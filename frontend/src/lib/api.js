@@ -1,5 +1,5 @@
 const PLACEHOLDER = 'https://placehold.co/400x400/ECF7E4/00694C?text=No+Image'
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://elarbol.icommerce.com.bd/api'
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'
 const MEDIA_BASE = API_BASE.replace('/api', '')
 const PRODUCT_BASE = '/products/products'
 
@@ -35,7 +35,7 @@ function normalizeProduct(p) {
     }
     return {
         ...p,
-        category: p.category || p.sub_category ? .category ? .name || null,
+        category: p.category || (p.sub_category && p.sub_category.category && p.sub_category.category.name) || null,
         price: Number(p.price),
         oldPrice: p.old_price != null ? Number(p.old_price) : null,
         wholesalePrice: p.wholesale_price != null ? Number(p.wholesale_price) : null,
@@ -58,12 +58,13 @@ export async function getProducts({ category, search, inStock, accessToken } = {
     if (inStock !== undefined) params.set('in_stock', inStock)
 
     const query = params.toString() ? `?${params}` : ''
-    const data = await apiAuthFetch(`${PRODUCT_BASE}/${query}`, accessToken)
+    const path = `${PRODUCT_BASE}/${query}`.replace(/([^:]\/)\/+/g, "$1")
+    const data = await apiAuthFetch(path, accessToken)
     return data.map(normalizeProduct)
 }
 
 export async function getProductBySlug(slug, accessToken) {
-    const data = await apiAuthFetch(`${PRODUCT_BASE}/slug/${slug}/`, accessToken)
+    const data = await apiAuthFetch(`${PRODUCT_BASE}/${slug}/`, accessToken)
     return {
         ...normalizeProduct(data),
         related: (data.related || []).map(normalizeProduct),

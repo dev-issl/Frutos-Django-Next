@@ -665,6 +665,15 @@ class Order(models.Model):
     customer_email = models.EmailField(help_text="Required customer email", db_index=True)
     customer_phone = models.CharField(max_length=50, help_text="Required customer phone number")
     
+
+
+     # ── Inline address fields ──────────────────────────────────────
+    street_address      = models.CharField(max_length=255, blank=True, default='')
+    city                = models.CharField(max_length=100, blank=True, default='')
+    postcode            = models.CharField(max_length=20,  blank=True, default='')
+    payment_method      = models.CharField(max_length=50,  blank=True, default='cash')
+    delivery_slot_label = models.CharField(max_length=100, blank=True, default='')
+
     ordered_at = models.DateTimeField(auto_now_add=True, db_index=True)
     
     class Meta:

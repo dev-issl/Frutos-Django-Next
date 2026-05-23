@@ -17,8 +17,7 @@ export default function OrderConfirmationClient({ order }) {
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
 
-  const statusCfg = STATUS_CONFIG[order.status] || STATUS_CONFIG.confirmed
-
+  const statusCfg = STATUS_CONFIG[order.status?.toLowerCase()] || STATUS_CONFIG['pending']
   // Format currency safely
   const fmt = (n) => Number(n).toFixed(2)
 

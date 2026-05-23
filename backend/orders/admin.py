@@ -84,9 +84,10 @@ class ShippingMethodAdmin(ImportExportModelAdmin):
 
                 @admin.register(BlockedDate)
                 class BlockedDateAdmin(admin.ModelAdmin):
-                    list_display = ('date', 'reason', 'created_at')
+                    list_display = ('date', 'reason')
                     list_filter = ('date',)
-                    readonly_fields = ('created_at',)
+                    search_fields = ('reason',)
+                    ordering = ('-date',)
                     <li><strong>Incremental Pricing:</strong> Add extra cost per additional weight unit</li>
                     <li><strong>Example:</strong> 70 BDT + 20 BDT per additional kg above 1kg</li>
                 </ul>
@@ -304,7 +305,7 @@ class OrderAdmin(ImportExportModelAdmin):
             'classes': ('wide',)
         }),
         ('🚚 Shipping & Delivery', {
-            'fields': ('shipping_address', 'shipping_method', 'tracking_number'),
+            'fields': ('shipping_address', 'shipping_method', 'tracking_number''street_address', 'city', 'postcode', 'payment_method', 'delivery_date', 'delivery_slot_label',),
             'classes': ('wide',)
         }),
         ('💰 Financial Summary', {
@@ -468,3 +469,11 @@ class FreeShippingRuleAdmin(ImportExportModelAdmin):
         count = obj.applicable_categories.count()
         return f"{count} categories" if count > 0 else "All categories"
     applicable_categories_count.short_description = 'Applies To'
+
+
+
+@admin.register(DeliverySlot)
+class DeliverySlotAdmin(admin.ModelAdmin):
+    list_display = ('name', 'start_time', 'end_time', 'is_active')
+    list_filter = ('is_active',)
+    ordering = ('start_time',)

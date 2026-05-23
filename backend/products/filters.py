@@ -10,8 +10,8 @@ class NumberInFilter(filters.BaseInFilter, filters.NumberFilter):
     pass
 
 class ProductFilter(filters.FilterSet):
-    category = filters.CharFilter(field_name='sub_category__category__slug')
-    subcategory = filters.CharFilter(field_name='sub_category__slug')
+    category = filters.CharFilter(method='filter_category')
+    subcategory = filters.CharFilter(method='filter_subcategory')
     subcategories = CharInFilter(field_name='sub_category__slug', lookup_expr='in')  # Support multiple subcategories
     brand = filters.CharFilter(field_name='brand__slug')  # Single brand filter
     brands = CharInFilter(field_name='brand__slug', lookup_expr='in')  # Multiple brands filter
@@ -31,6 +31,24 @@ class ProductFilter(filters.FilterSet):
     class Meta:
         model = Product
         fields = ['category', 'subcategory', 'subcategories', 'brand', 'brands', 'colors', 'shipping_categories', 'search', 'min_price', 'max_price', 'ordering']
+
+    def filter_category(self, queryset, name, value):
+        from django.db.models import Q
+        if not value:
+            return queryset
+        return queryset.filter(
+            Q(sub_category__category__slug__iexact=value) |
+            Q(sub_category__category__name__iexact=value)
+        ).distinct()
+
+    def filter_subcategory(self, queryset, name, value):
+        from django.db.models import Q
+        if not value:
+            return queryset
+        return queryset.filter(
+            Q(sub_category__slug__iexact=value) |
+            Q(sub_category__name__iexact=value)
+        ).distinct()
 
     def filter_search(self, queryset, name, value):
         """Custom search filter that searches across multiple fields"""

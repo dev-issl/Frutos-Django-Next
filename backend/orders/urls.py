@@ -1,4 +1,4 @@
-# orders/urls.py
+# orders/urls.py (সংশোধিত অংশ)
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
@@ -11,7 +11,11 @@ from .views import (
 
 # Create router for ViewSets
 router = DefaultRouter()
-router.register(r'orders', OrderViewSet, basename='order')
+
+# ── FIX: প্রিফিক্স 'orders' পরিবর্তন করে খালি স্ট্রিং '' দেওয়া হয়েছে ──
+# এর ফলে এটি মূল backend/urls.py এর 'api/orders/' পাথের সাথে সরাসরি যুক্ত হবে
+router.register(r'', OrderViewSet, basename='order')
+
 router.register(r'order-payments', OrderPaymentViewSet, basename='order-payment')
 router.register(r'shipping-methods', ShippingMethodViewSet, basename='shipping-method')
 router.register(r'shipping-categories', ShippingCategoryViewSet, basename='shipping-category')
@@ -21,7 +25,7 @@ router.register(r'coupons', CouponViewSet, basename='coupon')
 
 app_name = 'orders'
 
-urlpatterns = [
+urlpatterns = [ 
     # Order-related API endpoints
     path('', include(router.urls)),
     

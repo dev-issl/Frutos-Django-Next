@@ -6,6 +6,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework import status
+
+from orders.models import Order
 from .models import Product, Category, SubCategory, Color, Brand, Size, ProductSpecification, ProductAdditionalImage
 from django.db.models import Count, ProtectedError
 from .serializers import (
@@ -86,12 +88,12 @@ class ProductViewSet(viewsets.ModelViewSet):
         Override to apply different permissions based on the action.
         """
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
-            # Write operations require custom permission
-            self.permission_classes = [IsShopOwnerOrReadOnly]
+            # Write operations require authentication (or custom IsShopOwnerOrReadOnly)
+            permission_classes = [permissions.IsAuthenticated]
         else:
             # Read operations are public
-            self.permission_classes = [permissions.AllowAny]
-        return super().get_permissions()
+            permission_classes = [permissions.AllowAny]
+        return [permission() for permission in permission_classes]
 
     def list(self, request, *args, **kwargs):
         """

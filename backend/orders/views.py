@@ -586,15 +586,49 @@ class OrderViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'], url_path='submit', permission_classes=[permissions.AllowAny])
     def submit_order(self, request):
         """
-        Submit a new order - alias for create method with explicit endpoint.
         POST /api/orders/submit/
-        
-        Accepts nested order payload and creates Order, OrderItem(s) and OrderPayment in atomic transaction.
-        Supports both authenticated users and anonymous guest orders.
+        Frontend থেকে order create করার dedicated endpoint।
         """
-        # Use the confirm_payment method which has the proper implementation
-        return self.confirm_payment(request)
+        try:
+            with transaction.atomic():
+                serializer = OrderCreateSerializer(
+                    data=request.data,
+                    context={'request': request}
+                )
 
+                if not serializer.is_valid():
+                    logger.warning(f"Order validation failed: {serializer.errors}")
+                    return Response({
+                        'success': False,
+                        'detail': 'Order validation failed',
+                        'errors': serializer.errors
+                    }, status=status.HTTP_400_BAD_REQUEST)
+
+                order = serializer.save()
+
+                logger.info(f"Order created: {order.order_number}")
+                return Response({
+                    'success':      True,
+                    'order_number': order.order_number,
+                    'order_id':     order.id,
+                }, status=status.HTTP_201_CREATED)
+
+        except serializers.ValidationError as e:
+            return Response({
+                'success': False,
+                'detail':  'Order validation failed',
+                'errors':  e.detail if hasattr(e, 'detail') else str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            logger.exception(f"Order creation failed: {str(e)}")
+            return Response({
+                'success': False,
+                'detail':  f'Order creation failed: {str(e)}',
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+            
     @action(detail=False, methods=['post'], url_path='confirm-payment', permission_classes=[permissions.AllowAny])
     def confirm_payment(self, request):
         """
