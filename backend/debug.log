@@ -31954,3 +31954,567 @@ WARNING 2026-06-04 15:52:39,032 basehttp 10464 10504 "GET /api/site-config/ HTTP
 WARNING 2026-06-04 15:52:39,149 basehttp 10464 13388 "GET /api/site-config/footer/ HTTP/1.1" 404 4817
 WARNING 2026-06-04 15:52:39,200 basehttp 10464 10504 "GET /api/website/site-config/ HTTP/1.1" 404 23020
 INFO 2026-06-04 15:53:26,920 autoreload 13408 16928 Watching for file changes with StatReloader
+WARNING 2026-06-04 15:53:32,644 basehttp 13408 11640 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 15:53:47,602 basehttp 13408 11640 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 15:53:49,803 basehttp 13408 18888 "GET /api/site-config/ HTTP/1.1" 404 4796
+INFO 2026-06-04 15:53:49,900 basehttp 13408 11640 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 15:53:49,901 basehttp 13408 16452 "GET /api/site-config/footer/ HTTP/1.1" 404 4817
+WARNING 2026-06-04 15:53:49,946 basehttp 13408 18888 "GET /api/website/site-config/ HTTP/1.1" 404 23020
+WARNING 2026-06-04 15:53:52,719 basehttp 13408 11640 "GET /api/delivery-charge/ HTTP/1.1" 404 4808
+INFO 2026-06-04 15:53:52,750 views 13408 11640 ProductViewSet.list called with params: <QueryDict: {}>
+INFO 2026-06-04 15:53:52,824 basehttp 13408 15728 "GET /api/auth/profile/ HTTP/1.1" 200 294
+INFO 2026-06-04 15:53:52,840 views 13408 11640 Successfully paginated 3 products
+WARNING 2026-06-04 15:53:52,901 basehttp 13408 16452 "GET /api/site-config/ HTTP/1.1" 404 4796
+INFO 2026-06-04 15:53:52,902 basehttp 13408 15728 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 15:53:52,997 basehttp 13408 4772 "GET /api/site-config/footer/ HTTP/1.1" 404 4817
+INFO 2026-06-04 15:53:53,000 basehttp 13408 11640 "GET /api/products/products/ HTTP/1.1" 200 8132
+WARNING 2026-06-04 15:53:53,023 basehttp 13408 16452 "GET /api/website/site-config/ HTTP/1.1" 404 23020
+WARNING 2026-06-04 15:53:53,406 basehttp 13408 4772 "GET /api/site-config/ HTTP/1.1" 404 4796
+WARNING 2026-06-04 15:53:53,605 basehttp 13408 5356 "GET /api/site-config/footer/ HTTP/1.1" 404 4817
+WARNING 2026-06-04 15:53:53,665 basehttp 13408 4772 "GET /api/website/site-config/ HTTP/1.1" 404 23020
+WARNING 2026-06-04 15:53:54,079 basehttp 13408 5356 "GET /api/site-config/ HTTP/1.1" 404 4796
+WARNING 2026-06-04 15:53:54,144 basehttp 13408 14044 "GET /api/site-config/footer/ HTTP/1.1" 404 4817
+WARNING 2026-06-04 15:53:54,182 basehttp 13408 5356 "GET /api/website/site-config/ HTTP/1.1" 404 23020
+WARNING 2026-06-04 15:54:02,463 basehttp 13408 11640 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 15:54:02,871 basehttp 13408 11640 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 15:54:13,497 basehttp 13408 11640 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 15:54:23,922 basehttp 13408 11640 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 15:54:32,481 basehttp 13408 11640 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 15:54:33,445 basehttp 13408 11640 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 15:54:43,474 basehttp 13408 11640 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 15:54:53,450 basehttp 13408 11640 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 15:55:02,461 basehttp 13408 11640 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 15:55:03,467 basehttp 13408 11640 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 15:55:13,460 basehttp 13408 11640 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 15:55:32,484 basehttp 13408 11640 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+WARNING 2026-06-04 15:56:02,489 basehttp 13408 11640 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 15:56:13,489 basehttp 13408 11640 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 15:56:32,667 basehttp 13408 11640 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+WARNING 2026-06-04 15:57:13,490 basehttp 13408 15728 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 15:57:13,493 basehttp 13408 11640 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 15:58:13,468 basehttp 13408 15728 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 15:58:13,471 basehttp 13408 11640 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 15:59:13,472 basehttp 13408 15728 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 15:59:13,477 basehttp 13408 11640 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:00:14,107 basehttp 13408 11640 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 16:00:14,150 basehttp 13408 11640 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+WARNING 2026-06-04 16:00:41,640 basehttp 13408 11640 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+WARNING 2026-06-04 16:01:02,448 basehttp 13408 11640 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:01:13,460 basehttp 13408 11640 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 16:01:14,613 basehttp 13408 4652 "GET /api/site-config/ HTTP/1.1" 404 4796
+WARNING 2026-06-04 16:01:14,665 basehttp 13408 12232 "GET /api/site-config/footer/ HTTP/1.1" 404 4817
+WARNING 2026-06-04 16:01:14,688 basehttp 13408 4652 "GET /api/website/site-config/ HTTP/1.1" 404 23020
+WARNING 2026-06-04 16:01:15,454 basehttp 13408 11640 "GET /api/delivery-charge/ HTTP/1.1" 404 4808
+INFO 2026-06-04 16:01:15,467 basehttp 13408 15728 "GET /api/auth/profile/ HTTP/1.1" 200 294
+WARNING 2026-06-04 16:01:15,551 basehttp 13408 12232 "GET /api/site-config/ HTTP/1.1" 404 4796
+WARNING 2026-06-04 16:01:15,606 basehttp 13408 12640 "GET /api/site-config/footer/ HTTP/1.1" 404 4817
+WARNING 2026-06-04 16:01:15,636 basehttp 13408 12232 "GET /api/website/site-config/ HTTP/1.1" 404 23020
+WARNING 2026-06-04 16:01:15,856 basehttp 13408 12640 "GET /api/site-config/ HTTP/1.1" 404 4796
+WARNING 2026-06-04 16:01:15,991 basehttp 13408 1264 "GET /api/site-config/footer/ HTTP/1.1" 404 4817
+WARNING 2026-06-04 16:01:16,044 basehttp 13408 12640 "GET /api/website/site-config/ HTTP/1.1" 404 23020
+WARNING 2026-06-04 16:01:16,164 basehttp 13408 1264 "GET /api/site-config/ HTTP/1.1" 404 4796
+WARNING 2026-06-04 16:01:16,204 basehttp 13408 17476 "GET /api/site-config/footer/ HTTP/1.1" 404 4817
+WARNING 2026-06-04 16:01:16,226 basehttp 13408 1264 "GET /api/website/site-config/ HTTP/1.1" 404 23020
+INFO 2026-06-04 16:01:41,197 basehttp 13408 15728 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:01:42,880 basehttp 13408 15728 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:01:52,893 basehttp 13408 15728 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:02:02,861 basehttp 13408 15728 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:02:12,867 basehttp 13408 15728 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:02:22,868 basehttp 13408 15728 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:02:32,887 basehttp 13408 15728 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:02:42,887 basehttp 13408 15728 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:02:52,872 basehttp 13408 15728 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:03:02,874 basehttp 13408 15728 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:03:12,880 basehttp 13408 15728 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:03:22,878 basehttp 13408 15728 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:03:32,912 basehttp 13408 15728 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:03:42,898 basehttp 13408 15728 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:03:53,456 basehttp 13408 15728 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:04:03,475 basehttp 13408 15728 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:04:13,492 basehttp 13408 15728 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:04:23,575 basehttp 13408 15728 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:04:33,466 basehttp 13408 15728 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:05:13,474 basehttp 13408 15728 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:06:13,502 basehttp 13408 11892 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:07:13,449 basehttp 13408 11892 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:08:13,464 basehttp 13408 11892 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:09:13,457 basehttp 13408 11892 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:09:57,537 basehttp 13408 11892 "POST /api/auth/token/refresh/ HTTP/1.1" 200 835
+INFO 2026-06-04 16:09:57,562 basehttp 13408 8364 "POST /api/auth/token/refresh/ HTTP/1.1" 200 835
+INFO 2026-06-04 16:10:13,487 basehttp 13408 8364 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:11:13,479 basehttp 13408 8364 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:12:13,450 basehttp 13408 8364 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:13:13,475 basehttp 13408 8364 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:14:13,470 basehttp 13408 8364 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:15:13,485 basehttp 13408 8364 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:16:13,510 basehttp 13408 8364 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:17:13,493 basehttp 13408 8364 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:18:13,462 basehttp 13408 8364 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 16:19:05,799 basehttp 13408 18368 "GET /api/site-config/ HTTP/1.1" 404 4796
+WARNING 2026-06-04 16:19:05,799 basehttp 13408 11720 "GET /api/site-config/ HTTP/1.1" 404 4796
+WARNING 2026-06-04 16:19:05,799 basehttp 13408 8376 "GET /api/site-config/ HTTP/1.1" 404 4796
+WARNING 2026-06-04 16:19:06,178 basehttp 13408 2944 "GET /api/site-config/ HTTP/1.1" 404 4796
+WARNING 2026-06-04 16:19:06,213 basehttp 13408 16292 "GET /api/site-config/ HTTP/1.1" 404 4796
+WARNING 2026-06-04 16:19:06,238 basehttp 13408 9852 "GET /api/site-config/ HTTP/1.1" 404 4796
+WARNING 2026-06-04 16:19:06,239 basehttp 13408 2556 "GET /api/site-config/footer/ HTTP/1.1" 404 4817
+WARNING 2026-06-04 16:19:06,266 basehttp 13408 8376 "GET /api/site-config/footer/ HTTP/1.1" 404 4817
+WARNING 2026-06-04 16:19:06,303 basehttp 13408 18368 "GET /api/site-config/footer/ HTTP/1.1" 404 4817
+WARNING 2026-06-04 16:19:06,306 basehttp 13408 6428 "GET /api/site-config/footer/ HTTP/1.1" 404 4817
+WARNING 2026-06-04 16:19:06,581 basehttp 13408 11720 "GET /api/website/site-config/ HTTP/1.1" 404 23020
+WARNING 2026-06-04 16:19:06,608 basehttp 13408 8376 "GET /api/website/site-config/ HTTP/1.1" 404 23020
+WARNING 2026-06-04 16:19:06,608 basehttp 13408 16292 "GET /api/website/site-config/ HTTP/1.1" 404 23020
+WARNING 2026-06-04 16:19:06,634 basehttp 13408 9852 "GET /api/website/site-config/ HTTP/1.1" 404 23020
+WARNING 2026-06-04 16:19:06,653 basehttp 13408 8932 "GET /api/site-config/footer/ HTTP/1.1" 404 4817
+WARNING 2026-06-04 16:19:06,654 basehttp 13408 2944 "GET /api/site-config/footer/ HTTP/1.1" 404 4817
+WARNING 2026-06-04 16:19:06,821 basehttp 13408 18368 "GET /api/website/site-config/ HTTP/1.1" 404 23020
+WARNING 2026-06-04 16:19:06,863 basehttp 13408 2556 "GET /api/website/site-config/ HTTP/1.1" 404 23020
+WARNING 2026-06-04 16:19:07,533 basehttp 13408 2944 "GET /api/site-config/ HTTP/1.1" 404 4796
+WARNING 2026-06-04 16:19:07,669 basehttp 13408 6428 "GET /api/site-config/footer/ HTTP/1.1" 404 4817
+WARNING 2026-06-04 16:19:07,718 basehttp 13408 2944 "GET /api/website/site-config/ HTTP/1.1" 404 23020
+WARNING 2026-06-04 16:19:11,691 basehttp 13408 8364 "GET /api/delivery-charge/ HTTP/1.1" 404 4808
+INFO 2026-06-04 16:19:11,793 basehttp 13408 19380 "GET /api/auth/profile/ HTTP/1.1" 200 294
+WARNING 2026-06-04 16:19:11,880 basehttp 13408 12116 "GET /api/site-config/ HTTP/1.1" 404 4796
+WARNING 2026-06-04 16:19:12,185 basehttp 13408 1644 "GET /api/site-config/footer/ HTTP/1.1" 404 4817
+WARNING 2026-06-04 16:19:12,279 basehttp 13408 12116 "GET /api/website/site-config/ HTTP/1.1" 404 23020
+WARNING 2026-06-04 16:19:13,108 basehttp 13408 1644 "GET /api/site-config/ HTTP/1.1" 404 4796
+WARNING 2026-06-04 16:19:13,284 basehttp 13408 2928 "GET /api/site-config/footer/ HTTP/1.1" 404 4817
+WARNING 2026-06-04 16:19:13,322 basehttp 13408 1644 "GET /api/website/site-config/ HTTP/1.1" 404 23020
+WARNING 2026-06-04 16:19:26,850 basehttp 13408 2240 "GET /api/site-config/ HTTP/1.1" 404 4796
+WARNING 2026-06-04 16:19:26,912 basehttp 13408 17296 "GET /api/site-config/footer/ HTTP/1.1" 404 4817
+WARNING 2026-06-04 16:19:26,960 basehttp 13408 5080 "GET /api/website/site-config/ HTTP/1.1" 404 23020
+INFO 2026-06-04 16:19:28,677 basehttp 13408 19380 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:19:28,883 basehttp 13408 8364 "OPTIONS /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 200 0
+WARNING 2026-06-04 16:19:28,957 basehttp 13408 8364 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:19:28,973 views 13408 19380 Orders list request from user: elarbol@gmail.com
+INFO 2026-06-04 16:19:29,002 basehttp 13408 18420 "OPTIONS /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 200 0
+INFO 2026-06-04 16:19:29,147 views 13408 19380 User authenticated: True
+INFO 2026-06-04 16:19:29,179 views 13408 2896 ProductViewSet.list called with params: <QueryDict: {'page_size': ['500']}>
+INFO 2026-06-04 16:19:29,219 views 13408 19380 Query params: <QueryDict: {'ordering': ['-ordered_at']}>
+WARNING 2026-06-04 16:19:29,255 basehttp 13408 18420 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:19:29,344 views 13408 19380 Orders queryset count: 4
+INFO 2026-06-04 16:19:29,806 basehttp 13408 572 "GET /api/products/reviews/ HTTP/1.1" 200 560
+INFO 2026-06-04 16:19:29,944 views 13408 19380 Serialized orders count: 4
+INFO 2026-06-04 16:19:29,957 basehttp 13408 19380 "GET /api/orders/?ordering=-ordered_at HTTP/1.1" 200 3715
+INFO 2026-06-04 16:19:29,969 views 13408 2896 Successfully paginated 3 products
+INFO 2026-06-04 16:19:30,008 basehttp 13408 572 "GET /api/products/reviews/ HTTP/1.1" 200 560
+INFO 2026-06-04 16:19:30,045 basehttp 13408 2896 "GET /api/products/products/?page_size=500 HTTP/1.1" 200 8129
+INFO 2026-06-04 16:19:30,061 views 13408 572 ProductViewSet.list called with params: <QueryDict: {'page_size': ['500']}>
+INFO 2026-06-04 16:19:30,102 views 13408 572 Successfully paginated 3 products
+INFO 2026-06-04 16:19:30,146 basehttp 13408 572 "GET /api/products/products/?page_size=500 HTTP/1.1" 200 8129
+INFO 2026-06-04 16:19:41,218 views 13408 14600 ProductViewSet.retrieve called with slug: mango
+WARNING 2026-06-04 16:19:41,238 basehttp 13408 9412 "GET /api/site-config/ HTTP/1.1" 404 4796
+INFO 2026-06-04 16:19:41,272 views 13408 14600 Successfully retrieved product: Mango
+WARNING 2026-06-04 16:19:41,273 basehttp 13408 7204 "GET /api/site-config/footer/ HTTP/1.1" 404 4817
+WARNING 2026-06-04 16:19:41,307 basehttp 13408 9412 "GET /api/website/site-config/ HTTP/1.1" 404 23020
+INFO 2026-06-04 16:19:41,323 basehttp 13408 14600 "GET /api/products/products/mango/ HTTP/1.1" 200 2510
+INFO 2026-06-04 16:19:42,340 views 13408 2896 ProductViewSet.list called with params: <QueryDict: {}>
+WARNING 2026-06-04 16:19:42,368 basehttp 13408 572 "GET /api/delivery-charge/ HTTP/1.1" 404 4808
+INFO 2026-06-04 16:19:42,390 basehttp 13408 19380 "GET /api/auth/profile/ HTTP/1.1" 200 294
+INFO 2026-06-04 16:19:42,453 views 13408 2896 Successfully paginated 3 products
+INFO 2026-06-04 16:19:42,523 basehttp 13408 2896 "GET /api/products/products/ HTTP/1.1" 200 8132
+INFO 2026-06-04 16:19:42,612 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:19:42,799 basehttp 13408 2896 "OPTIONS /api/products/products/mango/ HTTP/1.1" 200 0
+INFO 2026-06-04 16:19:42,799 basehttp 13408 19380 "OPTIONS /api/products/products/mango/ HTTP/1.1" 200 0
+INFO 2026-06-04 16:19:42,818 views 13408 2896 ProductViewSet.retrieve called with slug: mango
+INFO 2026-06-04 16:19:42,908 views 13408 19380 ProductViewSet.retrieve called with slug: mango
+INFO 2026-06-04 16:19:43,001 views 13408 2896 Successfully retrieved product: Mango
+INFO 2026-06-04 16:19:43,012 views 13408 19380 Successfully retrieved product: Mango
+INFO 2026-06-04 16:19:43,071 basehttp 13408 2896 "GET /api/products/products/mango/ HTTP/1.1" 200 2509
+INFO 2026-06-04 16:19:43,073 basehttp 13408 19380 "GET /api/products/products/mango/ HTTP/1.1" 200 2509
+WARNING 2026-06-04 16:19:43,689 basehttp 13408 14600 "GET /api/site-config/ HTTP/1.1" 404 4796
+WARNING 2026-06-04 16:19:43,806 basehttp 13408 7204 "GET /api/site-config/footer/ HTTP/1.1" 404 4817
+WARNING 2026-06-04 16:19:43,840 basehttp 13408 14600 "GET /api/website/site-config/ HTTP/1.1" 404 23020
+WARNING 2026-06-04 16:19:44,448 basehttp 13408 19380 "GET /api/delivery-charge/ HTTP/1.1" 404 4808
+INFO 2026-06-04 16:19:44,495 basehttp 13408 19380 "GET /api/auth/profile/ HTTP/1.1" 200 294
+INFO 2026-06-04 16:19:44,587 views 13408 19380 Orders list request from user: elarbol@gmail.com
+INFO 2026-06-04 16:19:44,588 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:19:44,656 views 13408 19380 User authenticated: True
+INFO 2026-06-04 16:19:44,712 views 13408 19380 Query params: <QueryDict: {'ordering': ['-ordered_at']}>
+WARNING 2026-06-04 16:19:44,788 basehttp 13408 18420 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:19:44,789 views 13408 572 ProductViewSet.list called with params: <QueryDict: {'page_size': ['500']}>
+INFO 2026-06-04 16:19:44,793 views 13408 19380 Orders queryset count: 4
+INFO 2026-06-04 16:19:44,834 basehttp 13408 2896 "GET /api/products/reviews/ HTTP/1.1" 200 560
+WARNING 2026-06-04 16:19:44,872 basehttp 13408 18420 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:19:44,916 views 13408 572 Successfully paginated 3 products
+INFO 2026-06-04 16:19:44,953 views 13408 19380 Serialized orders count: 4
+INFO 2026-06-04 16:19:44,987 basehttp 13408 19380 "GET /api/orders/?ordering=-ordered_at HTTP/1.1" 200 3715
+INFO 2026-06-04 16:19:45,021 basehttp 13408 2896 "GET /api/products/reviews/ HTTP/1.1" 200 560
+INFO 2026-06-04 16:19:45,034 basehttp 13408 572 "GET /api/products/products/?page_size=500 HTTP/1.1" 200 8129
+INFO 2026-06-04 16:19:45,048 views 13408 572 ProductViewSet.list called with params: <QueryDict: {'page_size': ['500']}>
+INFO 2026-06-04 16:19:45,095 views 13408 572 Successfully paginated 3 products
+INFO 2026-06-04 16:19:45,166 basehttp 13408 572 "GET /api/products/products/?page_size=500 HTTP/1.1" 200 8129
+INFO 2026-06-04 16:19:45,978 basehttp 13408 572 "OPTIONS /api/products/products/mango/ HTTP/1.1" 200 0
+INFO 2026-06-04 16:19:45,987 views 13408 572 ProductViewSet.retrieve called with slug: mango
+INFO 2026-06-04 16:19:46,024 views 13408 572 Successfully retrieved product: Mango
+INFO 2026-06-04 16:19:46,168 basehttp 13408 572 "GET /api/products/products/mango/ HTTP/1.1" 200 2509
+INFO 2026-06-04 16:19:53,441 basehttp 13408 572 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:20:03,450 basehttp 13408 572 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:20:13,470 basehttp 13408 572 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 16:20:14,720 basehttp 13408 572 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:20:23,447 basehttp 13408 572 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:20:28,147 basehttp 13408 572 "OPTIONS /api/products/reviews/2/ HTTP/1.1" 200 0
+INFO 2026-06-04 16:20:28,239 basehttp 13408 572 "PATCH /api/products/reviews/2/ HTTP/1.1" 200 206
+INFO 2026-06-04 16:20:28,361 basehttp 13408 572 "GET /api/products/reviews/ HTTP/1.1" 200 560
+INFO 2026-06-04 16:20:32,608 basehttp 13408 572 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:20:38,971 views 13408 5116 ProductViewSet.retrieve called with slug: mango
+WARNING 2026-06-04 16:20:38,971 basehttp 13408 17084 "GET /api/site-config/ HTTP/1.1" 404 4796
+INFO 2026-06-04 16:20:39,011 views 13408 5116 Successfully retrieved product: Mango
+INFO 2026-06-04 16:20:39,034 basehttp 13408 5116 "GET /api/products/products/mango/ HTTP/1.1" 200 2510
+WARNING 2026-06-04 16:20:39,102 basehttp 13408 11884 "GET /api/site-config/footer/ HTTP/1.1" 404 4817
+WARNING 2026-06-04 16:20:39,137 basehttp 13408 17084 "GET /api/website/site-config/ HTTP/1.1" 404 23020
+WARNING 2026-06-04 16:20:40,182 basehttp 13408 572 "GET /api/delivery-charge/ HTTP/1.1" 404 4808
+INFO 2026-06-04 16:20:40,348 basehttp 13408 2896 "GET /api/auth/profile/ HTTP/1.1" 200 294
+INFO 2026-06-04 16:20:40,353 views 13408 572 ProductViewSet.list called with params: <QueryDict: {}>
+INFO 2026-06-04 16:20:40,485 views 13408 572 Successfully paginated 3 products
+INFO 2026-06-04 16:20:40,559 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:20:40,579 basehttp 13408 572 "GET /api/products/products/ HTTP/1.1" 200 8132
+INFO 2026-06-04 16:20:40,705 basehttp 13408 572 "OPTIONS /api/products/products/mango/ HTTP/1.1" 200 0
+INFO 2026-06-04 16:20:40,705 basehttp 13408 2896 "OPTIONS /api/products/products/mango/ HTTP/1.1" 200 0
+INFO 2026-06-04 16:20:40,707 basehttp 13408 19380 "OPTIONS /api/products/products/mango/ HTTP/1.1" 200 0
+INFO 2026-06-04 16:20:40,733 views 13408 572 ProductViewSet.retrieve called with slug: mango
+INFO 2026-06-04 16:20:40,753 views 13408 2896 ProductViewSet.retrieve called with slug: mango
+INFO 2026-06-04 16:20:40,764 views 13408 19380 ProductViewSet.retrieve called with slug: mango
+INFO 2026-06-04 16:20:40,826 views 13408 572 Successfully retrieved product: Mango
+INFO 2026-06-04 16:20:40,869 basehttp 13408 572 "GET /api/products/products/mango/ HTTP/1.1" 200 2509
+INFO 2026-06-04 16:20:40,870 views 13408 19380 Successfully retrieved product: Mango
+INFO 2026-06-04 16:20:40,872 views 13408 2896 Successfully retrieved product: Mango
+INFO 2026-06-04 16:20:41,358 basehttp 13408 19380 "GET /api/products/products/mango/ HTTP/1.1" 200 2509
+INFO 2026-06-04 16:20:41,358 basehttp 13408 2896 "GET /api/products/products/mango/ HTTP/1.1" 200 2509
+WARNING 2026-06-04 16:20:45,469 basehttp 13408 2896 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:20:51,447 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:21:01,518 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:21:11,450 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 16:21:15,489 basehttp 13408 2896 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:21:21,447 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:21:31,456 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:21:41,441 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 16:21:45,458 basehttp 13408 2896 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:21:58,853 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:22:00,554 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:22:11,449 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 16:22:15,452 basehttp 13408 2896 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:22:20,564 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:22:30,534 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:22:41,451 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 16:22:45,448 basehttp 13408 2896 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:22:51,452 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:23:01,445 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:23:11,465 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:23:20,798 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:23:31,461 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:23:41,449 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:23:51,465 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:24:01,441 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:24:10,720 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 16:24:13,684 basehttp 13408 2896 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:24:21,456 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:24:32,200 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:24:41,445 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 16:24:45,452 basehttp 13408 2896 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:24:51,450 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:25:01,494 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:25:11,443 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 16:25:15,453 basehttp 13408 2896 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:25:36,308 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 16:25:37,665 basehttp 13408 15856 "GET /api/site-config/ HTTP/1.1" 404 4796
+WARNING 2026-06-04 16:25:38,092 basehttp 13408 11040 "GET /api/site-config/footer/ HTTP/1.1" 404 4817
+INFO 2026-06-04 16:25:40,917 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 16:25:41,641 basehttp 13408 15856 "GET /api/site-config/ HTTP/1.1" 404 4796
+WARNING 2026-06-04 16:25:42,221 basehttp 13408 2104 "GET /api/website/site-config/ HTTP/1.1" 404 23020
+WARNING 2026-06-04 16:25:42,350 basehttp 13408 17096 "GET /api/site-config/footer/ HTTP/1.1" 404 4817
+WARNING 2026-06-04 16:25:42,514 basehttp 13408 9360 "GET /api/website/site-config/ HTTP/1.1" 404 23020
+INFO 2026-06-04 16:25:42,994 basehttp 13408 2896 "OPTIONS /api/products/products/mango/ HTTP/1.1" 200 0
+INFO 2026-06-04 16:25:43,052 views 13408 2896 ProductViewSet.retrieve called with slug: mango
+INFO 2026-06-04 16:25:43,198 views 13408 2896 Successfully retrieved product: Mango
+INFO 2026-06-04 16:25:43,360 basehttp 13408 2896 "GET /api/products/products/mango/ HTTP/1.1" 200 2509
+WARNING 2026-06-04 16:25:45,513 basehttp 13408 2896 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:25:50,583 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 16:25:55,636 basehttp 13408 9984 "GET /api/site-config/ HTTP/1.1" 404 4796
+INFO 2026-06-04 16:25:55,760 views 13408 6708 ProductViewSet.retrieve called with slug: mango
+INFO 2026-06-04 16:25:55,957 views 13408 6708 Successfully retrieved product: Mango
+INFO 2026-06-04 16:25:56,053 basehttp 13408 6708 "GET /api/products/products/mango/ HTTP/1.1" 200 2510
+WARNING 2026-06-04 16:25:57,109 basehttp 13408 6208 "GET /api/site-config/footer/ HTTP/1.1" 404 4817
+WARNING 2026-06-04 16:25:57,541 basehttp 13408 9984 "GET /api/website/site-config/ HTTP/1.1" 404 23020
+WARNING 2026-06-04 16:25:59,039 basehttp 13408 6708 "GET /api/site-config/ HTTP/1.1" 404 4796
+WARNING 2026-06-04 16:25:59,633 basehttp 13408 6208 "GET /api/site-config/footer/ HTTP/1.1" 404 4817
+WARNING 2026-06-04 16:25:59,817 basehttp 13408 6708 "GET /api/website/site-config/ HTTP/1.1" 404 23020
+WARNING 2026-06-04 16:26:00,134 basehttp 13408 6208 "GET /api/site-config/ HTTP/1.1" 404 4796
+WARNING 2026-06-04 16:26:00,452 basehttp 13408 15464 "GET /api/site-config/footer/ HTTP/1.1" 404 4817
+WARNING 2026-06-04 16:26:00,520 basehttp 13408 6208 "GET /api/website/site-config/ HTTP/1.1" 404 23020
+INFO 2026-06-04 16:26:00,551 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:26:00,714 basehttp 13408 2896 "OPTIONS /api/products/products/mango/ HTTP/1.1" 200 0
+INFO 2026-06-04 16:26:00,779 views 13408 2896 ProductViewSet.retrieve called with slug: mango
+INFO 2026-06-04 16:26:00,836 views 13408 2896 Successfully retrieved product: Mango
+INFO 2026-06-04 16:26:00,928 basehttp 13408 2896 "GET /api/products/products/mango/ HTTP/1.1" 200 2509
+INFO 2026-06-04 16:26:01,678 views 13408 2896 ProductViewSet.list called with params: <QueryDict: {'page_size': ['500']}>
+INFO 2026-06-04 16:26:01,726 basehttp 13408 10208 "GET /api/products/reviews/ HTTP/1.1" 200 560
+INFO 2026-06-04 16:26:01,734 views 13408 2896 Successfully paginated 3 products
+WARNING 2026-06-04 16:26:01,768 basehttp 13408 15464 "GET /api/site-config/ HTTP/1.1" 404 4796
+WARNING 2026-06-04 16:26:01,820 basehttp 13408 780 "GET /api/site-config/footer/ HTTP/1.1" 404 4817
+INFO 2026-06-04 16:26:01,829 basehttp 13408 2896 "GET /api/products/products/?page_size=500 HTTP/1.1" 200 8129
+WARNING 2026-06-04 16:26:01,854 basehttp 13408 15464 "GET /api/website/site-config/ HTTP/1.1" 404 23020
+WARNING 2026-06-04 16:26:02,171 basehttp 13408 780 "GET /api/site-config/ HTTP/1.1" 404 4796
+WARNING 2026-06-04 16:26:02,298 basehttp 13408 9028 "GET /api/site-config/footer/ HTTP/1.1" 404 4817
+WARNING 2026-06-04 16:26:02,377 basehttp 13408 780 "GET /api/website/site-config/ HTTP/1.1" 404 23020
+WARNING 2026-06-04 16:26:02,764 basehttp 13408 19264 "GET /api/site-config/ HTTP/1.1" 404 4796
+WARNING 2026-06-04 16:26:02,817 basehttp 13408 9028 "GET /api/site-config/footer/ HTTP/1.1" 404 4817
+WARNING 2026-06-04 16:26:02,860 basehttp 13408 19264 "GET /api/website/site-config/ HTTP/1.1" 404 23020
+INFO 2026-06-04 16:26:03,210 views 13408 10208 ProductViewSet.list called with params: <QueryDict: {'page_size': ['500']}>
+INFO 2026-06-04 16:26:03,241 basehttp 13408 2896 "GET /api/products/reviews/ HTTP/1.1" 200 560
+INFO 2026-06-04 16:26:03,256 views 13408 10208 Successfully paginated 3 products
+INFO 2026-06-04 16:26:03,307 basehttp 13408 10208 "GET /api/products/products/?page_size=500 HTTP/1.1" 200 8129
+INFO 2026-06-04 16:26:10,624 basehttp 13408 10208 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 16:26:12,602 basehttp 13408 12312 "GET /api/site-config/ HTTP/1.1" 404 4796
+WARNING 2026-06-04 16:26:12,849 basehttp 13408 10864 "GET /api/site-config/ HTTP/1.1" 404 4796
+WARNING 2026-06-04 16:26:12,887 basehttp 13408 12312 "GET /api/site-config/footer/ HTTP/1.1" 404 4817
+WARNING 2026-06-04 16:26:12,887 basehttp 13408 15396 "GET /api/site-config/footer/ HTTP/1.1" 404 4817
+WARNING 2026-06-04 16:26:12,918 basehttp 13408 10864 "GET /api/website/site-config/ HTTP/1.1" 404 23020
+WARNING 2026-06-04 16:26:12,943 basehttp 13408 15396 "GET /api/website/site-config/ HTTP/1.1" 404 23020
+WARNING 2026-06-04 16:26:16,198 basehttp 13408 10208 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:26:16,614 views 13408 2896 ProductViewSet.list called with params: <QueryDict: {'page_size': ['500']}>
+INFO 2026-06-04 16:26:16,680 basehttp 13408 10208 "GET /api/products/reviews/ HTTP/1.1" 200 560
+INFO 2026-06-04 16:26:16,713 views 13408 2896 Successfully paginated 3 products
+INFO 2026-06-04 16:26:16,811 basehttp 13408 2896 "GET /api/products/products/?page_size=500 HTTP/1.1" 200 8129
+INFO 2026-06-04 16:26:17,387 basehttp 13408 2896 "OPTIONS /api/products/products/mango/ HTTP/1.1" 200 0
+INFO 2026-06-04 16:26:17,399 views 13408 2896 ProductViewSet.retrieve called with slug: mango
+INFO 2026-06-04 16:26:17,433 views 13408 2896 Successfully retrieved product: Mango
+INFO 2026-06-04 16:26:17,480 basehttp 13408 2896 "GET /api/products/products/mango/ HTTP/1.1" 200 2509
+INFO 2026-06-04 16:26:21,451 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:26:31,453 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:26:41,444 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:26:51,472 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:27:01,456 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:27:11,447 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 16:27:13,468 basehttp 13408 2896 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:27:20,542 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:27:30,548 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:27:40,552 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 16:27:47,095 basehttp 13408 2896 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:27:50,538 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:28:01,456 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:28:11,452 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 16:28:15,491 basehttp 13408 2896 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:28:21,450 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:28:31,442 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:28:41,472 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 16:28:45,463 basehttp 13408 2896 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:28:51,444 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:29:13,467 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 16:29:15,461 basehttp 13408 2896 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+WARNING 2026-06-04 16:29:57,530 basehttp 13408 2896 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:29:58,621 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 16:29:58,776 basehttp 13408 1852 "GET /api/site-config/ HTTP/1.1" 404 4796
+WARNING 2026-06-04 16:30:00,011 basehttp 13408 19640 "GET /api/site-config/ HTTP/1.1" 404 4796
+WARNING 2026-06-04 16:30:00,028 basehttp 13408 11160 "GET /api/site-config/footer/ HTTP/1.1" 404 4817
+WARNING 2026-06-04 16:30:00,164 basehttp 13408 1852 "GET /api/site-config/footer/ HTTP/1.1" 404 4817
+WARNING 2026-06-04 16:30:00,203 basehttp 13408 19640 "GET /api/website/site-config/ HTTP/1.1" 404 23020
+WARNING 2026-06-04 16:30:00,245 basehttp 13408 11160 "GET /api/website/site-config/ HTTP/1.1" 404 23020
+INFO 2026-06-04 16:30:00,533 basehttp 13408 2896 "OPTIONS /api/products/products/mango/ HTTP/1.1" 200 0
+INFO 2026-06-04 16:30:00,564 views 13408 2896 ProductViewSet.retrieve called with slug: mango
+INFO 2026-06-04 16:30:00,588 basehttp 13408 10208 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:30:00,631 views 13408 2896 Successfully retrieved product: Mango
+INFO 2026-06-04 16:30:00,680 basehttp 13408 2896 "GET /api/products/products/mango/ HTTP/1.1" 200 2509
+WARNING 2026-06-04 16:30:01,092 basehttp 13408 2896 "GET /api/products/reviews/ HTTP/1.1" 401 172
+WARNING 2026-06-04 16:30:01,153 basehttp 13408 2896 "GET /api/products/products/?page_size=500 HTTP/1.1" 401 172
+INFO 2026-06-04 16:30:01,263 basehttp 13408 2896 "OPTIONS /api/auth/token/refresh/ HTTP/1.1" 200 0
+INFO 2026-06-04 16:30:01,362 basehttp 13408 2896 "POST /api/auth/token/refresh/ HTTP/1.1" 200 777
+INFO 2026-06-04 16:30:01,434 views 13408 10208 ProductViewSet.list called with params: <QueryDict: {'page_size': ['500']}>
+INFO 2026-06-04 16:30:01,455 basehttp 13408 2896 "GET /api/products/reviews/ HTTP/1.1" 200 560
+INFO 2026-06-04 16:30:01,475 views 13408 10208 Successfully paginated 3 products
+INFO 2026-06-04 16:30:01,529 basehttp 13408 10208 "GET /api/products/products/?page_size=500 HTTP/1.1" 200 8129
+WARNING 2026-06-04 16:30:03,007 basehttp 13408 1852 "GET /api/site-config/ HTTP/1.1" 404 4796
+INFO 2026-06-04 16:30:03,738 views 13408 11224 ProductViewSet.retrieve called with slug: mango
+INFO 2026-06-04 16:30:03,803 views 13408 11224 Successfully retrieved product: Mango
+WARNING 2026-06-04 16:30:03,851 basehttp 13408 12956 "GET /api/site-config/footer/ HTTP/1.1" 404 4817
+WARNING 2026-06-04 16:30:03,965 basehttp 13408 1852 "GET /api/website/site-config/ HTTP/1.1" 404 23020
+INFO 2026-06-04 16:30:03,966 basehttp 13408 11224 "GET /api/products/products/mango/ HTTP/1.1" 200 2510
+WARNING 2026-06-04 16:30:05,163 basehttp 13408 10208 "GET /api/delivery-charge/ HTTP/1.1" 404 4808
+INFO 2026-06-04 16:30:05,318 views 13408 10208 ProductViewSet.list called with params: <QueryDict: {}>
+INFO 2026-06-04 16:30:05,345 basehttp 13408 2896 "GET /api/auth/profile/ HTTP/1.1" 200 294
+INFO 2026-06-04 16:30:05,428 views 13408 10208 Successfully paginated 3 products
+INFO 2026-06-04 16:30:05,519 basehttp 13408 10208 "GET /api/products/products/ HTTP/1.1" 200 8132
+INFO 2026-06-04 16:30:05,540 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:30:05,780 basehttp 13408 2896 "OPTIONS /api/products/products/mango/ HTTP/1.1" 200 0
+INFO 2026-06-04 16:30:05,789 basehttp 13408 10208 "OPTIONS /api/products/products/mango/ HTTP/1.1" 200 0
+INFO 2026-06-04 16:30:05,822 views 13408 2896 ProductViewSet.retrieve called with slug: mango
+INFO 2026-06-04 16:30:05,847 views 13408 10208 ProductViewSet.retrieve called with slug: mango
+INFO 2026-06-04 16:30:05,894 basehttp 13408 19988 "OPTIONS /api/products/products/mango/ HTTP/1.1" 200 0
+INFO 2026-06-04 16:30:05,926 views 13408 19988 ProductViewSet.retrieve called with slug: mango
+INFO 2026-06-04 16:30:05,931 views 13408 2896 Successfully retrieved product: Mango
+INFO 2026-06-04 16:30:05,938 views 13408 10208 Successfully retrieved product: Mango
+INFO 2026-06-04 16:30:06,012 basehttp 13408 2896 "GET /api/products/products/mango/ HTTP/1.1" 200 2509
+INFO 2026-06-04 16:30:06,017 views 13408 19988 Successfully retrieved product: Mango
+INFO 2026-06-04 16:30:06,018 basehttp 13408 10208 "GET /api/products/products/mango/ HTTP/1.1" 200 2509
+INFO 2026-06-04 16:30:06,088 basehttp 13408 19988 "GET /api/products/products/mango/ HTTP/1.1" 200 2509
+WARNING 2026-06-04 16:30:14,699 basehttp 13408 19988 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:30:16,471 basehttp 13408 19988 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:30:16,805 basehttp 13408 19988 "OPTIONS /api/auth/admin/users/?page=1&page_size=20 HTTP/1.1" 200 0
+INFO 2026-06-04 16:30:16,845 basehttp 13408 19988 "GET /api/auth/admin/users/?page=1&page_size=20 HTTP/1.1" 200 1094
+INFO 2026-06-04 16:30:26,448 basehttp 13408 19988 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:30:30,507 basehttp 13408 19988 "OPTIONS /api/auth/admin/users/4/ HTTP/1.1" 200 0
+INFO 2026-06-04 16:30:30,679 basehttp 13408 19988 "PATCH /api/auth/admin/users/4/ HTTP/1.1" 200 16
+INFO 2026-06-04 16:30:30,714 basehttp 13408 19988 "GET /api/auth/admin/users/?page=1&page_size=20 HTTP/1.1" 200 1092
+INFO 2026-06-04 16:30:33,012 views 13408 10224 ProductViewSet.retrieve called with slug: mango
+WARNING 2026-06-04 16:30:33,032 basehttp 13408 15220 "GET /api/site-config/ HTTP/1.1" 404 4796
+INFO 2026-06-04 16:30:33,067 views 13408 10224 Successfully retrieved product: Mango
+WARNING 2026-06-04 16:30:33,071 basehttp 13408 16124 "GET /api/site-config/footer/ HTTP/1.1" 404 4817
+WARNING 2026-06-04 16:30:33,104 basehttp 13408 15220 "GET /api/website/site-config/ HTTP/1.1" 404 23020
+INFO 2026-06-04 16:30:33,121 basehttp 13408 10224 "GET /api/products/products/mango/ HTTP/1.1" 200 2510
+INFO 2026-06-04 16:30:33,948 views 13408 10208 ProductViewSet.list called with params: <QueryDict: {}>
+WARNING 2026-06-04 16:30:33,962 basehttp 13408 19988 "GET /api/delivery-charge/ HTTP/1.1" 404 4808
+INFO 2026-06-04 16:30:33,999 basehttp 13408 19988 "GET /api/auth/profile/ HTTP/1.1" 200 294
+INFO 2026-06-04 16:30:34,029 views 13408 10208 Successfully paginated 3 products
+INFO 2026-06-04 16:30:34,151 basehttp 13408 19988 "OPTIONS /api/products/products/mango/ HTTP/1.1" 200 0
+INFO 2026-06-04 16:30:34,172 views 13408 19988 ProductViewSet.retrieve called with slug: mango
+INFO 2026-06-04 16:30:34,172 basehttp 13408 10208 "GET /api/products/products/ HTTP/1.1" 200 8132
+INFO 2026-06-04 16:30:34,205 basehttp 13408 10208 "OPTIONS /api/products/products/mango/ HTTP/1.1" 200 0
+INFO 2026-06-04 16:30:34,208 views 13408 19988 Successfully retrieved product: Mango
+INFO 2026-06-04 16:30:34,225 views 13408 10208 ProductViewSet.retrieve called with slug: mango
+INFO 2026-06-04 16:30:34,287 basehttp 13408 2896 "OPTIONS /api/products/products/mango/ HTTP/1.1" 200 0
+INFO 2026-06-04 16:30:34,300 views 13408 10208 Successfully retrieved product: Mango
+INFO 2026-06-04 16:30:34,316 basehttp 13408 19988 "GET /api/products/products/mango/ HTTP/1.1" 200 2509
+INFO 2026-06-04 16:30:34,317 views 13408 2896 ProductViewSet.retrieve called with slug: mango
+INFO 2026-06-04 16:30:34,375 basehttp 13408 10208 "GET /api/products/products/mango/ HTTP/1.1" 200 2509
+INFO 2026-06-04 16:30:34,379 basehttp 13408 2392 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:30:34,405 views 13408 2896 Successfully retrieved product: Mango
+INFO 2026-06-04 16:30:34,442 basehttp 13408 2896 "GET /api/products/products/mango/ HTTP/1.1" 200 2509
+INFO 2026-06-04 16:30:44,454 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 16:30:44,699 basehttp 13408 2896 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:30:54,300 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:31:01,997 basehttp 13408 2896 "POST /api/products/reviews/ HTTP/1.1" 201 79
+INFO 2026-06-04 16:31:04,277 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:31:04,711 views 13408 5844 ProductViewSet.list called with params: <QueryDict: {}>
+INFO 2026-06-04 16:31:04,713 views 13408 11792 CategoryViewSet.list called with params: <QueryDict: {}>
+WARNING 2026-06-04 16:31:04,749 basehttp 13408 13744 "GET /api/homepage/ HTTP/1.1" 404 4787
+INFO 2026-06-04 16:31:04,799 views 13408 11792 Successfully returned 4 categories
+INFO 2026-06-04 16:31:04,855 basehttp 13408 11792 "GET /api/products/categories/ HTTP/1.1" 200 725
+INFO 2026-06-04 16:31:04,845 views 13408 5844 Successfully paginated 3 products
+INFO 2026-06-04 16:31:04,955 basehttp 13408 5844 "GET /api/products/products/ HTTP/1.1" 200 8326
+INFO 2026-06-04 16:31:07,306 views 13408 5844 ProductViewSet.retrieve called with slug: mango
+INFO 2026-06-04 16:31:07,356 views 13408 5844 Successfully retrieved product: Mango
+INFO 2026-06-04 16:31:07,444 basehttp 13408 5844 "GET /api/products/products/mango/ HTTP/1.1" 200 2704
+INFO 2026-06-04 16:31:07,750 basehttp 13408 2896 "OPTIONS /api/products/products/mango/ HTTP/1.1" 200 0
+INFO 2026-06-04 16:31:07,750 basehttp 13408 2392 "OPTIONS /api/products/products/mango/ HTTP/1.1" 200 0
+INFO 2026-06-04 16:31:07,785 views 13408 2896 ProductViewSet.retrieve called with slug: mango
+INFO 2026-06-04 16:31:07,817 views 13408 2392 ProductViewSet.retrieve called with slug: mango
+INFO 2026-06-04 16:31:07,846 views 13408 2896 Successfully retrieved product: Mango
+INFO 2026-06-04 16:31:07,887 views 13408 2392 Successfully retrieved product: Mango
+INFO 2026-06-04 16:31:07,887 basehttp 13408 2896 "GET /api/products/products/mango/ HTTP/1.1" 200 2743
+INFO 2026-06-04 16:31:07,915 basehttp 13408 2392 "GET /api/products/products/mango/ HTTP/1.1" 200 2743
+INFO 2026-06-04 16:31:14,288 basehttp 13408 2392 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 16:31:15,470 basehttp 13408 2392 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:31:24,449 basehttp 13408 2392 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:31:34,488 basehttp 13408 2392 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:31:44,480 basehttp 13408 2392 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 16:31:45,448 basehttp 13408 2392 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:31:54,456 basehttp 13408 2392 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:32:04,472 basehttp 13408 2392 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:32:14,448 basehttp 13408 2392 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:32:24,441 basehttp 13408 2392 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 16:33:13,482 basehttp 13408 2392 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:33:13,488 basehttp 13408 2896 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 16:34:14,283 basehttp 13408 2896 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:34:14,287 basehttp 13408 2392 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:34:21,576 basehttp 13408 2392 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:34:24,286 basehttp 13408 2392 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:34:34,270 basehttp 13408 2392 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:34:44,466 basehttp 13408 2392 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 16:34:45,508 basehttp 13408 2392 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:34:54,457 basehttp 13408 2392 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:35:04,439 basehttp 13408 2392 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:35:14,447 basehttp 13408 2392 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 16:35:15,468 basehttp 13408 2392 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:35:24,454 basehttp 13408 2392 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:35:34,655 basehttp 13408 2392 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 16:35:52,806 basehttp 13408 19724 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:36:13,463 basehttp 13408 19724 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 16:36:15,493 basehttp 13408 19724 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+WARNING 2026-06-04 16:36:45,452 basehttp 13408 19724 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:37:13,533 basehttp 13408 19724 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 16:38:13,462 basehttp 13408 19724 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:38:13,469 basehttp 13408 19612 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 16:39:13,496 basehttp 13408 19724 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:39:13,500 basehttp 13408 19612 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 16:40:13,491 basehttp 13408 19724 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:40:13,495 basehttp 13408 19612 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 16:40:45,288 basehttp 13408 19612 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:41:13,501 basehttp 13408 19612 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 16:41:15,455 basehttp 13408 19612 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+WARNING 2026-06-04 16:41:45,492 basehttp 13408 19612 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:42:13,453 basehttp 13408 19612 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 16:42:15,451 basehttp 13408 19612 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:42:20,625 autoreload 13408 16928 D:\Munna\Munna\icommerce\icommerce\backend\products\serializers.py changed, reloading.
+INFO 2026-06-04 16:42:31,789 autoreload 19104 13272 Watching for file changes with StatReloader
+INFO 2026-06-04 16:42:34,720 basehttp 19104 6992 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:42:37,605 views 19104 11196 ProductViewSet.retrieve called with slug: mango
+WARNING 2026-06-04 16:42:37,621 basehttp 19104 3912 "GET /api/site-config/ HTTP/1.1" 404 4796
+INFO 2026-06-04 16:42:37,751 views 19104 11196 Successfully retrieved product: Mango
+INFO 2026-06-04 16:42:37,841 basehttp 19104 11196 "GET /api/products/products/mango/ HTTP/1.1" 200 2733
+WARNING 2026-06-04 16:42:37,852 basehttp 19104 7600 "GET /api/site-config/footer/ HTTP/1.1" 404 4817
+WARNING 2026-06-04 16:42:37,965 basehttp 19104 3912 "GET /api/website/site-config/ HTTP/1.1" 404 23020
+INFO 2026-06-04 16:42:38,536 basehttp 19104 7872 "GET /media/products/thumbnails/mango_2.jfif HTTP/1.1" 200 8386
+WARNING 2026-06-04 16:42:39,392 basehttp 19104 6992 "GET /api/delivery-charge/ HTTP/1.1" 404 4808
+INFO 2026-06-04 16:42:39,454 basehttp 19104 6992 "GET /api/auth/profile/ HTTP/1.1" 200 294
+INFO 2026-06-04 16:42:39,525 views 19104 18724 ProductViewSet.list called with params: <QueryDict: {}>
+INFO 2026-06-04 16:42:39,634 basehttp 19104 6992 "OPTIONS /api/products/products/mango/ HTTP/1.1" 200 0
+INFO 2026-06-04 16:42:39,654 views 19104 6992 ProductViewSet.retrieve called with slug: mango
+INFO 2026-06-04 16:42:39,660 views 19104 18724 Successfully paginated 3 products
+INFO 2026-06-04 16:42:39,731 basehttp 19104 7300 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:42:39,733 basehttp 19104 6360 "OPTIONS /api/products/products/mango/ HTTP/1.1" 200 0
+INFO 2026-06-04 16:42:39,734 views 19104 6992 Successfully retrieved product: Mango
+INFO 2026-06-04 16:42:39,769 basehttp 19104 18724 "GET /api/products/products/ HTTP/1.1" 200 8366
+INFO 2026-06-04 16:42:39,817 views 19104 6360 ProductViewSet.retrieve called with slug: mango
+INFO 2026-06-04 16:42:39,841 basehttp 19104 12116 "OPTIONS /api/products/products/mango/ HTTP/1.1" 200 0
+INFO 2026-06-04 16:42:39,927 basehttp 19104 6992 "GET /api/products/products/mango/ HTTP/1.1" 200 2772
+INFO 2026-06-04 16:42:39,968 views 19104 6360 Successfully retrieved product: Mango
+INFO 2026-06-04 16:42:40,009 views 19104 12116 ProductViewSet.retrieve called with slug: mango
+INFO 2026-06-04 16:42:40,060 basehttp 19104 6360 "GET /api/products/products/mango/ HTTP/1.1" 200 2772
+INFO 2026-06-04 16:42:40,197 views 19104 12116 Successfully retrieved product: Mango
+INFO 2026-06-04 16:42:40,293 basehttp 19104 12116 "GET /api/products/products/mango/ HTTP/1.1" 200 2772
+WARNING 2026-06-04 16:42:45,458 basehttp 19104 12116 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:42:49,659 basehttp 19104 12116 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:43:00,473 basehttp 19104 12116 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:43:10,444 basehttp 19104 12116 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 16:43:14,712 basehttp 19104 12116 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:43:20,459 basehttp 19104 12116 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:43:30,463 basehttp 19104 12116 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:43:39,666 basehttp 19104 12116 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 16:43:45,457 basehttp 19104 12116 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:43:50,469 basehttp 19104 12116 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:44:00,436 basehttp 19104 12116 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:44:10,451 basehttp 19104 12116 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 16:44:15,444 basehttp 19104 12116 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:44:20,449 basehttp 19104 12116 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:44:30,449 basehttp 19104 12116 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:44:40,437 basehttp 19104 12116 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 16:45:10,537 basehttp 19104 12116 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:45:13,467 basehttp 19104 12116 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 16:45:14,704 basehttp 19104 12116 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+WARNING 2026-06-04 16:45:45,452 basehttp 19104 12116 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:46:13,470 basehttp 19104 12116 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 16:46:15,489 basehttp 19104 12116 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+WARNING 2026-06-04 16:47:13,476 basehttp 19104 12116 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:47:13,482 basehttp 19104 6360 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 16:48:13,522 basehttp 19104 6360 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:48:13,939 basehttp 19104 6360 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 16:49:13,464 basehttp 19104 12116 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:49:13,467 basehttp 19104 6360 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 16:50:13,456 basehttp 19104 12116 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:50:13,459 basehttp 19104 6360 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:51:13,490 basehttp 19104 6360 "OPTIONS /api/auth/notifications/unread-count/ HTTP/1.1" 200 0
+WARNING 2026-06-04 16:51:13,506 basehttp 19104 12116 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:51:13,515 basehttp 19104 6360 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 16:52:13,476 basehttp 19104 6360 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:52:13,479 basehttp 19104 12116 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 16:53:13,480 basehttp 19104 6360 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:53:13,482 basehttp 19104 12116 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 16:54:13,458 basehttp 19104 6360 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:54:13,461 basehttp 19104 12116 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 16:55:13,462 basehttp 19104 12116 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:55:13,466 basehttp 19104 6360 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+INFO 2026-06-04 16:56:13,467 basehttp 19104 12116 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 16:56:13,485 basehttp 19104 6360 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+WARNING 2026-06-04 16:57:13,465 basehttp 19104 6360 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:57:13,470 basehttp 19104 12116 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17
+WARNING 2026-06-04 16:58:14,630 basehttp 19104 12116 "GET /api/auth/vendor/tickets/?status=OPEN&page_size=1 HTTP/1.1" 404 10335
+INFO 2026-06-04 16:58:14,647 basehttp 19104 12116 "GET /api/auth/notifications/unread-count/ HTTP/1.1" 200 17

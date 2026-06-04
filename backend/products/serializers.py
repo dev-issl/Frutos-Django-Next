@@ -87,11 +87,23 @@ class ProductAdditionalImageSerializer(serializers.ModelSerializer):
         return None
 
 class ReviewSerializer(serializers.ModelSerializer):
-    user = serializers.StringRelatedField()
+    user = serializers.SerializerMethodField()
     product_name = serializers.CharField(source='product.name', read_only=True)
+
     class Meta:
         model = Review
         fields = ['id', 'user', 'product', 'product_name', 'rating', 'comment', 'created_at']
+
+    def get_user(self, obj):
+        u = obj.user
+        full_name = getattr(u, 'name', '') or ''
+        parts = full_name.strip().split(' ', 1)
+        first = parts[0] if parts[0] else u.email.split('@')[0]
+        last = parts[1] if len(parts) > 1 else ''
+        return {
+            'first_name': first,
+            'last_name': last,
+        }
 
 class ReviewCreateSerializer(serializers.ModelSerializer):
     class Meta:

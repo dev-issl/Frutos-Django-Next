@@ -340,7 +340,7 @@ function TabSection({ product, session, localToken }) {
                   <div key={r.id || idx} className="border-b border-[#BCCAC1]/30 pb-7 mb-7 last:border-0">
                     <div className="flex items-center justify-between mb-3">
                       <div>
-                        <p style={{ fontWeight: 600, fontSize: '14px', color: '#151E13' }}>{r.user}</p>
+                        <p style={{ fontWeight: 600, fontSize: '14px', color: '#151E13' }}>{r.user?.first_name ? `${r.user.first_name} ${r.user.last_name || ''}` : r.user}</p>
                         <p style={{ fontSize: '12px', color: '#6D7A73' }}>{formattedDate}</p>
                       </div>
                       <StarRating rating={r.rating} reviews={0} size={13} />
