@@ -1,4 +1,3 @@
-
 'use client'
 // src/app/components/Navbar.jsx
 import Image from 'next/image'
@@ -13,9 +12,9 @@ import AuthModal from '@/app/components/AuthModal'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://elarbol.icommerce.com.bd/api'
 
-const navLinks = [
+// Fallback nav links (used when API returns nothing)
+const DEFAULT_NAV_LINKS = [
   { label: 'Shop',      href: '/shop'      },
-  // { label: 'Recipes',   href: '/recipes'   },
   { label: 'Store',     href: '/stores'    },
   { label: 'About',     href: '/about'     },
   { label: 'Wholesale', href: '/wholesale' },
@@ -148,7 +147,9 @@ function ProfileMenu({ user, logout, isMobile = false }) {
 
 // ── Main Navbar 
 
-export default function Navbar({ navbarLogoUrl = '', brandName = 'El Árbol' }) {
+export default function Navbar({ navbarLogoUrl = '', brandName = 'El Árbol', navLinks: navLinksProp = [] }) {
+  // Use API-supplied links if available, else fallback
+  const navLinks = navLinksProp && navLinksProp.length > 0 ? navLinksProp : DEFAULT_NAV_LINKS
   const { user, isAuthenticated, logout, authFetch } = useAuth()
   const { data: session } = useSession()
     // Wholesale user detect করুন

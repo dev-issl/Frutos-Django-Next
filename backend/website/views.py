@@ -45,14 +45,17 @@ class BaseWebsiteViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save()
+        cache.delete('site_config_v1')
         cache.clear()
 
     def perform_update(self, serializer):
         serializer.save()
+        cache.delete('site_config_v1')
         cache.clear()
 
     def perform_destroy(self, instance):
         instance.delete()
+        cache.delete('site_config_v1')
         cache.clear()
 
 class NavbarSettingsViewSet(BaseWebsiteViewSet):
@@ -343,8 +346,9 @@ def clear_website_cache(request):
         cache_keys = [
             'website_data_all',
             'navbar_data',
-            'homepage_data', 
-            'footer_data'
+            'homepage_data',
+            'footer_data',
+            'site_config_v1',
         ]
         
         for key in cache_keys:
@@ -357,5 +361,101 @@ def clear_website_cache(request):
     except Exception as e:
         return Response(
             {'error': 'Failed to clear cache', 'detail': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@api_view(['GET'])
+@perm_classes([AllowAny])
+def site_config(request):
+    """
+    Returns a unified site config object expected by the Next.js frontend.
+    Shape matches what FooterWrapper / NavbarWrapper / layout.jsx expect:
+    {
+        brand_name, brand_tagline, navbar_logo_url, footer_logo_url,
+        favicon_url, contact_email, contact_phone, contact_address,
+        nav_links: [{label, href}],
+        social_links: [{url, icon_name, title}],
+        store_locations: [{name, slug}],
+        footer_sections: [...],   # full sections with links
+        site_settings: [...]      # raw key/value list
+    }
+    """
+    try:
+        cache_key = 'site_config_v1'
+        cached = cache.get(cache_key)
+        if cached:
+            return Response(cached)
+
+        # ── Site settings → dict ─────────────────────────────────────────
+        settings_qs = SiteSettings.objects.filter(is_active=True)
+        settings_map = {s.key: s.get_typed_value() for s in settings_qs}
+
+        # ── Navbar links ────────────────────────────────────────────────
+        navbar_qs = NavbarSettings.objects.filter(is_active=True, parent__isnull=True).order_by('order', 'name')
+        nav_links = [
+            {'label': n.name, 'href': n.url or '#'}
+            for n in navbar_qs
+        ]
+
+        # ── Social links ─────────────────────────────────────────────────
+        social_qs = SocialMediaLink.objects.filter(is_active=True).order_by('order', 'platform')
+        social_links = [
+            {
+                'url': s.url,
+                'icon_name': s.icon_class or s.platform.capitalize(),
+                'title': s.platform,
+                'platform': s.platform,
+            }
+            for s in social_qs
+        ]
+
+        # ── Footer sections (with nested links) ──────────────────────────
+        footer_sections = FooterSectionSerializer(
+            FooterSection.objects.filter(is_active=True).prefetch_related('links').order_by('section_type', 'order'),
+            many=True,
+            context={'request': request}
+        ).data
+
+        # ── Build response ───────────────────────────────────────────────
+        data = {
+            # Core branding (from site settings or defaults)
+            'brand_name':      settings_map.get('brand_name', 'El Árbol'),
+            'brand_tagline':   settings_map.get('brand_tagline', ''),
+            'navbar_logo_url': settings_map.get('navbar_logo_url', '/el-erbol-logo.png'),
+            'footer_logo_url': settings_map.get('footer_logo_url', '/el-erbol-logo.png'),
+            'favicon_url':     settings_map.get('favicon_url', '/favicon.ico'),
+
+            # Contact
+            'contact_email':   settings_map.get('contact_email', ''),
+            'contact_phone':   settings_map.get('contact_phone', ''),
+            'contact_address': settings_map.get('contact_address', ''),
+
+            # Navigation
+            'nav_links': nav_links,
+
+            # Social
+            'social_links': social_links,
+
+            # Footer
+            'footer_sections': footer_sections,
+
+            # Raw settings for any extra frontend use
+            'site_settings': [
+                {'key': s.key, 'value': s.get_typed_value(), 'group': s.group}
+                for s in settings_qs
+            ],
+
+            # Kept for backward compat (Footer component uses these)
+            'store_locations': [],
+            'payment_methods': [],
+        }
+
+        cache.set(cache_key, data, CACHE_TIMEOUT)
+        return Response(data)
+
+    except Exception as e:
+        return Response(
+            {'error': 'Failed to fetch site config', 'detail': str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )

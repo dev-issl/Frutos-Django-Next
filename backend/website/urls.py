@@ -4,7 +4,8 @@ from .views import (
     NavbarSettingsViewSet, OfferCategoryViewSet, HeroBannerViewSet,
     OfferBannerViewSet, HorizontalPromoBannerViewSet, BlogPostViewSet,
     FooterSectionViewSet, FooterLinkViewSet, SocialMediaLinkViewSet, SiteSettingsViewSet,
-    website_data, navbar_data, homepage_data, footer_data, clear_website_cache
+    website_data, navbar_data, homepage_data, footer_data, clear_website_cache,
+    site_config,
 )
 
 # Create router for ViewSets
@@ -23,15 +24,18 @@ router.register(r'site-settings', SiteSettingsViewSet, basename='site-settings')
 app_name = 'website'
 
 urlpatterns = [
-    # Individual API endpoints - Remove extra 'api/' prefix since it's already in main urls.py
+    # ViewSet routes
     path('', include(router.urls)),
-    
-    # Consolidated endpoints for better performance
+
+    # Consolidated endpoints
     path('data/all/', website_data, name='website-data-all'),
     path('data/navbar/', navbar_data, name='navbar-data'),
     path('data/homepage/', homepage_data, name='homepage-data'),
     path('data/footer/', footer_data, name='footer-data'),
-    
+
+    # ── NEW: unified site-config for Next.js layout ──────────────────────
+    path('site-config/', site_config, name='site-config'),
+
     # Cache management
     path('cache/clear/', clear_website_cache, name='clear-cache'),
 ]
