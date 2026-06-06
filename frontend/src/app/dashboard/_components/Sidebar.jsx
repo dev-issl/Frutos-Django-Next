@@ -60,7 +60,7 @@ const navGroups = [
     items: [
       { name: "Users", href: "/dashboard/users", icon: Users },
       { name: 'Stores', href: '/dashboard/stores', icon: Store },
-      { name: "Vendors", href: "/dashboard/vendors", icon: Building2 },
+      // { name: "Vendors", href: "/dashboard/vendors", icon: Building2 },
       { name: "Shops", href: "/dashboard/shops", icon: Store },
     ],
   },
