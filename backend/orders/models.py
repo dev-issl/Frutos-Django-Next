@@ -797,3 +797,258 @@ class OrderPayment(models.Model):
 
     def __str__(self):
         return f"Payment for {self.order.order_number} - {self.get_payment_method_display()}"
+
+
+
+
+# ══════════════════════════════════════════════════════════════════
+# APPEND THIS ENTIRE BLOCK to the bottom of orders/models.py
+# Do NOT modify anything above in orders/models.py
+# ══════════════════════════════════════════════════════════════════
+
+class ShippingZone(models.Model):
+    ZONE_CHOICES = [
+        ('DHK', 'Dhaka'),
+        ('CTG', 'Chattogram'),
+        ('RJH', 'Rajshahi'),
+        ('KHL', 'Khulna'),
+        ('SYL', 'Sylhet'),
+        ('BRS', 'Barisal'),
+        ('RNG', 'Rangpur'),
+        ('MYM', 'Mymensingh'),
+    ]
+    name         = models.CharField(max_length=100)
+    code         = models.CharField(max_length=20, unique=True, choices=ZONE_CHOICES)
+    base_charge  = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    delivery_sla = models.CharField(max_length=50, blank=True, help_text="e.g. '1-2 days'")
+    is_active    = models.BooleanField(default=True)
+    priority     = models.SmallIntegerField(default=0)
+    created_at   = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['priority', 'name']
+        verbose_name = 'Shipping Zone'
+        verbose_name_plural = 'Shipping Zones'
+
+    def __str__(self):
+        return f'{self.name} ({self.code})'
+
+
+class ShippingZoneCoverage(models.Model):
+    zone     = models.ForeignKey(ShippingZone, on_delete=models.CASCADE, related_name='coverages')
+    city     = models.CharField(max_length=100, blank=True, db_index=True)
+    postcode = models.CharField(max_length=20, blank=True, db_index=True)
+    district = models.CharField(max_length=100, blank=True)
+
+    class Meta:
+        verbose_name = 'Zone Coverage'
+        verbose_name_plural = 'Zone Coverages'
+
+    def __str__(self):
+        return f'{self.zone.code}: {self.city or self.postcode}'
+
+
+class WeightShippingRule(models.Model):
+    name        = models.CharField(max_length=100)
+    min_weight  = models.DecimalField(max_digits=8, decimal_places=2)
+    max_weight  = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+    base_cost   = models.DecimalField(max_digits=10, decimal_places=2)
+    per_kg_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    zone        = models.ForeignKey(
+        ShippingZone, on_delete=models.CASCADE,
+        null=True, blank=True, related_name='weight_rules',
+    )
+    is_active   = models.BooleanField(default=True)
+    priority    = models.SmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ['zone', 'min_weight']
+        verbose_name = 'Weight Shipping Rule'
+        verbose_name_plural = 'Weight Shipping Rules'
+
+    def applies_to(self, weight):
+        from decimal import Decimal
+        w = Decimal(str(weight))
+        if w < self.min_weight:
+            return False
+        if self.max_weight is not None and w > self.max_weight:
+            return False
+        return True
+
+    def calculate_cost(self, weight):
+        import math
+        from decimal import Decimal
+        if not self.applies_to(weight):
+            return None
+        w      = Decimal(str(weight))
+        excess = max(w - self.min_weight, Decimal('0'))
+        extra  = Decimal(str(math.ceil(float(excess)))) * self.per_kg_cost
+        return self.base_cost + extra
+
+    def __str__(self):
+        max_w = f'-{self.max_weight}kg' if self.max_weight else 'kg+'
+        zone  = f' [{self.zone.code}]' if self.zone else ' [Global]'
+        return f'{self.min_weight}{max_w}{zone} → ৳{self.base_cost}'
+
+
+class OrderValueShippingRule(models.Model):
+    name             = models.CharField(max_length=100)
+    min_order_value  = models.DecimalField(max_digits=10, decimal_places=2)
+    max_order_value  = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    shipping_cost    = models.DecimalField(max_digits=10, decimal_places=2)
+    is_free_shipping = models.BooleanField(default=False)
+    zone             = models.ForeignKey(
+        ShippingZone, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='value_rules',
+    )
+    is_active        = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['min_order_value']
+        verbose_name = 'Order Value Shipping Rule'
+        verbose_name_plural = 'Order Value Shipping Rules'
+
+    def applies_to(self, order_value, zone=None):
+        from decimal import Decimal
+        v = Decimal(str(order_value))
+        if v < self.min_order_value:
+            return False
+        if self.max_order_value is not None and v > self.max_order_value:
+            return False
+        if self.zone_id and zone and self.zone_id != zone.id:
+            return False
+        return True
+
+    def __str__(self):
+        max_v = f'-৳{self.max_order_value}' if self.max_order_value else '+'
+        return f'৳{self.min_order_value}{max_v} → ৳{self.shipping_cost}'
+
+
+class CategoryShippingRule(models.Model):
+    category          = models.OneToOneField(
+        'products.Category', on_delete=models.CASCADE, related_name='shipping_rule',
+    )
+    additional_charge = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    is_override       = models.BooleanField(
+        default=False,
+        help_text='If True, override_cost replaces all other shipping charges',
+    )
+    override_cost     = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    is_active         = models.BooleanField(default=True)
+    notes             = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        verbose_name = 'Category Shipping Rule'
+        verbose_name_plural = 'Category Shipping Rules'
+
+    def __str__(self):
+        return f'{self.category.name}: +৳{self.additional_charge}'
+
+
+class CourierProvider(models.Model):
+    name            = models.CharField(max_length=100)
+    slug            = models.SlugField(unique=True)
+    api_key         = models.CharField(max_length=255, blank=True)
+    api_secret      = models.CharField(max_length=255, blank=True)
+    tracking_url    = models.CharField(
+        max_length=500, blank=True,
+        help_text='Use {tracking_number} as placeholder',
+    )
+    webhook_url     = models.CharField(max_length=500, blank=True)
+    base_url        = models.CharField(max_length=500, blank=True)
+    is_active       = models.BooleanField(default=True)
+    supported_zones = models.ManyToManyField(ShippingZone, blank=True, related_name='couriers')
+    created_at      = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Courier Provider'
+        verbose_name_plural = 'Courier Providers'
+
+    def get_tracking_url(self, tracking_number):
+        return self.tracking_url.replace('{tracking_number}', str(tracking_number))
+
+    def __str__(self):
+        return self.name
+
+
+class Warehouse(models.Model):
+    name               = models.CharField(max_length=150)
+    code               = models.CharField(max_length=30, unique=True)
+    address            = models.TextField(blank=True)
+    city               = models.CharField(max_length=100, blank=True)
+    postcode           = models.CharField(max_length=20, blank=True)
+    zone               = models.ForeignKey(
+        ShippingZone, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='warehouses',
+    )
+    delivery_radius_km = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
+    priority           = models.SmallIntegerField(default=0, help_text='Lower = preferred')
+    is_active          = models.BooleanField(default=True)
+    contact_phone      = models.CharField(max_length=50, blank=True)
+    contact_email      = models.EmailField(blank=True)
+
+    class Meta:
+        ordering = ['priority', 'name']
+        verbose_name = 'Warehouse'
+        verbose_name_plural = 'Warehouses'
+
+    def __str__(self):
+        return f'{self.name} ({self.code})'
+
+
+class WarehouseZoneMapping(models.Model):
+    warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE, related_name='zone_mappings')
+    zone      = models.ForeignKey(ShippingZone, on_delete=models.CASCADE, related_name='warehouse_mappings')
+
+    class Meta:
+        unique_together = ('warehouse', 'zone')
+        verbose_name = 'Warehouse Zone Mapping'
+
+    def __str__(self):
+        return f'{self.warehouse.code} → {self.zone.code}'
+
+
+class LeftoverPackShippingRule(models.Model):
+    RULE_TYPE_CHOICES = [
+        ('fixed',      'Fixed Cost'),
+        ('reduced',    'Reduced (% off standard)'),
+        ('free',       'Free Shipping'),
+        ('zone_based', 'Zone-Based Cost'),
+    ]
+    name              = models.CharField(max_length=150)
+    rule_type         = models.CharField(max_length=20, choices=RULE_TYPE_CHOICES)
+    fixed_cost        = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    reduction_percent = models.DecimalField(
+        max_digits=5, decimal_places=2, default=0,
+        help_text="For 'reduced' type: % off standard shipping",
+    )
+    zone              = models.ForeignKey(
+        ShippingZone, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='leftover_rules',
+        help_text='For zone_based type only',
+    )
+    zone_cost         = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    is_active         = models.BooleanField(default=True)
+    created_at        = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Leftover Pack Shipping Rule'
+        verbose_name_plural = 'Leftover Pack Shipping Rules'
+
+    def __str__(self):
+        return f'{self.name} ({self.get_rule_type_display()})'
+
+    def calculate_cost(self, standard_cost, zone=None):
+        from decimal import Decimal
+        if self.rule_type == 'free':
+            return Decimal('0')
+        if self.rule_type == 'fixed':
+            return self.fixed_cost
+        if self.rule_type == 'reduced':
+            discount = Decimal(str(self.reduction_percent)) / 100
+            return standard_cost * (1 - discount)
+        if self.rule_type == 'zone_based':
+            if zone and self.zone_id and self.zone_id == zone.id:
+                return self.zone_cost or Decimal('0')
+            return standard_cost
+        return standard_cost
