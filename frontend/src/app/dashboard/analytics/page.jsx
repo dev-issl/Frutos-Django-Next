@@ -360,10 +360,10 @@ import {
   AreaChart, Area, Legend,
 } from "recharts";
 import Container from "@/app/dashboard/_components/Container";
-import { TrendingUp, ShoppingCart, DollarSign, Users, Package, CheckCircle, Clock, XCircle, Loader2, BarChart2, Store, MapPin } from "lucide-react";
+import { TrendingUp, ShoppingCart, DollarSign, Users, Package, CheckCircle, Clock, XCircle, Loader2, BarChart2, Store, MapPin, Tag } from "lucide-react";
 import useSWR from "swr";
 import { fetchAdminDashboardStats } from "@/app/dashboard/_lib/auth";
-import { ordersService, productsService, storesService, leftoverPacksService } from "@/app/dashboard/_lib/services";
+import { ordersService, productsService, storesService, leftoverPacksService, offersService } from "@/app/dashboard/_lib/services";
 
 // Chart color palette
 const PALETTE = ["#18181b", "#4f46e5", "#0ea5e9", "#10b981", "#f59e0b", "#ef4444"];
@@ -450,6 +450,20 @@ export default function AnalyticsPage() {
     { revalidateOnFocus: false }
   );
   const leftoverPacks = Array.isArray(leftoverPacksData) ? leftoverPacksData : (leftoverPacksData?.results || []);
+
+  const { data: offersRaw } = useSWR(
+    "analytics-offers",
+    () => offersService.list(),
+    { revalidateOnFocus: false }
+  );
+  const allOffers = Array.isArray(offersRaw) ? offersRaw : (offersRaw?.results || []);
+  const activeOffersCount = allOffers.filter(o => o.is_active !== false).length;
+  const inactiveOffersCount = allOffers.filter(o => o.is_active === false).length;
+
+  const offersStatusData = [
+    { name: "Active", value: activeOffersCount },
+    { name: "Inactive", value: inactiveOffersCount }
+  ].filter(d => d.value > 0);
 
   // Feature breakdown across all stores
   const featureMap = {};
@@ -783,6 +797,95 @@ export default function AnalyticsPage() {
                 ))}
               </div>
             ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Offers Analytics */}
+      <div className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-lg mt-4 mb-4">
+        <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-800 flex items-center gap-2">
+          <Tag className="w-4 h-4 text-blue-500" />
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Offers Analytics</h3>
+        </div>
+        
+        <div className="p-4 grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Metrics summary */}
+          <div className="lg:col-span-1 space-y-3">
+             <div className="grid grid-cols-2 gap-3">
+               <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/50 rounded-lg p-3">
+                  <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">Total Offers</p>
+                  <p className="text-2xl font-bold text-blue-700 dark:text-blue-300 mt-1">{allOffers.length}</p>
+               </div>
+               <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/50 rounded-lg p-3">
+                  <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Active Offers</p>
+                  <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300 mt-1">{activeOffersCount}</p>
+               </div>
+             </div>
+             
+             <div className="bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-lg p-3">
+                <div className="flex justify-between items-center mb-2">
+                   <p className="text-xs text-gray-500 dark:text-gray-400">Active vs Inactive</p>
+                   <p className="text-xs font-medium text-gray-700 dark:text-gray-300">{allOffers.length} Total Offers</p>
+                </div>
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-2 flex overflow-hidden">
+                   <div style={{ width: `${Math.max((activeOffersCount / (allOffers.length || 1)) * 100, 0)}%` }} className="bg-emerald-400"></div>
+                   <div style={{ width: `${Math.max((inactiveOffersCount / (allOffers.length || 1)) * 100, 0)}%` }} className="bg-gray-400"></div>
+                </div>
+                <div className="flex justify-between text-[11px]">
+                   <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400"></span> Active ({activeOffersCount})
+                   </span>
+                   <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 font-medium">
+                      <span className="w-2 h-2 rounded-full bg-gray-400"></span> Inactive ({inactiveOffersCount})
+                   </span>
+                </div>
+             </div>
+          </div>
+          
+          {/* Chart by Status */}
+          <div className="lg:col-span-1 min-w-0">
+             <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Offers by Status</h4>
+             <div className="h-40 w-full min-h-[160px]">
+               {offersStatusData.length > 0 ? (
+                 <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+                   <PieChart>
+                     <Pie data={offersStatusData} cx="50%" cy="50%" innerRadius={35} outerRadius={55} dataKey="value" stroke="none">
+                       {offersStatusData.map((entry, i) => (
+                         <Cell key={i} fill={entry.name === 'Active' ? '#10b981' : '#9ca3af'} />
+                       ))}
+                     </Pie>
+                     <Tooltip contentStyle={{ fontSize: "11px", borderRadius: "8px" }} />
+                   </PieChart>
+                 </ResponsiveContainer>
+               ) : (
+                 <div className="flex items-center justify-center h-full text-sm text-gray-400">No offers data found</div>
+               )}
+             </div>
+          </div>
+
+          {/* Recent/Top Offers List */}
+          <div className="lg:col-span-1">
+             <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Top Offers</h4>
+             <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
+               {allOffers.length === 0 ? (
+                 <p className="text-xs text-gray-400 py-4">No offers available</p>
+               ) : allOffers.slice(0, 4).map(offer => (
+                 <div key={offer.id || offer.slug} className="flex items-center gap-3 p-2 rounded-lg border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50">
+                   {offer.image ? (
+                     <img src={offer.image} alt={offer.title} className="w-8 h-8 rounded-md object-cover flex-shrink-0" />
+                   ) : (
+                     <div className="w-8 h-8 rounded-md bg-gray-200 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
+                       <Tag className="w-3 h-3 text-gray-400" />
+                     </div>
+                   )}
+                   <div className="flex-1 min-w-0">
+                     <p className="text-xs font-medium text-gray-900 dark:text-white truncate">{offer.title}</p>
+                     <p className="text-[10px] text-gray-500">{offer.discount_percentage ? `${offer.discount_percentage}% OFF` : 'Offer'}</p>
+                   </div>
+                   <span className={`flex-shrink-0 w-2 h-2 rounded-full ${offer.is_active !== false ? 'bg-emerald-400' : 'bg-gray-400'}`} />
+                 </div>
+               ))}
+             </div>
           </div>
         </div>
       </div>

@@ -238,13 +238,13 @@
 // src/app/dashboard/page.jsx
 "use client";
 
-import { DollarSign, ShoppingCart, Users, Package, Loader2, Store, MapPin, ToggleLeft, ToggleRight, Archive } from "lucide-react";
+import { DollarSign, ShoppingCart, Users, Package, Loader2, Store, MapPin, ToggleLeft, ToggleRight, Archive, Tag } from "lucide-react";
 import useSWR from "swr";
 import { AreaChart, Area, BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import Container from "@/app/dashboard/_components/Container";
 import StatCard from "@/app/dashboard/_components/StatCard";
 import { fetchAdminDashboardStats } from "@/app/dashboard/_lib/auth";
-import { ordersService, storesService, leftoverPacksService } from "@/app/dashboard/_lib/services";
+import { ordersService, storesService, leftoverPacksService, offersService } from "@/app/dashboard/_lib/services";
 
 const STATUS_COLORS = {
   pending:    { bg: "bg-amber-50 dark:bg-amber-950/30",    text: "text-amber-700 dark:text-amber-400" },
@@ -330,6 +330,14 @@ export default function DashboardHomePage() {
   );
   const leftoverPacks = Array.isArray(leftoverPacksData) ? leftoverPacksData : (leftoverPacksData?.results || []);
 
+  const { data: offersRaw } = useSWR(
+    "dash-offers",
+    () => offersService.list(),
+    { revalidateOnFocus: false }
+  );
+  const allOffers = Array.isArray(offersRaw) ? offersRaw : (offersRaw?.results || []);
+  const activeOffers = allOffers.filter(o => o.is_active !== false);
+
   let availableLeftoverPacks = 0;
   leftoverPacks.forEach(p => { availableLeftoverPacks += Number(p.stock || 0); });
 
@@ -368,15 +376,16 @@ export default function DashboardHomePage() {
   return (
     <Container title="Dashboard" description="Overview of your store performance">
 
-      {/* Top 5 stat cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+      {/* Top 6 stat cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
         {statsLoading
-          ? Array.from({ length: 5 }).map((_, i) => (
+          ? Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-lg p-4 h-24 animate-pulse" />
             ))
           : <>
               <StatCard label="Total Users"    value={Number(stats?.total_users    || 0).toLocaleString()} icon={Users} />
               <StatCard label="Total Products" value={Number(stats?.total_products || 0).toLocaleString()} icon={Package} />
+              <StatCard label="Active Offers"  value={activeOffers.length.toLocaleString()} icon={Tag} />
               <StatCard label="Leftover Packs" value={leftoverPacks.length.toLocaleString()} icon={Archive} />
               <StatCard label="Total Orders"   value={Number(stats?.total_orders   || 0).toLocaleString()} icon={ShoppingCart} />
               <StatCard label="Revenue"        value={`৳${Number(stats?.total_revenue || 0).toLocaleString()}`} icon={DollarSign} />
@@ -396,6 +405,25 @@ export default function DashboardHomePage() {
               <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1 font-semibold">Pending Orders</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white leading-none">
                 {Number(stats?.pending_orders || 0).toLocaleString()}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Offers Quick Stats */}
+        {!statsLoading && (
+          <div className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 border-l-4 border-l-blue-500 rounded-lg px-5 py-3 flex items-center gap-6 w-fit shadow-sm">
+            <div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1 font-semibold">Total Offers</p>
+              <p className="text-2xl font-bold text-blue-600 dark:text-blue-400 leading-none">
+                {allOffers.length.toLocaleString()}
+              </p>
+            </div>
+            <div className="w-px h-10 bg-gray-200 dark:bg-gray-800"></div>
+            <div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1 font-semibold">Active Offers</p>
+              <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 leading-none">
+                {activeOffers.length.toLocaleString()}
               </p>
             </div>
           </div>

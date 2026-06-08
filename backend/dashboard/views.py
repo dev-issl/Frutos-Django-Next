@@ -767,12 +767,18 @@ def order_create(request):
 @user_passes_test(staff_required)
 def order_edit(request, pk):
     """Edit an existing order"""
+    from accounts.notifications import send_order_status_notification
+
     order = get_object_or_404(Order, pk=pk)
-    
+    old_status = order.status  # snapshot before any save
+
     if request.method == 'POST':
         form = OrderForm(request.POST, instance=order)
         if form.is_valid():
             order = form.save()
+            # Send notification if status changed
+            if order.status != old_status:
+                send_order_status_notification(order)
             messages.success(request, f'Order "{order.order_number}" updated successfully!')
             
             # If HTMX request, return updated table
@@ -841,12 +847,18 @@ def order_delete(request, pk):
 @require_http_methods(["POST"])
 def order_update_status(request, pk):
     """Update order status inline from list"""
+    from accounts.notifications import send_order_status_notification
+
     order = get_object_or_404(Order, pk=pk)
     new_status = request.POST.get('status', order.status)
-    
+    old_status = order.status
+
     if new_status in dict(Order.OrderStatus.choices):
         order.status = new_status
         order.save()
+        # Send notification to the customer if status changed
+        if new_status != old_status:
+            send_order_status_notification(order)
         messages.success(request, f'Order #{order.order_number} status updated to {order.get_status_display()}')
     
     # Return updated order table

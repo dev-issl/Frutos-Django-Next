@@ -1,13 +1,10 @@
 // src/app/wholesale/profile/_shared/StatBox.jsx
 export function StatBox({ label, value, sub }) {
   return (
-    <div style={{
-      background: '#F7FAF8', borderRadius: 12, padding: '14px 10px',
-      textAlign: 'center', border: '1px solid #E8F0EA',
-    }}>
-      <p style={{ fontSize: 18, fontWeight: 800, color: '#085041', margin: '0 0 2px', lineHeight: 1.1, wordBreak: 'break-word' }}>{value}</p>
-      <p style={{ fontSize: 10.5, fontWeight: 600, color: '#6D7A73', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</p>
-      {sub && <p style={{ fontSize: 10.5, color: '#9DAAA3', margin: '3px 0 0' }}>{sub}</p>}
+    <div className="bg-gray-50/50 rounded-xl px-3 py-4 text-center border border-gray-100 shadow-sm transition-all hover:border-gray-200">
+      <p className="text-[20px] font-bold text-[#085041] mb-1 leading-tight break-words">{value}</p>
+      <p className="text-[10.5px] font-bold text-gray-500 m-0 uppercase tracking-wider">{label}</p>
+      {sub && <p className="text-[10.5px] text-gray-400 mt-1">{sub}</p>}
     </div>
   )
 }
@@ -16,22 +13,18 @@ export function StatBox({ label, value, sub }) {
 export function Field({ label, value, name, onChange, readOnly, type = 'text', hint }) {
   return (
     <div>
-      <label style={{
-        display: 'block', fontSize: 11.5, fontWeight: 600, color: '#6D7A73',
-        marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.05em',
-      }}>{label}</label>
+      <label className="block text-[11px] font-bold uppercase tracking-widest text-gray-500 mb-2">
+        {label}
+      </label>
       <input
         type={type} name={name} value={value || ''} onChange={onChange} readOnly={readOnly}
-        style={{
-          width: '100%', boxSizing: 'border-box', padding: '9px 12px',
-          borderRadius: 10, border: `1.5px solid ${readOnly ? '#E8F0EA' : '#C8D5CC'}`,
-          background: readOnly ? '#F7FAF8' : 'white',
-          fontSize: 13.5, color: readOnly ? '#9DAAA3' : '#151E13',
-          outline: 'none', fontFamily: 'inherit',
-          cursor: readOnly ? 'not-allowed' : 'text',
-        }}
+        className={`w-full px-4 py-3 rounded-xl border outline-none transition-all text-sm ${
+          readOnly 
+            ? 'bg-gray-50/80 border-gray-100 text-gray-400 cursor-not-allowed' 
+            : 'bg-gray-50/50 border-gray-200 text-[#151e13] focus:border-[#00694C] focus:ring-1 focus:ring-[#00694C] placeholder-gray-400'
+        }`}
       />
-      {hint && <p style={{ fontSize: 11, color: '#9DAAA3', margin: '4px 0 0' }}>{hint}</p>}
+      {hint && <p className="text-[11px] text-gray-400 mt-1.5">{hint}</p>}
     </div>
   )
 }

@@ -20,11 +20,17 @@ export function AuthProvider({ children }) {
   function storeTokens(access, refresh) {
     localStorage.setItem('access_token',  access)
     localStorage.setItem('refresh_token', refresh)
+    if (typeof document !== 'undefined') {
+      document.cookie = `access_token=${access}; path=/; max-age=86400; SameSite=Lax`
+    }
   }
 
   function clearTokens() {
     localStorage.removeItem('access_token')
     localStorage.removeItem('refresh_token')
+    if (typeof document !== 'undefined') {
+      document.cookie = 'access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+    }
   }
 
   // ── Auto-refresh: re-issue access token 5 min before it expires ───────────
@@ -80,7 +86,7 @@ export function AuthProvider({ children }) {
           return
         }
         // Token valid — fetch fresh profile
-        const res = await fetch(`${API_BASE}/auth/profile/`, {
+        const res = await fetch(`${API_BASE}/auth/profile/?t=${Date.now()}`, {
           headers: { Authorization: `Bearer ${access}` },
         })
         if (res.ok) {

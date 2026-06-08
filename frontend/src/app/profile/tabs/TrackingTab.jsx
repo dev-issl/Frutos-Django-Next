@@ -6,31 +6,25 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'
 // ── Status pipeline (cancelled is a side-branch) ─────────────────────────────
 const STEPS = [
   {
-    key:   'pending',
+    key:   'PENDING',
     label: 'Order Placed',
     sub:   'We received your order',
     icon:  'receipt_long',
   },
   {
-    key:   'confirmed',
-    label: 'Confirmed',
-    sub:   'Order accepted & queued',
-    icon:  'check_circle',
-  },
-  {
-    key:   'preparing',
-    label: 'Preparing',
+    key:   'PROCESSING',
+    label: 'Processing',
     sub:   'Being carefully packed',
     icon:  'inventory_2',
   },
   {
-    key:   'out_for_delivery',
-    label: 'Out for Delivery',
+    key:   'SHIPPED',
+    label: 'Shipped',
     sub:   'On its way to you',
     icon:  'local_shipping',
   },
   {
-    key:   'delivered',
+    key:   'DELIVERED',
     label: 'Delivered',
     sub:   'Enjoy your order!',
     icon:  'where_to_vote',
@@ -40,12 +34,11 @@ const STEPS = [
 const STATUS_INDEX = Object.fromEntries(STEPS.map((s, i) => [s.key, i]))
 
 const STATUS_LABEL = {
-  pending:          'Pending',
-  confirmed:        'Confirmed',
-  preparing:        'Preparing',
-  out_for_delivery: 'Out for Delivery',
-  delivered:        'Delivered',
-  cancelled:        'Cancelled',
+  PENDING:    'Pending',
+  PROCESSING: 'Processing',
+  SHIPPED:    'Shipped',
+  DELIVERED:  'Delivered',
+  CANCELLED:  'Cancelled',
 }
 
 const FULFILLMENT_ICON = {
@@ -64,7 +57,7 @@ function fmtDate(iso) {
 
 // ── Single order tracking card ────────────────────────────────────────────────
 function TrackingCard({ order, onClose }) {
-  const isCancelled = order.status === 'cancelled'
+  const isCancelled = order.status === 'CANCELLED'
   const activeIdx   = isCancelled ? -1 : (STATUS_INDEX[order.status] ?? 0)
 
   return (
@@ -568,12 +561,37 @@ function OrderRow({ order, isSelected, onClick }) {
 }
 
 // ── Main Tab Component ─────────────────────────────────────────────────────────
+
+function normalizeOrder(o) {
+  return {
+    id: o.id,
+    orderNumber: o.order_number || o.orderNumber,
+    createdAt: o.ordered_at || o.createdAt,
+    status: o.status,
+    total: o.total_amount || o.total,
+    subtotal: o.cart_subtotal || o.subtotal,
+    deliveryFee: (Number(o.total_amount || 0) - Number(o.cart_subtotal || 0)) || 0,
+    promo_discount: o.promo_discount || 0,
+    original_subtotal: Number(o.cart_subtotal || o.subtotal) + Number(o.promo_discount || 0),
+    promo_code: o.promo_code || '',
+    itemCount: (o.items || []).length,
+    items: (o.items || []).map(i => ({
+      id: i.id,
+      productName: i.product_name || i.productName,
+      productImage: i.product_image || i.productImage,
+      productOrigin: i.product_origin || i.productOrigin,
+      quantity: i.quantity,
+      unitPrice: i.unit_price || i.unitPrice,
+      lineTotal: i.line_total || i.lineTotal,
+    }))
+  }
+}
+
 export default function TrackingTab({ authFetch, initialOrders = null }) {
-  const [orders,      setOrders]      = useState(() =>
-    Array.isArray(initialOrders) ? initialOrders
-    : initialOrders?.results      ? initialOrders.results
-    : []
-  )
+  const [orders,      setOrders]      = useState(() => {
+    const arr = Array.isArray(initialOrders) ? initialOrders : (initialOrders?.results || [])
+    return arr.map(normalizeOrder)
+  })
   const [loading,     setLoading]     = useState(initialOrders === null)
   const [selectedId,  setSelectedId]  = useState(null)
   const [lastUpdated, setLastUpdated] = useState(null)
@@ -585,7 +603,7 @@ export default function TrackingTab({ authFetch, initialOrders = null }) {
     try {
       const res  = await authFetch(`${API_BASE}/auth/orders/`)
       const data = await res.json()
-      const list = Array.isArray(data) ? data : (data.results || [])
+      const list = (Array.isArray(data) ? data : (data.results || [])).map(normalizeOrder)
 
       setOrders((prev) => {
         // detect if anything changed so we can animate
@@ -608,16 +626,16 @@ export default function TrackingTab({ authFetch, initialOrders = null }) {
     else setLastUpdated(new Date())
   }, [])
 
-  // Real-time polling every 30 s
+  // Real-time polling every 3 s
   useEffect(() => {
-    const id = setInterval(() => fetchOrders(true), 30_000)
+    const id = setInterval(() => fetchOrders(true), 3_000)
     return () => clearInterval(id)
   }, [fetchOrders])
 
   // Auto-select most-recent non-delivered / first order
   useEffect(() => {
     if (orders.length > 0 && selectedId === null) {
-      const active = orders.find((o) => !['delivered', 'cancelled'].includes(o.status))
+      const active = orders.find((o) => !['DELIVERED', 'CANCELLED'].includes(o.status))
       setSelectedId((active || orders[0]).orderNumber)
     }
   }, [orders])
@@ -717,7 +735,7 @@ export default function TrackingTab({ authFetch, initialOrders = null }) {
 
       {lastUpdated && (
         <p style={{ fontSize: '11px', color: '#BCCAC1', marginBottom: '16px', marginTop: '-10px' }}>
-          Updated {lastUpdated.toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit' })} · auto-refreshes every 30s
+          Updated {lastUpdated.toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit' })} · auto-refreshes every 3s
         </p>
       )}
 

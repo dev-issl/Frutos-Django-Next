@@ -149,29 +149,28 @@ export default function Footer({ config }) {
   ];
 
   return (
-    <footer className="relative bg-[#043328] text-white pt-16 pb-8 border-t border-[#064234] mt-16">
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-12 lg:gap-8 pb-16 border-b border-white/10">
+    <footer className="relative bg-[#043328] text-white pt-8 pb-4 border-t border-white/5 mt-8">
+      <div className="max-w-7xl mx-auto px-4 lg:px-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6 lg:gap-8 pb-8 border-b border-white/10">
           
-          <div className="lg:col-span-4 lg:pr-8">
-            <Link href="/" className="inline-flex items-center gap-3 mb-6 transition-opacity hover:opacity-90">
+          {/* Brand Column */}
+          <div className="lg:col-span-4 lg:pr-6">
+            <Link href="/" className="inline-flex items-center gap-2 mb-4 transition-opacity hover:opacity-80">
               {footer_logo_url ? (
-                <img src={footer_logo_url} alt={`${brand_name} logo`} className="w-10 h-10 object-contain brightness-0 invert" />
+                <img src={footer_logo_url} alt={`${brand_name} logo`} className="w-8 h-8 object-contain brightness-0 invert" />
               ) : (
-                <div className="w-10 h-10 bg-white/10 rounded flex items-center justify-center">
-                  <span className="text-xl font-bold">{brand_name[0]}</span>
+                <div className="w-8 h-8 bg-white/10 rounded flex items-center justify-center">
+                  <span className="text-lg font-bold">{brand_name[0]}</span>
                 </div>
               )}
-              <span className="font-serif text-2xl font-bold tracking-wide">{brand_name}</span>
+              <span className="font-serif text-xl font-bold tracking-wide">{brand_name}</span>
             </Link>
-            <p className="text-[13px] text-gray-300 leading-relaxed mb-8 pr-4">
+            <p className="text-xs text-gray-400 leading-relaxed mb-6">
               {companyTagline || brand_tagline || 'Discover our premium selection of quality products. We are dedicated to providing the best shopping experience for our customers.'}
             </p>
-            <div className="flex items-center gap-4">
-              <button className="bg-emerald-500 hover:bg-emerald-400 text-[#043328] text-[11px] font-bold uppercase tracking-widest py-2.5 px-5 rounded-full transition-colors duration-300 shadow-lg shadow-emerald-500/20">
-                Follow Us
-              </button>
-              <div className="flex gap-2.5 flex-wrap">
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="text-xs font-semibold text-gray-300 uppercase tracking-wider">Follow Us</span>
+              <div className="flex gap-3">
                 {social_links.map((s, i) => {
                   const Icon = SOCIAL_ICONS[(s.icon_name || s.platform || '').toLowerCase()] || SOCIAL_ICONS['Globe']
                   return (
@@ -181,7 +180,7 @@ export default function Footer({ config }) {
                       title={s.title || s.platform}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-300 hover:bg-emerald-500 hover:border-emerald-500 hover:text-[#043328] transition-all duration-300"
+                      className="text-gray-400 hover:text-white transition-colors duration-200"
                     >
                       <Icon />
                     </a>
@@ -191,19 +190,20 @@ export default function Footer({ config }) {
             </div>
           </div>
 
+          {/* Dynamic Link Columns */}
           {displayCols.map(col => (
             <div key={col.id} className="lg:col-span-2">
-              <h4 className="text-[11px] font-bold uppercase tracking-widest text-emerald-400 mb-6">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-white mb-4">
                 {col.title}
               </h4>
-              <ul className="flex flex-col gap-3.5">
+              <ul className="flex flex-col gap-2">
                 {col.links.map((link, i) => (
                   <li key={i}>
                     <Link
                       href={link.url || '#'}
                       target={link.open_in_new_tab ? '_blank' : undefined}
                       rel={link.open_in_new_tab ? 'noopener noreferrer' : undefined}
-                      className="text-[13px] text-gray-300 hover:text-white transition-colors duration-200"
+                      className="text-xs text-gray-400 hover:text-white transition-colors duration-200"
                     >
                       {link.text}
                     </Link>
@@ -213,13 +213,14 @@ export default function Footer({ config }) {
             </div>
           ))}
 
+          {/* Stores Column (if any) */}
           {activeStoreLocations.length > 0 && displayCols.length < 3 && (
             <div className="lg:col-span-2">
-              <h4 className="text-[11px] font-bold uppercase tracking-widest text-emerald-400 mb-6">Stores</h4>
-              <ul className="flex flex-col gap-3.5">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-white mb-4">Stores</h4>
+              <ul className="flex flex-col gap-2">
                 {activeStoreLocations.map((store, i) => (
                   <li key={store.slug || i}>
-                    <Link href={`/stores/${store.slug || ''}`} className="text-[13px] text-gray-300 hover:text-white transition-colors duration-200">
+                    <Link href={`/stores/${store.slug || ''}`} className="text-xs text-gray-400 hover:text-white transition-colors duration-200">
                       {store.name}
                     </Link>
                   </li>
@@ -228,31 +229,32 @@ export default function Footer({ config }) {
             </div>
           )}
 
+          {/* Contact & Payments Column */}
           <div className="lg:col-span-3 lg:col-start-10">
-            <h4 className="text-[11px] font-bold uppercase tracking-widest text-emerald-400 mb-6">
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-white mb-4">
               Contact Us
             </h4>
-            <ul className="flex flex-col gap-4 mb-8">
+            <ul className="flex flex-col gap-2.5 mb-6">
               {activeContactEmail && (
-                <li className="flex items-start gap-3">
-                  <span className="mt-0.5 text-emerald-400/80"><EmailIcon /></span>
-                  <a href={`mailto:${activeContactEmail}`} className="text-[13px] text-gray-300 hover:text-white transition-colors duration-200 break-all">
+                <li className="flex items-start gap-2">
+                  <span className="text-gray-400 mt-0.5"><EmailIcon /></span>
+                  <a href={`mailto:${activeContactEmail}`} className="text-xs text-gray-400 hover:text-white transition-colors duration-200 break-all">
                     {activeContactEmail}
                   </a>
                 </li>
               )}
               {activeContactPhone && (
-                <li className="flex items-start gap-3">
-                  <span className="mt-0.5 text-emerald-400/80"><PhoneIcon /></span>
-                  <a href={`tel:${activeContactPhone}`} className="text-[13px] text-gray-300 hover:text-white transition-colors duration-200">
+                <li className="flex items-start gap-2">
+                  <span className="text-gray-400 mt-0.5"><PhoneIcon /></span>
+                  <a href={`tel:${activeContactPhone}`} className="text-xs text-gray-400 hover:text-white transition-colors duration-200">
                     {activeContactPhone}
                   </a>
                 </li>
               )}
               {activeContactAddress && (
-                <li className="flex items-start gap-3">
-                  <span className="mt-0.5 text-emerald-400/80"><PinIcon /></span>
-                  <span className="text-[13px] text-gray-300 leading-relaxed">
+                <li className="flex items-start gap-2">
+                  <span className="text-gray-400 mt-0.5"><PinIcon /></span>
+                  <span className="text-xs text-gray-400 leading-relaxed">
                     {activeContactAddress}
                   </span>
                 </li>
@@ -261,14 +263,14 @@ export default function Footer({ config }) {
 
             {activePaymentMethods.length > 0 && (
               <div>
-                <p className="text-[10px] font-bold tracking-widest text-gray-400 uppercase mb-3">We Accept</p>
+                <p className="text-[10px] font-semibold tracking-wider text-gray-500 uppercase mb-2">We Accept</p>
                 <div className="flex flex-wrap gap-2">
                   {activePaymentMethods.map((pm, i) => (
-                    <div key={i} title={pm.title} className="bg-white/5 border border-white/10 rounded-md px-2 py-1 flex items-center justify-center min-w-[48px] h-[28px]">
+                    <div key={i} title={pm.title} className="bg-white/5 border border-white/10 rounded px-1.5 py-1 flex items-center justify-center h-6">
                       {pm.image_url ? (
-                        <img src={pm.image_url} alt={pm.title} className="max-h-[16px] object-contain" />
+                        <img src={pm.image_url} alt={pm.title} className="max-h-3 object-contain" />
                       ) : (
-                        <span className="text-[10px] text-gray-400 font-semibold uppercase">{pm.title}</span>
+                        <span className="text-[9px] text-gray-400 font-medium uppercase">{pm.title}</span>
                       )}
                     </div>
                   ))}
@@ -279,16 +281,17 @@ export default function Footer({ config }) {
 
         </div>
 
-        <div className="pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-gray-400 order-2 md:order-1 text-center md:text-left">
+        {/* Footer Bottom */}
+        <div className="pt-4 flex flex-col md:flex-row items-center justify-between gap-3">
+          <p className="text-[11px] text-gray-500 order-2 md:order-1 text-center md:text-left">
             {copyrightText}
           </p>
-          <p className="text-xs text-gray-400 order-3 md:order-2 text-center">
-            Developed by <a href="https://www.intelligentsystemsltd.com/" target="_blank" rel="noopener noreferrer" className="text-white font-medium hover:underline">Intelligent Systems and Solutions Limited</a>
+          <p className="text-[11px] text-gray-500 order-3 md:order-2 text-center">
+            Developed by <a href="https://www.intelligentsystemsltd.com/" target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-white transition-colors duration-200">Intelligent Systems and Solutions Limited</a>
           </p>
-          <div className="flex gap-6 order-1 md:order-3">
+          <div className="flex gap-4 order-1 md:order-3">
             {['Privacy Policy', 'Terms of Service', 'Cookies'].map((item) => (
-              <Link key={item} href="#" className="text-xs text-gray-400 hover:text-white transition-colors duration-200">
+              <Link key={item} href="#" className="text-[11px] text-gray-500 hover:text-white transition-colors duration-200">
                 {item}
               </Link>
             ))}

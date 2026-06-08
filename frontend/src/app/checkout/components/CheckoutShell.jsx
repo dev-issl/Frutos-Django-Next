@@ -254,7 +254,9 @@ export default function CheckoutShell({ deliveryDates, deliverySlots, initialUse
         if (typeof data === 'string' && data.trim()) {
           detail = data.trim()
         } else if (data && typeof data === 'object') {
-          if (data.detail) {
+          if (data.errors && Array.isArray(data.errors) && data.errors.length > 0) {
+            detail = data.errors.join('. ')
+          } else if (data.detail) {
             detail = data.detail
           } else {
             const entries = Object.entries(data)

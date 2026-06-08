@@ -315,9 +315,9 @@ function toArray(data) {
 }
 
 // initialNotifications — pre-fetched by the server component; no spinner on first load.
-export default function NotificationsTab({ authFetch, initialNotifications = null }) {
+export default function NotificationsTab({ authFetch, initialNotifications = null, onCountChange }) {
   const [notifs,        setNotifs]        = useState(() => toArray(initialNotifications))
-  const [loading,       setLoading]       = useState(initialNotifications === null)
+  const [loading,       setLoading]       = useState(true)  // always load fresh
   const [expanded,      setExpanded]      = useState(null)
   const [orderCache,    setOrderCache]    = useState({})
   const [fetchingOrder, setFetchingOrder] = useState({})
@@ -338,22 +338,67 @@ export default function NotificationsTab({ authFetch, initialNotifications = nul
       }
       prevIdsRef.current = new Set(list.map(n => n.id))
       setNotifs(list)
+      // sync unread count to parent sidebar badge
+      const unread = list.filter(n => !n.isRead).length
+      if (onCountChange) onCountChange(unread)
     } catch {
       if (isInitial) setNotifs([])
     } finally {
       if (isInitial) setLoading(false)
     }
-  }, [authFetch])
+  }, [authFetch, onCountChange])
 
-  // Client-side initial fetch only when server data was unavailable
+  // ── Initial full fetch ─────────────────────────────────────────────────────
   useEffect(() => {
-    if (initialNotifications !== null) return
     fetchNotifs(true)
   }, [fetchNotifs])
 
-  // Real-time polling — every 8 seconds
+  // ── SSE — real-time push (instant when dashboard changes status) ───────────
   useEffect(() => {
-    const interval = setInterval(() => fetchNotifs(false), 8_000)
+    let es = null
+    let retryTimeout = null
+
+    function connect() {
+      // Get token from localStorage (set by AuthContext)
+      const token = localStorage.getItem('access_token')
+      if (!token) return
+
+      const url = `${API_BASE}/auth/notifications/stream/?token=${encodeURIComponent(token)}`
+      es = new EventSource(url)
+
+      es.onmessage = (event) => {
+        try {
+          const notif = JSON.parse(event.data)
+          setNotifs(prev => {
+            // avoid duplicates
+            if (prev.some(n => n.id === notif.id)) return prev
+            setHasNew(true)
+            const next = [notif, ...prev]
+            const unread = next.filter(n => !n.isRead).length
+            if (onCountChange) onCountChange(unread)
+            return next
+          })
+          prevIdsRef.current.add(notif.id)
+        } catch { /* ignore parse errors */ }
+      }
+
+      es.onerror = () => {
+        es.close()
+        // Reconnect after 3s on error
+        retryTimeout = setTimeout(connect, 3000)
+      }
+    }
+
+    connect()
+    return () => {
+      if (es) es.close()
+      if (retryTimeout) clearTimeout(retryTimeout)
+    }
+  }, [onCountChange])
+
+  // ── Fallback polling every 10s (keeps data fresh if SSE drops) ────────────
+  useEffect(() => {
+    const interval = setInterval(() => fetchNotifs(false), 10_000)
     return () => clearInterval(interval)
   }, [fetchNotifs])
 

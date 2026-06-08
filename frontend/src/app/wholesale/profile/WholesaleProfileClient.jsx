@@ -109,39 +109,39 @@ export default function WholesaleProfileClient({ initialProfile, initialNotifica
   ]
 
   return (
-    <div style={{ background: '#F7FAF8', minHeight: '100vh' }} >
+    <div className="bg-gray-50/50 min-h-screen pb-12">
       <ProfileHeader
         profile={profile} activeTab={activeTab} setActiveTab={setActiveTab}
         tabs={tabs} onLogout={handleLogout}
       />
 
-      <div style={{ maxWidth: 960, margin: '0 auto', padding: '20px 14px' }}
-        className=" flex flex-col gap-5 cursor-pointer"
-      >
-        {activeTab === 'overview' && (
-          <OverviewTab profile={profile} orders={orders} />
-        )}
-        {activeTab === 'orders' && (
-          <OrdersTab orders={orders} onDeleteOrder={handleDeleteOrder} />
-        )}
-        {activeTab === 'notifications' && (
-          <NotificationsTab
-            notifications={notifications} unreadCount={unreadCount}
-            onMarkAllRead={handleMarkAllRead} onDelete={handleDeleteNotif}
-          />
-        )}
-        {activeTab === 'settings' && (
-          <SettingsTab
-            profile={profile} editForm={editForm} onChange={handleEditChange}
-            onSave={handleEditSave} saving={editSaving} success={editSuccess} error={editError}
-          />
-        )}
-        {activeTab === 'security' && (
-          <SecurityTab
-            pwForm={pwForm} onChange={handlePwChange}
-            onSave={handlePasswordSave} saving={pwSaving} success={pwSuccess} error={pwError}
-          />
-        )}
+      <div className="max-w-5xl mx-auto px-4 md:px-6 py-8">
+        <div className="flex flex-col gap-6">
+          {activeTab === 'overview' && (
+            <OverviewTab profile={profile} orders={orders} />
+          )}
+          {activeTab === 'orders' && (
+            <OrdersTab orders={orders} onDeleteOrder={handleDeleteOrder} />
+          )}
+          {activeTab === 'notifications' && (
+            <NotificationsTab
+              notifications={notifications} unreadCount={unreadCount}
+              onMarkAllRead={handleMarkAllRead} onDelete={handleDeleteNotif}
+            />
+          )}
+          {activeTab === 'settings' && (
+            <SettingsTab
+              profile={profile} editForm={editForm} onChange={handleEditChange}
+              onSave={handleEditSave} saving={editSaving} success={editSuccess} error={editError}
+            />
+          )}
+          {activeTab === 'security' && (
+            <SecurityTab
+              pwForm={pwForm} onChange={handlePwChange}
+              onSave={handlePasswordSave} saving={pwSaving} success={pwSuccess} error={pwError}
+            />
+          )}
+        </div>
       </div>
     </div>
   )

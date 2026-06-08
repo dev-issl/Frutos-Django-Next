@@ -183,12 +183,39 @@ const FULFILLMENT_ICONS = {
 }
 
 // Statuses that cannot be cancelled
-const NON_CANCELLABLE = ['out_for_delivery', 'delivered', 'cancelled']
+const NON_CANCELLABLE = ['SHIPPED', 'DELIVERED', 'CANCELLED']
 
 function toArray(data) {
   if (Array.isArray(data)) return data
   if (data && Array.isArray(data.results)) return data.results
   return []
+}
+
+function normalizeOrder(o) {
+  return {
+    id: o.id,
+    orderNumber: o.order_number || o.orderNumber,
+    createdAt: o.ordered_at || o.createdAt,
+    status: o.status,
+    total: o.total_amount || o.total,
+    subtotal: o.cart_subtotal || o.subtotal,
+    deliveryFee: (Number(o.total_amount || 0) - Number(o.cart_subtotal || 0)) || 0,
+    customerName: o.customer_name || o.customerName,
+    street: o.street_address || o.street,
+    city: o.city,
+    postcode: o.postcode,
+    deliveryDate: o.delivery_date || o.deliveryDate,
+    deliverySlot: o.delivery_slot_label || o.deliverySlot,
+    fulfillment: 'delivery',
+    items: (o.items || []).map(i => ({
+      id: i.id,
+      productName: i.product_name || i.productName,
+      productImage: i.product_image || i.productImage,
+      quantity: i.quantity,
+      unitPrice: i.unit_price || i.unitPrice,
+      lineTotal: i.line_total || i.lineTotal,
+    }))
+  }
 }
 
 // ── Confirmation Modal ────────────────────────────────────────────────────────
@@ -310,7 +337,7 @@ function CancelModal({ orderNumber, onConfirm, onClose, cancelling }) {
 //   initialOrders  — pre-fetched server data (optional)
 //   onDeleteOrder  — async fn(orderNumber) => void  (call your API inside this)
 export default function OrdersTab({ authFetch, initialOrders = null, onDeleteOrder }) {
-  const [orders,       setOrders]       = useState(() => toArray(initialOrders))
+  const [orders,       setOrders]       = useState(() => toArray(initialOrders).map(normalizeOrder))
   const [loading,      setLoading]      = useState(initialOrders === null)
   const [expanded,     setExpanded]     = useState(null)
   const [confirmOrder, setConfirmOrder] = useState(null)   // { id, orderNumber } | null
@@ -320,7 +347,7 @@ export default function OrdersTab({ authFetch, initialOrders = null, onDeleteOrd
     if (initialOrders !== null) return
     authFetch(`${API_BASE}/auth/orders/`)
       .then(r => r.json())
-      .then(data => setOrders(toArray(data)))
+      .then(data => setOrders(toArray(data).map(normalizeOrder)))
       .finally(() => setLoading(false))
   }, [])
 

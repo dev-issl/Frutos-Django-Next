@@ -3,11 +3,7 @@ import { useState, useRef } from 'react'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'
 
-const inputCls = {
-  width: '100%', padding: '10px 14px', border: '1.5px solid #e0e8e0',
-  borderRadius: '10px', background: '#fafaf8', color: '#151e13',
-  fontSize: '14px', outline: 'none', boxSizing: 'border-box',
-}
+const inputClass = "w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#00694C] focus:ring-1 focus:ring-[#00694C] outline-none transition-all text-sm bg-gray-50/50 text-[#151e13] placeholder-gray-400";
 
 export default function ProfileTab({ user, authFetch, uploadAvatar, onUserUpdate }) {
   const [form, setForm] = useState({
@@ -100,48 +96,51 @@ export default function ProfileTab({ user, authFetch, uploadAvatar, onUserUpdate
   return (
     <div className="space-y-6">
       {/* Avatar */}
-      <div className="flex items-center gap-5 p-6 rounded-2xl" style={{ background: '#f5f9f5', border: '1px solid #e0e8e0' }}>
+      <div className="flex items-center gap-6 p-6 rounded-2xl bg-white border border-gray-100 shadow-sm">
         <div className="relative">
-          <div className="w-20 h-20 rounded-full overflow-hidden flex-shrink-0"
-            style={{ background: '#ECF7E4', border: '3px solid #00694C20', position: 'relative' }}>
+          <div className="w-20 h-20 rounded-full overflow-hidden flex-shrink-0 bg-emerald-50 border-4 border-emerald-500/10 relative">
             {/*  displayAvatar ব্যবহার করো — blob URL বা server URL */}
             {displayAvatar
               ? <img src={displayAvatar} alt="" className="w-full h-full object-cover" />
               : <div className="w-full h-full flex items-center justify-center">
-                  <span className="material-symbols-outlined text-4xl" style={{ color: '#BCCAC1' }}>person</span>
+                  <span className="material-symbols-outlined text-4xl text-emerald-200">person</span>
                 </div>
             }
             {avatarLoading && (
-              <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%' }}>
-                <svg style={{ animation: 'spin 1s linear infinite', width: '22px', height: '22px' }} viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="3" strokeOpacity=".3"/>
-                  <path d="M12 2a10 10 0 0 1 10 10" stroke="white" strokeWidth="3" strokeLinecap="round"/>
+              <div className="absolute inset-0 bg-black/40 flex items-center justify-center rounded-full">
+                <svg className="w-6 h-6 animate-spin text-white" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeOpacity=".3"/>
+                  <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/>
                 </svg>
               </div>
             )}
           </div>
-          <button onClick={() => fileRef.current?.click()} disabled={avatarLoading}
-            className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full flex items-center justify-center cursor-pointer"
-            style={{ background: '#00694C', border: '2px solid white', opacity: avatarLoading ? 0.6 : 1 }}>
-            <span className="material-symbols-outlined text-white" style={{ fontSize: '14px' }}>edit</span>
+          <button 
+            onClick={() => fileRef.current?.click()} 
+            disabled={avatarLoading}
+            className={`absolute -bottom-1 -right-1 w-8 h-8 rounded-full flex items-center justify-center cursor-pointer bg-[#00694C] border-[2.5px] border-white shadow-md hover:bg-[#085041] transition-colors ${avatarLoading ? 'opacity-60 cursor-not-allowed' : ''}`}
+          >
+            <span className="material-symbols-outlined text-white text-[14px]">edit</span>
           </button>
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
         </div>
         <div>
-          <p className="font-bold text-lg" style={{ color: '#151e13', fontFamily: '"Newsreader",Georgia,serif' }}>
+          <p className="font-bold text-xl text-[#151e13] font-['Newsreader'] tracking-tight">
             {user?.firstName} {user?.lastName}
           </p>
-          <p className="text-sm" style={{ color: '#6d7a73' }}>{user?.email}</p>
-          {avatarLoading && <p className="text-xs font-medium mt-1.5" style={{ color: '#855000' }}>Uploading photo…</p>}
+          <p className="text-sm text-gray-500">{user?.email}</p>
+          {avatarLoading && <p className="text-xs font-medium mt-1.5 text-amber-600">Uploading photo…</p>}
           {avatarSaved && !avatarLoading && (
-            <p className="text-xs font-medium mt-1.5 flex items-center gap-1" style={{ color: '#00694C' }}>
-              <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>check_circle</span> Photo updated!
+            <p className="text-xs font-medium mt-1.5 flex items-center gap-1 text-[#00694C]">
+              <span className="material-symbols-outlined text-[16px]">check_circle</span> Photo updated!
             </p>
           )}
-          {avatarError && !avatarLoading && <p className="text-xs font-medium mt-1.5" style={{ color: '#BA1A1A' }}>{avatarError}</p>}
+          {avatarError && !avatarLoading && <p className="text-xs font-medium mt-1.5 text-red-600">{avatarError}</p>}
           {!avatarLoading && !avatarSaved && !avatarError && (
-            <button onClick={() => fileRef.current?.click()} className="text-xs font-medium mt-1 cursor-pointer"
-              style={{ color: '#00694C', background: 'none', border: 'none', padding: 0 }}>
+            <button 
+              onClick={() => fileRef.current?.click()} 
+              className="text-xs font-semibold mt-2 text-[#00694C] hover:text-[#085041] transition-colors"
+            >
               Change photo
             </button>
           )}
@@ -149,72 +148,105 @@ export default function ProfileTab({ user, authFetch, uploadAvatar, onUserUpdate
       </div>
 
       {/* Personal info */}
-      <form onSubmit={saveProfile} className="p-6 rounded-2xl space-y-4" style={{ background: '#fff', border: '1px solid #eaeaea' }}>
-        <h3 className="font-bold text-base" style={{ color: '#151e13' }}>Personal Information</h3>
-        <div className="grid grid-cols-2 gap-4">
+      <form onSubmit={saveProfile} className="p-6 rounded-2xl space-y-5 bg-white border border-gray-100 shadow-sm">
+        <h3 className="font-bold text-lg text-[#151e13] font-['Newsreader']">Personal Information</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           <div>
-            <label className="block text-[11px] font-bold uppercase tracking-widest mb-1.5" style={{ color: '#6d7a73' }}>First Name</label>
-            <input style={inputCls} value={form.firstName} onChange={e => setForm(p => ({ ...p, firstName: e.target.value }))} placeholder="Jane" />
+            <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">First Name</label>
+            <input className={inputClass} value={form.firstName} onChange={e => setForm(p => ({ ...p, firstName: e.target.value }))} placeholder="Jane" />
           </div>
           <div>
-            <label className="block text-[11px] font-bold uppercase tracking-widest mb-1.5" style={{ color: '#6d7a73' }}>Last Name</label>
-            <input style={inputCls} value={form.lastName} onChange={e => setForm(p => ({ ...p, lastName: e.target.value }))} placeholder="Doe" />
+            <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Last Name</label>
+            <input className={inputClass} value={form.lastName} onChange={e => setForm(p => ({ ...p, lastName: e.target.value }))} placeholder="Doe" />
           </div>
         </div>
         <div>
-          <label className="block text-[11px] font-bold uppercase tracking-widest mb-1.5" style={{ color: '#6d7a73' }}>Phone</label>
-          <input style={inputCls} value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} placeholder="+44 7700 900077" />
+          <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Phone</label>
+          <input className={inputClass} value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} placeholder="+44 7700 900077" />
         </div>
         <div>
-          <label className="block text-[11px] font-bold uppercase tracking-widest mb-1.5" style={{ color: '#6d7a73' }}>Bio</label>
-          <textarea style={{ ...inputCls, height: '80px', resize: 'vertical', paddingTop: '10px' }}
-            value={form.bio} onChange={e => setForm(p => ({ ...p, bio: e.target.value }))} placeholder="Tell us a little about yourself…" />
+          <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Bio</label>
+          <textarea 
+            className={`${inputClass} min-h-[100px] resize-y`}
+            value={form.bio} 
+            onChange={e => setForm(p => ({ ...p, bio: e.target.value }))} 
+            placeholder="Tell us a little about yourself…" 
+          />
         </div>
 
-        <h3 className="font-bold text-base pt-2" style={{ color: '#151e13' }}>Notification Preferences</h3>
-        {[
-          { key: 'notifOrderUpdates',  label: 'Order updates',        sub: 'Status changes for your orders' },
-          { key: 'notifPromotions',    label: 'Promotional offers',   sub: 'Exclusive deals and discounts'  },
-          { key: 'notifPriceChanges',  label: 'Price changes',        sub: 'When favourites drop in price'  },
-          { key: 'notifLeftoverPacks', label: 'Leftover pack alerts', sub: 'End-of-day fresh packs'         },
-        ].map(({ key, label, sub }) => (
-          <label key={key} className="flex items-center justify-between cursor-pointer py-2" style={{ borderBottom: '1px solid #f0f4f0' }}>
-            <div>
-              <p className="text-sm font-medium" style={{ color: '#151e13' }}>{label}</p>
-              <p className="text-xs" style={{ color: '#6d7a73' }}>{sub}</p>
-            </div>
-            <div onClick={() => setForm(p => ({ ...p, [key]: !p[key] }))}
-              className="relative w-11 h-6 rounded-full transition-colors cursor-pointer flex-shrink-0"
-              style={{ background: form[key] ? '#00694C' : '#BCCAC1' }}>
-              <div className="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all"
-                style={{ left: form[key] ? '22px' : '2px' }} />
-            </div>
-          </label>
-        ))}
+        <h3 className="font-bold text-lg text-[#151e13] font-['Newsreader'] pt-4 border-t border-gray-100">Notification Preferences</h3>
+        <div className="space-y-1">
+          {[
+            { key: 'notifOrderUpdates',  label: 'Order updates',        sub: 'Status changes for your orders' },
+            { key: 'notifPromotions',    label: 'Promotional offers',   sub: 'Exclusive deals and discounts'  },
+            { key: 'notifPriceChanges',  label: 'Price changes',        sub: 'When favourites drop in price'  },
+            { key: 'notifLeftoverPacks', label: 'Leftover pack alerts', sub: 'End-of-day fresh packs'         },
+          ].map(({ key, label, sub }) => (
+            <label key={key} className="flex items-center justify-between cursor-pointer py-3 border-b border-gray-50 last:border-0 group">
+              <div>
+                <p className="text-sm font-semibold text-gray-800 group-hover:text-[#00694C] transition-colors">{label}</p>
+                <p className="text-xs text-gray-500 mt-0.5">{sub}</p>
+              </div>
+              <div 
+                onClick={() => setForm(p => ({ ...p, [key]: !p[key] }))}
+                className={`relative w-12 h-6.5 rounded-full transition-colors cursor-pointer flex-shrink-0 ${form[key] ? 'bg-[#00694C]' : 'bg-gray-300'}`}
+              >
+                <div 
+                  className={`absolute top-[3px] w-5 h-5 rounded-full bg-white shadow-sm transition-all duration-300 ${form[key] ? 'left-[22px]' : 'left-[3px]'}`} 
+                />
+              </div>
+            </label>
+          ))}
+        </div>
 
-        <button type="submit" disabled={saving} className="cursor-pointer w-full py-3 rounded-xl font-bold text-white text-sm"
-          style={{ background: saved ? '#085041' : '#00694C', marginTop: '8px' }}>
-          {saving ? 'Saving…' : saved ? '✓ Saved!' : 'Save Changes'}
+        <button 
+          type="submit" 
+          disabled={saving} 
+          className={`w-full py-3.5 rounded-xl font-bold text-white text-sm transition-all mt-4 ${
+            saved 
+              ? 'bg-[#085041] shadow-md shadow-[#085041]/20' 
+              : saving 
+                ? 'bg-[#00694C]/70 cursor-not-allowed' 
+                : 'bg-[#00694C] hover:bg-[#085041] shadow-md shadow-[#00694C]/20 hover:-translate-y-0.5'
+          }`}
+        >
+          {saving ? 'Saving…' : saved ? '✓ Saved Successfully!' : 'Save Changes'}
         </button>
       </form>
 
       {/* Change password */}
-      <form onSubmit={changePassword} className="p-6 rounded-2xl space-y-4" style={{ background: '#fff', border: '1px solid #eaeaea' }}>
-        <h3 className="font-bold text-base" style={{ color: '#151e13' }}>Change Password</h3>
-        {passError && <p className="text-sm p-3 rounded-lg" style={{ background: '#FFF0F0', color: '#BA1A1A' }}>{passError}</p>}
-        <div>
-          <label className="block text-[11px] font-bold uppercase tracking-widest mb-1.5" style={{ color: '#6d7a73' }}>Current Password</label>
-          <input type="password" style={inputCls} value={passForm.oldPassword}
-            onChange={e => setPassForm(p => ({ ...p, oldPassword: e.target.value }))} placeholder="••••••••" />
+      <form onSubmit={changePassword} className="p-6 rounded-2xl space-y-5 bg-white border border-gray-100 shadow-sm">
+        <h3 className="font-bold text-lg text-[#151e13] font-['Newsreader']">Change Password</h3>
+        
+        {passError && (
+          <div className="p-3.5 rounded-xl bg-red-50 text-red-600 text-sm flex items-center gap-2 font-medium">
+            <span className="material-symbols-outlined text-[18px]">error</span>
+            {passError}
+          </div>
+        )}
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Current Password</label>
+            <input type="password" className={inputClass} value={passForm.oldPassword}
+              onChange={e => setPassForm(p => ({ ...p, oldPassword: e.target.value }))} placeholder="••••••••" />
+          </div>
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">New Password</label>
+            <input type="password" className={inputClass} value={passForm.newPassword}
+              onChange={e => setPassForm(p => ({ ...p, newPassword: e.target.value }))} placeholder="Min. 8 characters" />
+          </div>
         </div>
-        <div>
-          <label className="block text-[11px] font-bold uppercase tracking-widest mb-1.5" style={{ color: '#6d7a73' }}>New Password</label>
-          <input type="password" style={inputCls} value={passForm.newPassword}
-            onChange={e => setPassForm(p => ({ ...p, newPassword: e.target.value }))} placeholder="Min. 8 characters" />
-        </div>
-        <button type="submit" className="cursor-pointer px-6 py-2.5 rounded-xl font-bold text-sm"
-          style={{ background: passSaved ? '#085041' : '#151e13', color: 'white' }}>
-          {passSaved ? '✓ Changed!' : 'Update Password'}
+        
+        <button 
+          type="submit" 
+          className={`px-8 py-3.5 rounded-xl font-bold text-white text-sm transition-all ${
+            passSaved 
+              ? 'bg-[#085041] shadow-md shadow-[#085041]/20' 
+              : 'bg-[#151e13] hover:bg-black shadow-md hover:-translate-y-0.5'
+          }`}
+        >
+          {passSaved ? '✓ Password Changed!' : 'Update Password'}
         </button>
       </form>
     </div>

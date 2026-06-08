@@ -15,7 +15,10 @@ async function serverFetch(path) {
   if (!token) return null
 
   try {
-    const res = await fetch(API_BASE + path, {
+    const separator = path.includes('?') ? '&' : '?'
+    const fetchPath = `${path}${separator}t=${Date.now()}`
+    
+    const res = await fetch(API_BASE + fetchPath, {
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       cache: 'no-store', // always fresh — profile data changes often
     })

@@ -101,7 +101,14 @@ class RegisterSerializer(serializers.ModelSerializer):
 # ─── User — read ──────────────────────────────────────────────────────────────
 
 class UserProfileSerializer(serializers.ModelSerializer):
-    resolvedAvatar    = serializers.CharField(source='resolved_avatar', read_only=True)
+    resolvedAvatar    = serializers.SerializerMethodField()
+
+    def get_resolvedAvatar(self, obj):
+        request = self.context.get('request')
+        url = obj.resolved_avatar
+        if url and request and not url.startswith('http'):
+            return request.build_absolute_uri(url)
+        return url
     notifOrderUpdates = serializers.BooleanField(source='notif_order_updates')
     notifPromotions   = serializers.BooleanField(source='notif_promotions')
     notifPriceChanges = serializers.BooleanField(source='notif_price_changes')
@@ -155,11 +162,17 @@ class ProfileUpdateSerializer(serializers.Serializer):
     notifLeftoverPacks = serializers.BooleanField(required=False)
 
     def update(self, user, validated_data):
-        if 'firstName' in validated_data:
-            user.first_name = validated_data['firstName']
-        if 'lastName' in validated_data:
-            user.last_name = validated_data['lastName']
-        user.save(update_fields=['first_name', 'last_name'])
+        if 'firstName' in validated_data or 'lastName' in validated_data:
+            current_name = getattr(user, 'name', '') or ''
+            parts = current_name.split(' ', 1)
+            current_first = parts[0] if parts else ''
+            current_last = parts[1] if len(parts) > 1 else ''
+            
+            first_name = validated_data.get('firstName', current_first)
+            last_name  = validated_data.get('lastName', current_last)
+            
+            user.name = f"{first_name} {last_name}".strip()
+            user.save(update_fields=['name'])
 
         profile, _ = UserProfile.objects.get_or_create(user=user)
         profile_fields = []   # ← শুধু changed fields track করো

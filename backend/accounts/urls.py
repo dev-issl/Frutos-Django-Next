@@ -23,10 +23,11 @@ urlpatterns = [
 
     # ── Notifications ─────────────────────────────────────────────────────────
     # IMPORTANT: specific paths MUST come before <int:pk> — Django matches top-down
-    path('notifications/',               views.NotificationListView.as_view(),   name='notif-list'),
+    path('notifications/',               views.NotificationListView.as_view(),    name='notif-list'),
     path('notifications/mark-read/',     views.NotificationMarkReadView.as_view(), name='notif-mark-read'),
-    path('notifications/unread-count/',  views.UnreadCountView.as_view(),         name='notif-unread-count'),
-    path('notifications/<int:pk>/',      views.NotificationDeleteView.as_view(),  name='notif-delete'),
+    path('notifications/unread-count/',  views.UnreadCountView.as_view(),          name='notif-unread-count'),
+    path('notifications/stream/',        views.notification_stream,                name='notif-stream'),
+    path('notifications/<int:pk>/',      views.NotificationDeleteView.as_view(),   name='notif-delete'),
 
 
 

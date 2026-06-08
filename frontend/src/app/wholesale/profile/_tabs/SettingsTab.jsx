@@ -19,14 +19,12 @@ export default function SettingsTab({ profile, editForm, onChange, onSave, savin
 
         {/* Volume select */}
         <div>
-          <label style={{ display: 'block', fontSize: 11.5, fontWeight: 600, color: '#6D7A73', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          <label className="block text-[11px] font-bold uppercase tracking-widest text-gray-500 mb-2">
             Monthly Volume
           </label>
-          <select name="monthly_volume" value={editForm.monthly_volume} onChange={onChange} style={{
-            width: '100%', boxSizing: 'border-box', padding: '9px 12px',
-            borderRadius: 10, border: '1.5px solid #C8D5CC', background: 'white',
-            fontSize: 13.5, color: '#151E13', outline: 'none', fontFamily: 'inherit',
-          }}>
+          <select name="monthly_volume" value={editForm.monthly_volume} onChange={onChange} 
+            className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50/50 text-[#151e13] focus:border-[#00694C] focus:ring-1 focus:ring-[#00694C] outline-none transition-all text-sm appearance-none cursor-pointer"
+          >
             <option value="400_1000">€400 – €1,000 / month</option>
             <option value="1000_3000">€1,000 – €3,000 / month</option>
             <option value="3000_7000">€3,000 – €7,000 / month</option>
@@ -36,23 +34,27 @@ export default function SettingsTab({ profile, editForm, onChange, onSave, savin
       </div>
 
       {success && (
-        <div style={{ background: '#D1FAE5', borderRadius: 10, padding: '10px 14px', marginTop: 16, fontSize: 13, color: '#065F46', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></svg>
+        <div className="mt-4 p-3.5 rounded-xl bg-emerald-50 text-emerald-700 text-sm flex items-center gap-2 font-medium">
+          <span className="material-symbols-outlined text-[18px]">check_circle</span>
           Profile updated successfully.
         </div>
       )}
       {error && (
-        <div style={{ background: '#FEE2E2', borderRadius: 10, padding: '10px 14px', marginTop: 16, fontSize: 13, color: '#991B1B' }}>
+        <div className="mt-4 p-3.5 rounded-xl bg-red-50 text-red-600 text-sm flex items-center gap-2 font-medium">
+          <span className="material-symbols-outlined text-[18px]">error</span>
           {error}
         </div>
       )}
 
-      <button onClick={onSave} disabled={saving} style={{
-        marginTop: 20, padding: '11px 24px', background: '#00694C', color: 'white',
-        border: 'none', borderRadius: 10, fontSize: 13.5, fontWeight: 700,
-        cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
-        opacity: saving ? 0.65 : 1,
-      }}>
+      <button 
+        onClick={onSave} 
+        disabled={saving} 
+        className={`mt-6 w-full md:w-auto px-8 py-3.5 rounded-xl font-bold text-white text-sm transition-all ${
+          saving 
+            ? 'bg-[#00694C]/70 cursor-not-allowed' 
+            : 'bg-[#00694C] hover:bg-[#085041] shadow-md shadow-[#00694C]/20 hover:-translate-y-0.5'
+        }`}
+      >
         {saving ? 'Saving…' : 'Save Changes'}
       </button>
     </Card>

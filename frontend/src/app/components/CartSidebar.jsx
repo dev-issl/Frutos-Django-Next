@@ -295,7 +295,7 @@ export default function CartSidebar() {
         <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
           {items.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full gap-4 text-center py-16">
-              <span className="material-symbols-outlined text-5xl text-[#bccac1]">shopping_basket</span>
+              <span className="material-symbols-outlined text-4xl text-[#bccac1]">shopping_basket</span>
               <p className="text-xl italic text-[#6d7a73]" style={{ fontFamily: '"Newsreader", Georgia, serif' }}>
                 Your basket is empty
               </p>

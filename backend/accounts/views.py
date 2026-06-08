@@ -166,7 +166,7 @@ class UserOrderHistoryView(generics.ListAPIView):
             Order.objects
             .filter(user=request.user)
             .prefetch_related('items__product')
-            .order_by('-created_at')
+            .order_by('-ordered_at')
         )
         serializer = OrderReadSerializer(orders, many=True, context={'request': request})
         return Response(serializer.data)
@@ -229,7 +229,76 @@ class UnreadCountView(APIView):
     def get(self, request):
         count = Notification.objects.filter(user=request.user, is_read=False).count()
         return Response({'unreadCount': count})
-    
+
+
+# ─── Notifications — Server-Sent Events (real-time push) ─────────────────────
+
+import json as _json
+import time as _time
+from django.http import StreamingHttpResponse
+from django.views.decorators.http import require_GET
+from django.views.decorators.csrf import csrf_exempt
+
+@csrf_exempt
+@require_GET
+def notification_stream(request):
+    """
+    GET /api/auth/notifications/stream/?token=<access_token>
+    Plain Django view (not DRF) — avoids 406 from content negotiation.
+    JWT accepted as query-param; EventSource cannot send custom headers.
+    """
+    from rest_framework_simplejwt.tokens import AccessToken
+    from django.http import HttpResponse as _HR
+
+    token_str = request.GET.get('token', '')
+    try:
+        tok  = AccessToken(token_str)
+        User = get_user_model()
+        user = User.objects.get(pk=tok['user_id'])
+    except Exception:
+        return _HR('Unauthorized', status=401)
+
+    def event_stream():
+        sent_ids = set(
+            Notification.objects.filter(user=user)
+            .values_list('id', flat=True)
+        )
+        tick = 0
+        while True:
+            new_notifs = (
+                Notification.objects
+                .filter(user=user)
+                .exclude(id__in=sent_ids)
+                .order_by('id')
+            )
+            for n in new_notifs:
+                sent_ids.add(n.id)
+                payload = {
+                    'id':         n.id,
+                    'type':       n.type,
+                    'title':      n.title,
+                    'message':    n.message,
+                    'isRead':     n.is_read,
+                    'icon':       n.icon,
+                    'metadata':   n.metadata,
+                    'created_at': n.created_at.isoformat(),
+                }
+                yield f"data: {_json.dumps(payload, ensure_ascii=True)}\n\n"
+
+            tick += 1
+            if tick % 5 == 0:
+                yield ": heartbeat\n\n"
+            _time.sleep(1)
+
+    resp = StreamingHttpResponse(event_stream(), content_type='text/event-stream; charset=utf-8')
+    resp['Cache-Control']     = 'no-cache'
+    resp['X-Accel-Buffering'] = 'no'
+    return resp
+
+
+# Keep a dummy class alias so the URL still works if referenced elsewhere
+class NotificationStreamView:
+    pass
 
 
 import random

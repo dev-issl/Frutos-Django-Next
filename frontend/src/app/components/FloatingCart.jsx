@@ -41,7 +41,7 @@ export default function FloatingCart() {
           transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
         .cart-top {
-          background: transparent;
+          background: transparent; /* Parent container handles the main color */
           width: 100%;
           padding: 16px 4px 14px 4px;
           display: flex;
@@ -57,15 +57,16 @@ export default function FloatingCart() {
           height: 28px;
           fill: none;
           stroke: #ffffff;
-          stroke-width: 1.8;
+          stroke-width: 1.6;
           stroke-linecap: round;
           stroke-linejoin: round;
+          filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
         }
         .cart-badge {
           position: absolute;
           top: -6px;
           right: -8px;
-          background: #ef4444; /* Modern red */
+          background: #ef4444;
           color: white;
           border-radius: 50%;
           min-width: 20px;
@@ -77,22 +78,22 @@ export default function FloatingCart() {
           font-size: 11px;
           font-weight: 700;
           line-height: 1;
-          box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+          box-shadow: 0 2px 6px rgba(0,0,0,0.2);
           border: 2px solid var(--common-color, #00694C); /* Matches the cart background to blend seamlessly */
           font-family: system-ui, -apple-system, sans-serif;
         }
         .cart-bottom {
-          background: rgba(0, 0, 0, 0.18); /* Elegant dark overlay over the main color */
+          background: rgba(0, 0, 0, 0.15); /* Elegant translucent overlay */
           width: 100%;
           padding: 10px 4px;
           text-align: center;
-          border-top: 1px solid rgba(255, 255, 255, 0.08); /* Subtle separator */
+          border-top: 1px solid rgba(255, 255, 255, 0.1);
         }
         .cart-price-text {
           color: #ffffff;
-          font-size: 13px;
+          font-size: 14px;
           font-weight: 700;
-          letter-spacing: 0.3px;
+          letter-spacing: 0.5px;
           line-height: 1;
           font-family: system-ui, -apple-system, sans-serif;
         }
@@ -104,10 +105,10 @@ export default function FloatingCart() {
           className={`cart-container ${isBumping ? 'bump-anim' : ''}`}
           style={{
             background: 'var(--common-color, #00694C)',
-            border: '1px solid rgba(255, 255, 255, 0.12)',
+            border: '1px solid rgba(255, 255, 255, 0.15)',
             borderRadius: '12px',
             overflow: 'hidden',
-            boxShadow: '0 10px 25px -5px rgba(0,0,0,0.3), 0 8px 10px -6px rgba(0,0,0,0.1)',
+            boxShadow: '0 12px 30px -5px rgba(0,0,0,0.3), 0 8px 10px -6px rgba(0,0,0,0.1)',
             cursor: 'pointer',
             display: 'flex',
             flexDirection: 'column',
