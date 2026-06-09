@@ -995,3 +995,141 @@ class AdminSupportTicketDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def perform_update(self, serializer):
         serializer.save(responded_by=self.request.user)
+
+
+class SupportTicketReplyView(APIView):
+    """
+    POST /api/auth/tickets/<ticket_id>/reply/
+    """
+    permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    def post(self, request, ticket_id):
+        from django.shortcuts import get_object_or_404
+        from .models import SupportTicketMessage, SupportTicketMessageAttachment
+        from .serializers import SupportTicketMessageSerializer
+
+        ticket = get_object_or_404(SupportTicket, id=ticket_id, user=request.user)
+        message_text = request.data.get('message', '')
+        images = request.FILES.getlist('images')
+
+        if not message_text and not images:
+            return Response({'detail': 'Message or image is required'}, status=400)
+
+        msg = SupportTicketMessage.objects.create(
+            ticket=ticket,
+            sender=request.user,
+            message=message_text,
+        )
+        
+        for image in images:
+            SupportTicketMessageAttachment.objects.create(message=msg, file=image)
+
+        return Response(SupportTicketMessageSerializer(msg).data, status=201)
+
+
+class AdminSupportTicketReplyView(APIView):
+    """
+    POST /api/auth/admin/tickets/<ticket_id>/reply/
+    """
+    permission_classes = [permissions.IsAdminUser]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    def post(self, request, ticket_id):
+        from django.shortcuts import get_object_or_404
+        from .models import SupportTicketMessage, SupportTicketMessageAttachment
+        from .serializers import SupportTicketMessageSerializer
+
+        ticket = get_object_or_404(SupportTicket, id=ticket_id)
+        message_text = request.data.get('message', '')
+        images = request.FILES.getlist('images')
+
+        if not message_text and not images:
+            return Response({'detail': 'Message or image is required'}, status=400)
+
+        msg = SupportTicketMessage.objects.create(
+            ticket=ticket,
+            sender=request.user,
+            message=message_text,
+        )
+
+        for image in images:
+            SupportTicketMessageAttachment.objects.create(message=msg, file=image)
+        
+        # Optionally update ticket status
+        new_status = request.data.get('status')
+        if new_status and new_status in dict(SupportTicket.STATUS_CHOICES):
+            ticket.status = new_status
+            ticket.responded_by = request.user
+            ticket.save(update_fields=['status', 'responded_by', 'updated_at'])
+
+        return Response(SupportTicketMessageSerializer(msg).data, status=201)
+
+class SupportTicketMessageDetailView(APIView):
+    """
+    PATCH /api/auth/tickets/<ticket_id>/messages/<msg_id>/
+    DELETE /api/auth/tickets/<ticket_id>/messages/<msg_id>/
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def patch(self, request, ticket_id, msg_id):
+        from django.shortcuts import get_object_or_404
+        from .models import SupportTicketMessage
+        from .serializers import SupportTicketMessageSerializer
+
+        msg = get_object_or_404(SupportTicketMessage, id=msg_id, ticket_id=ticket_id, sender=request.user)
+        message_text = request.data.get('message')
+        if not message_text:
+            return Response({'detail': 'Message text is required.'}, status=400)
+
+        msg.message = message_text
+        msg.is_edited = True
+        msg.save(update_fields=['message', 'is_edited'])
+
+        return Response(SupportTicketMessageSerializer(msg).data)
+
+    def delete(self, request, ticket_id, msg_id):
+        from django.shortcuts import get_object_or_404
+        from .models import SupportTicketMessage
+        from .serializers import SupportTicketMessageSerializer
+
+        msg = get_object_or_404(SupportTicketMessage, id=msg_id, ticket_id=ticket_id, sender=request.user)
+        msg.is_deleted = True
+        msg.save(update_fields=['is_deleted'])
+
+        return Response(SupportTicketMessageSerializer(msg).data)
+
+
+class AdminSupportTicketMessageDetailView(APIView):
+    """
+    PATCH /api/auth/admin/tickets/<ticket_id>/messages/<msg_id>/
+    DELETE /api/auth/admin/tickets/<ticket_id>/messages/<msg_id>/
+    """
+    permission_classes = [permissions.IsAdminUser]
+
+    def patch(self, request, ticket_id, msg_id):
+        from django.shortcuts import get_object_or_404
+        from .models import SupportTicketMessage
+        from .serializers import SupportTicketMessageSerializer
+
+        msg = get_object_or_404(SupportTicketMessage, id=msg_id, ticket_id=ticket_id, sender=request.user)
+        message_text = request.data.get('message')
+        if not message_text:
+            return Response({'detail': 'Message text is required.'}, status=400)
+
+        msg.message = message_text
+        msg.is_edited = True
+        msg.save(update_fields=['message', 'is_edited'])
+
+        return Response(SupportTicketMessageSerializer(msg).data)
+
+    def delete(self, request, ticket_id, msg_id):
+        from django.shortcuts import get_object_or_404
+        from .models import SupportTicketMessage
+        from .serializers import SupportTicketMessageSerializer
+
+        msg = get_object_or_404(SupportTicketMessage, id=msg_id, ticket_id=ticket_id, sender=request.user)
+        msg.is_deleted = True
+        msg.save(update_fields=['is_deleted'])
+
+        return Response(SupportTicketMessageSerializer(msg).data)

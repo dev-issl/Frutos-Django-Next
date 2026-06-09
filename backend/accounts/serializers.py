@@ -255,23 +255,49 @@ class ChangePasswordSerializer(serializers.Serializer):
 
 # ─── Support Ticket ───────────────────────────────────────────────────────────
 
-from .models import SupportTicket, SupportTicketImage
+from .models import SupportTicket, SupportTicketImage, SupportTicketMessage, SupportTicketMessageAttachment
 
 class SupportTicketImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = SupportTicketImage
         fields = ['id', 'image', 'created_at']
 
+class SupportTicketMessageAttachmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SupportTicketMessageAttachment
+        fields = ['id', 'file', 'created_at']
+
+class SupportTicketMessageSerializer(serializers.ModelSerializer):
+    senderName = serializers.CharField(source='sender.name', read_only=True)
+    senderEmail = serializers.CharField(source='sender.email', read_only=True)
+    isAdmin = serializers.SerializerMethodField()
+    attachments = SupportTicketMessageAttachmentSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = SupportTicketMessage
+        fields = ['id', 'senderName', 'senderEmail', 'isAdmin', 'message', 'attachments', 'is_edited', 'is_deleted', 'created_at']
+        
+    def get_isAdmin(self, obj):
+        return obj.sender.is_staff or obj.sender.is_superuser
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        if ret.get('is_deleted'):
+            ret['message'] = ''
+            ret['attachments'] = []
+        return ret
+
 
 class SupportTicketSerializer(serializers.ModelSerializer):
     userName = serializers.CharField(source='user.name', read_only=True)
     userEmail = serializers.CharField(source='user.email', read_only=True)
     images = SupportTicketImageSerializer(many=True, read_only=True)
+    messages = SupportTicketMessageSerializer(many=True, read_only=True)
 
     class Meta:
         model = SupportTicket
         fields = [
-            'id', 'subject', 'description', 'images', 'category', 'priority',
+            'id', 'subject', 'description', 'images', 'messages', 'category', 'priority',
             'status', 'admin_response', 'created_at', 'updated_at',
             'userName', 'userEmail'
         ]

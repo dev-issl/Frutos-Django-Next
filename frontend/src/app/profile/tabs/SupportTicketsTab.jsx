@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Plus, X, Upload, MessageSquare, Clock, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react'
+import { Plus, X, Upload, MessageSquare, Clock, CheckCircle2, AlertCircle, Loader2, ArrowLeft, Send, MoreVertical } from 'lucide-react'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'
 
@@ -21,6 +21,34 @@ const PRIORITY_CHOICES = [
   { value: 'URGENT', label: 'Urgent' },
 ]
 
+const formatMessageTime = (dateString) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  const now = new Date();
+  
+  const isToday = date.getDate() === now.getDate() && date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+  
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const isYesterday = date.getDate() === yesterday.getDate() && date.getMonth() === yesterday.getMonth() && date.getFullYear() === yesterday.getFullYear();
+
+  const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  if (isToday) {
+    return `Today at ${timeStr}`;
+  } else if (isYesterday) {
+    return `Yesterday at ${timeStr}`;
+  } else {
+    const diffTime = Math.abs(now - date);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+    if (diffDays <= 7) {
+      const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      return `${days[date.getDay()]} at ${timeStr}`;
+    }
+    return `${date.toLocaleDateString([], { month: 'short', day: 'numeric', year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined })} at ${timeStr}`;
+  }
+};
+
 export default function SupportTicketsTab({ authFetch }) {
   const [tickets, setTickets] = useState([])
   const [loading, setLoading] = useState(true)
@@ -28,6 +56,9 @@ export default function SupportTicketsTab({ authFetch }) {
   
   const [showForm, setShowForm] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  
+  // Selected ticket for chat
+  const [selectedTicketId, setSelectedTicketId] = useState(null)
   
   // Form state
   const [subject, setSubject] = useState('')
@@ -53,9 +84,23 @@ export default function SupportTicketsTab({ authFetch }) {
     }
   }, [authFetch])
 
+  // Polling for updates if a ticket is selected
   useEffect(() => {
     fetchTickets()
-  }, [fetchTickets])
+    
+    // Poll every 5 seconds if a ticket is selected to get new messages instantly
+    let interval;
+    if (selectedTicketId) {
+      interval = setInterval(() => {
+        authFetch(`${API_BASE}/auth/tickets/`).then(res => res.json()).then(data => {
+          setTickets(Array.isArray(data) ? data : (data.results || []))
+        }).catch(() => {})
+      }, 5000)
+    }
+    return () => {
+      if (interval) clearInterval(interval)
+    }
+  }, [fetchTickets, selectedTicketId, authFetch])
 
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files)
@@ -74,7 +119,6 @@ export default function SupportTicketsTab({ authFetch }) {
   const removeImage = (index) => {
     setImageFiles(prev => prev.filter((_, i) => i !== index))
     setImagePreviews(prev => prev.filter((_, i) => i !== index))
-    // Note: We don't clear the input value so user can re-upload if they want
   }
 
   const handleSubmit = async (e) => {
@@ -152,6 +196,10 @@ export default function SupportTicketsTab({ authFetch }) {
       </div>
     )
   }
+
+  const selectedTicket = tickets.find(t => t.id === selectedTicketId)
+
+  // -- Chat Interface will be rendered as a modal at the bottom --
 
   return (
     <div className="space-y-6">
@@ -301,7 +349,11 @@ export default function SupportTicketsTab({ authFetch }) {
       {!showForm && tickets.length > 0 && (
         <div className="space-y-4">
           {tickets.map(ticket => (
-            <div key={ticket.id} className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:border-[#00694C]/30 transition-colors">
+            <div 
+              key={ticket.id} 
+              onClick={() => setSelectedTicketId(ticket.id)}
+              className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:border-[#00694C]/50 transition-colors cursor-pointer shadow-sm hover:shadow"
+            >
               <div className="p-5">
                 <div className="flex flex-wrap gap-2 justify-between items-start mb-3">
                   <div className="flex items-center gap-2">
@@ -320,43 +372,394 @@ export default function SupportTicketsTab({ authFetch }) {
                   </span>
                 </div>
                 
-                <h4 className="text-base font-semibold text-gray-900 mb-2">{ticket.subject}</h4>
-                <p className="text-sm text-gray-600 whitespace-pre-wrap mb-4 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                <h4 className="text-base font-semibold text-gray-900 mb-1">{ticket.subject}</h4>
+                <p className="text-sm text-gray-500 truncate max-w-3xl">
                   {ticket.description}
                 </p>
-
-                {ticket.images && ticket.images.length > 0 && (
-                  <div className="mb-4">
-                    <p className="text-xs font-medium text-gray-500 uppercase mb-2 tracking-wider">Attachments</p>
-                    <div className="flex flex-wrap gap-2">
-                      {ticket.images.map(imgObj => (
-                        <a key={imgObj.id} href={imgObj.image} target="_blank" rel="noopener noreferrer" className="relative group block overflow-hidden rounded-lg border border-gray-200 shrink-0">
-                          <img src={imgObj.image} alt="Ticket attachment" className="h-20 w-auto object-cover" />
-                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                            <span className="text-xs text-white font-medium">View Full</span>
-                          </div>
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {ticket.admin_response && (
-                  <div className="mt-4 border-t border-gray-100 pt-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-6 h-6 bg-[#00694C]/10 rounded-full flex items-center justify-center">
-                        <span className="material-symbols-outlined text-[14px] text-[#00694C]">support_agent</span>
-                      </div>
-                      <span className="text-sm font-medium text-gray-900">Admin Response</span>
-                    </div>
-                    <p className="text-sm text-gray-700 whitespace-pre-wrap bg-blue-50/50 border border-blue-100/50 p-3 rounded-lg">
-                      {ticket.admin_response}
-                    </p>
-                  </div>
+                
+                {/* Unread indicator or last message info could go here */}
+                {ticket.messages && ticket.messages.length > 0 && (
+                  <p className="text-xs text-gray-400 mt-3 flex items-center gap-1">
+                    <MessageSquare className="w-3.5 h-3.5" />
+                    {ticket.messages.length} replies
+                  </p>
                 )}
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Chat Modal */}
+      {selectedTicket && (
+        <TicketChat 
+          ticket={selectedTicket} 
+          authFetch={authFetch} 
+          onBack={() => setSelectedTicketId(null)} 
+          getStatusBadge={getStatusBadge}
+          getStatusIcon={getStatusIcon}
+        />
+      )}
+    </div>
+  )
+}
+
+function TicketChat({ ticket, authFetch, onBack, getStatusBadge, getStatusIcon }) {
+  const [replyText, setReplyText] = useState('')
+  const [replyImages, setReplyImages] = useState([])
+  const [replyImagePreviews, setReplyImagePreviews] = useState([])
+  const [sending, setSending] = useState(false)
+  
+  const [editingMessageId, setEditingMessageId] = useState(null)
+  const [editingMessageText, setEditingMessageText] = useState('')
+  const [openMenuId, setOpenMenuId] = useState(null)
+  const [deleteModalId, setDeleteModalId] = useState(null)
+
+  const fileRef = useRef(null)
+  const messagesEndRef = useRef(null)
+
+  // Scroll to bottom whenever ticket messages change
+  const messagesCount = ticket.messages?.length || 0;
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [messagesCount])
+
+  const handleImageChange = (e) => {
+    const files = Array.from(e.target.files || [])
+    if (files.length > 0) {
+      const validFiles = files.filter(file => file.size <= 5 * 1024 * 1024)
+      if (validFiles.length < files.length) {
+        alert("Some files were skipped because they exceed 5MB")
+      }
+      setReplyImages(prev => [...prev, ...validFiles])
+      
+      const newPreviews = validFiles.map(file => URL.createObjectURL(file))
+      setReplyImagePreviews(prev => [...prev, ...newPreviews])
+    }
+  }
+
+  const removeImage = (indexToRemove) => {
+    setReplyImages(prev => prev.filter((_, idx) => idx !== indexToRemove))
+    setReplyImagePreviews(prev => prev.filter((_, idx) => idx !== indexToRemove))
+  }
+
+  const handleSend = async (e) => {
+    e.preventDefault()
+    if (!replyText.trim() && replyImages.length === 0) return
+
+    setSending(true)
+    try {
+      const formData = new FormData()
+      if (replyText.trim()) formData.append('message', replyText)
+      replyImages.forEach(img => {
+        formData.append('images', img)
+      })
+
+      const res = await authFetch(`${API_BASE}/auth/tickets/${ticket.id}/reply/`, {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!res.ok) {
+        throw new Error('Failed to send reply')
+      }
+
+      setReplyText('')
+      setReplyImages([])
+      setReplyImagePreviews([])
+      // The parent polling will pick up the new message shortly, or we could optimistically update
+    } catch (err) {
+      alert(err.message)
+    } finally {
+      setSending(false)
+    }
+  }
+
+  const handleDeleteMessage = async (msgId) => {
+    try {
+      const res = await authFetch(`${API_BASE}/auth/tickets/${ticket.id}/messages/${msgId}/`, {
+        method: 'DELETE',
+      })
+      if (!res.ok) throw new Error('Failed to delete message')
+      setDeleteModalId(null)
+      // Wait for next poll or could update locally
+    } catch (err) {
+      alert(err.message)
+    }
+  }
+
+  const handleEditSubmit = async (msgId) => {
+    if (!editingMessageText.trim()) return;
+    try {
+      const res = await authFetch(`${API_BASE}/auth/tickets/${ticket.id}/messages/${msgId}/`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: editingMessageText })
+      })
+      if (!res.ok) throw new Error('Failed to edit message')
+      setEditingMessageId(null)
+      setEditingMessageText('')
+    } catch (err) {
+      alert(err.message)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4" onClick={onBack}>
+      <div 
+        className="bg-white rounded-xl shadow-2xl w-full max-w-3xl h-[85vh] flex flex-col overflow-hidden" 
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Chat Header */}
+        <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-gray-50/50 shrink-0">
+          <div className="flex items-center gap-3">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${getStatusBadge(ticket.status)}`}>
+                  {getStatusIcon(ticket.status)}
+                  {ticket.status.replace('_', ' ')}
+                </span>
+                <span className="text-[10px] font-mono text-gray-400">#{ticket.id}</span>
+              </div>
+              <h3 className="font-semibold text-gray-900 text-sm">{ticket.subject}</h3>
+            </div>
+          </div>
+          <button 
+            onClick={onBack}
+            className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer shrink-0"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+      {/* Chat Messages */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50/50">
+        
+        {/* Original Ticket Description as First Message */}
+        <div className="flex flex-col items-end">
+          <div className="max-w-[85%] bg-[#00694C] text-white rounded-2xl rounded-tr-sm px-3 py-2 shadow-sm">
+            <p className="text-[14px] whitespace-pre-wrap leading-relaxed">{ticket.description}</p>
+            
+            {ticket.images && ticket.images.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {ticket.images.map(img => (
+                  <a key={img.id} href={img.image} target="_blank" rel="noopener noreferrer" className="cursor-pointer block">
+                    <img src={img.image} className="h-20 w-auto rounded border border-white/20 object-cover" alt="attachment" />
+                  </a>
+                ))}
+              </div>
+            )}
+            <div className="text-[10px] text-white/70 mt-2 text-right">
+              {new Date(ticket.created_at).toLocaleString()}
+            </div>
+          </div>
+        </div>
+
+        {/* Legacy Admin Response (if exists) */}
+        {ticket.admin_response && (
+          <div className="flex flex-col items-start">
+            <div className="flex items-end gap-2 mb-1">
+              <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center shrink-0">
+                <span className="material-symbols-outlined text-[14px] text-slate-600">support_agent</span>
+              </div>
+              <span className="text-xs text-slate-500 font-medium">Support Team</span>
+            </div>
+            <div className="max-w-[85%] bg-white border border-gray-200 text-gray-800 rounded-2xl rounded-tl-sm px-3 py-2 shadow-sm ml-8">
+              <p className="text-[14px] whitespace-pre-wrap leading-relaxed">{ticket.admin_response}</p>
+            </div>
+          </div>
+        )}
+
+        {/* New Messages Thread */}
+        {ticket.messages && ticket.messages.map(msg => {
+          const isUser = !msg.isAdmin
+          return (
+            <div key={msg.id} className={`flex flex-col ${isUser ? 'items-end' : 'items-start'}`}>
+              {!isUser && (
+                <div className="flex items-end gap-2 mb-1">
+                  <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center shrink-0">
+                    <span className="material-symbols-outlined text-[14px] text-slate-600">support_agent</span>
+                  </div>
+                  <span className="text-xs text-slate-500 font-medium">{msg.senderName || 'Support Team'}</span>
+                </div>
+              )}
+              
+              <div className="flex items-center gap-2 group/msg relative">
+                {/* 3-Dot Menu Actions (Only for user) */}
+                {isUser && !msg.is_deleted && ticket.status !== 'CLOSED' && (
+                  <div className="relative flex items-center">
+                    <button 
+                      onClick={() => setOpenMenuId(openMenuId === msg.id ? null : msg.id)}
+                      className="p-1 hover:bg-gray-100 rounded-full text-gray-400 hover:text-gray-600 transition-colors opacity-0 group-hover/msg:opacity-100 focus:opacity-100 mr-1 cursor-pointer" 
+                      title="More options"
+                    >
+                      <MoreVertical className="w-4 h-4" />
+                    </button>
+                    
+                    {openMenuId === msg.id && (
+                      <div className="absolute right-full top-0 mr-2 bg-white shadow-lg border border-gray-100 rounded-xl py-1 z-20 min-w-[120px] overflow-hidden flex flex-col">
+                        <button 
+                          onClick={() => { setEditingMessageId(msg.id); setEditingMessageText(msg.message); setOpenMenuId(null); }} 
+                          className="px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-50 transition-colors w-full cursor-pointer"
+                        >
+                          Edit
+                        </button>
+                        <div className="h-px w-full bg-gray-100"></div>
+                        <button 
+                          onClick={() => { setDeleteModalId(msg.id); setOpenMenuId(null); }} 
+                          className="px-4 py-2 text-sm text-left text-red-600 hover:bg-red-50 transition-colors w-full cursor-pointer"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div className={`max-w-[85%] flex flex-col gap-1 ${isUser ? 'items-end' : 'items-start'}`}>
+                  {(msg.message || msg.is_deleted || editingMessageId === msg.id) && (
+                    <div className={`px-3 py-2 shadow-sm relative ${
+                      isUser 
+                        ? 'bg-[#00694C] text-white rounded-2xl rounded-tr-sm' 
+                        : 'bg-white border border-gray-200 text-gray-800 rounded-2xl rounded-tl-sm ml-8'
+                    }`}>
+                      {msg.is_deleted ? (
+                        <p className="text-sm italic text-white/70">You deleted this message</p>
+                      ) : editingMessageId === msg.id ? (
+                        <div className="flex flex-col gap-2 min-w-[200px]">
+                          <textarea 
+                            value={editingMessageText}
+                            onChange={(e) => setEditingMessageText(e.target.value)}
+                            className="w-full bg-white/10 border border-white/30 rounded p-2 text-sm text-white placeholder-white/50 focus:outline-none focus:ring-1 focus:ring-white/50"
+                            rows="3"
+                          />
+                          <div className="flex justify-end gap-2">
+                            <button onClick={() => setEditingMessageId(null)} className="text-xs bg-white/20 hover:bg-white/30 px-2 py-1 rounded transition-colors cursor-pointer">Cancel</button>
+                            <button onClick={() => handleEditSubmit(msg.id)} className="text-xs bg-white text-[#00694C] font-medium hover:bg-gray-100 px-2 py-1 rounded transition-colors cursor-pointer">Save</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.message}</p>
+                      )}
+                    </div>
+                  )}
+
+                  {msg.attachments && msg.attachments.length > 0 && (
+                    <div className={`flex flex-wrap gap-2 ${!isUser && 'ml-8'} ${isUser ? 'justify-end' : 'justify-start'}`}>
+                      {msg.attachments.map((att, i) => (
+                        <a key={i} href={att.file} target="_blank" rel="noopener noreferrer" className="cursor-pointer">
+                          <img src={att.file} className="h-40 w-auto rounded-lg object-cover shadow-sm border border-gray-200 hover:opacity-90 transition-opacity" alt="attachment" />
+                        </a>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className={`flex items-center gap-1 text-[10px] mt-1 ${isUser ? 'justify-end text-gray-400' : 'justify-start text-gray-400 ml-8'}`}>
+                    {msg.is_edited && !msg.is_deleted && <span>(edited)</span>}
+                    <span>{formatMessageTime(msg.created_at)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )
+        })}
+        
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Reply Input */}
+      {ticket.status !== 'CLOSED' && (
+        <div className="p-4 bg-white border-t border-gray-100 shrink-0">
+          {replyImagePreviews.length > 0 && (
+            <div className="mb-3 flex flex-wrap gap-3">
+              {replyImagePreviews.map((preview, idx) => (
+                <div key={idx} className="relative inline-block">
+                  <img src={preview} alt={`Preview ${idx + 1}`} className="h-20 w-auto object-cover rounded-lg border border-gray-200 shadow-sm" />
+                  <button
+                    type="button"
+                    onClick={() => removeImage(idx)}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 shadow-md transition-transform hover:scale-105 cursor-pointer"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          
+          <form onSubmit={handleSend} className="flex items-end gap-2">
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              className="p-3 text-gray-400 hover:text-[#00694C] hover:bg-[#00694C]/10 rounded-xl transition-colors shrink-0 cursor-pointer"
+            >
+              <Upload className="w-5 h-5" />
+            </button>
+            <input 
+              type="file" 
+              ref={fileRef} 
+              onChange={handleImageChange} 
+              accept="image/*,.pdf,.doc,.docx" 
+              className="hidden" 
+              multiple 
+            />
+            
+            <textarea
+              value={replyText}
+              onChange={e => setReplyText(e.target.value)}
+              placeholder="Type your reply..."
+              className="flex-1 max-h-32 min-h-[44px] p-3 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00694C]/50 focus:border-[#00694C] resize-y"
+              rows={1}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault()
+                  handleSend(e)
+                }
+              }}
+            />
+            
+            <button
+              type="submit"
+              disabled={sending || (!replyText.trim() && replyImages.length === 0)}
+              className="flex items-center justify-center w-12 h-12 bg-[#0f172a] text-white rounded-xl hover:bg-slate-800 disabled:opacity-50 disabled:bg-slate-300 transition-all shrink-0 shadow-md hover:shadow-lg mb-1 cursor-pointer disabled:cursor-not-allowed"
+            >
+              {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+            </button>
+          </form>
+        </div>
+      )}
+      {ticket.status === 'CLOSED' && (
+        <div className="p-4 bg-gray-50 border-t border-gray-100 text-center text-sm text-gray-500 shrink-0">
+          This ticket has been closed. You cannot reply to a closed ticket.
+        </div>
+      )}
+      </div>
+      {/* Delete Confirmation Modal */}
+      {deleteModalId && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 p-4" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl flex flex-col items-center">
+            <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-4">
+              <AlertCircle className="w-6 h-6" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Delete Message?</h3>
+            <p className="text-gray-500 text-sm text-center mb-6">
+              This action cannot be undone. Are you sure you want to permanently delete this message?
+            </p>
+            <div className="flex gap-3 w-full">
+              <button 
+                onClick={() => setDeleteModalId(null)}
+                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-medium hover:bg-gray-50 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={() => handleDeleteMessage(deleteModalId)}
+                className="flex-1 py-2.5 rounded-xl bg-red-600 text-white font-medium hover:bg-red-700 shadow-sm transition-colors cursor-pointer"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

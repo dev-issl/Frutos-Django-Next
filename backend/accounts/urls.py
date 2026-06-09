@@ -50,8 +50,13 @@ urlpatterns = [
 
     path('dashboard/admin/', views.AdminDashboardStatsView.as_view(), name='admin-dashboard-stats'),
     
-    # ── Support Tickets ────────────────────────────────────────────────────────
-    path('tickets/', views.SupportTicketListCreateView.as_view(), name='support-tickets'),
-    path('admin/tickets/', views.AdminSupportTicketListView.as_view(), name='admin-support-tickets'),
-    path('admin/tickets/<int:pk>/', views.AdminSupportTicketDetailView.as_view(), name='admin-support-ticket-detail'),
+    # ── Support Tickets ───────────────────────────────────────────────────────
+    path('tickets/', views.SupportTicketListCreateView.as_view(), name='ticket-list-create'),
+    path('tickets/<int:ticket_id>/reply/', views.SupportTicketReplyView.as_view(), name='ticket-reply'),
+    path('tickets/<int:ticket_id>/messages/<int:msg_id>/', views.SupportTicketMessageDetailView.as_view(), name='ticket-message-detail'),
+    
+    path('admin/tickets/', views.AdminSupportTicketListView.as_view(), name='admin-ticket-list'),
+    path('admin/tickets/<int:pk>/', views.AdminSupportTicketDetailView.as_view(), name='admin-ticket-detail'),
+    path('admin/tickets/<int:ticket_id>/reply/', views.AdminSupportTicketReplyView.as_view(), name='admin-ticket-reply'),
+    path('admin/tickets/<int:ticket_id>/messages/<int:msg_id>/', views.AdminSupportTicketMessageDetailView.as_view(), name='admin-ticket-message-detail'),
 ]

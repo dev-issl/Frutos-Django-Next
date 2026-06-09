@@ -71,6 +71,7 @@ class Notification(models.Model):
         ('promo',         'Promotional Offer'),
         ('price_change',  'Price Change'),
         ('leftover_pack', 'Leftover Pack Available'),
+        ('ticket_reply',  'Support Ticket Reply'),
     ]
 
     user       = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='notifications')
@@ -98,6 +99,7 @@ class Notification(models.Model):
             'promo':         'local_offer',
             'price_change':  'trending_down',
             'leftover_pack': 'inventory_2',
+            'ticket_reply':  'support_agent',
         }.get(self.type, 'notifications')
 
 
@@ -189,3 +191,43 @@ class SupportTicketImage(models.Model):
     class Meta:
         app_label = 'accounts'
         ordering = ['created_at']
+
+
+class SupportTicketMessage(models.Model):
+    ticket = models.ForeignKey(SupportTicket, related_name='messages', on_delete=models.CASCADE)
+    sender = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='ticket_messages', on_delete=models.CASCADE)
+    message = models.TextField(blank=True)
+    is_edited = models.BooleanField(default=False)
+    is_deleted = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        app_label = 'accounts'
+        ordering = ['created_at']
+
+class SupportTicketMessageAttachment(models.Model):
+    message = models.ForeignKey(SupportTicketMessage, related_name='attachments', on_delete=models.CASCADE)
+    file = models.FileField(upload_to='support_tickets/message_attachments/')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        app_label = 'accounts'
+        ordering = ['created_at']
+
+
+@receiver(post_save, sender=SupportTicketMessage)
+def notify_on_ticket_message(sender, instance, created, **kwargs):
+    if created:
+        ticket = instance.ticket
+        # If the sender is an admin (or not the ticket owner), notify the user
+        if instance.sender != ticket.user:
+            Notification.objects.create(
+                user=ticket.user,
+                type='ticket_reply',
+                title=f'New reply on Ticket #{ticket.id}',
+                message=f'You received a new response regarding: {ticket.subject}',
+                metadata={'ticket_id': ticket.id, 'icon': 'support_agent'}
+            )
+        else:
+            # We update the ticket's updated_at timestamp when a user replies so admins see it's active
+            ticket.save(update_fields=['updated_at'])
