@@ -396,3 +396,156 @@ class SiteSettings(BaseModel):
             except ValueError:
                 return 0
         return self.value
+
+
+class HomePageContent(models.Model):
+    """Singleton model for the public Home Page content"""
+    def default_hero():
+        return {
+            'mobile_heading': 'Freshness from the Orchard to Your Table.',
+            'desktop_heading': 'Fresh from the market, delivered to your door.',
+            'desktop_subtext': 'Experience the finest seasonal harvests, sourced directly from trusted local farms. We bring nature’s best right to your kitchen, ensuring quality and sustainability in every bite.',
+            'primary_cta_text': 'Shop the Harvest',
+            'primary_cta_href': '/products',
+            'secondary_cta_text': 'Learn more',
+            'secondary_cta_href': '/about'
+        }
+
+    def default_how_it_works():
+        return {
+            'heading': 'How it works'
+        }
+
+    def default_steps():
+        return [
+            {
+                'id': 1,
+                'icon_key': 'select',
+                'title': 'Select Your Favorites',
+                'desc': 'Browse our curated selection of seasonal produce, dairy, and pantry staples.'
+            },
+            {
+                'id': 2,
+                'icon_key': 'local',
+                'title': 'Sourced Locally',
+                'desc': 'We partner directly with farmers to ensure peak freshness and fair prices.'
+            },
+            {
+                'id': 3,
+                'icon_key': 'delivery',
+                'title': 'Delivered to You',
+                'desc': 'Enjoy convenient, eco-friendly delivery straight to your doorstep.'
+            },
+            {
+                'id': 4,
+                'icon_key': 'enjoy',
+                'title': 'Enjoy the Harvest',
+                'desc': 'Cook, share, and savor the exceptional taste of farm-fresh food.'
+            }
+        ]
+
+    def default_leftover_banner():
+        return {
+            'heading': 'Help Us Reduce Food Waste!',
+            'description': 'Grab our \'Leftover Pack\'—a surprise bundle of perfectly good, delicious produce that might otherwise go to waste. Save money and the planet!',
+            'cta_text': 'Get a Leftover Pack',
+            'cta_href': '/products'
+        }
+
+    hero_section = models.JSONField(default=default_hero, blank=True)
+    how_it_works = models.JSONField(default=default_how_it_works, blank=True)
+    steps = models.JSONField(default=default_steps, blank=True)
+    leftover_banner = models.JSONField(default=default_leftover_banner, blank=True)
+    
+    hero_image_desktop = models.ImageField(upload_to='homepage/hero/', blank=True, null=True)
+    hero_image_mobile = models.ImageField(upload_to='homepage/hero/', blank=True, null=True)
+    leftover_banner_image = models.ImageField(upload_to='homepage/leftover/', blank=True, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return "Home Page Content"
+
+    def save(self, *args, **kwargs):
+        # Ensure only one instance exists
+        if not self.pk and HomePageContent.objects.exists():
+            return HomePageContent.objects.first()
+        return super().save(*args, **kwargs)
+
+
+class AboutPageContent(BaseModel):
+    """Singleton model for the About Us page content"""
+    # The default data structures map to the frontend FALLBACK data
+    
+    def default_hero():
+        return {
+            'badge': 'Our story',
+            'title': 'Rooted in quality,<br /><em style="font-style: italic; color: #00694c">growing for the future.</em>',
+            'image_url': ''
+        }
+    
+    def default_stats():
+        return [
+            {'value': '6+', 'label': 'Years of service'},
+            {'value': '40+', 'label': 'Local farm partners'},
+            {'value': '8', 'label': 'Store locations'},
+            {'value': '98%', 'label': 'Customer satisfaction'},
+        ]
+        
+    def default_values():
+        return [
+            {'icon_name': 'Leaf', 'title': 'Rooted in sustainability', 'body': 'Every product we source follows strict environmental criteria.'},
+            {'icon_name': 'Users', 'title': 'Community first', 'body': 'We believe in fair prices for farmers and fair prices for customers.'},
+            {'icon_name': 'Award', 'title': 'Uncompromising quality', 'body': 'From harvest to doorstep in under 48 hours.'},
+            {'icon_name': 'MapPin', 'title': 'Transparent provenance', 'body': 'Every product carries a story — the farm, the region, the farmer.'},
+        ]
+        
+    def default_milestones():
+        return [
+            {'year': '2018', 'event': 'Founded in Madrid with three farm partners and a single market stall.'},
+            {'year': '2019', 'event': 'Opened our first physical store in Chamberí; launched home delivery across Madrid.'},
+            {'year': '2021', 'event': 'Expanded to Barcelona and Sevilla; introduced the Leftover Pack programme.'},
+            {'year': '2023', 'event': 'Reached 40 partner farms across Spain; launched the El Árbol digital platform.'},
+            {'year': '2024', 'event': '8 store locations, 50,000+ happy customers, and still growing.'},
+        ]
+        
+    def default_farm_partners():
+        return [
+            {'name': 'Hacienda del Sol', 'region': 'Almería', 'specialty': 'Heirloom tomatoes & peppers'},
+            {'name': 'Finca La Paloma', 'region': 'Huelva', 'specialty': 'Strawberries & stone fruit'},
+            {'name': 'Rancho Verde', 'region': 'Murcia', 'specialty': 'Avocados & citrus'},
+            {'name': 'Serra dei Fiori', 'region': 'Liguria', 'specialty': 'Fresh herbs & greens'},
+            {'name': 'Huerta La Vega', 'region': 'Murcia', 'specialty': 'Spinach & root vegetables'},
+            {'name': 'Les Herbes du Midi', 'region': 'Provence', 'specialty': 'Wild-harvested herbs'},
+        ]
+        
+    def default_team():
+        return [
+            {'name': 'Sofía Martínez', 'role': 'Co-founder & CEO', 'initials': 'SM', 'origin': 'Madrid'},
+            {'name': 'Lucas Ferreira', 'role': 'Co-founder & Head of Sourcing', 'initials': 'LF', 'origin': 'Porto'},
+            {'name': 'Ana Delgado', 'role': 'Head of Operations', 'initials': 'AD', 'origin': 'Sevilla'},
+            {'name': 'Tomás Ruiz', 'role': 'Head of Technology', 'initials': 'TR', 'origin': 'Barcelona'},
+        ]
+
+    stats = models.JSONField(default=default_stats, help_text="List of stats objects {value, label}")
+    values = models.JSONField(default=default_values, help_text="List of value objects {icon_name, title, body}")
+    milestones = models.JSONField(default=default_milestones, help_text="List of timeline milestone objects {year, event}")
+    farm_partners = models.JSONField(default=default_farm_partners, help_text="List of farm partners {name, region, specialty}")
+    team = models.JSONField(default=default_team, help_text="List of team members {name, role, initials, origin}")
+    hero_section = models.JSONField(default=default_hero, help_text="Hero section data {badge, title, image_url}")
+    hero_image = models.ImageField(upload_to='about/', null=True, blank=True, help_text="Upload image for hero section (overrides image_url in JSON)")
+
+    class Meta:
+        verbose_name = "About Page Content"
+        verbose_name_plural = "About Page Content"
+
+    def __str__(self):
+        return "About Page Content"
+
+    def save(self, *args, **kwargs):
+        # Ensure only one instance exists
+        if not self.pk and AboutPageContent.objects.exists():
+            return AboutPageContent.objects.first()
+        return super().save(*args, **kwargs)
+

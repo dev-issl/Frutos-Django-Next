@@ -96,8 +96,8 @@
 import { getWholesalePageContent } from '@/lib/api'
 import WholesalePageClient from './WholesalePageClient'
 
-// ISR: re-render at most every 60 s.  Bump to 300 for very stable content.
-export const revalidate = 60
+// Force dynamic rendering for instant updates from dashboard
+export const dynamic = 'force-dynamic'
 
 export const metadata = {
   title: 'Wholesale | El Árbol',

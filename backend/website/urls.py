@@ -5,7 +5,7 @@ from .views import (
     OfferBannerViewSet, HorizontalPromoBannerViewSet, BlogPostViewSet,
     FooterSectionViewSet, FooterLinkViewSet, SocialMediaLinkViewSet, SiteSettingsViewSet,
     website_data, navbar_data, homepage_data, footer_data, clear_website_cache,
-    site_config,
+    site_config, AboutPageContentViewSet, HomePageContentViewSet
 )
 
 # Create router for ViewSets
@@ -20,6 +20,8 @@ router.register(r'footer-sections', FooterSectionViewSet, basename='footer-secti
 router.register(r'footer-links', FooterLinkViewSet, basename='footer-links')
 router.register(r'social-links', SocialMediaLinkViewSet, basename='social-links')
 router.register(r'site-settings', SiteSettingsViewSet, basename='site-settings')
+router.register(r'about-page', AboutPageContentViewSet, basename='about-page')
+router.register(r'home-page', HomePageContentViewSet, basename='home-page')
 
 app_name = 'website'
 

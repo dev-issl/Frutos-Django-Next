@@ -16,13 +16,25 @@ export default function TeamSection({ team }) {
               background: '#f2fdea', borderRadius: '16px', padding: '24px 16px',
               textAlign: 'center', border: '1px solid rgba(188,202,193,0.2)',
             }}>
-              <div style={{
-                width: '60px', height: '60px', borderRadius: '50%',
-                background: '#adedd8', display: 'flex', alignItems: 'center',
-                justifyContent: 'center', margin: '0 auto 14px',
-              }}>
-                <span style={{ fontSize: '17px', fontWeight: 700, color: '#085041' }}>{t.initials}</span>
-              </div>
+              {t.image_url ? (
+                <img 
+                  src={t.image_url} 
+                  alt={t.name} 
+                  style={{
+                    width: '60px', height: '60px', borderRadius: '50%',
+                    objectFit: 'cover', margin: '0 auto 14px',
+                    border: '1px solid rgba(188,202,193,0.4)',
+                  }}
+                />
+              ) : (
+                <div style={{
+                  width: '60px', height: '60px', borderRadius: '50%',
+                  background: '#adedd8', display: 'flex', alignItems: 'center',
+                  justifyContent: 'center', margin: '0 auto 14px',
+                }}>
+                  <span style={{ fontSize: '17px', fontWeight: 700, color: '#085041' }}>{t.initials}</span>
+                </div>
+              )}
               <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#151e13', marginBottom: '4px' }}>{t.name}</h3>
               <p style={{ fontSize: '11px', color: '#00694c', fontWeight: 600, marginBottom: '6px', lineHeight: 1.4 }}>{t.role}</p>
               <p style={{ fontSize: '11px', color: '#9aada3', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>

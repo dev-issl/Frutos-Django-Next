@@ -1,6 +1,38 @@
+import * as LucideIcons from 'lucide-react';
 
 export default function HowItWorksSection({ data = [], guarantee = null }) {
-  if (!data.length) return null
+  const defaultData = [
+    {
+      id: 1,
+      number: '1',
+      title: 'Apply for an Account',
+      body: 'Fill out our short application form with your business details.',
+      icon_name: 'FileText'
+    },
+    {
+      id: 2,
+      number: '2',
+      title: 'Get Approved',
+      body: 'Our team will review your application within 24 hours.',
+      icon_name: 'CheckSquare'
+    },
+    {
+      id: 3,
+      number: '3',
+      title: 'Place Order',
+      body: 'Access our wholesale catalog and place your first order.',
+      icon_name: 'ShoppingCart'
+    },
+    {
+      id: 4,
+      number: '4',
+      title: 'Receive Delivery',
+      body: 'Get your fresh produce delivered within 48 hours.',
+      icon_name: 'Truck'
+    }
+  ];
+
+  const steps = data && data.length ? data : defaultData;
 
   const bar = guarantee ?? {
     title: 'No long-term commitment required',
@@ -69,8 +101,8 @@ export default function HowItWorksSection({ data = [], guarantee = null }) {
           {/* Steps */}
           <div className="ws-steps-grid">
             <div className="ws-step-connector" />
-            {data.map((s, i) => (
-              <div key={s.id} className="ws-step-item">
+            {steps.map((s, i) => (
+              <div key={s.id || i} className="ws-step-item">
                 <div
                   className="ws-step-circle"
                   style={{
@@ -84,8 +116,12 @@ export default function HowItWorksSection({ data = [], guarantee = null }) {
                 >
                   <span
                     style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                    dangerouslySetInnerHTML={{ __html: s.icon_svg }}
-                  />
+                  >
+                    {(() => {
+                      const Icon = LucideIcons[s.icon_name] || LucideIcons.Circle;
+                      return <Icon size={24} strokeWidth={2} />;
+                    })()}
+                  </span>
                 </div>
                 <div className="ws-step-text">
                   <span style={{ display: 'block', fontSize: '10px', fontWeight: 700, letterSpacing: '0.12em', color: '#00694c', marginBottom: '7px' }}>
@@ -135,8 +171,8 @@ export default function HowItWorksSection({ data = [], guarantee = null }) {
               style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px 0', width: '100%' }}
               className="guarantee-checks"
             >
-              {bar.checks.map((c) => (
-                <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+              {(bar?.checks || []).map((c, index) => (
+                <div key={c.id || index} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                   <svg width="13" height="13" fill="none" stroke="#5dd9a8" strokeWidth="2.5" viewBox="0 0 24 24">
                     <path d="M20 6 9 17l-5-5" />
                   </svg>

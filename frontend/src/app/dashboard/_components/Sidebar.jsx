@@ -27,6 +27,7 @@ import {
   Ticket,
   MessageSquare,
   Star,
+  Info,
 } from "lucide-react";
 import Image from "next/image";
 
@@ -74,6 +75,9 @@ const navGroups = [
     label: "Content",
     items: [
       { name: "Website", href: "/dashboard/website", icon: Globe },
+      { name: "Home Page", href: "/dashboard/home", icon: Info },
+      { name: "About Page", href: "/dashboard/about", icon: Info },
+      { name: "Wholesale Page", href: "/dashboard/wholesale", icon: Info },
       { name: "Sections", href: "/dashboard/sections", icon: Layers },
     ],
   },

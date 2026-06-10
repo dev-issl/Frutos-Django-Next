@@ -309,11 +309,76 @@ export async function deleteWholesaleOrder(accessToken, orderNumber) {
 }
 
 
+export const WHOLESALE_FALLBACK = {
+    hero_section: {
+        headline: "Premium produce,",
+        headline_em: "built for your business.",
+        subtitle: "El Árbol supplies restaurants, hotels, caterers, and retailers across Spain with directly sourced produce — harvested to order, delivered within 48 hours.",
+        trust_text: "Trusted by 200+ food businesses · Minimum order from €400/month",
+        badge_stat: "48h",
+        badge_label: "DELIVERY",
+        bottom_badge_title: "Harvested to order",
+        bottom_badge_subtitle: "From 40+ certified farms across Spain",
+        trust_badges: [
+            { label: "Fine Dining", order: 1 },
+            { label: "Hotel Groups", order: 2 },
+            { label: "Retailers", order: 3 }
+        ]
+    },
+    hero_image: null,
+    hero_image_url_final: "https://images.unsplash.com/photo-1595858641571-55dbfb37e201?auto=format&fit=crop&q=80",
+    stats: [
+        { value: "200+", label: "Business Partners", sub: "Restaurants, hotels & retailers", icon_name: "Building2" },
+        { value: "48h", label: "Harvest to Delivery", sub: "Maximum freshness guaranteed", icon_name: "Truck" },
+        { value: "99.1%", label: "Order Accuracy", sub: "Rigorous quality control", icon_name: "CheckCircle2" }
+    ],
+    benefits: [
+        { title: "Guaranteed Freshness", body: "Produce is harvested only after your order is confirmed.", icon_name: "Leaf" },
+        { title: "Direct from Farms", body: "We work directly with growers to ensure fair prices.", icon_name: "Tractor" },
+        { title: "Flexible Ordering", body: "Order via our B2B platform, email, or WhatsApp.", icon_name: "Phone" }
+    ],
+    categories: [
+        { title: "Fresh Vegetables", items: "Tomatoes, peppers, courgettes", badge: "Year-round", badge_bg_color: "#E7F1DF", badge_text_color: "#00694c", icon_name: "Carrot", icon_bg_color: "#EDFAF2" },
+        { title: "Seasonal Fruits", items: "Citrus, stone fruits, berries", badge: "Seasonal", badge_bg_color: "#FEF3C7", badge_text_color: "#92400E", icon_name: "Apple", icon_bg_color: "#FFFBEB" },
+        { title: "Artisan Dairy", items: "Cheeses, butter, milk", badge: "Limited", badge_bg_color: "#E0E7FF", badge_text_color: "#3730A3", icon_name: "Milk", icon_bg_color: "#EEF2FF" }
+    ],
+    steps: [
+        { number: "01", title: "Apply for an Account", body: "Fill out the application form with your business details.", icon_name: "FileText" },
+        { number: "02", title: "Get Approved", body: "Our team will review and approve your account within 24h.", icon_name: "CheckSquare" },
+        { number: "03", title: "Start Ordering", body: "Access wholesale pricing and place your first order.", icon_name: "ShoppingCart" }
+    ],
+    guarantee: {
+        title: "No long-term commitment required",
+        subtitle: "Rolling monthly arrangement. Upgrade or pause anytime.",
+        checks: [
+            { text: "No setup fees", order: 1 },
+            { text: "Cancel anytime", order: 2 },
+            { text: "Dedicated support", order: 3 }
+        ]
+    }
+};
+
 export async function getWholesalePageContent() {
     try {
-        return await apiFetch('/wholesale/content/')
+        const data = await apiFetch('/wholesale/page-content/')
+        if (!data || Object.keys(data).length === 0) return WHOLESALE_FALLBACK;
+        if (Array.isArray(data)) return data[0] || WHOLESALE_FALLBACK;
+        return data;
     } catch (err) {
-        console.warn('[api] getWholesalePageContent error:', err.message)
-        return null
+        console.warn('[api] getWholesalePageContent error, using fallback:', err.message)
+        return WHOLESALE_FALLBACK
     }
+}
+
+export async function updateWholesalePageContent(formData, accessToken) {
+    const res = await fetch(`${API_BASE}/wholesale/page-content/`, {
+        method: 'PUT',
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+        },
+        body: formData, // Sending FormData to handle file uploads
+    })
+    const data = await res.json()
+    if (!res.ok) throw data
+    return data
 }

@@ -23,14 +23,14 @@ export const metadata = {
 export const dynamic = 'force-dynamic'
 
 export default async function AboutPage() {
-  const { stats, values, milestones, farm_partners, team } = await getAboutPageData()
+  const { hero_section, hero_image_url_final, stats, values, milestones, farm_partners, team } = await getAboutPageData()
 
   const valuesWithIcons = normalizeValues(values)
 
   return (
     <div style={{ background: '#f2fdea', minHeight: '100vh' }}>
       <AboutStyles />
-      <HeroSection />
+      <HeroSection data={{ ...(hero_section || {}), image_url: hero_image_url_final }} />
       <StatsSection stats={stats} />
       <ValuesSection values={valuesWithIcons} />
       <TimelineSection milestones={milestones} />

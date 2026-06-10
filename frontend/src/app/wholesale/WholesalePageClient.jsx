@@ -18,17 +18,20 @@ export default function WholesalePageClient({ content }) {
 
   // Safely destructure — falls back to empty arrays / null when API is down
   const {
-    hero       = null,
+    hero_section = null,
     stats      = [],
     benefits   = [],
     categories = [],
     steps      = [],
     guarantee  = null,
+    hero_image_url_final = null,
   } = content ?? {}
+
+  const heroData = hero_section ? { ...hero_section, hero_image_url_final } : { hero_image_url_final }
 
   return (
     <>
-      <HeroSection       data={hero}       onApplyClick={open} />
+      <HeroSection       data={heroData}       onApplyClick={open} />
       <StatesSection     data={stats} />
       <BenefitsSection   data={benefits} />
       <CategoriesSection data={categories} />

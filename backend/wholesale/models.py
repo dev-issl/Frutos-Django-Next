@@ -193,356 +193,112 @@ from django.db import models
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# HERO
+# PAGE CONTENT (JSON-based Singleton)
 # ─────────────────────────────────────────────────────────────────────────────
 
-class WholesaleHeroContent(models.Model):
+class WholesalePageContent(models.Model):
     """
-    Singleton-style model.  Only the row where is_active=True is served.
-    Stores all copy and the hero image for the top of the Wholesale page.
+    Singleton-style model holding all content for the Wholesale landing page
+    in flexible JSON fields.
     """
-    headline = models.CharField(
-        max_length=200,
-        default="Premium produce,",
-        help_text="First line of the H1 heading, e.g. 'Premium produce,'",
-    )
-    headline_em = models.CharField(
-        max_length=200,
-        default="built for your business.",
-        help_text="Second (italic / coloured) line of the H1, e.g. 'built for your business.'",
-    )
-    subtitle = models.TextField(
-        default="El Árbol supplies restaurants, hotels, caterers, and retailers across Spain with directly sourced produce — harvested to order, delivered within 48 hours.",
-        help_text="Paragraph beneath the headline (1-2 sentences).",
-    )
-    trust_text = models.CharField(
-        max_length=300,
-        default="Trusted by 200+ food businesses · Minimum order from €400/month",
-        help_text="Small muted line below the subtitle, e.g. trust signals or minimum order info.",
+    def default_hero():
+        return {
+            'badge': 'PARTNER WITH US',
+            'title_main': 'Supply your business with',
+            'title_highlight': 'the freshest local produce',
+            'description': 'Join hundreds of restaurants, hotels, and retailers who trust us for consistent quality, transparent sourcing, and reliable delivery.',
+            'primary_cta_text': 'Apply for Wholesale',
+            'primary_cta_href': '#apply',
+            'secondary_cta_text': 'View our catalogue',
+            'secondary_cta_href': '/products'
+        }
+
+    def default_stats():
+        return [
+            {'value': '48h', 'label': 'Farm to Kitchen', 'sub': 'Guaranteed freshness', 'icon_name': 'Clock'},
+            {'value': '40+', 'label': 'Local Farms', 'sub': 'Direct relationships', 'icon_name': 'MapPin'},
+            {'value': '€0', 'label': 'Delivery Fee', 'sub': 'On orders over €150', 'icon_name': 'Truck'},
+        ]
+
+    def default_benefits():
+        return [
+            {'title': 'Consistent Quality', 'body': 'We source only from trusted local farms with strict quality standards.', 'icon_name': 'Award'},
+            {'title': 'Transparent Pricing', 'body': 'Fair prices for farmers, competitive prices for your business.', 'icon_name': 'CircleDollarSign'},
+            {'title': 'Reliable Delivery', 'body': 'Flexible delivery schedules to match your kitchen\'s rhythm.', 'icon_name': 'Truck'},
+            {'title': 'Dedicated Support', 'body': 'A personal account manager for your specific sourcing needs.', 'icon_name': 'Headset'},
+            {'title': 'Seasonal Insights', 'body': 'Regular updates on what\'s in season to help plan your menus.', 'icon_name': 'CalendarDays'},
+            {'title': 'Sustainable Impact', 'body': 'Reduce food miles and support the local agricultural economy.', 'icon_name': 'Leaf'},
+        ]
+
+    def default_categories():
+        return [
+            {'title': 'Fresh Produce', 'items': 'Seasonal fruits, vegetables, herbs, and specialty items.', 'badge': 'MOST POPULAR', 'badge_bg_color': '#E8F5E9', 'badge_text_color': '#2E7D32', 'icon_name': 'Leaf', 'icon_bg_color': '#F1F8F5'},
+            {'title': 'Dairy & Eggs', 'items': 'Farm-fresh eggs, artisanal cheeses, milk, and butter.', 'badge': '', 'badge_bg_color': '', 'badge_text_color': '', 'icon_name': 'Egg', 'icon_bg_color': '#FFF8E1'},
+            {'title': 'Pantry Staples', 'items': 'Olive oils, grains, preserves, and artisanal honey.', 'badge': '', 'badge_bg_color': '', 'badge_text_color': '', 'icon_name': 'Wheat', 'icon_bg_color': '#FFF3E0'},
+            {'title': 'Leftover Packs', 'items': 'Imperfect produce at a discount to reduce food waste.', 'badge': 'ECO-FRIENDLY', 'badge_bg_color': '#E8EAF6', 'badge_text_color': '#3F51B5', 'icon_name': 'PackageOpen', 'icon_bg_color': '#E8EAF6'},
+        ]
+
+    def default_steps():
+        return [
+            {'number': '1', 'title': 'Apply online', 'body': 'Fill out our quick wholesale application form with your business details.', 'icon_name': 'FileText'},
+            {'number': '2', 'title': 'Account approval', 'body': 'Our team will review your application and set up your account within 24 hours.', 'icon_name': 'CheckCircle'},
+            {'number': '3', 'title': 'Place orders', 'body': 'Access our wholesale portal, view live pricing, and place your first order.', 'icon_name': 'ShoppingCart'},
+            {'number': '4', 'title': 'Receive delivery', 'body': 'Get fresh produce delivered directly to your kitchen door.', 'icon_name': 'Truck'},
+        ]
+
+    def default_guarantee():
+        return {
+            'title': 'The El Árbol Guarantee',
+            'subtitle': 'We stand behind the quality of every order.',
+            'checks': [
+                '100% Satisfaction or your money back',
+                'Fully traceable supply chain',
+                'HACCP compliant handling'
+            ]
+        }
+
+    hero_section = models.JSONField(
+        default=default_hero,
+        blank=True,
+        help_text="JSON for the hero section (badge, title_main, title_highlight, image_url, etc.)"
     )
     hero_image = models.ImageField(
         upload_to="wholesale/hero/",
-        help_text="Main hero image displayed on the right side of the section. Recommended: 1200×900px.",
+        null=True,
+        blank=True,
+        help_text="Main hero image displayed on the right side of the section. Recommended: 1200×900px."
+    )
+    stats = models.JSONField(
+        default=default_stats,
+        blank=True,
+        help_text="Array of stat objects: [{ value, label, sub, icon_name }]"
+    )
+    benefits = models.JSONField(
+        default=default_benefits,
+        blank=True,
+        help_text="Array of benefit objects: [{ title, body, icon_name }]"
+    )
+    categories = models.JSONField(
+        default=default_categories,
+        blank=True,
+        help_text="Array of category objects: [{ title, items, badge, badge_bg_color, badge_text_color, icon_name, icon_bg_color }]"
+    )
+    steps = models.JSONField(
+        default=default_steps,
+        blank=True,
+        help_text="Array of step objects: [{ number, title, body, icon_name }]"
+    )
+    guarantee = models.JSONField(
+        default=default_guarantee,
+        blank=True,
+        help_text="JSON object for the guarantee bar: { title, subtitle, checks: [text, text...] }"
     )
 
-    # Top-right floating badge (e.g. "48h DELIVERY")
-    badge_stat = models.CharField(
-        max_length=20,
-        default="48h",
-        help_text="Large value shown in the top-right image badge, e.g. '48h'.",
-    )
-    badge_label = models.CharField(
-        max_length=50,
-        default="DELIVERY",
-        help_text="Small label under the badge stat, e.g. 'DELIVERY'.",
-    )
-
-    # Bottom overlay card
-    bottom_badge_title = models.CharField(
-        max_length=100,
-        default="Harvested to order",
-        help_text="Bold title in the bottom-left image overlay card.",
-    )
-    bottom_badge_subtitle = models.CharField(
-        max_length=200,
-        default="From 40+ certified farms across Spain",
-        help_text="Muted subtitle in the bottom-left image overlay card.",
-    )
-
-    is_active = models.BooleanField(
-        default=True,
-        help_text="Only ONE hero should be active at a time. The first active row is served.",
-    )
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        verbose_name = "Hero Content"
-        verbose_name_plural = "Hero Content"
+        verbose_name = "Wholesale Page Content"
+        verbose_name_plural = "Wholesale Page Content"
 
     def __str__(self):
-        return f"Wholesale Hero — {self.headline}"
-
-
-class WholesaleTrustBadge(models.Model):
-    """
-    Pills shown in the 'Serving' strip at the bottom of the Hero section,
-    e.g. 'Fine Dining', 'Hotel Groups', etc.
-    """
-    hero = models.ForeignKey(
-        WholesaleHeroContent,
-        on_delete=models.CASCADE,
-        related_name="trust_badges",
-        help_text="Hero row these badges belong to.",
-    )
-    label = models.CharField(
-        max_length=80,
-        help_text="Text shown inside the pill badge, e.g. 'Fine Dining'.",
-    )
-    order = models.PositiveSmallIntegerField(
-        default=0,
-        help_text="Display order — lower numbers appear first.",
-    )
-    is_active = models.BooleanField(default=True)
-
-    class Meta:
-        ordering = ["order"]
-        verbose_name = "Trust Badge"
-        verbose_name_plural = "Trust Badges"
-
-    def __str__(self):
-        return self.label
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# STATS BAR
-# ─────────────────────────────────────────────────────────────────────────────
-
-class WholesaleStat(models.Model):
-    """
-    Key numbers shown in the dark stats bar (StatsSection),
-    e.g. '200+ Business Partners'.
-    """
-    value = models.CharField(
-        max_length=30,
-        help_text="The headline number or value, e.g. '200+', '48h', '99.1%'.",
-    )
-    label = models.CharField(
-        max_length=100,
-        help_text="Short descriptive label, e.g. 'Business Partners'.",
-    )
-    sub = models.CharField(
-        max_length=200,
-        help_text="Smaller subtext beneath the label, e.g. 'Restaurants, hotels & retailers'.",
-    )
-    icon_svg = models.TextField(
-        help_text=(
-            "Raw SVG markup for the stat icon.  "
-            "Include the full <svg> element.  "
-            "Tip: use stroke='currentColor' so the colour is controlled by CSS."
-        ),
-    )
-    order = models.PositiveSmallIntegerField(
-        default=0,
-        help_text="Display order — lower numbers appear first (left → right).",
-    )
-    is_active = models.BooleanField(default=True)
-
-    class Meta:
-        ordering = ["order"]
-        verbose_name = "Stat"
-        verbose_name_plural = "Stats"
-
-    def __str__(self):
-        return f"{self.value} — {self.label}"
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# BENEFITS
-# ─────────────────────────────────────────────────────────────────────────────
-
-class WholesaleBenefit(models.Model):
-    """
-    Cards shown in the Benefits section ('Why partner with us').
-    Displayed in a 3-column grid on desktop.
-    """
-    title = models.CharField(
-        max_length=150,
-        help_text="Card heading, e.g. 'Guaranteed Freshness'.",
-    )
-    body = models.TextField(
-        help_text="1-3 sentence description displayed under the card title.",
-    )
-    icon_svg = models.TextField(
-        help_text=(
-            "Raw SVG markup for the icon inside the green rounded square.  "
-            "Recommended size: 20×20.  Use stroke='#00694c' for the brand green."
-        ),
-    )
-    order = models.PositiveSmallIntegerField(
-        default=0,
-        help_text="Display order — lower numbers appear first (left → right, top → bottom).",
-    )
-    is_active = models.BooleanField(
-        default=True,
-        help_text="Uncheck to hide this benefit card without deleting it.",
-    )
-
-    class Meta:
-        ordering = ["order"]
-        verbose_name = "Benefit"
-        verbose_name_plural = "Benefits"
-
-    def __str__(self):
-        return self.title
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# CATEGORIES
-# ─────────────────────────────────────────────────────────────────────────────
-
-class WholesaleCategory(models.Model):
-    """
-    Cards shown in the Product Range / Categories section.
-    Each card has a coloured icon, an availability badge, and an italic items list.
-    """
-
-    BADGE_CHOICES = [
-        ("Year-round", "Year-round"),
-        ("Seasonal", "Seasonal"),
-        ("Limited", "Limited"),
-    ]
-
-    title = models.CharField(
-        max_length=150,
-        help_text="Category heading, e.g. 'Fresh Vegetables'.",
-    )
-    items = models.TextField(
-        help_text=(
-            "Comma-separated example items shown in italic below the title.  "
-            "e.g. 'Heirloom tomatoes, peppers, courgettes, aubergines, leafy greens'."
-        ),
-    )
-    badge = models.CharField(
-        max_length=30,
-        choices=BADGE_CHOICES,
-        default="Year-round",
-        help_text="Availability badge shown in the top-right corner of the card.",
-    )
-    badge_bg_color = models.CharField(
-        max_length=20,
-        default="#E7F1DF",
-        help_text="Badge background colour as a CSS hex value, e.g. '#E7F1DF'.",
-    )
-    badge_text_color = models.CharField(
-        max_length=20,
-        default="#00694c",
-        help_text="Badge text colour as a CSS hex value, e.g. '#00694c'.",
-    )
-    icon_svg = models.TextField(
-        help_text=(
-            "Raw SVG markup for the category icon.  "
-            "Recommended size: 18×18.  Match the stroke colour to the icon background theme."
-        ),
-    )
-    icon_bg_color = models.CharField(
-        max_length=20,
-        default="#EDFAF2",
-        help_text="Icon container background colour as a CSS hex value, e.g. '#EDFAF2'.",
-    )
-    order = models.PositiveSmallIntegerField(
-        default=0,
-        help_text="Display order — lower numbers appear first.",
-    )
-    is_active = models.BooleanField(
-        default=True,
-        help_text="Uncheck to hide this category without deleting it.",
-    )
-
-    class Meta:
-        ordering = ["order"]
-        verbose_name = "Product Category"
-        verbose_name_plural = "Product Categories"
-
-    def __str__(self):
-        return self.title
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# HOW IT WORKS — STEPS
-# ─────────────────────────────────────────────────────────────────────────────
-
-class WholesaleStep(models.Model):
-    """
-    Numbered steps shown in the 'How It Works' section.
-    The first step (order=0) is rendered with the filled green circle style.
-    """
-    number = models.CharField(
-        max_length=5,
-        help_text="Zero-padded step number string displayed above the title, e.g. '01', '02'.",
-    )
-    title = models.CharField(
-        max_length=150,
-        help_text="Step heading, e.g. 'Submit your application'.",
-    )
-    body = models.TextField(
-        help_text="One short sentence describing what happens in this step.",
-    )
-    icon_svg = models.TextField(
-        help_text=(
-            "Raw SVG markup for the step icon.  "
-            "Recommended size: 20×20.  Use stroke='currentColor' — "
-            "the frontend will control colour based on whether the step is first."
-        ),
-    )
-    order = models.PositiveSmallIntegerField(
-        default=0,
-        help_text="Display order — the step with order=0 gets the filled green circle style.",
-    )
-    is_active = models.BooleanField(default=True)
-
-    class Meta:
-        ordering = ["order"]
-        verbose_name = "How It Works Step"
-        verbose_name_plural = "How It Works Steps"
-
-    def __str__(self):
-        return f"Step {self.number} — {self.title}"
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# HOW IT WORKS — GUARANTEE BAR
-# ─────────────────────────────────────────────────────────────────────────────
-
-class WholesaleGuaranteeBar(models.Model):
-    """
-    The dark full-width bar shown below the steps.
-    Only ONE active row is served.  Use the inline check items to customise the three tick lines.
-    """
-    title = models.CharField(
-        max_length=200,
-        default="No long-term commitment required",
-        help_text="Bold title on the left side of the bar.",
-    )
-    subtitle = models.CharField(
-        max_length=300,
-        default="Rolling monthly arrangement. Upgrade or pause anytime.",
-        help_text="Muted subtitle below the bar title.",
-    )
-    is_active = models.BooleanField(default=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        verbose_name = "Guarantee Bar"
-        verbose_name_plural = "Guarantee Bars"
-
-    def __str__(self):
-        return self.title
-
-
-class WholesaleGuaranteeCheck(models.Model):
-    """
-    Individual ✓ items on the right side of the Guarantee Bar,
-    e.g. '48h setup', 'Cancel anytime', 'No setup fee'.
-    """
-    bar = models.ForeignKey(
-        WholesaleGuaranteeBar,
-        on_delete=models.CASCADE,
-        related_name="checks",
-        help_text="The guarantee bar these checks belong to.",
-    )
-    text = models.CharField(
-        max_length=80,
-        help_text="Short label shown next to the green tick, e.g. 'Cancel anytime'.",
-    )
-    order = models.PositiveSmallIntegerField(
-        default=0,
-        help_text="Display order — lower numbers appear first (left → right).",
-    )
-
-    class Meta:
-        ordering = ["order"]
-        verbose_name = "Guarantee Check Item"
-        verbose_name_plural = "Guarantee Check Items"
-
-    def __str__(self):
-        return self.text
+        return "Wholesale Page Content"

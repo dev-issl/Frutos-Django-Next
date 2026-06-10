@@ -596,6 +596,24 @@ export const siteSettingsService = createModelService("/api/website/site-setting
     modelName: "sitesettings",
 });
 
+export const aboutPageService = createModelService("/api/website/about-page", {
+    lookupField: "id",
+    appLabel: "website",
+    modelName: "aboutpagecontent",
+});
+
+export const homePageService = createModelService("/api/website/home-page", {
+    lookupField: "id",
+    appLabel: "website",
+    modelName: "homepagecontent",
+});
+
+export const wholesalePageService = createModelService("/api/wholesale/page-content", {
+    lookupField: "id",
+    appLabel: "wholesale",
+    modelName: "wholesalepagecontent",
+});
+
 // Orders - invoice
 export const invoiceService = {
     /** Get invoice HTML for an order */

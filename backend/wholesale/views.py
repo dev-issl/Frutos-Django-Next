@@ -279,141 +279,61 @@ class WholesaleVerifyOTPAndResetPasswordView(APIView):
 
 # wholesale content
 
-"""
-wholesale/views.py  — public content views
+from rest_framework import viewsets
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from .models import WholesalePageContent
+from .serializers import WholesalePageContentSerializer
+from website.views import IsAdminOrReadOnly
 
-Add these view functions to your existing views.py.
-Existing auth views (register, login, profile, etc.) stay unchanged.
-"""
+class WholesalePageContentViewSet(viewsets.ModelViewSet):
+    """API for Wholesale Page Content (Singleton)"""
+    serializer_class = WholesalePageContentSerializer
+    permission_classes = [IsAdminOrReadOnly]
+    
+    def get_queryset(self):
+        return WholesalePageContent.objects.all()
+    
+    def list(self, request, *args, **kwargs):
+        # Always return the single instance
+        instance, created = WholesalePageContent.objects.get_or_create()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+        
+    def retrieve(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+    
+    def update(self, request, *args, **kwargs):
+        instance, created = WholesalePageContent.objects.get_or_create()
+        data = request.data.dict()
+        
+        if 'hero_image' in request.FILES:
+            data['hero_image'] = request.FILES['hero_image']
+
+        import json
+        for field in ['hero_section', 'stats', 'benefits', 'categories', 'steps', 'guarantee']:
+            if field in data and isinstance(data[field], str):
+                try:
+                    data[field] = json.loads(data[field])
+                except json.JSONDecodeError:
+                    pass
+
+        partial = kwargs.pop('partial', False)
+        serializer = self.get_serializer(instance, data=data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data)
 
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
-from rest_framework.response import Response
-from rest_framework import status
-
-from .models import (
-    WholesaleBenefit,
-    WholesaleCategory,
-    WholesaleGuaranteeBar,
-    WholesaleHeroContent,
-    WholesaleStat,
-    WholesaleStep,
-)
-from .serializers import (
-    WholesaleBenefitSerializer,
-    WholesaleCategorySerializer,
-    WholesaleGuaranteeBarSerializer,
-    WholesaleHeroContentSerializer,
-    WholesaleStatSerializer,
-    WholesaleStepSerializer,
-)
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Individual section endpoints (useful for granular cache invalidation later)
-# ─────────────────────────────────────────────────────────────────────────────
-
-@api_view(["GET"])
-@permission_classes([AllowAny])
-def wholesale_hero(request):
-    """GET /api/wholesale/hero/  — active hero content + trust badges."""
-    hero = WholesaleHeroContent.objects.prefetch_related("trust_badges").filter(is_active=True).first()
-    if not hero:
-        return Response({"detail": "No active hero content found."}, status=status.HTTP_404_NOT_FOUND)
-    return Response(WholesaleHeroContentSerializer(hero, context={"request": request}).data)
-
-
-@api_view(["GET"])
-@permission_classes([AllowAny])
-def wholesale_stats(request):
-    """GET /api/wholesale/stats/  — ordered active stats."""
-    qs = WholesaleStat.objects.filter(is_active=True)
-    return Response(WholesaleStatSerializer(qs, many=True).data)
-
-
-@api_view(["GET"])
-@permission_classes([AllowAny])
-def wholesale_benefits(request):
-    """GET /api/wholesale/benefits/  — ordered active benefit cards."""
-    qs = WholesaleBenefit.objects.filter(is_active=True)
-    return Response(WholesaleBenefitSerializer(qs, many=True).data)
-
-
-@api_view(["GET"])
-@permission_classes([AllowAny])
-def wholesale_categories(request):
-    """GET /api/wholesale/categories/  — ordered active product categories."""
-    qs = WholesaleCategory.objects.filter(is_active=True)
-    return Response(WholesaleCategorySerializer(qs, many=True).data)
-
-
-@api_view(["GET"])
-@permission_classes([AllowAny])
-def wholesale_steps(request):
-    """GET /api/wholesale/steps/  — ordered active 'How It Works' steps."""
-    qs = WholesaleStep.objects.filter(is_active=True)
-    return Response(WholesaleStepSerializer(qs, many=True).data)
-
-
-@api_view(["GET"])
-@permission_classes([AllowAny])
-def wholesale_guarantee(request):
-    """GET /api/wholesale/guarantee/  — active guarantee bar + check items."""
-    bar = WholesaleGuaranteeBar.objects.prefetch_related("checks").filter(is_active=True).first()
-    if not bar:
-        return Response({"detail": "No active guarantee bar found."}, status=status.HTTP_404_NOT_FOUND)
-    return Response(WholesaleGuaranteeBarSerializer(bar).data)
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Combined endpoint — Next.js page fetches this ONE request on the server
-# ─────────────────────────────────────────────────────────────────────────────
 
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def wholesale_page_content(request):
     """
     GET /api/wholesale/content/
-
-    Returns ALL wholesale landing-page content in a single response so the
-    Next.js server component only has to make one HTTP call.
-
-    Shape:
-    {
-        "hero":       { ... } | null,
-        "stats":      [ ... ],
-        "benefits":   [ ... ],
-        "categories": [ ... ],
-        "steps":      [ ... ],
-        "guarantee":  { ... } | null,
-    }
+    Legacy fallback/alias endpoint returning the new single WholesalePageContent JSON
+    so that frontend API fetch doesn't break immediately.
     """
-    hero = (
-        WholesaleHeroContent.objects
-        .prefetch_related("trust_badges")
-        .filter(is_active=True)
-        .first()
-    )
-    stats      = WholesaleStat.objects.filter(is_active=True)
-    benefits   = WholesaleBenefit.objects.filter(is_active=True)
-    categories = WholesaleCategory.objects.filter(is_active=True)
-    steps      = WholesaleStep.objects.filter(is_active=True)
-    guarantee  = (
-        WholesaleGuaranteeBar.objects
-        .prefetch_related("checks")
-        .filter(is_active=True)
-        .first()
-    )
-
-    return Response({
-        "hero": WholesaleHeroContentSerializer(
-            hero, context={"request": request}
-        ).data if hero else None,
-
-        "stats":      WholesaleStatSerializer(stats,      many=True).data,
-        "benefits":   WholesaleBenefitSerializer(benefits, many=True).data,
-        "categories": WholesaleCategorySerializer(categories, many=True).data,
-        "steps":      WholesaleStepSerializer(steps,       many=True).data,
-
-        "guarantee": WholesaleGuaranteeBarSerializer(guarantee).data if guarantee else None,
-    })
+    instance, created = WholesalePageContent.objects.get_or_create()
+    serializer = WholesalePageContentSerializer(instance, context={"request": request})
+    return Response(serializer.data)

@@ -237,7 +237,7 @@ export default function HeroSection({ data, onApplyClick }) {
     headline_em:           data?.headline_em          ?? 'built for your business.',
     subtitle:              data?.subtitle             ?? 'El Árbol supplies restaurants, hotels, caterers, and retailers across Spain with directly sourced produce — harvested to order, delivered within 48 hours.',
     trust_text:            data?.trust_text           ?? 'Trusted by 200+ food businesses · Minimum order from €400/month',
-    hero_image_url:        data?.hero_image_url       ?? null,
+    hero_image_url:        data?.hero_image_url_final ?? null,
     badge_stat:            data?.badge_stat           ?? '48h',
     badge_label:           data?.badge_label          ?? 'DELIVERY',
     bottom_badge_title:    data?.bottom_badge_title   ?? 'Harvested to order',
@@ -352,8 +352,8 @@ export default function HeroSection({ data, onApplyClick }) {
                 <span style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.14em', color: '#b0bdb8', marginRight: '2px' }}>
                   Serving
                 </span>
-                {hero.trust_badges.map((b) => (
-                  <span key={b.id} style={{
+                {hero.trust_badges.map((b, index) => (
+                  <span key={b.id || index} style={{
                     fontSize: '11.5px', fontWeight: 600, color: '#4A6358',
                     padding: '4px 10px', borderRadius: '100px',
                     border: '1px solid #D5E8DC', background: '#F5FBF7',

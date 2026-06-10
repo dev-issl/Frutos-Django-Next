@@ -1,3 +1,5 @@
+import DynamicIcon from '@/app/components/DynamicIcon'
+
 export default function FarmPartnersSection({ farms }) {
   return (
     <section className="about-section-pad" style={{ background: '#f2fdea' }}>
@@ -26,11 +28,9 @@ export default function FarmPartnersSection({ farms }) {
                 width: '44px', height: '44px', borderRadius: '12px',
                 background: '#E7F1DF', flexShrink: 0,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: '#00694c',
               }}>
-                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="#00694c" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M17 8C8 10 5.9 16.17 3.82 19.3A10 10 0 0 0 19 5c-1-1-2-1.71-2-1.71V8z"/>
-                  <path d="M3.82 19.3C4 18 5 13 9 11"/>
-                </svg>
+                <DynamicIcon name={f.icon_name || 'Leaf'} size={20} />
               </div>
               <div>
                 <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#151e13', marginBottom: '3px' }}>{f.name}</h3>

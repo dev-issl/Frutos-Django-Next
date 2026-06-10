@@ -1,4 +1,4 @@
-﻿from rest_framework import viewsets, status, permissions
+from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import api_view, permission_classes as perm_classes
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
@@ -8,13 +8,14 @@ from django.core.cache import cache
 from .models import (
     NavbarSettings, OfferCategory, HeroBanner, OfferBanner, 
     HorizontalPromoBanner, BlogPost, FooterSection, FooterLink, 
-    SocialMediaLink, SiteSettings
+    SocialMediaLink, SiteSettings, AboutPageContent
 )
 from .serializers import (
     NavbarSettingsSerializer, OfferCategorySerializer, HeroBannerSerializer,
     OfferBannerSerializer, HorizontalPromoBannerSerializer, BlogPostSerializer,
     BlogPostListSerializer, FooterSectionSerializer, FooterLinkSerializer,
-    SocialMediaLinkSerializer, SiteSettingsSerializer, WebsiteDataSerializer
+    SocialMediaLinkSerializer, SiteSettingsSerializer, WebsiteDataSerializer,
+    AboutPageContentSerializer
 )
 
 # Cache timeout in seconds (15 minutes)
@@ -179,6 +180,53 @@ class SiteSettingsViewSet(BaseWebsiteViewSet):
                 (self.request.user.is_staff or getattr(self.request.user, 'user_type', '') == 'ADMIN')):
             qs = qs.filter(is_active=True)
         return qs
+
+class AboutPageContentViewSet(viewsets.ModelViewSet):
+    """API for About Page Content (Singleton)"""
+    serializer_class = AboutPageContentSerializer
+    permission_classes = [IsAdminOrReadOnly]
+    
+    def get_queryset(self):
+        return AboutPageContent.objects.all()
+    
+    def list(self, request, *args, **kwargs):
+        # Always return the single instance
+        instance, created = AboutPageContent.objects.get_or_create()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+        
+    def retrieve(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+    
+    def update(self, request, *args, **kwargs):
+        instance, created = AboutPageContent.objects.get_or_create()
+        data = request.data.copy()
+        
+        # Handle team member images inside JSON array
+        team_data = data.get('team')
+        if team_data:
+            import json
+            try:
+                team = json.loads(team_data)
+                for i in range(len(team)):
+                    file_key = f'team_image_{i}'
+                    if file_key in request.FILES:
+                        image = request.FILES[file_key]
+                        from django.core.files.storage import default_storage
+                        import uuid
+                        ext = image.name.split('.')[-1]
+                        filename = f"about/team_{uuid.uuid4().hex}.{ext}"
+                        path = default_storage.save(filename, image)
+                        team[i]['image_url'] = request.build_absolute_uri(default_storage.url(path))
+                data['team'] = json.dumps(team)
+            except Exception as e:
+                pass
+
+        partial = kwargs.pop('partial', False)
+        serializer = self.get_serializer(instance, data=data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data)
 
 # Consolidated API endpoints
 @api_view(['GET'])
@@ -459,3 +507,106 @@ def site_config(request):
             {'error': 'Failed to fetch site config', 'detail': str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+
+from .models import HomePageContent
+from .serializers import HomePageContentSerializer
+
+class HomePageContentViewSet(viewsets.ModelViewSet):
+    """API for Home Page Content (Singleton)"""
+    serializer_class = HomePageContentSerializer
+    permission_classes = [IsAdminOrReadOnly]
+    
+    def get_queryset(self):
+        return HomePageContent.objects.all()
+    
+    def list(self, request, *args, **kwargs):
+        instance, created = HomePageContent.objects.get_or_create()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+        
+    def retrieve(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+    
+    def update(self, request, *args, **kwargs):
+        instance, created = HomePageContent.objects.get_or_create()
+        data = request.data.dict()
+        
+        # Handle file uploads if they exist in the request
+        if 'hero_image_desktop' in request.FILES:
+            data['hero_image_desktop'] = request.FILES['hero_image_desktop']
+        if 'hero_image_mobile' in request.FILES:
+            data['hero_image_mobile'] = request.FILES['hero_image_mobile']
+        if 'leftover_banner_image' in request.FILES:
+            data['leftover_banner_image'] = request.FILES['leftover_banner_image']
+            
+        import json
+        for field in ['hero_section', 'how_it_works', 'steps', 'leftover_banner']:
+            if field in data and isinstance(data[field], str):
+                try:
+                    data[field] = json.loads(data[field])
+                except json.JSONDecodeError:
+                    pass
+            
+        partial = kwargs.pop('partial', False)
+        serializer = self.get_serializer(instance, data=data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data)
+
+
+from .serializers import AboutPageContentSerializer
+
+class AboutPageContentViewSet(viewsets.ModelViewSet):
+    """API for About Page Content (Singleton)"""
+    serializer_class = AboutPageContentSerializer
+    permission_classes = [IsAdminOrReadOnly]
+    
+    def get_queryset(self):
+        return AboutPageContent.objects.all()
+    
+    def list(self, request, *args, **kwargs):
+        # Always return the single instance
+        instance, created = AboutPageContent.objects.get_or_create()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+        
+    def retrieve(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+    
+    def update(self, request, *args, **kwargs):
+        instance, created = AboutPageContent.objects.get_or_create()
+        data = request.data.dict()
+        
+        # Handle team member images inside JSON array
+        team_data = data.get('team')
+        if team_data:
+            import json
+            try:
+                team = json.loads(team_data)
+                for i in range(len(team)):
+                    file_key = f'team_image_{i}'
+                    if file_key in request.FILES:
+                        image = request.FILES[file_key]
+                        from django.core.files.storage import default_storage
+                        import uuid
+                        ext = image.name.split('.')[-1]
+                        filename = f"about/team_{uuid.uuid4().hex}.{ext}"
+                        path = default_storage.save(filename, image)
+                        team[i]['image_url'] = request.build_absolute_uri(default_storage.url(path))
+                data['team'] = team
+            except Exception as e:
+                pass
+
+        # Parse stringified JSON fields
+        for field in ['hero_section', 'stats', 'values', 'milestones', 'farm_partners', 'team']:
+            if field in data and isinstance(data[field], str):
+                try:
+                    data[field] = json.loads(data[field])
+                except json.JSONDecodeError:
+                    pass
+
+        partial = kwargs.pop('partial', False)
+        serializer = self.get_serializer(instance, data=data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data)

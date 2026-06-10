@@ -1,5 +1,6 @@
 # wholesale/urls.py
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
 from .views import (
     WholesaleRegisterView,
     WholesaleLoginView,
@@ -14,18 +15,18 @@ from .views import (
     WholesaleStatusView,
     WholesaleSendPasswordResetOTPView,
     WholesaleVerifyOTPAndResetPasswordView,
-    wholesale_benefits,
-    wholesale_categories,
-    wholesale_guarantee,
-    wholesale_hero,
+    WholesalePageContentViewSet,
     wholesale_page_content,
-    wholesale_stats,
-    wholesale_steps,
 )
+
+router = DefaultRouter()
+router.register(r'page-content', WholesalePageContentViewSet, basename='wholesale-page-content')
 
 app_name = 'wholesale'
 
 urlpatterns = [
+    path('', include(router.urls)),
+
     # ─── Auth ────────────────────────────────────────────────
     path('auth/register/',        WholesaleRegisterView.as_view(),       name='register'),
     path('auth/login/',           WholesaleLoginView.as_view(),          name='login'),
@@ -50,14 +51,6 @@ urlpatterns = [
     path('auth/password-reset/verify/',   WholesaleVerifyOTPAndResetPasswordView.as_view(), name='ws-password-reset-verify'),
 
 
-     # Single combined endpoint — Next.js server component uses this
+     # Single combined endpoint — Next.js server component uses this (GET only for backwards compat or public)
     path("content/",    wholesale_page_content, name="page-content"),
- 
-    # Individual section endpoints (useful for partial refreshes / ISR tags)
-    path("hero/",       wholesale_hero,         name="hero"),
-    path("stats/",      wholesale_stats,        name="stats"),
-    path("benefits/",   wholesale_benefits,     name="benefits"),
-    path("categories/", wholesale_categories,   name="categories"),
-    path("steps/",      wholesale_steps,        name="steps"),
-    path("guarantee/",  wholesale_guarantee,    name="guarantee"),
 ]

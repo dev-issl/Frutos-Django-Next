@@ -2,7 +2,8 @@ import Image from 'next/image'
 import Link from 'next/link'
 import aboutHero from '../../../../public/about/about_hero.png';
 
-export default function HeroSection() {
+export default function HeroSection({ data }) {
+  const { badge, title_main, title_highlight, title, image_url } = data || {};
   return (
     <section style={{ background: '#fff', borderBottom: '1px solid rgba(188,202,193,0.2)' }}>
       <style>{`
@@ -33,15 +34,27 @@ export default function HeroSection() {
               letterSpacing: '0.22em', textTransform: 'uppercase', color: '#00694c',
               marginBottom: '16px',
             }}>
-              Our story
+              {badge || 'Our story'}
             </span>
             <h1 className="about-h1" style={{
               fontFamily: '"Playfair Display", Georgia, serif',
               fontWeight: 600, color: '#151e13', lineHeight: 0.9,
               marginBottom: '20px',
             }}>
-              Rooted in quality,<br />
-              <em style={{ fontStyle: 'italic', color: '#00694c' }}>growing for the future.</em>
+              {title_main || (title ? '' : 'Rooted in quality,')}
+              {(title_main || !title) && <br />}
+              {title_highlight ? (
+                <em style={{ fontStyle: 'italic', color: '#00694c' }}>
+                  {title_highlight}
+                </em>
+              ) : !title ? (
+                <em style={{ fontStyle: 'italic', color: '#00694c' }}>
+                  growing for the future.
+                </em>
+              ) : null}
+              {title && !title_main && !title_highlight && (
+                <span dangerouslySetInnerHTML={{ __html: title }} />
+              )}
             </h1>
             {/* <p style={{ fontSize: '16px', color: '#6D7A73', lineHeight: 1.5, maxWidth: '580px', marginBottom: '32px' }}>
               El Árbol was born from a simple conviction: the gap between a Spanish farmer's harvest and your dinner table should be as short as possible. We are the bridge — careful, transparent, and deeply committed to the people on both ends.
@@ -69,14 +82,24 @@ export default function HeroSection() {
 
           {/* ── Right: image (large screens only) ── */}
           <div className="hero-img-wrap">
-            <Image placeholder='blur'
-              src={aboutHero}
-              alt="El Árbol — farm fresh produce"
-              
-              fill
-              style={{ objectFit: 'contain' }}
-              priority
-            />
+            {image_url ? (
+              <Image 
+                src={image_url}
+                alt={badge || "El Árbol"}
+                fill
+                style={{ objectFit: 'contain' }}
+                priority
+              />
+            ) : (
+              <Image placeholder='blur'
+                src={aboutHero}
+                alt="El Árbol — farm fresh produce"
+                
+                fill
+                style={{ objectFit: 'contain' }}
+                priority
+              />
+            )}
           </div>
 
         </div>
