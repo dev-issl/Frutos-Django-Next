@@ -687,7 +687,7 @@ export default function ProductDetailClient({ product: initialProduct, related }
             </div>
 
             {/* RIGHT: Product info */}
-            <div className="col-span-5 flex flex-col gap-6">
+            <div className="col-span-5 flex flex-col gap-4">
 
               <div>
                 <h1 className="font-bold tracking-tight text-[#151E13] mb-2"
@@ -702,7 +702,7 @@ export default function ProductDetailClient({ product: initialProduct, related }
                 <StarRating rating={product.rating} reviews={product.reviews} size={16} />
               </div>
 
-              <div className="bg-white p-6 rounded-md border-l-4 border-[#00694C]"
+              <div className="bg-white p-4 rounded-md border-l-4 border-[#00694C]"
                 style={{ boxShadow: '0 2px 8px rgba(0,33,21,0.04)' }}>
                 <div className="flex items-start justify-between">
                   <div>
@@ -744,8 +744,9 @@ export default function ProductDetailClient({ product: initialProduct, related }
                     )}
                   </div>
                   {!isWholesalePrice && savePercent && (
-                    <span className="bg-[#BA1A1A] text-white text-[10px] font-bold px-3 py-1
-                                     rounded-full uppercase tracking-widest shrink-0">
+                    <span className="border border-[#855000] text-[#855000] bg-[#FFF8EB] text-[10px] font-bold px-2.5 py-1
+                                     rounded uppercase tracking-widest shrink-0"
+                          style={{ letterSpacing: '0.15em' }}>
                       Save {savePercent}%
                     </span>
                   )}
@@ -753,7 +754,7 @@ export default function ProductDetailClient({ product: initialProduct, related }
               </div>
 
               <div>
-                <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className="grid grid-cols-2 gap-4 mb-3">
                   <div>
                     <label className="text-[10px] uppercase tracking-widest font-bold
                                       text-[#6D7A73] block mb-2">
@@ -803,13 +804,13 @@ export default function ProductDetailClient({ product: initialProduct, related }
 
               <div>
                 <label className="text-[10px] uppercase tracking-widest font-bold
-                                  text-[#6D7A73] block mb-3">
+                                  text-[#6D7A73] block mb-2">
                   Fulfillment
                 </label>
-                <div className="space-y-2.5">
+                <div className="space-y-2">
                   {fulfillmentOptions.map((opt) => (
                     <label key={opt.id}
-                      className="flex items-center gap-4 p-4 rounded-xl cursor-pointer transition-all"
+                      className="flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all"
                       style={{ background: 'white',
                                border: `1px solid ${fulfillment === opt.id ? '#00694C' : '#BCCAC1'}` }}>
                       <input type="radio" name="fulfillment" value={opt.id}
