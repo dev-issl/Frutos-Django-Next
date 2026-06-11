@@ -173,17 +173,31 @@ class UserOrderHistoryView(generics.ListAPIView):
 
 
 # ─── Notifications — list ─────────────────────────────────────────────────────
-
 class NotificationListView(generics.ListAPIView):
-    """GET /api/auth/notifications/?unread=true"""
+    """GET /api/auth/notifications/?unread=true&page=1&page_size=20"""
     permission_classes = [permissions.IsAuthenticated]
     serializer_class   = NotificationSerializer
 
     def get_queryset(self):
-        qs = Notification.objects.filter(user=self.request.user)
+        qs = Notification.objects.filter(user=self.request.user).order_by('-created_at')
         if self.request.query_params.get('unread') == 'true':
             qs = qs.filter(is_read=False)
-        return qs[:50]  # latest 50
+        return qs
+
+    def list(self, request, *args, **kwargs):
+        qs        = self.get_queryset()
+        page_size = int(request.query_params.get('page_size', 20))
+        page_num  = int(request.query_params.get('page', 1))
+        total     = qs.count()
+        start     = (page_num - 1) * page_size
+        items     = qs[start:start + page_size]
+
+        serializer = self.get_serializer(items, many=True)
+        return Response({
+            'count':       total,
+            'total_pages': (total + page_size - 1) // page_size or 1,
+            'results':     serializer.data,
+        })
 
 
 # ─── Notification — delete single ────────────────────────────────────────────
@@ -204,6 +218,21 @@ class NotificationDeleteView(APIView):
             )
 
 
+# ─── Notifications — bulk delete ──────────────────────────────────────────────
+
+class NotificationBulkDeleteView(APIView):
+    """DELETE /api/auth/notifications/bulk-delete/ body: {ids: [1,2,3]}"""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def delete(self, request):
+        ids = request.data.get('ids', [])
+        if not ids:
+            return Response({'detail': 'No ids provided.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        deleted_count, _ = Notification.objects.filter(id__in=ids, user=request.user).delete()
+        return Response({'deleted': deleted_count}, status=status.HTTP_200_OK)
+
+
 # ─── Notifications — mark read ────────────────────────────────────────────────
 
 class NotificationMarkReadView(APIView):
@@ -211,13 +240,23 @@ class NotificationMarkReadView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
+        qs = Notification.objects.filter(user=request.user)
+        
+        context = request.query_params.get('context', '') or request.data.get('context', '')
+        admin_types = ['admin_alert', 'out_of_stock', 'wholesale_pending', 'ticket_created']
+        
+        if context == 'dashboard':
+            qs = qs.filter(type__in=admin_types)
+        else:
+            qs = qs.exclude(type__in=admin_types)
+
         if request.data.get('all'):
-            Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
+            qs.filter(is_read=False).update(is_read=True)
         else:
             ids = request.data.get('ids', [])
-            Notification.objects.filter(user=request.user, id__in=ids).update(is_read=True)
-        unread_count = Notification.objects.filter(user=request.user, is_read=False).count()
-        return Response({'unreadCount': unread_count})
+            qs.filter(id__in=ids).update(is_read=True)
+            
+        return Response({'unreadCount': qs.filter(is_read=False).count()})
 
 
 # ─── Notifications — unread count ────────────────────────────────────────────
@@ -227,8 +266,17 @@ class UnreadCountView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        count = Notification.objects.filter(user=request.user, is_read=False).count()
-        return Response({'unreadCount': count})
+        qs = Notification.objects.filter(user=request.user, is_read=False)
+        
+        context = request.query_params.get('context', '')
+        admin_types = ['admin_alert', 'out_of_stock', 'wholesale_pending', 'ticket_created']
+        
+        if context == 'dashboard':
+            qs = qs.filter(type__in=admin_types)
+        else:
+            qs = qs.exclude(type__in=admin_types)
+            
+        return Response({'unreadCount': qs.count()})
 
 
 # ─── Notifications — Server-Sent Events (real-time push) ─────────────────────
@@ -258,21 +306,23 @@ def notification_stream(request):
     except Exception:
         return _HR('Unauthorized', status=401)
 
+    context = request.GET.get('context', '')
+    admin_types = ['admin_alert', 'out_of_stock', 'wholesale_pending', 'ticket_created']
+
     def event_stream():
-        sent_ids = set(
-            Notification.objects.filter(user=user)
-            .values_list('id', flat=True)
-        )
+        base_qs = Notification.objects.filter(user=user)
+        if context == 'dashboard':
+            base_qs = base_qs.filter(type__in=admin_types)
+        else:
+            base_qs = base_qs.exclude(type__in=admin_types)
+
+        sent_ids = set(base_qs.values_list('id', flat=True))
         tick = 0
         while True:
             from django.db import close_old_connections
             close_old_connections()
-            new_notifs = (
-                Notification.objects
-                .filter(user=user)
-                .exclude(id__in=sent_ids)
-                .order_by('id')
-            )
+            
+            new_notifs = base_qs.exclude(id__in=sent_ids).order_by('id')
             for n in new_notifs:
                 sent_ids.add(n.id)
                 payload = {
@@ -752,7 +802,7 @@ class AdminUserListView(APIView):
                 'business_name':    None,
                 'wholesale_status': None,
                 'is_wholesale':     False,
-                'photo':            request.build_absolute_uri(u.profile.avatar.url) if (hasattr(u, 'profile') and getattr(u.profile, 'avatar', None) and getattr(u.profile.avatar, 'name', None)) else None,
+                'photo':            request.build_absolute_uri(u.profile_image.url) if getattr(u, 'profile_image', None) and getattr(u.profile_image, 'name', None) else (request.build_absolute_uri(u.profile.avatar.url) if (hasattr(u, 'profile') and getattr(u.profile, 'avatar', None) and getattr(u.profile.avatar, 'name', None)) else None),
             })
 
         # ── Wholesale users ───────────────────────────────────────
@@ -838,6 +888,7 @@ class AdminUserDetailView(generics.RetrieveUpdateDestroyAPIView):
         
         from wholesale.models import WholesaleUser
         if isinstance(u, WholesaleUser):
+            profile_image_url = request.build_absolute_uri(u.profile_image.url) if u.profile_image else None
             return Response({
                 'id':               f'ws_{u.id}',
                 'name':             u.contact_name or u.email,
@@ -846,6 +897,7 @@ class AdminUserDetailView(generics.RetrieveUpdateDestroyAPIView):
                 'is_active':        u.is_active,
                 'date_joined':      u.applied_at,
                 'wholesale_status': u.status,
+                'profile_image':    profile_image_url,
             })
 
         ws_status = None
@@ -854,6 +906,8 @@ class AdminUserDetailView(generics.RetrieveUpdateDestroyAPIView):
                 ws_status = u.wholesaler_profile.approval_status
             except Exception:
                 ws_status = 'PENDING'
+                
+        profile_image_url = request.build_absolute_uri(u.profile_image.url) if u.profile_image else None
         return Response({
             'id':               u.id,
             'name':             getattr(u, 'name', None) or u.get_full_name() or u.email,
@@ -862,6 +916,7 @@ class AdminUserDetailView(generics.RetrieveUpdateDestroyAPIView):
             'is_active':        u.is_active,
             'date_joined':      u.date_joined,
             'wholesale_status': ws_status,
+            'profile_image':    profile_image_url,
         })
 
     def partial_update(self, request, *args, **kwargs):
@@ -876,8 +931,10 @@ class AdminUserDetailView(generics.RetrieveUpdateDestroyAPIView):
                 u.is_active = data['is_active'] in [True, 'true', '1']
             if 'wholesale_status' in data:
                 u.status = data['wholesale_status']
+            if 'profile_image' in request.FILES:
+                u.profile_image = request.FILES['profile_image']
             u.save()
-            return Response({'success': True})
+            return self.retrieve(request, *args, **kwargs)
 
         if 'name' in data:
             u.name = data['name']
@@ -893,9 +950,12 @@ class AdminUserDetailView(generics.RetrieveUpdateDestroyAPIView):
                 profile.save()
             except Exception:
                 pass
+                
+        if 'profile_image' in request.FILES:
+            u.profile_image = request.FILES['profile_image']
 
         u.save()
-        return Response({'success': True})
+        return self.retrieve(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
         self.get_object().delete()

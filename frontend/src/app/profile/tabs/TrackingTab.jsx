@@ -631,11 +631,7 @@ export default function TrackingTab({ authFetch, initialOrders = null }) {
     else setLastUpdated(new Date())
   }, [])
 
-  // Real-time polling every 3 s
-  useEffect(() => {
-    const id = setInterval(() => fetchOrders(true), 3_000)
-    return () => clearInterval(id)
-  }, [fetchOrders])
+  // Real-time polling removed to prevent server overload
 
   // Auto-select most-recent non-delivered / first order
   useEffect(() => {
@@ -703,19 +699,7 @@ export default function TrackingTab({ authFetch, initialOrders = null }) {
           Order Tracking
         </h2>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {/* Live dot */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-            <div
-              style={{
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                background: '#00694C',
-                animation: 'livePulse 2s ease-in-out infinite',
-              }}
-            />
-            <span style={{ fontSize: '11px', fontWeight: 600, color: '#00694C' }}>Live</span>
-          </div>
+          {/* Live dot removed */}
           <button
             onClick={() => fetchOrders(true)}
             style={{
@@ -740,7 +724,7 @@ export default function TrackingTab({ authFetch, initialOrders = null }) {
 
       {lastUpdated && (
         <p style={{ fontSize: '11px', color: '#BCCAC1', marginBottom: '16px', marginTop: '-10px' }}>
-          Updated {lastUpdated.toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit' })} · auto-refreshes every 3s
+          Updated {lastUpdated.toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit' })}
         </p>
       )}
 

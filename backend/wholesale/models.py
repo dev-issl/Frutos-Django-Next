@@ -58,10 +58,11 @@ class WholesaleUser(AbstractBaseUser, PermissionsMixin):
     user_permissions = models.ManyToManyField(
         'auth.Permission',
         blank=True,
-        related_name='wholesale_users',
+        related_name='wholesale_users_permissions',
         related_query_name='wholesale_user',
         verbose_name='user permissions',
     )
+    profile_image = models.ImageField(upload_to='wholesale/profiles/', blank=True, null=True)
     # id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     # serial_number = models.IntegerField( null=True, blank=True)  
     email = models.EmailField(unique=True, db_index=True)

@@ -58,6 +58,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     # Legacy fields for compatibility (can be removed if not needed)
     full_name = models.CharField(max_length=255, blank=True, null=True)
     phone = models.CharField(max_length=20, blank=True, null=True)
+    profile_image = models.ImageField(upload_to='users/profiles/', blank=True, null=True)
     
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['name']

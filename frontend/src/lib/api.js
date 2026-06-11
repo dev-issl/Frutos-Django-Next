@@ -243,6 +243,20 @@ export async function updateWholesaleProfile(accessToken, payload) {
     return data
 }
 
+export async function uploadWholesaleProfileImage(accessToken, file) {
+    const formData = new FormData()
+    formData.append('profile_image', file)
+    
+    const res = await fetch(`${WS_BASE}/profile/image/`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${accessToken}` },
+        body: formData,
+    })
+    const data = await res.json()
+    if (!res.ok) throw data
+    return data
+}
+
 export async function changeWholesalePassword(accessToken, oldPassword, newPassword) {
     const res = await fetch(`${WS_BASE}/auth/change-password/`, {
         method: 'POST',

@@ -68,17 +68,17 @@ function ProfileMenu({ user, logout, isMobile = false }) {
       <button
         onClick={() => setOpen(v => !v)}
         style={{
-          display: 'flex', alignItems: 'center', gap: '7px',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
           background: open ? '#ECF7E4' : 'transparent',
           border: `1.5px solid ${open ? '#00694C' : '#BCCAC1'}`,
-          borderRadius: '99px',
-          padding: isMobile ? '4px' : '4px 10px 4px 4px',
+          borderRadius: '50%',
+          padding: '2px',
           cursor: 'pointer',
           transition: 'background .15s, border-color .15s',
         }}
       >
         <div style={{
-          width: '28px', height: '28px', borderRadius: '50%',
+          width: '32px', height: '32px', borderRadius: '50%',
           background: avatarUrl ? 'transparent' : '#1D9E75',
           overflow: 'hidden',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -86,20 +86,9 @@ function ProfileMenu({ user, logout, isMobile = false }) {
         }}>
           {avatarUrl
             ? <Image src={avatarUrl} alt={displayName} width={40} height={40} style={{ objectFit: 'cover' }} />
-            : <span style={{ fontSize: '11px', fontWeight: 700, color: 'white', lineHeight: 1 }}>{initials}</span>
+            : <span style={{ fontSize: '12px', fontWeight: 700, color: 'white', lineHeight: 1 }}>{initials}</span>
           }
         </div>
-        {!isMobile && (
-          <span style={{ fontSize: '13px', fontWeight: 500, color: '#2D3A35', maxWidth: '90px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {displayName.split(' ')[0]}
-          </span>
-        )}
-        {!isMobile && (
-          <svg width="12" height="12" fill="none" stroke="#6D7A73" strokeWidth="2.2" viewBox="0 0 24 24"
-            style={{ transition: 'transform .2s', transform: open ? 'rotate(180deg)' : 'rotate(0deg)', flexShrink: 0 }}>
-            <path d="m6 9 6 6 6-6"/>
-          </svg>
-        )}
       </button>
 
       {open && (

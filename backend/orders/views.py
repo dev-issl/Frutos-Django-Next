@@ -417,10 +417,15 @@ class OrderViewSet(viewsets.ModelViewSet):
         order_number_param = self.request.query_params.get('order_number')
         user = self.request.user
 
+        # Check for wholesale token
+        is_wholesale_token = False
+        if hasattr(self.request, 'auth') and getattr(self.request.auth, 'get', None):
+            is_wholesale_token = self.request.auth.get('is_wholesale') == True
+
         # API: filter by user id if provided
         if user_param:
             # Security check: only allow admin to fetch any user's orders, or users to fetch their own
-            is_admin = user.is_authenticated and (
+            is_admin = not is_wholesale_token and user.is_authenticated and (
                 (hasattr(user, 'user_type') and user.user_type == 'ADMIN') or 
                 user.is_superuser or 
                 user.is_staff
@@ -429,7 +434,7 @@ class OrderViewSet(viewsets.ModelViewSet):
             if is_admin:
                 # Admin can filter by any user ID
                 queryset = queryset.filter(user__id=user_param)
-            elif user.is_authenticated and str(user.id) == str(user_param):
+            elif user.is_authenticated and not is_wholesale_token and str(user.id) == str(user_param):
                 # Users can fetch their own orders, including guest orders by email
                 from django.db.models import Q
                 queryset = queryset.filter(
@@ -442,13 +447,17 @@ class OrderViewSet(viewsets.ModelViewSet):
         elif order_number_param:
             queryset = queryset.filter(order_number=order_number_param)
             # Additional security: non-admin users can only see their own orders
-            is_admin = user.is_authenticated and (
+            is_admin = not is_wholesale_token and user.is_authenticated and (
                 (hasattr(user, 'user_type') and user.user_type == 'ADMIN') or 
                 user.is_superuser or 
                 user.is_staff
             )
             if not is_admin:
-                queryset = queryset.filter(user=user)
+                if is_wholesale_token:
+                    wholesale_email = self.request.auth.get('email')
+                    queryset = queryset.filter(customer_email=wholesale_email)
+                else:
+                    queryset = queryset.filter(user=user)
 
         # If no filter params, apply default logic
         else:
@@ -457,7 +466,7 @@ class OrderViewSet(viewsets.ModelViewSet):
                 return queryset
 
             # Check if user is admin
-            is_admin = user.is_authenticated and (
+            is_admin = not is_wholesale_token and user.is_authenticated and (
                 (hasattr(user, 'user_type') and user.user_type == 'ADMIN') or 
                 user.is_superuser or 
                 user.is_staff
@@ -466,6 +475,10 @@ class OrderViewSet(viewsets.ModelViewSet):
             if is_admin:
                 # Admin can see all orders
                 return queryset.order_by('-ordered_at')
+            
+            if is_wholesale_token:
+                wholesale_email = self.request.auth.get('email')
+                return queryset.filter(customer_email=wholesale_email).order_by('-ordered_at')
             
             # If not authenticated, return empty queryset
             if not user.is_authenticated:
@@ -566,6 +579,26 @@ class OrderViewSet(viewsets.ModelViewSet):
                 order = serializer.save()
                 
                 logger.info(f"Order created successfully: {order.order_number}")
+                
+                from accounts.notifications import send_admin_notification
+                
+                # 1. Notify Admins about the new order
+                send_admin_notification(
+                    notification_type='admin_alert',
+                    title='New Order Placed 🛍️',
+                    message=f'Order #{order.order_number} has been placed. Total: ৳{order.total_amount}',
+                    metadata={'orderNumber': order.order_number, 'icon': 'shopping_bag'}
+                )
+                
+                # 2. Check if any product went out of stock
+                for item in order.items.all():
+                    if item.product and item.product.stock <= 0:
+                        send_admin_notification(
+                            notification_type='out_of_stock',
+                            title='Product Out of Stock ⚠️',
+                            message=f'Product "{item.product.name}" is now out of stock after order #{order.order_number}.',
+                            metadata={'productId': str(item.product.id), 'productName': item.product.name, 'icon': 'warning'}
+                        )
                 
                 # Return success response with order details
                 return Response({
@@ -782,9 +815,17 @@ class OrderViewSet(viewsets.ModelViewSet):
             import random
             tracking_number = f"TRK-{datetime.datetime.now().strftime('%Y%m%d')}-{random.randint(10000, 99999)}"
 
+            # Check for wholesale token
+            is_wholesale_token = False
+            if hasattr(request, 'auth') and getattr(request.auth, 'get', None):
+                is_wholesale_token = request.auth.get('is_wholesale') == True
+                
+            # If it's a wholesale token, don't mistakenly attach the admin/users.User with the same ID
+            order_user = request.user if request.user.is_authenticated and not is_wholesale_token else None
+
             # Create order data
             order_data = {
-                'user': request.user if request.user.is_authenticated else None,
+                'user': order_user,
                 'total_amount': total_amount,
                 'cart_subtotal': subtotal,
                 'status': Order.OrderStatus.PROCESSING,  # Set to processing after payment confirmation
@@ -866,6 +907,38 @@ class OrderViewSet(viewsets.ModelViewSet):
                 status=Order.OrderStatus.PROCESSING,
                 notes=f"Payment confirmed. Transaction ID: {transaction_id}. {comment if comment else ''}"
             )
+
+            # ── Send Notifications ────────────────────────────────────────
+            from accounts.notifications import send_admin_notification
+            
+            try:
+                send_admin_notification(
+                    notification_type='admin_alert',
+                    title='New Order Placed (Paid) 🛍️',
+                    message=f'Order #{order.order_number} has been paid and confirmed. Total: €{order.total_amount}',
+                    metadata={'orderNumber': str(order.order_number), 'icon': 'shopping_bag'}
+                )
+            except Exception as e:
+                pass
+            
+            # NOTE: confirm_payment does not decrease stock currently, but we can check if it's already out of stock
+            for item in items:
+                try:
+                    product = None
+                    if 'product' in item:
+                        product = Product.objects.get(id=item['product'])
+                    elif 'product_id' in item:
+                        product = Product.objects.get(id=item['product_id'])
+                    
+                    if product and product.stock is not None and product.stock <= 0:
+                        send_admin_notification(
+                            notification_type='out_of_stock',
+                            title='Product Out of Stock ⚠️',
+                            message=f'Product "{product.name}" is out of stock (Order #{order.order_number}).',
+                            metadata={'productId': str(product.id), 'productName': product.name, 'icon': 'warning'}
+                        )
+                except Exception:
+                    pass
 
             # Prepare response data
             response_data = {

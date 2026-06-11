@@ -1,10 +1,10 @@
 // src/app/wholesale/profile/_shared/StatBox.jsx
 export function StatBox({ label, value, sub }) {
   return (
-    <div className="bg-gray-50/50 rounded-xl px-3 py-4 text-center border border-gray-100 shadow-sm transition-all hover:border-gray-200">
-      <p className="text-[20px] font-bold text-[#085041] mb-1 leading-tight break-words">{value}</p>
-      <p className="text-[10.5px] font-bold text-gray-500 m-0 uppercase tracking-wider">{label}</p>
-      {sub && <p className="text-[10.5px] text-gray-400 mt-1">{sub}</p>}
+    <div className="bg-white rounded-[20px] p-5 sm:p-6 flex flex-col justify-center items-center text-center border border-gray-100 shadow-[0_2px_12px_rgb(0,0,0,0.02)] transition-all hover:shadow-[0_4px_20px_rgb(0,0,0,0.04)] hover:-translate-y-0.5">
+      <p className="text-[22px] sm:text-2xl font-bold text-[#085041] mb-2 leading-tight break-words">{value}</p>
+      <p className="text-[11px] font-bold text-gray-500 m-0 uppercase tracking-[0.08em]">{label}</p>
+      {sub && <p className="text-[11px] text-gray-400 mt-1.5 italic font-medium">{sub}</p>}
     </div>
   )
 }

@@ -70,3 +70,40 @@ def send_order_status_notification(order):
         )
     except Exception as exc:
         logger.error('Failed to create notification: %s', exc)
+
+
+def send_admin_notification(notification_type, title, message, metadata=None):
+    """
+    Create a Notification record for all active superusers.
+    """
+    from django.contrib.auth import get_user_model
+    from .models import Notification
+
+    User = get_user_model()
+    # Filter for active users who are either superusers OR have user_type='ADMIN'
+    from django.db.models import Q
+    admins = User.objects.filter(
+        Q(is_superuser=True) | Q(user_type='ADMIN'),
+        is_active=True
+    ).distinct()
+    
+    if not admins.exists():
+        return
+
+    notifications = []
+    for admin in admins:
+        notifications.append(
+            Notification(
+                user=admin,
+                type=notification_type,
+                title=title,
+                message=message,
+                metadata=metadata or {}
+            )
+        )
+    
+    try:
+        Notification.objects.bulk_create(notifications)
+        logger.info('Admin notifications created: type=%s count=%d', notification_type, len(notifications))
+    except Exception as exc:
+        logger.error('Failed to bulk create admin notifications: %s', exc)

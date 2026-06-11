@@ -45,6 +45,7 @@ export default async function WholesaleProfilePage() {
     account_manager_email: session.user.accountManagerEmail,
     total_orders:          session.user.totalOrders,
     total_spent:           session.user.totalSpent,
+    profile_image_url:     session.user.profileImage,
   }
 
   const profileData = profile.status === 'fulfilled'

@@ -72,7 +72,7 @@ class WholesaleLoginView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         user = serializer.validated_data['user']
         tokens = get_tokens_for_user(user)
-        user_data = WholesaleUserPublicSerializer(user).data
+        user_data = WholesaleUserPublicSerializer(user, context={'request': request}).data
         return Response({'user': user_data, **tokens})
 
 
@@ -101,7 +101,7 @@ class WholesaleProfileView(APIView):
     permission_classes = [IsWholesaleUser]
 
     def get(self, request):
-        serializer = WholesaleUserPublicSerializer(request.user)
+        serializer = WholesaleUserPublicSerializer(request.user, context={'request': request})
         return Response(serializer.data)
 
     def patch(self, request):
@@ -110,7 +110,7 @@ class WholesaleProfileView(APIView):
         )
         if serializer.is_valid():
             serializer.save()
-            return Response(WholesaleUserPublicSerializer(request.user).data)
+            return Response(WholesaleUserPublicSerializer(request.user, context={'request': request}).data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 

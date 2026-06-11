@@ -2,8 +2,12 @@
 import Card from '../_shared/Card'
 import { Field } from '../_shared/StatBox'
 
-export default function SettingsTab({ profile, editForm, onChange, onSave, saving, success, error }) {
+export default function SettingsTab({ 
+  profile, editForm, onChange, onSave, saving, success, error,
+  pwForm, pwOnChange, pwOnSave, pwSaving, pwSuccess, pwError
+}) {
   return (
+    <div className="flex flex-col gap-6 lg:gap-8">
     <Card title="Edit Profile" icon={
       <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
         <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
@@ -49,14 +53,58 @@ export default function SettingsTab({ profile, editForm, onChange, onSave, savin
       <button 
         onClick={onSave} 
         disabled={saving} 
-        className={`mt-6 w-full md:w-auto px-8 py-3.5 rounded-xl font-bold text-white text-sm transition-all ${
+        className={`mt-4 w-full md:w-auto px-6 py-3 rounded-xl font-bold text-white text-sm transition-all ${
           saving 
             ? 'bg-[#00694C]/70 cursor-not-allowed' 
-            : 'bg-[#00694C] hover:bg-[#085041] shadow-md shadow-[#00694C]/20 hover:-translate-y-0.5'
+            : 'bg-[#00694C] hover:bg-[#085041] shadow-md shadow-[#00694C]/20 hover:-translate-y-0.5 cursor-pointer'
         }`}
       >
         {saving ? 'Saving…' : 'Save Changes'}
       </button>
     </Card>
+
+    {/* Change Password Card */}
+    <Card title="Change Password" icon={
+      <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+        <path d="M7 11V7a5 5 0 0110 0v4" />
+      </svg>
+    }>
+      <div className="flex flex-col gap-4 max-w-md">
+        {[
+          { label: 'Current Password', name: 'old_password' },
+          { label: 'New Password',     name: 'new_password' },
+          { label: 'Confirm New',      name: 'confirm'      },
+        ].map(({ label, name }) => (
+          <Field key={name} label={label} name={name} type="password"
+            value={pwForm[name]} onChange={pwOnChange} />
+        ))}
+
+        {pwSuccess && (
+          <div className="mt-2 p-3.5 rounded-xl bg-emerald-50 text-emerald-700 text-sm flex items-center gap-2 font-medium">
+            <span className="material-symbols-outlined text-[18px]">check_circle</span>
+            Password changed successfully.
+          </div>
+        )}
+        {pwError && (
+          <div className="mt-2 p-3.5 rounded-xl bg-red-50 text-red-600 text-sm flex items-center gap-2 font-medium">
+            <span className="material-symbols-outlined text-[18px]">error</span>
+            {pwError}
+          </div>
+        )}
+
+        <button 
+          onClick={pwOnSave} 
+          disabled={pwSaving} 
+          className={`mt-2 w-full md:w-auto px-6 py-3 rounded-xl font-bold text-[#085041] bg-[#E7F1DF] hover:bg-[#D5E6C9] text-sm transition-all ${
+            pwSaving ? 'opacity-60 cursor-not-allowed' : 'hover:-translate-y-0.5 cursor-pointer'
+          }`}
+        >
+          {pwSaving ? 'Changing…' : 'Update Password'}
+        </button>
+      </div>
+    </Card>
+
+    </div>
   )
 }

@@ -7,7 +7,7 @@ import { signOut, useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 
 import {
-  updateWholesaleProfile, changeWholesalePassword,
+  updateWholesaleProfile, changeWholesalePassword, uploadWholesaleProfileImage,
   markWholesaleNotificationsRead, deleteWholesaleOrder, deleteWholesaleNotification,
 } from '@/lib/api'
 
@@ -16,7 +16,6 @@ import OverviewTab        from './_tabs/OverviewTab'
 import OrdersTab          from './_tabs/OrdersTab'
 import NotificationsTab   from './_tabs/NotificationsTab'
 import SettingsTab        from './_tabs/SettingsTab'
-import SecurityTab        from './_tabs/SecurityTab'
 
 export default function WholesaleProfileClient({ initialProfile, initialNotifications, initialOrders, accessToken }) {
   const router = useRouter()
@@ -51,6 +50,24 @@ export default function WholesaleProfileClient({ initialProfile, initialNotifica
       await updateSession({ contactName: updated.contact_name })
     } catch { setEditError('Failed to save changes. Please try again.') }
     finally  { setEditSaving(false) }
+  }
+
+  const [imageUploading, setImageUploading] = useState(false)
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setImageUploading(true)
+    try {
+      const updated = await uploadWholesaleProfileImage(accessToken, file)
+      setProfile(p => ({ ...p, profile_image: updated.profile_image_url || p.profile_image }))
+      await updateSession({ profileImage: updated.profile_image_url })
+    } catch (err) {
+      console.error('Failed to upload image:', err)
+      alert('Failed to upload image. Please try again.')
+    } finally {
+      setImageUploading(false)
+    }
   }
 
   // ── Change password ───────────────────────────────────────────────────────
@@ -105,7 +122,6 @@ export default function WholesaleProfileClient({ initialProfile, initialNotifica
     { id: 'orders',         label: `Orders${orders.length ? ` (${orders.length})` : ''}` },
     { id: 'notifications',  label: `Notification${unreadCount ? ` (${unreadCount})` : ''}` },
     { id: 'settings',       label: 'Settings' },
-    { id: 'security',       label: 'Security' },
   ]
 
   return (
@@ -113,6 +129,8 @@ export default function WholesaleProfileClient({ initialProfile, initialNotifica
       <ProfileHeader
         profile={profile} activeTab={activeTab} setActiveTab={setActiveTab}
         tabs={tabs} onLogout={handleLogout}
+        onImageUpload={handleImageUpload}
+        imageUploading={imageUploading}
       />
 
       <div className="max-w-5xl mx-auto px-4 md:px-6 py-8">
@@ -133,12 +151,8 @@ export default function WholesaleProfileClient({ initialProfile, initialNotifica
             <SettingsTab
               profile={profile} editForm={editForm} onChange={handleEditChange}
               onSave={handleEditSave} saving={editSaving} success={editSuccess} error={editError}
-            />
-          )}
-          {activeTab === 'security' && (
-            <SecurityTab
-              pwForm={pwForm} onChange={handlePwChange}
-              onSave={handlePasswordSave} saving={pwSaving} success={pwSuccess} error={pwError}
+              pwForm={pwForm} pwOnChange={handlePwChange} pwOnSave={handlePasswordSave}
+              pwSaving={pwSaving} pwSuccess={pwSuccess} pwError={pwError}
             />
           )}
         </div>

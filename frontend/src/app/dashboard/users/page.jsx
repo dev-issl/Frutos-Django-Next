@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Plus, Eye, Pencil, Trash2 } from "lucide-react";
+import { useState, useRef } from "react";
+import { Plus, Eye, Pencil, Trash2, Camera } from "lucide-react";
 import Container from "@/app/dashboard/_components/Container";
 import DataTable from "@/app/dashboard/_components/DataTable";
 import Modal from "@/app/dashboard/_components/Modal";
@@ -45,9 +45,10 @@ function WholesaleStatusBadge({ value }) {
     rejected:  "bg-red-100 text-red-700",
     suspended: "bg-slate-100 text-slate-600",
   };
+  const label = value.charAt(0).toUpperCase() + value.slice(1);
   return (
-    <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${map[value] || map.pending}`}>
-      {value}
+    <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${map[value.toLowerCase()] || map.pending}`}>
+      {label}
     </span>
   );
 }
@@ -67,11 +68,16 @@ const columns = [
   { key: "email",            label: "Email" },
   { key: "user_type",        label: "Role",      render: (v) => <RoleBadge value={v} /> },
   { key: "business_name",    label: "Business",  render: (v) => v || <span className="text-slate-400">—</span> },
-  { key: "is_active",        label: "Status",    render: (v) => (
-    <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${v ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-500"}`}>
-      {v ? "Active" : "Inactive"}
-    </span>
-  )},
+  { key: "is_active",        label: "Status",    render: (v, row) => {
+    if (row.user_type === 'WHOLESALE' || row.user_type === 'WHOLESALER') {
+      return <WholesaleStatusBadge value={row.wholesale_status || 'pending'} />;
+    }
+    return (
+      <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${v ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-500"}`}>
+        {v ? "Active" : "Inactive"}
+      </span>
+    );
+  }},
   { key: "date_joined", label: "Joined", render: (v) => v ? new Date(v).toLocaleDateString() : "—" },
 ];
 
@@ -93,9 +99,9 @@ const editFields = [
 const wholesaleEditFields = [
   ...editFields,
   { key: "wholesale_status", label: "Wholesale Status", type: "select", options: [
-    { value: "PENDING",  label: "Pending" },
-    { value: "APPROVED", label: "Approved" },
-    { value: "REJECTED", label: "Rejected" },
+    { value: "pending",  label: "Pending" },
+    { value: "approved", label: "Approved" },
+    { value: "rejected", label: "Rejected" },
   ]},
 ]
 
@@ -111,17 +117,6 @@ const createFields = [
   ]},
 ];
 
-const handleApproveWholesale = async (row) => {
-  try {
-    await api.patch(`/api/auth/admin/users/${row.id}/`, {
-      wholesale_status: 'APPROVED',
-    })
-    toast.success(`${row.name} approved as wholesaler`)
-    mutate()
-  } catch (err) {
-    toast.error(err?.message || 'Failed to approve wholesaler')
-  }
-}
 
 export default function UsersPage() {
   const toast = useToastContext();
@@ -188,6 +183,41 @@ export default function UsersPage() {
     }
   };
 
+  const handleApproveWholesale = async (row) => {
+    try {
+      await api.patch(`/api/auth/admin/users/${row.id}/`, {
+        wholesale_status: 'approved',
+      })
+      toast.success(`${row.name} approved as wholesaler`)
+      mutate()
+    } catch (err) {
+      toast.error(err?.message || 'Failed to approve wholesaler')
+    }
+  };
+
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !viewItem) return;
+
+    const formData = new FormData();
+    formData.append("profile_image", file);
+
+    try {
+      setIsUploadingImage(true);
+      const res = await api.patch(`/api/auth/admin/users/${viewItem.id}/`, formData);
+      toast.success("Profile image updated successfully");
+      setViewItem(res.data); // Update modal view
+      mutate(); // Update table
+    } catch (err) {
+      toast.error(err?.message || "Failed to update profile image");
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
   return (
     <Container title="Users" description="Manage user accounts — normal, wholesale, and admin">
 
@@ -225,8 +255,8 @@ export default function UsersPage() {
         actions={(row) => (
         <div className="flex items-center justify-end gap-1">
           <button onClick={() => setViewItem(row)} className="db-icon-btn" title="View"><Eye size={14} /></button>
-          <button onClick={() => setEditItem({ ...row, is_active: String(row.is_active), wholesale_status: row.wholesale_status || 'PENDING' })} className="db-icon-btn" title="Edit"><Pencil size={14} /></button>
-          {row.user_type === 'WHOLESALER' && row.wholesale_status === 'PENDING' && (
+          <button onClick={() => setEditItem({ ...row, is_active: String(row.is_active), wholesale_status: row.wholesale_status || 'pending' })} className="db-icon-btn" title="Edit"><Pencil size={14} /></button>
+          {row.user_type === 'WHOLESALE' && row.wholesale_status === 'pending' && (
             <button onClick={() => handleApproveWholesale(row)} style={{ padding: "5px 10px", fontSize: "11px", fontWeight: "700", borderRadius: "7px", background: "#22c55e", color: "white", border: "none", cursor: "pointer" }}>Approve</button>
           )}
           <button onClick={() => setDeleteItem(row)} className="db-icon-btn danger" title="Delete"><Trash2 size={14} /></button>
@@ -241,7 +271,7 @@ export default function UsersPage() {
       <Modal open={!!editItem} onClose={() => setEditItem(null)} title="Edit User">
   {editItem && (
     <FormModal
-      fields={editItem.user_type === 'WHOLESALER' ? wholesaleEditFields : editFields}
+      fields={editItem.user_type === 'WHOLESALE' ? wholesaleEditFields : editFields}
       initialValues={editItem}
       onSubmit={handleEdit}
       submitLabel="Save Changes"
@@ -249,30 +279,56 @@ export default function UsersPage() {
   )}
 </Modal>
 
-      <Modal open={!!viewItem} onClose={() => setViewItem(null)} title="User Details">
+      <Modal open={!!viewItem} onClose={() => setViewItem(null)} title="User Profile">
         {viewItem && (
-          <div className="space-y-4">
-            <div className="flex justify-center mb-4">
-              <div className="w-16 h-16 rounded-full overflow-hidden bg-slate-100 flex items-center justify-center border border-slate-200 shrink-0">
-                {viewItem.photo ? (
-                  <img src={viewItem.photo} alt={viewItem.name || "User"} className="w-full h-full object-cover" />
+          <div className="space-y-6">
+            <div className="flex flex-col items-center mb-6 relative">
+              <div 
+                className="w-24 h-24 rounded-full overflow-hidden bg-slate-100 flex items-center justify-center border-4 border-white shadow-lg shrink-0 relative group cursor-pointer"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {viewItem.profile_image || viewItem.photo ? (
+                  <img src={viewItem.profile_image || viewItem.photo} alt={viewItem.name || "User"} className="w-full h-full object-cover" />
                 ) : (
-                  <span className="text-2xl font-semibold text-slate-500">{(viewItem.name || viewItem.email || "U").charAt(0).toUpperCase()}</span>
+                  <span className="text-3xl font-semibold text-slate-400">{(viewItem.name || viewItem.email || "U").charAt(0).toUpperCase()}</span>
+                )}
+                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Camera size={24} className="text-white" />
+                </div>
+                {isUploadingImage && (
+                  <div className="absolute inset-0 bg-white/60 flex items-center justify-center">
+                    <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                  </div>
                 )}
               </div>
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                className="hidden" 
+                accept="image/*" 
+                onChange={handleImageUpload} 
+              />
+              <h3 className="mt-3 text-lg font-bold text-slate-800">{viewItem.name}</h3>
+              <p className="text-sm text-slate-500">{viewItem.email}</p>
+              <div className="mt-2 flex gap-2">
+                <RoleBadge value={viewItem.user_type} />
+                {viewItem.user_type === 'WHOLESALE' && <WholesaleStatusBadge value={viewItem.wholesale_status} />}
+              </div>
             </div>
-            <div className="space-y-3">
+            
+            <div className="bg-slate-50 rounded-xl p-4 space-y-4 border border-slate-100">
+              <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Account Details</h4>
               {[
-                ["Name",      viewItem.name],
-                ["Email",     viewItem.email],
-                ["Role",      viewItem.user_type],
-                ["Business",  viewItem.business_name || "—"],
-                ["Status",    viewItem.is_active ? "Active" : "Inactive"],
-                ["Joined",    viewItem.date_joined ? new Date(viewItem.date_joined).toLocaleDateString() : "—"],
-              ].map(([label, val]) => (
-                <div key={label} className="flex justify-between py-1.5 border-b border-slate-100 last:border-0">
-                  <span className="text-sm text-slate-500">{label}</span>
-                  <span className="text-sm font-medium text-slate-800">{String(val)}</span>
+                { label: "Status", val: viewItem.is_active ? <span className="text-emerald-600 font-medium flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500"></span>Active</span> : <span className="text-slate-500 font-medium flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-slate-400"></span>Inactive</span> },
+                { label: "Joined Date", val: viewItem.date_joined ? new Date(viewItem.date_joined).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) : "—" },
+                ...(viewItem.user_type === 'WHOLESALE' ? [
+                  { label: "Business Name", val: viewItem.business_name || "—" },
+                  { label: "Business Type", val: viewItem.business_type || "—" }
+                ] : []),
+              ].map((item, idx) => (
+                <div key={idx} className="flex justify-between items-center py-1">
+                  <span className="text-sm text-slate-500">{item.label}</span>
+                  <span className="text-sm font-medium text-slate-800">{item.val}</span>
                 </div>
               ))}
             </div>

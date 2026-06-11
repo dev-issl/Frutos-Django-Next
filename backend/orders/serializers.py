@@ -244,6 +244,42 @@ class OrderCreateSerializer(serializers.Serializer):
                 notes  = "Order placed successfully.",
             )
 
+            # ── Send Notifications ────────────────────────────────────────
+            from accounts.notifications import send_admin_notification
+            
+            # 1. Notify Admins about the new order
+            try:
+                send_admin_notification(
+                    notification_type='admin_alert',
+                    title='New Order Placed 🛍️',
+                    message=f'Order #{order.order_number} has been placed. Total: €{order.total_amount}',
+                    metadata={'orderNumber': str(order.order_number), 'icon': 'shopping_bag'}
+                )
+            except Exception as e:
+                logger.error(f"Failed to send new order notification to admins: {e}")
+
+            # 1.5 Notify Customer about the new order
+            try:
+                from accounts.notifications import send_order_status_notification
+                send_order_status_notification(order)
+            except Exception as e:
+                logger.error(f"Failed to send new order notification to customer: {e}")
+
+            # 2. Check if any product went out of stock
+            for item in cart_items:
+                if item.get('item_type') == 'product':
+                    product = item['product']
+                    if product.stock is not None and product.stock <= 0:
+                        try:
+                            send_admin_notification(
+                                notification_type='out_of_stock',
+                                title='Product Out of Stock ⚠️',
+                                message=f'Product "{product.name}" is now out of stock after order #{order.order_number}.',
+                                metadata={'productId': str(product.id), 'productName': product.name, 'icon': 'warning'}
+                            )
+                        except Exception as e:
+                            logger.error(f"Failed to send out of stock notification for {product.name}: {e}")
+
             return order
 
     def _validate_wholesale_minimums(self, cart_items):

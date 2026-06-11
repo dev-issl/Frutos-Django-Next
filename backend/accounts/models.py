@@ -72,6 +72,9 @@ class Notification(models.Model):
         ('price_change',  'Price Change'),
         ('leftover_pack', 'Leftover Pack Available'),
         ('ticket_reply',  'Support Ticket Reply'),
+        ('admin_alert',   'Admin Alert'),
+        ('out_of_stock',  'Out of Stock Alert'),
+        ('wholesale_pending', 'Wholesale Pending Approval'),
     ]
 
     user       = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='notifications')
@@ -100,6 +103,9 @@ class Notification(models.Model):
             'price_change':  'trending_down',
             'leftover_pack': 'inventory_2',
             'ticket_reply':  'support_agent',
+            'admin_alert':   'admin_panel_settings',
+            'out_of_stock':  'warning',
+            'wholesale_pending': 'storefront',
         }.get(self.type, 'notifications')
 
 

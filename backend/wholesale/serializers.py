@@ -53,6 +53,15 @@ class WholesaleRegisterSerializer(serializers.ModelSerializer):
         user = WholesaleUser(**validated_data)
         user.set_password(password)
         user.save()
+        
+        from accounts.notifications import send_admin_notification
+        send_admin_notification(
+            notification_type='wholesale_pending',
+            title='New Wholesale Application 📝',
+            message=f'Business "{user.business_name}" applied for a wholesale account and is pending approval.',
+            metadata={'wholesaleUserId': user.id, 'email': user.email, 'icon': 'storefront'}
+        )
+        
         return user
 
 

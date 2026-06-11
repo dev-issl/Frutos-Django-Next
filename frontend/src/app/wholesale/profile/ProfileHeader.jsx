@@ -1,8 +1,12 @@
 'use client'
 // src/app/wholesale/profile/ProfileHeader.jsx
+import { useRef } from 'react'
+import { Camera } from 'lucide-react'
 import StatusBadge from './_shared/StatusBadge'
 
-export default function ProfileHeader({ profile, activeTab, setActiveTab, tabs, onLogout }) {
+export default function ProfileHeader({ profile, activeTab, setActiveTab, tabs, onLogout, onImageUpload, imageUploading }) {
+  const fileInputRef = useRef(null)
+
   return (
     <div className="bg-gradient-to-br from-[#085041] via-[#00694C] to-[#1D9E75] pt-8 md:pt-10">
       <div className="max-w-[960px] mx-auto px-4 lg:px-6">
@@ -11,11 +15,36 @@ export default function ProfileHeader({ profile, activeTab, setActiveTab, tabs, 
         <div className="flex flex-row items-start gap-4 sm:gap-6">
           
           {/* Avatar - Dynamic size */}
-          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full flex-shrink-0 bg-white/15 border-2 border-white/30 flex items-center justify-center shadow-lg">
-            <span className="font-serif text-xl sm:text-2xl font-bold text-white uppercase">
-              {(profile.contact_name || profile.business_name || '?')[0]}
-            </span>
+          <div 
+            className="w-14 h-14 sm:w-16 sm:h-16 rounded-full flex-shrink-0 bg-white/15 border-2 border-white/30 flex items-center justify-center shadow-lg relative group cursor-pointer overflow-hidden"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            {(profile.profile_image_url || profile.profile_image) ? (
+              <img src={profile.profile_image_url || profile.profile_image} alt={profile.contact_name || "Profile"} className="w-full h-full object-cover" />
+            ) : (
+              <span className="font-serif text-xl sm:text-2xl font-bold text-white uppercase">
+                {(profile.contact_name || profile.business_name || '?')[0]}
+              </span>
+            )}
+            
+            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              <Camera size={20} className="text-white" />
+            </div>
+            
+            {imageUploading && (
+              <div className="absolute inset-0 bg-white/60 flex items-center justify-center">
+                <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            )}
           </div>
+          
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            className="hidden" 
+            accept="image/*" 
+            onChange={onImageUpload} 
+          />
 
           {/* Business Info */}
           <div className="flex-1 min-w-0 pt-1">
@@ -51,19 +80,7 @@ export default function ProfileHeader({ profile, activeTab, setActiveTab, tabs, 
           </button>
         </div>
 
-        {/* --- Pending Status Banner --- */}
-        {profile.status === 'pending' && (
-          <div className="mt-6 flex gap-3 items-center bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 sm:p-4">
-            <div className="flex-shrink-0 text-amber-300">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
-              </svg>
-            </div>
-            <p className="text-amber-100 text-xs sm:text-sm leading-snug">
-              <span className="font-bold">Application under review.</span> Expect verification within 24 hours.
-            </p>
-          </div>
-        )}
+
 
         {/* --- Navigation Tabs --- */}
         <div className=" mt-8 overflow-x-auto scrollbar-hide">
