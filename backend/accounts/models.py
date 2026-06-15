@@ -176,6 +176,8 @@ class SupportTicket(models.Model):
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
         related_name='responded_support_tickets'
     )
+    user_typing_at = models.DateTimeField(null=True, blank=True)
+    admin_typing_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

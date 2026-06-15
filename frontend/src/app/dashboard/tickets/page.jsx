@@ -139,7 +139,7 @@ function TicketDetailModal({ ticket: initialTicket, onClose, onReplySuccess }) {
   const messagesCount = ticket.messages?.length || 0;
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messagesCount]);
+  }, [messagesCount, ticket.is_user_typing]);
 
   // Handle click outside to close emoji picker
   useEffect(() => {
@@ -152,7 +152,7 @@ function TicketDetailModal({ ticket: initialTicket, onClose, onReplySuccess }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showEmojiPicker]);
 
-  // Poll for new messages every 5 seconds
+  // Poll for new messages every 1.5 seconds
   useEffect(() => {
     const interval = setInterval(async () => {
       try {
@@ -160,9 +160,18 @@ function TicketDetailModal({ ticket: initialTicket, onClose, onReplySuccess }) {
         setTicket(res);
         setNewStatus(res.status);
       } catch (e) {}
-    }, 5000);
+    }, 1500);
     return () => clearInterval(interval);
   }, [ticket.id]);
+
+  // Handle typing indicator
+  useEffect(() => {
+    if (!replyText.trim()) return;
+    const timeout = setTimeout(() => {
+      api.post(`/api/auth/admin/tickets/${ticket.id}/typing/`).catch(() => {});
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [replyText, ticket.id]);
 
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files || [])
@@ -360,7 +369,7 @@ function TicketDetailModal({ ticket: initialTicket, onClose, onReplySuccess }) {
 
             {/* New Chat Thread */}
             {ticket.messages && ticket.messages.map((msg) => {
-              const isAdmin = msg.isAdmin;
+              const isAdmin = msg.senderEmail !== ticket.userEmail;
               const hasText = msg.message && msg.message.trim().length > 0;
               const isOnlyImages = !hasText && msg.attachments && msg.attachments.length > 0;
 
@@ -457,6 +466,25 @@ function TicketDetailModal({ ticket: initialTicket, onClose, onReplySuccess }) {
               </div>
             );
             })}
+
+            {/* User Typing Indicator */}
+            {ticket.is_user_typing && (
+              <div className="flex flex-col items-start mb-2">
+                <div className="flex items-end max-w-[85%] justify-start">
+                  <div className="flex-shrink-0 mr-2 mb-1">
+                    <div className="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 shadow-sm border border-slate-200">
+                      <User className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-xl rounded-tl-none border border-slate-200/50 px-3 py-2 shadow-sm flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                    <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                    <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce"></span>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             <div ref={messagesEndRef} className="h-1" />
           </div>
 

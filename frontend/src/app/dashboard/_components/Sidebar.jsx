@@ -174,7 +174,7 @@ export default function Sidebar({ collapsed, onToggle }) {
                     onClick={() => setMobileOpen(false)}
                     className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-all ${
                       active
-                        ? "bg-slate-900 text-white shadow-sm"
+                        ? "bg-[#00694C] text-white shadow-sm"
                         : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                     }`}
                     title={collapsed ? item.name : undefined}

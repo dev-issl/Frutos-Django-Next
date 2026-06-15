@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { Upload, Download, FileSpreadsheet, FileText, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
@@ -50,11 +50,27 @@ export default function ImportExportPage() {
     setExporting(true);
     try {
       const mod = getService(exportModule);
+      let res;
       if (exportFormat === "csv") {
-        await mod.service.exportCsv();
+        res = await mod.service.exportCsv();
       } else {
-        await mod.service.exportExcel();
+        res = await mod.service.exportExcel();
       }
+      
+      if (!res || !res.ok) {
+        throw new Error("Export failed");
+      }
+      
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${exportModule}_export.${exportFormat === "csv" ? "csv" : "xlsx"}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      
       toast.success("Export downloaded");
     } catch (err) {
       toast.error(err?.message || "Export failed");
@@ -120,7 +136,7 @@ export default function ImportExportPage() {
             <button
               onClick={handleImport}
               disabled={!file || importing}
-              className="w-full py-2 px-4 text-sm font-medium bg-slate-900 text-white rounded-md hover:bg-gray-800 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+              className="w-full py-2 px-4 text-sm font-medium bg-[#00694C] text-white rounded-md hover:bg-[#085041] disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
             >
               {importing ? (
                 <><Loader2 className="w-4 h-4 animate-spin" /> Importing...</>
@@ -183,7 +199,7 @@ export default function ImportExportPage() {
             <button
               onClick={handleExport}
               disabled={exporting}
-              className="w-full py-2 px-4 text-sm font-medium bg-slate-900 text-white rounded-md hover:bg-gray-800 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+              className="w-full py-2 px-4 text-sm font-medium bg-[#00694C] text-white rounded-md hover:bg-[#085041] disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
             >
               {exporting ? (
                 <><Loader2 className="w-4 h-4 animate-spin" /> Exporting...</>

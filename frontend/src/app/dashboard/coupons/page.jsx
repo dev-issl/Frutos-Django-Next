@@ -125,8 +125,8 @@ function CouponForm({ initial = {}, onSubmit, submitLabel = "Save" }) {
         <div className="sm:col-span-2">
           <label className={lbl}>Discount Type *</label>
           <div className="flex gap-2">
-            <button type="button" className={v.discount_type === "PERCENT" ? btnActive : btnInactive} onClick={() => set("discount_type", "PERCENT")}>% Percentage</button>
-            <button type="button" className={v.discount_type === "FLAT"    ? btnActive : btnInactive} onClick={() => set("discount_type", "FLAT")}>€ Flat Amount</button>
+            <button style={{cursor: 'pointer'}} type="button" className={v.discount_type === "PERCENT" ? btnActive : btnInactive} onClick={() => set("discount_type", "PERCENT")}>% Percentage</button>
+            <button style={{cursor: 'pointer'}} type="button" className={v.discount_type === "FLAT"    ? btnActive : btnInactive} onClick={() => set("discount_type", "FLAT")}>€ Flat Amount</button>
           </div>
         </div>
 
@@ -151,8 +151,8 @@ function CouponForm({ initial = {}, onSubmit, submitLabel = "Save" }) {
           <label className={lbl}>Status</label>
           <SearchableSelect value={v.active} onChange={val => set("active", val)} options={[{ value: "true", label: "Active" }, { value: "false", label: "Inactive" }]} />
         </div>
-        <div><label className={lbl}>Valid From *</label><input required type="datetime-local" className={inp} value={v.valid_from} onChange={e => set("valid_from", e.target.value)} /></div>
-        <div><label className={lbl}>Expires At *</label><input required type="datetime-local" className={inp} value={v.expires_at} onChange={e => set("expires_at", e.target.value)} /></div>
+        <div><label className={lbl}>Valid From *</label><input required type="datetime-local" className={`${inp} cursor-pointer`} value={v.valid_from} onChange={e => set("valid_from", e.target.value)} /></div>
+        <div><label className={lbl}>Expires At *</label><input required type="datetime-local" className={`${inp} cursor-pointer`} value={v.expires_at} onChange={e => set("expires_at", e.target.value)} /></div>
       </div>
 
       {/* Applicable Products */}
@@ -182,7 +182,7 @@ function CouponForm({ initial = {}, onSubmit, submitLabel = "Save" }) {
       </div>
 
       <div className="flex justify-end pt-1">
-        <button type="submit" disabled={submitting} className="px-4 py-2 text-sm font-medium bg-slate-900 text-white rounded-md hover:bg-gray-800 disabled:opacity-50">
+        <button style={{cursor: 'pointer'}} type="submit" disabled={submitting} className="px-4 py-2 text-sm font-medium bg-[#00694C] text-white rounded-md hover:bg-[#085041] disabled:opacity-50">
           {submitting ? "Saving..." : submitLabel}
         </button>
       </div>
@@ -223,7 +223,7 @@ function FreeShippingForm({ initial = {}, onSubmit, submitLabel = "Save" }) {
         </div>
       </div>
       <div className="flex justify-end pt-1">
-        <button type="submit" disabled={submitting} className="px-4 py-2 text-sm font-medium bg-slate-900 text-white rounded-md hover:bg-gray-800 disabled:opacity-50">
+        <button style={{cursor: 'pointer'}} type="submit" disabled={submitting} className="px-4 py-2 text-sm font-medium bg-[#00694C] text-white rounded-md hover:bg-[#085041] disabled:opacity-50">
           {submitting ? "Saving..." : submitLabel}
         </button>
       </div>
@@ -299,8 +299,8 @@ export default function CouponsPage() {
 
   const actions = (row) => (
     <div className="flex items-center gap-1">
-      <button onClick={() => setModal({ open: true, mode: "edit", item: row })} className="p-1.5 rounded-md hover:bg-slate-100 text-slate-500 hover:text-slate-700"><Pencil className="w-3.5 h-3.5" /></button>
-      <button onClick={() => setConfirm({ open: true, item: row, tab })} className="p-1.5 rounded-md hover:bg-red-50 text-slate-500 hover:text-red-600"><Trash2 className="w-3.5 h-3.5" /></button>
+      <button style={{cursor: 'pointer'}} onClick={() => setModal({ open: true, mode: "edit", item: row })} className="p-1.5 rounded-md hover:bg-slate-100 text-slate-500 hover:text-slate-700"><Pencil className="w-3.5 h-3.5" /></button>
+      <button style={{cursor: 'pointer'}} onClick={() => setConfirm({ open: true, item: row, tab })} className="p-1.5 rounded-md hover:bg-red-50 text-slate-500 hover:text-red-600"><Trash2 className="w-3.5 h-3.5" /></button>
     </div>
   );
 
@@ -309,10 +309,10 @@ export default function CouponsPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="flex gap-1 bg-slate-100 p-0.5 rounded-lg">
           {TABS.map(t => (
-            <button key={t.id} onClick={() => { setTab(t.id); setModal({ open: false, mode: "create", item: null }); setConfirm({ open: false, item: null, tab: null }); }} className={`px-3 py-1.5 text-sm rounded-md transition-colors ${tab === t.id ? "bg-white text-slate-800 shadow-sm font-medium" : "text-slate-500 hover:text-slate-700"}`}>{t.label}</button>
+            <button style={{cursor: 'pointer'}} key={t.id} onClick={() => { setTab(t.id); setModal({ open: false, mode: "create", item: null }); setConfirm({ open: false, item: null, tab: null }); }} className={`px-3 py-1.5 text-sm rounded-md transition-colors ${tab === t.id ? "bg-white text-slate-800 shadow-sm font-medium" : "text-slate-500 hover:text-slate-700"}`}>{t.label}</button>
           ))}
         </div>
-        <button onClick={() => setModal({ open: true, mode: "create", item: null })} className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-slate-900 text-white rounded-md hover:bg-gray-800 whitespace-nowrap">
+        <button style={{cursor: 'pointer'}} onClick={() => setModal({ open: true, mode: "create", item: null })} className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-[#00694C] text-white rounded-md hover:bg-[#085041] whitespace-nowrap">
           <Plus className="w-3.5 h-3.5" /> Add {getLabel()}
         </button>
       </div>

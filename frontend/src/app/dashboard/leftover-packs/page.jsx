@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useState, useEffect, useRef } from 'react'
 import {
@@ -28,7 +28,7 @@ function Select({ label, error, children, className = '', ...props }) {
     <div className="flex flex-col gap-1">
       {label && <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{label}</label>}
       <select
-        className={`bg-white border ${error ? 'border-red-500' : 'border-slate-200'} rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all ${className}`}
+        className={`bg-white border ${error ? 'border-red-500' : 'border-slate-200'} rounded-lg px-3 py-2 text-sm text-slate-800 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all ${className}`}
         {...props}
       >
         {children}
@@ -128,7 +128,7 @@ function PackFormModal({ pack, stores, storeSlug, onClose, onSave }) {
               <p className="font-bold text-slate-800">{isEdit ? 'Edit Leftover Pack' : 'Add Leftover Pack'}</p>
             </div>
           </div>
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-500 transition-colors">
+          <button style={{cursor: 'pointer'}} onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-500 transition-colors">
             <X size={16} />
           </button>
         </div>
@@ -192,9 +192,9 @@ function PackFormModal({ pack, stores, storeSlug, onClose, onSave }) {
                 id="is_active"
                 checked={form.is_active}
                 onChange={(e) => set('is_active', e.target.checked)}
-                className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                className="w-4 h-4 text-blue-600 rounded border-gray-300 cursor-pointer focus:ring-blue-500"
               />
-              <label htmlFor="is_active" className="text-sm font-medium text-slate-800">
+              <label htmlFor="is_active" className="text-sm font-medium text-slate-800 cursor-pointer">
                 Active (visible on store page)
               </label>
             </div>
@@ -202,12 +202,12 @@ function PackFormModal({ pack, stores, storeSlug, onClose, onSave }) {
           </div>
 
           <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-200 flex-shrink-0">
-            <button type="button" onClick={onClose}
+            <button style={{cursor: 'pointer'}} type="button" onClick={onClose}
               className="px-5 py-2 rounded-xl bg-slate-100 hover:bg-gray-200 text-slate-800 text-sm font-semibold transition-colors">
               Cancel
             </button>
-            <button type="submit" disabled={loading}
-              className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold transition-colors flex items-center gap-2 disabled:opacity-60">
+            <button style={{cursor: 'pointer'}} type="submit" disabled={loading}
+              className="px-5 py-2 rounded-xl bg-[#00694C] hover:bg-[#085041] text-white text-sm font-semibold transition-colors flex items-center gap-2 disabled:opacity-60">
               {loading ? <Loader2 size={15} className="animate-spin" /> : <Check size={15} />}
               {isEdit ? 'Save Changes' : 'Create Pack'}
             </button>
@@ -230,10 +230,10 @@ function DeleteConfirm({ pack, onClose, onConfirm, loading }) {
           Are you sure you want to delete <span className="text-slate-800 font-semibold">{pack.name}</span>?
         </p>
         <div className="flex gap-3">
-          <button onClick={onClose} className="flex-1 py-2 rounded-xl bg-slate-100 hover:bg-gray-200 text-slate-800 text-sm font-semibold transition-colors">
+          <button style={{cursor: 'pointer'}} onClick={onClose} className="flex-1 py-2 rounded-xl bg-slate-100 hover:bg-gray-200 text-slate-800 text-sm font-semibold transition-colors">
             Cancel
           </button>
-          <button onClick={onConfirm} disabled={loading}
+          <button style={{cursor: 'pointer'}} onClick={onConfirm} disabled={loading}
             className="flex-1 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-sm font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-60">
             {loading ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
             Delete
@@ -319,10 +319,10 @@ export default function LeftoverPacksPage() {
           <h1 className="text-2xl font-bold text-slate-800">Leftover Packs</h1>
           <p className="text-sm text-slate-500 mt-1">Manage rescue packs, surplus stock, and daily leftovers.</p>
         </div>
-        <button
+        <button style={{cursor: 'pointer'}}
           onClick={handleAdd}
           disabled={stores.length === 0}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-500 transition-colors shadow-sm disabled:opacity-50"
+          className="flex items-center gap-2 px-4 py-2 bg-[#00694C] text-white rounded-xl text-sm font-bold hover:bg-[#085041] transition-colors shadow-sm disabled:opacity-50"
         >
           <Plus size={16} /> Add Pack
         </button>
@@ -345,7 +345,7 @@ export default function LeftoverPacksPage() {
                 <select
                     value={selectedStoreSlug}
                     onChange={e => setSelectedStoreSlug(e.target.value)}
-                    className="bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                    className="bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm text-slate-800 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500/40"
                 >
                     <option value="">Select Store</option>
                     {stores.map(s => (
@@ -365,7 +365,7 @@ export default function LeftoverPacksPage() {
           <div className="flex flex-col items-center justify-center py-16 gap-3 text-red-500">
             <AlertCircle size={24} />
             <p className="text-sm font-semibold">{error}</p>
-            <button onClick={loadData} className="px-4 py-2 bg-slate-100 rounded-lg text-sm text-slate-800">Retry</button>
+            <button style={{cursor: 'pointer'}} onClick={loadData} className="px-4 py-2 bg-slate-100 rounded-lg text-sm text-slate-800">Retry</button>
           </div>
         ) : filteredPacks.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
@@ -377,7 +377,7 @@ export default function LeftoverPacksPage() {
               {search ? 'Try a different search term' : 'Add your first leftover pack to start selling surplus produce.'}
             </p>
             {!search && stores.length > 0 && (
-              <button onClick={handleAdd} className="mt-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg">
+              <button style={{cursor: 'pointer'}} onClick={handleAdd} className="mt-2 px-4 py-2 bg-[#00694C] text-white text-sm font-semibold rounded-lg">
                 Add Pack
               </button>
             )}
@@ -442,10 +442,10 @@ export default function LeftoverPacksPage() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <button onClick={() => handleEdit(pack)} className="p-1.5 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-md transition-colors">
+                        <button style={{cursor: 'pointer'}} onClick={() => handleEdit(pack)} className="p-1.5 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-md transition-colors">
                           <Edit2 size={16} />
                         </button>
-                        <button onClick={() => setDeletePack(pack)} className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors">
+                        <button style={{cursor: 'pointer'}} onClick={() => setDeletePack(pack)} className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors">
                           <Trash2 size={16} />
                         </button>
                       </div>

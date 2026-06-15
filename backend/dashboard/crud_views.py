@@ -23,6 +23,33 @@ from .export_engine import ModelExporter
 from .import_engine import ModelImporter, ImportResult
 
 
+def jwt_or_session_required(view_func):
+    """Decorator that allows access if user is authenticated via session OR JWT token."""
+    from functools import wraps
+    @wraps(view_func)
+    def _wrapped_view(request, *args, **kwargs):
+        if request.user.is_authenticated:
+            return view_func(request, *args, **kwargs)
+        
+        auth_header = request.headers.get('Authorization')
+        if auth_header and auth_header.startswith('Bearer '):
+            try:
+                from rest_framework_simplejwt.authentication import JWTAuthentication
+                jwt_auth = JWTAuthentication()
+                auth_result = jwt_auth.authenticate(request)
+                if auth_result:
+                    user, token = auth_result
+                    if user and user.is_active:
+                        request.user = user
+                        return view_func(request, *args, **kwargs)
+            except Exception:
+                pass
+                
+        from django.http import JsonResponse
+        return JsonResponse({'error': 'Unauthorized'}, status=401)
+    return _wrapped_view
+
+
 def apply_bootstrap_form_styling(form):
     """Apply Bootstrap 5 classes to form widgets dynamically"""
     for field_name, field in form.fields.items():
@@ -452,7 +479,7 @@ def model_delete(request, app_label, model_name, pk):
     return redirect('dashboard:model_list', app_label=app_label, model_name=model_name)
 
 
-@login_required
+@jwt_or_session_required
 def model_export_csv(request, app_label, model_name):
     """Export model data to CSV"""
     
@@ -467,7 +494,7 @@ def model_export_csv(request, app_label, model_name):
     return ModelExporter.export_to_csv(queryset, model)
 
 
-@login_required
+@jwt_or_session_required
 def model_export_excel(request, app_label, model_name):
     """Export model data to Excel"""
     
@@ -487,7 +514,7 @@ def model_export_excel(request, app_label, model_name):
         return redirect('dashboard:model_list', app_label=app_label, model_name=model_name)
 
 
-@login_required
+@jwt_or_session_required
 def model_export_single_csv(request, app_label, model_name, pk):
     """Export single record to CSV"""
     
@@ -502,7 +529,7 @@ def model_export_single_csv(request, app_label, model_name, pk):
     return ModelExporter.export_single_record(obj, format='csv')
 
 
-@login_required
+@jwt_or_session_required
 def model_export_single_excel(request, app_label, model_name, pk):
     """Export single record to Excel"""
     
@@ -528,7 +555,7 @@ def model_download_single(request, app_label, model_name, pk):
     return model_export_single_csv(request, app_label, model_name, pk)
 
 
-@login_required
+@jwt_or_session_required
 def model_bulk_export_csv(request, app_label, model_name):
     """Bulk export selected records to CSV"""
     
@@ -550,7 +577,7 @@ def model_bulk_export_csv(request, app_label, model_name):
     return ModelExporter.export_to_csv(queryset, model)
 
 
-@login_required
+@jwt_or_session_required
 def model_bulk_export_excel(request, app_label, model_name):
     """Bulk export selected records to Excel"""
     
@@ -604,7 +631,7 @@ def model_bulk_delete(request, app_label, model_name):
     return redirect('dashboard:model_list', app_label=app_label, model_name=model_name)
 
 
-@login_required
+@jwt_or_session_required
 def model_export_template(request, app_label, model_name):
     """Download import template (CSV or Excel)"""
     

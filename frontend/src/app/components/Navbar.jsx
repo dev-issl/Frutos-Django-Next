@@ -423,6 +423,21 @@ useEffect(() => {
               }
             </button>
 
+            {/* Tablet Cart Icon */}
+            <button onClick={() => setSidebarOpen(true)}
+              className="hidden md:flex lg:hidden w-9 cursor-pointer h-9 items-center justify-center rounded-full hover:bg-[#BCCAC1]/25 transition-colors relative">
+              <svg width="19" height="19" fill="none" stroke="#3D4943" strokeWidth="1.75" viewBox="0 0 24 24">
+                <path d="M5 8h14l-1.5 11H6.5L5 8z"/>
+                <path d="M9 8V6a3 3 0 1 1 6 0v2"/>
+              </svg>
+              {totalItems > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[17px] h-[17px] px-[3px] bg-[#00694C] text-white rounded-full flex items-center justify-center"
+                  style={{ fontSize: '10px', fontWeight: 700, lineHeight: 1 }}>
+                  {totalItems > 99 ? '99+' : totalItems}
+                </span>
+              )}
+            </button>
+
             {/* ── Bell with unread badge ── */}
             <button onClick={handleBellClick}
               className="w-9 cursor-pointer h-9 flex items-center justify-center rounded-full hover:bg-[#BCCAC1]/25 transition-colors relative">
@@ -478,6 +493,20 @@ useEffect(() => {
                 ? <svg width="17" height="17" fill="none" stroke="#151E13" strokeWidth="2.2" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
                 : <svg width="19" height="19" fill="none" stroke="#151E13" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
               }
+            </button>
+
+            {/* Mobile Cart Icon */}
+            <button onClick={() => setSidebarOpen(true)} className="w-9 h-9 flex items-center justify-center relative cursor-pointer">
+              <svg width="19" height="19" fill="none" stroke="#151E13" strokeWidth="1.75" viewBox="0 0 24 24">
+                <path d="M5 8h14l-1.5 11H6.5L5 8z"/>
+                <path d="M9 8V6a3 3 0 1 1 6 0v2"/>
+              </svg>
+              {totalItems > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[15px] h-[15px] px-[3px] bg-[#00694C] text-white rounded-full flex items-center justify-center"
+                  style={{ fontSize: '9px', fontWeight: 700, lineHeight: 1 }}>
+                  {totalItems > 99 ? '99+' : totalItems}
+                </span>
+              )}
             </button>
 
             {/* Mobile bell with badge */}

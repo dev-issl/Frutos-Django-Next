@@ -40,6 +40,11 @@ export default function FloatingCart() {
           z-index: 9990;
           transition: transform 0.3s ease;
         }
+        @media (max-width: 1023px) {
+          .floating-cart-wrapper {
+            display: none !important;
+          }
+        }
         .cart-container {
           background: #00694C;
           border-radius: 8px;

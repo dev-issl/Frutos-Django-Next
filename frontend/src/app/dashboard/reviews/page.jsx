@@ -115,7 +115,7 @@ function ReviewForm({ initialValues, onSubmit, submitLabel = "Save", products })
         </label>
         <div className="flex items-center gap-1">
           {[1, 2, 3, 4, 5].map((i) => (
-            <button
+            <button style={{cursor: 'pointer'}}
               key={i}
               type="button"
               onClick={() => handleChange("rating", i)}
@@ -150,10 +150,10 @@ function ReviewForm({ initialValues, onSubmit, submitLabel = "Save", products })
 
       {/* Submit */}
       <div className="flex justify-end pt-2">
-        <button
+        <button style={{cursor: 'pointer'}}
           type="submit"
           disabled={submitting || !form.product}
-          className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium bg-slate-900 text-white rounded-md hover:bg-gray-800 disabled:opacity-50 transition-colors"
+          className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium bg-[#00694C] text-white rounded-md hover:bg-[#085041] disabled:opacity-50 transition-colors"
         >
           {submitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
           {submitting ? "Saving..." : submitLabel}
@@ -275,9 +275,9 @@ export default function ReviewsPage() {
       title="Reviews"
       description="Manage product reviews and ratings"
       actions={
-        <button
+        <button style={{cursor: 'pointer'}}
           onClick={() => setCreateOpen(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-slate-900 text-white rounded-md hover:bg-gray-800 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-[#00694C] text-white rounded-md hover:bg-[#085041] transition-colors"
         >
           <Plus className="w-4 h-4" /> Add Review
         </button>
@@ -292,13 +292,13 @@ export default function ReviewsPage() {
         pageSize={PAGE_SIZE}
         actions={(row) => (
           <div className="flex items-center justify-end gap-1">
-            <button
+            <button style={{cursor: 'pointer'}}
               onClick={() => setEditItem(row)}
               className="db-icon-btn"
             >
               <Pencil className="w-3.5 h-3.5" />
             </button>
-            <button
+            <button style={{cursor: 'pointer'}}
               onClick={() => setDeleteItem(row)}
               className="db-icon-btn danger"
             >

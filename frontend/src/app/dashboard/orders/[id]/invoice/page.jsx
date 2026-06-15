@@ -213,7 +213,7 @@ function A4Invoice({ order, items, subtotal, total, shipping, storeName, logoUrl
 }
 
 /* ─── Wholesale Invoice Layout ─── */
-function WholesaleInvoice({ order, items, subtotal, total, shipping, storeName, logoUrl, contactEmail, contactPhone, contactAddress, allProducts = [] }) {
+function WholesaleInvoice({ order, items, storeName, allProducts = [] }) {
   const productsByCategory = allProducts.reduce((acc, p) => {
     const cat = p.category_name || (p.category && p.category.name) || "Uncategorized";
     if (!acc[cat]) acc[cat] = [];
@@ -226,101 +226,48 @@ function WholesaleInvoice({ order, items, subtotal, total, shipping, storeName, 
     return acc;
   }, {});
 
+  const orderDate = order.ordered_at 
+    ? new Date(order.ordered_at).toLocaleDateString("es-ES", { day: '2-digit', month: '2-digit', year: 'numeric' }) 
+    : "";
+
   return (
     <div className="bg-white border border-slate-200 rounded-lg shadow-sm max-w-4xl mx-auto print:shadow-none print:border-0 print:max-w-none">
-      <div className="p-8 print:p-12" style={{ minHeight: "297mm", margin: "0 auto" }}>
+      <div className="p-4 print:p-8" style={{ minHeight: "297mm", margin: "0 auto" }}>
         
-        {/* Header */}
-        <div className="flex justify-between items-start border-b-[4px] border-indigo-600 pb-6 mb-8">
-          <div>
-            {logoUrl ? (
-              <img src={logoUrl} alt={storeName} style={{ height: '48px', width: 'auto', maxWidth: '200px' }} className="mb-2 object-contain" />
-            ) : (
-              <h1 className="text-2xl font-black text-indigo-900 tracking-tight">{storeName}</h1>
-            )}
-            <p className="text-sm text-slate-600 font-medium mt-2">B2B Wholesale Division</p>
-            {contactAddress && <p className="text-xs text-slate-500 mt-1">{contactAddress}</p>}
-            {contactEmail && <p className="text-xs text-slate-500 mt-0.5">{contactEmail}</p>}
-            {contactPhone && <p className="text-xs text-slate-500 mt-0.5">{contactPhone}</p>}
-          </div>
-          <div className="text-right">
-            <h2 className="text-3xl font-black text-slate-200 tracking-wider">COMMERCIAL INVOICE</h2>
-            <div className="mt-4 flex flex-col items-end gap-1">
-              <span className="inline-block bg-indigo-50 text-indigo-700 font-bold px-3 py-1 rounded text-sm border border-indigo-100">
-                NO: {order.order_number}
-              </span>
-              <p className="text-sm font-medium text-slate-600 mt-2">
-                Date: {order.ordered_at ? new Date(order.ordered_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) : "—"}
-              </p>
-            </div>
+        {/* Simple Header matching the paper photo */}
+        <div className="flex justify-between items-end border-b-2 border-black pb-2 mb-4">
+          <h1 className="text-sm font-bold text-black uppercase tracking-wide">
+            Tienda: {storeName}
+          </h1>
+          <div className="text-sm font-bold text-black">
+            #{order.order_number} {orderDate && `| Fecha: ${orderDate}`}
           </div>
         </div>
 
-        {/* Info Grid */}
-        <div className="grid grid-cols-2 gap-12 mb-10">
-          <div className="bg-slate-50 p-5 rounded-lg border border-slate-100">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3 border-b border-slate-200 pb-2">Billed To</h3>
-            <p className="text-base font-bold text-slate-800">{order.customer_name}</p>
-            <p className="text-sm text-slate-600 mt-1">{order.customer_email}</p>
-            {order.customer_phone && <p className="text-sm text-slate-600">{order.customer_phone}</p>}
-            {(order.street_address || order.city) && (
-              <p className="text-sm text-slate-600 mt-2">
-                {order.street_address}
-                <br />
-                {order.city} {order.postcode && `, ${order.postcode}`}
-              </p>
-            )}
-          </div>
-          
-          <div className="bg-slate-50 p-5 rounded-lg border border-slate-100">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3 border-b border-slate-200 pb-2">Order Summary</h3>
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-500">Status</span>
-                <span className="font-bold text-slate-700">{order.status_display || order.status}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-500">Payment Status</span>
-                <span className="font-bold text-slate-700">{order.payment_status_display || order.payment_status}</span>
-              </div>
-              {order.payment && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">Payment Method</span>
-                  <span className="font-bold text-slate-700 capitalize">{order.payment.payment_method}</span>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Items Grid */}
-        <div className="mb-8 space-y-6">
+        {/* Items Grid (Warehouse Picking List) */}
+        <div className="mb-4">
           {Object.keys(productsByCategory).length > 0 ? (
             Object.entries(productsByCategory).map(([category, prods]) => (
-              <div key={category}>
-                <h4 className="text-[11px] font-bold text-slate-800 uppercase bg-slate-100 px-3 py-1 border border-slate-300 border-b-0 inline-block tracking-wider">
+              <div key={category} className="break-inside-avoid mb-0.5">
+                {/* Optional category header to maintain structure */}
+                <h4 className="text-[10px] font-bold text-black uppercase bg-slate-200 print:bg-gray-200 px-2 border-l border-r border-t border-black inline-block tracking-wider">
                   {category}
                 </h4>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 border-l border-t border-slate-300">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 border-l border-t border-black">
                   {prods.map(p => {
                     const ordered = orderedItemsMap[p.id];
                     return (
-                      <div key={p.id} className="border-r border-b border-slate-300 p-1.5 flex justify-between items-center text-[10px] bg-white h-full">
-                        <div className="flex gap-1.5 items-center flex-1 min-w-0 pr-1">
-                          {ordered ? (
-                            <span className="font-bold text-black shrink-0">
-                              {ordered.quantity} {[ordered.color_name, ordered.size_name].filter(Boolean).join("/") || 'pcs'}
-                            </span>
-                          ) : null}
-                          <span className={`truncate uppercase ${ordered ? "font-bold text-black" : "text-slate-500"}`} title={p.name}>
+                      <div key={p.id} className="flex border-r border-b border-black text-[10px] bg-white h-full">
+                        {/* Name (Left side) */}
+                        <div className="flex-1 px-1.5 py-1 flex items-center min-w-0 border-r border-black border-dashed">
+                          <span className={`uppercase truncate ${ordered ? "font-black text-black" : "text-gray-800"}`} title={p.name}>
                             {p.name}
                           </span>
                         </div>
-                        {ordered ? (
-                          <span className="font-bold text-black shrink-0">
-                            €{(ordered.quantity * Number(ordered.unit_price)).toLocaleString()}
-                          </span>
-                        ) : null}
+                        {/* Quantity Box (Right side partition) */}
+                        <div className="w-16 shrink-0 flex items-center justify-center font-bold text-black text-[10px] bg-slate-50 print:bg-transparent text-center px-1">
+                          {ordered ? `${ordered.quantity} ${(p.wholesale_unit || p.unit || 'pcs').replace(/^per\s+/i, '')}` : ""}
+                        </div>
                       </div>
                     );
                   })}
@@ -330,38 +277,6 @@ function WholesaleInvoice({ order, items, subtotal, total, shipping, storeName, 
           ) : (
             <div className="p-8 text-center text-slate-400 border border-slate-200 rounded-lg">Loading products grid...</div>
           )}
-        </div>
-
-        {/* Totals Section */}
-        <div className="flex justify-end mb-16">
-          <div className="w-80 bg-slate-50 p-6 rounded-lg border border-slate-200">
-            <div className="space-y-3">
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-500 font-medium">Subtotal</span>
-                <span className="text-slate-800 font-bold">€{subtotal.toLocaleString()}</span>
-              </div>
-              {shipping > 0 && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-500 font-medium">Shipping & Handling</span>
-                  <span className="text-slate-800 font-bold">€{shipping.toLocaleString()}</span>
-                </div>
-              )}
-              <div className="border-t-2 border-slate-200 pt-3 mt-3 flex justify-between items-center">
-                <span className="text-base font-bold text-slate-800 uppercase">Grand Total</span>
-                <span className="text-2xl font-black text-indigo-700">€{total.toLocaleString()}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Footer Notes */}
-        <div className="border-t border-slate-200 pt-6">
-          <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2">Terms & Conditions</h4>
-          <p className="text-xs text-slate-500 leading-relaxed max-w-2xl">
-            This is a commercial wholesale invoice. Payment is due as per the agreed B2B terms. 
-            Goods remain the property of {storeName} until paid for in full. 
-            {contactEmail && `For any queries regarding this invoice, please contact ${contactEmail}.`}
-          </p>
         </div>
       </div>
     </div>

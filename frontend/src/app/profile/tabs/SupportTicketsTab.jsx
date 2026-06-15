@@ -88,14 +88,14 @@ export default function SupportTicketsTab({ authFetch }) {
   useEffect(() => {
     fetchTickets()
     
-    // Poll every 5 seconds if a ticket is selected to get new messages instantly
+    // Poll every 1.5 seconds if a ticket is selected to get new messages instantly
     let interval;
     if (selectedTicketId) {
       interval = setInterval(() => {
         authFetch(`${API_BASE}/auth/tickets/`).then(res => res.json()).then(data => {
           setTickets(Array.isArray(data) ? data : (data.results || []))
         }).catch(() => {})
-      }, 5000)
+      }, 1500)
     }
     return () => {
       if (interval) clearInterval(interval)
@@ -479,7 +479,16 @@ function TicketChat({ ticket: initialTicket, authFetch, onBack, getStatusBadge, 
   const messagesCount = ticket.messages?.length || 0;
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messagesCount])
+  }, [messagesCount, ticket.is_admin_typing])
+
+  // Handle typing indicator
+  useEffect(() => {
+    if (!replyText.trim()) return;
+    const timeout = setTimeout(() => {
+      authFetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'}/auth/tickets/${ticket.id}/typing/`, { method: 'POST' }).catch(() => {});
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [replyText, authFetch, ticket.id]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -681,7 +690,7 @@ function TicketChat({ ticket: initialTicket, authFetch, onBack, getStatusBadge, 
             )}
 
             {ticket.messages && ticket.messages.map((msg) => {
-              const isUser = !msg.isAdmin;
+              const isUser = msg.senderEmail === ticket.userEmail;
               const hasText = msg.message && msg.message.trim().length > 0;
               const isOnlyImages = !hasText && msg.attachments && msg.attachments.length > 0;
 
@@ -777,6 +786,24 @@ function TicketChat({ ticket: initialTicket, authFetch, onBack, getStatusBadge, 
               </div>
             );
             })}
+            {/* Admin Typing Indicator */}
+            {ticket.is_admin_typing && (
+              <div className="flex flex-col items-start mb-2">
+                <div className="flex items-end max-w-[85%] justify-start">
+                  <div className="flex-shrink-0 mr-2 mb-1">
+                    <div className="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 shadow-sm border border-slate-200">
+                      <span className="material-symbols-outlined text-[14px]">support_agent</span>
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-xl rounded-tl-none border border-slate-200/50 px-3 py-2 shadow-sm flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                    <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                    <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce"></span>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             <div ref={messagesEndRef} className="h-1" />
           </div>
 

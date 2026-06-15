@@ -162,7 +162,7 @@ export default function Header({ onMenuClick }) {
 
         {/* User avatar + name */}
         <div className="flex items-center gap-2 pl-1">
-          <div className="w-8 h-8 rounded-full bg-slate-900 flex items-center justify-center shrink-0 shadow-sm">
+          <div className="w-8 h-8 rounded-full bg-[#00694C] flex items-center justify-center shrink-0 shadow-sm">
             <span className="text-xs font-bold text-white">
               {user?.name?.charAt(0)?.toUpperCase() || "A"}
             </span>

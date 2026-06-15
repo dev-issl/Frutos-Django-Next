@@ -74,7 +74,7 @@ export default function DashboardLoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2 px-4 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-colors"
+            className="w-full py-2 px-4 bg-[#00694C] text-white text-sm font-medium rounded-lg hover:bg-[#085041] disabled:opacity-50 transition-colors"
           >
             {loading ? "Signing in..." : "Sign in"}
           </button>

@@ -69,6 +69,7 @@ const FILTERS = [
   { label: "Shipped", value: "SHIPPED" },
   { label: "Delivered", value: "DELIVERED" },
   { label: "Cancelled", value: "CANCELLED" },
+  { label: "Wholesale", value: "WHOLESALE" },
 ];
 
 export default function OrdersPage() {
@@ -87,7 +88,9 @@ export default function OrdersPage() {
 
   const rawList = rawData?.results || (Array.isArray(rawData) ? rawData : []);
   const data = activeFilter 
-    ? rawList.filter(o => o.status === activeFilter) 
+    ? activeFilter === "WHOLESALE" 
+      ? rawList.filter(o => o.is_wholesale_order)
+      : rawList.filter(o => o.status === activeFilter) 
     : rawList;
   const totalCount = rawData?.count ?? data.length;
 

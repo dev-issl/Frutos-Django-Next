@@ -39,9 +39,9 @@
 }
 
 .db-filter-pill.active {
-  background: #0f172a;
+  background: #00694C;
   color: #ffffff;
-  border-color: #0f172a;
+  border-color: #00694C;
 }
 
 /* ── Primary Button ── */
@@ -50,7 +50,7 @@
   align-items: center;
   gap: 6px;
   padding: 8px 16px;
-  background: #0f172a;
+  background: #00694C;
   color: #ffffff;
   font-size: 13px;
   font-weight: 700;
@@ -62,7 +62,7 @@
 }
 
 .db-btn-primary:hover {
-  background: #1e293b;
+  background: #085041;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }

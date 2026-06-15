@@ -453,7 +453,7 @@ export default function AboutDashboardPage() {
           <div className="flex justify-end pt-4">
             <button
               type="submit"
-              className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium rounded-lg shadow-sm transition-colors cursor-pointer"
+              className="px-4 py-2 bg-[#00694C] hover:bg-[#085041] text-white text-sm font-medium rounded-lg shadow-sm transition-colors cursor-pointer"
             >
               {editingIndex !== null ? "Update Item" : "Add Item"}
             </button>

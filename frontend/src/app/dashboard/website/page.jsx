@@ -432,7 +432,7 @@ function FooterForm() {
             <div className="relative flex-1 min-h-[120px] border-2 border-dashed border-slate-200 hover:border-slate-300 rounded-xl overflow-hidden group transition-all bg-slate-50 hover:bg-slate-100 flex flex-col items-center justify-center cursor-pointer p-4">
               {data.footer_logo_url.value ? (
                 <div className="flex flex-col items-center gap-2 w-full">
-                  <img src={data.footer_logo_url.value} alt="Footer Logo Preview" className="h-14 object-contain bg-slate-900/5 p-2 rounded-lg" />
+                  <img src={data.footer_logo_url.value} alt="Footer Logo Preview" className="h-14 object-contain bg-[#00694C]/5 p-2 rounded-lg" />
                   <span className="text-[10px] text-slate-500 font-medium px-2 py-1 bg-white rounded-md shadow-sm">Click to change</span>
                 </div>
               ) : (
@@ -519,7 +519,7 @@ function FooterForm() {
         </div>
       </div>
       <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex justify-end">
-        <button type="submit" disabled={saving} className="px-4 py-2 bg-slate-900 text-white rounded-md text-sm font-medium hover:bg-slate-800 disabled:opacity-50 cursor-pointer">
+        <button type="submit" disabled={saving} className="px-4 py-2 bg-[#00694C] text-white rounded-md text-sm font-medium hover:bg-[#085041] disabled:opacity-50 cursor-pointer">
           {saving ? "Saving..." : "Save Footer"}
         </button>
       </div>
@@ -538,6 +538,7 @@ function MetaConfigForm() {
     og_title: { id: null, value: "" },
     og_description: { id: null, value: "" },
     og_image_url: { id: null, value: "", file: null },
+    favicon_url: { id: null, value: "", file: null },
   });
 
   const [loading, setLoading] = useState(true);
@@ -567,6 +568,7 @@ function MetaConfigForm() {
         og_title: { id: null, value: "" },
         og_description: { id: null, value: "" },
         og_image_url: { id: null, value: "", file: null },
+        favicon_url: { id: null, value: "", file: null },
       };
       
       items.forEach(item => {
@@ -679,7 +681,7 @@ function MetaConfigForm() {
               <div className="relative w-full min-h-[160px] border-2 border-dashed border-slate-200 hover:border-slate-300 rounded-xl overflow-hidden group transition-all bg-slate-50 hover:bg-slate-100 flex flex-col items-center justify-center cursor-pointer p-4">
                 {data.og_image_url.value ? (
                   <div className="flex flex-col items-center gap-2 w-full">
-                    <img src={data.og_image_url.value} alt="OG Image Preview" className="h-24 object-cover bg-slate-900/5 rounded-lg shadow-sm" />
+                    <img src={data.og_image_url.value} alt="OG Image Preview" className="h-24 object-cover bg-[#00694C]/5 rounded-lg shadow-sm" />
                     <span className="text-[10px] text-slate-500 font-medium px-2 py-1 bg-white rounded-md shadow-sm">Click to change</span>
                   </div>
                 ) : (
@@ -705,10 +707,49 @@ function MetaConfigForm() {
             </div>
           </div>
         </div>
+
+        {/* Favicon Settings */}
+        <div className="pt-2">
+          <h3 className="text-sm font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+            <ImageIcon className="w-4 h-4 text-slate-500" /> Site Favicon
+          </h3>
+          <div className="space-y-4">
+            <div className="flex flex-col">
+              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">Favicon Image</label>
+              <div className="relative w-32 h-32 border-2 border-dashed border-slate-200 hover:border-slate-300 rounded-xl overflow-hidden group transition-all bg-slate-50 hover:bg-slate-100 flex flex-col items-center justify-center cursor-pointer p-4">
+                {data.favicon_url?.value ? (
+                  <div className="flex flex-col items-center gap-2 w-full">
+                    <img src={data.favicon_url.value} alt="Favicon Preview" className="h-12 w-12 object-contain bg-[#00694C]/5 rounded-lg shadow-sm" />
+                    <span className="text-[10px] text-slate-500 font-medium px-2 py-1 bg-white rounded-md shadow-sm">Click to change</span>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-2 text-slate-400 group-hover:text-slate-600 transition-colors">
+                    <ImageIcon className="w-6 h-6" />
+                    <span className="text-[10px] font-medium text-center">Upload Favicon</span>
+                    <span className="text-[9px] text-center">32x32px .ico/.png</span>
+                  </div>
+                )}
+                <input 
+                  type="file" 
+                  accept=".ico,.png,image/png,image/x-icon" 
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      setData(prev => ({ ...prev, favicon_url: { ...prev.favicon_url, value: URL.createObjectURL(file), file } }));
+                    }
+                  }} 
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
+                  title="Upload Favicon"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
         
       </div>
       <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex justify-end">
-        <button type="submit" disabled={saving} className="px-4 py-2 bg-slate-900 text-white rounded-md text-sm font-medium hover:bg-slate-800 disabled:opacity-50 cursor-pointer">
+        <button type="submit" disabled={saving} className="px-4 py-2 bg-[#00694C] text-white rounded-md text-sm font-medium hover:bg-[#085041] disabled:opacity-50 cursor-pointer">
           {saving ? "Saving..." : "Save Meta Config"}
         </button>
       </div>
@@ -828,7 +869,7 @@ function NavbarConfigForm() {
               <div className="relative w-full min-h-[160px] border-2 border-dashed border-slate-200 hover:border-slate-300 rounded-xl overflow-hidden group transition-all bg-slate-50 hover:bg-slate-100 flex flex-col items-center justify-center cursor-pointer p-4">
                 {data.navbar_logo_url.value ? (
                   <div className="flex flex-col items-center gap-2 w-full">
-                    <img src={data.navbar_logo_url.value} alt="Navbar Logo Preview" className="h-24 object-contain bg-slate-900/5 rounded-lg shadow-sm px-4" />
+                    <img src={data.navbar_logo_url.value} alt="Navbar Logo Preview" className="h-24 object-contain bg-[#00694C]/5 rounded-lg shadow-sm px-4" />
                     <span className="text-[10px] text-slate-500 font-medium px-2 py-1 bg-white rounded-md shadow-sm">Click to change</span>
                   </div>
                 ) : (
@@ -857,7 +898,7 @@ function NavbarConfigForm() {
         
       </div>
       <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex justify-end">
-        <button type="submit" disabled={saving} className="px-4 py-2 bg-slate-900 text-white rounded-md text-sm font-medium hover:bg-slate-800 disabled:opacity-50 cursor-pointer">
+        <button type="submit" disabled={saving} className="px-4 py-2 bg-[#00694C] text-white rounded-md text-sm font-medium hover:bg-[#085041] disabled:opacity-50 cursor-pointer">
           {saving ? "Saving..." : "Save Navbar Config"}
         </button>
       </div>
@@ -902,7 +943,7 @@ function TabTable({ service, columns, formFields, lookupField = "id", boolFields
   return (
     <>
       <div className="flex justify-end mb-3">
-        <button onClick={() => setCreateOpen(true)} className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-slate-900 text-white rounded-md hover:bg-gray-800 transition-colors">
+        <button onClick={() => setCreateOpen(true)} className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-[#00694C] text-white rounded-md hover:bg-[#085041] transition-colors">
           <Plus className="w-4 h-4" /> Add
         </button>
       </div>

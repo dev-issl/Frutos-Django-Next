@@ -87,7 +87,7 @@ function BrandForm({ initial = {}, onSubmit, submitLabel = "Save" }) {
         </div>
       </div>
       <div className="flex justify-end pt-1">
-        <button type="submit" disabled={submitting} className="px-4 py-2 text-sm font-medium bg-slate-900 text-white rounded-md hover:bg-gray-800 disabled:opacity-50">
+        <button type="submit" disabled={submitting} className="px-4 py-2 text-sm font-medium bg-[#00694C] text-white rounded-md hover:bg-[#085041] disabled:opacity-50">
           {submitting ? "Saving..." : submitLabel}
         </button>
       </div>
@@ -121,7 +121,7 @@ function ColorForm({ initial = {}, onSubmit, submitLabel = "Save" }) {
         </div>
       </div>
       <div className="flex justify-end pt-1">
-        <button type="submit" disabled={submitting} className="px-4 py-2 text-sm font-medium bg-slate-900 text-white rounded-md hover:bg-gray-800 disabled:opacity-50">
+        <button type="submit" disabled={submitting} className="px-4 py-2 text-sm font-medium bg-[#00694C] text-white rounded-md hover:bg-[#085041] disabled:opacity-50">
           {submitting ? "Saving..." : submitLabel}
         </button>
       </div>
@@ -145,7 +145,7 @@ function SizeForm({ initial = {}, onSubmit, submitLabel = "Save" }) {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div><label className={lbl}>Size Name *</label><input required className={inp} value={name} onChange={e => setName(e.target.value)} placeholder="e.g., XL, 42, Large" /></div>
       <div className="flex justify-end pt-1">
-        <button type="submit" disabled={submitting} className="px-4 py-2 text-sm font-medium bg-slate-900 text-white rounded-md hover:bg-gray-800 disabled:opacity-50">
+        <button type="submit" disabled={submitting} className="px-4 py-2 text-sm font-medium bg-[#00694C] text-white rounded-md hover:bg-[#085041] disabled:opacity-50">
           {submitting ? "Saving..." : submitLabel}
         </button>
       </div>
@@ -247,7 +247,7 @@ export default function BrandsPage() {
             <button key={t.id} onClick={() => { setTab(t.id); setModal({ open: false, mode: "create", item: null }); setConfirm({ open: false, item: null, tab: null }); }} className={`px-3 py-1.5 text-sm rounded-md transition-colors ${tab === t.id ? "bg-white text-slate-800 shadow-sm font-medium" : "text-slate-500 hover:text-slate-700"}`}>{t.label}</button>
           ))}
         </div>
-        <button onClick={() => setModal({ open: true, mode: "create", item: null })} className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-slate-900 text-white rounded-md hover:bg-gray-800">
+        <button onClick={() => setModal({ open: true, mode: "create", item: null })} className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-[#00694C] text-white rounded-md hover:bg-[#085041]">
           <Plus className="w-3.5 h-3.5" /> Add {getLabel()}
         </button>
       </div>

@@ -109,7 +109,7 @@ function SectionForm({ initial = {}, onSubmit, submitLabel = "Save" }) {
           </div>
         </div>
       )}
-      <div className="flex justify-end pt-1"><button type="submit" className="px-4 py-2 text-sm font-medium bg-slate-900 text-white rounded-md hover:bg-gray-800 transition-colors">{submitLabel}</button></div>
+      <div className="flex justify-end pt-1"><button type="submit" className="px-4 py-2 text-sm font-medium bg-[#00694C] text-white rounded-md hover:bg-[#085041] transition-colors">{submitLabel}</button></div>
     </form>
   );
 }
@@ -276,7 +276,7 @@ function ItemForm({ isEdit = false, initial = {}, sections = [], products = [], 
         <button
           type="submit"
           disabled={!isEdit && sectionId && selectedIds.length === 0}
-          className="px-4 py-2 text-sm font-medium bg-slate-900 text-white rounded-md hover:bg-gray-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="px-4 py-2 text-sm font-medium bg-[#00694C] text-white rounded-md hover:bg-[#085041] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {submitLabel}{!isEdit && selectedIds.length > 1 ? ` (${selectedIds.length} items)` : ""}
         </button>
@@ -352,7 +352,7 @@ function AssignmentForm({ initial = {}, sections = [], onSubmit, submitLabel = "
           </label>
         ))}
       </div>
-      <div className="flex justify-end pt-1"><button type="submit" className="px-4 py-2 text-sm font-medium bg-slate-900 text-white rounded-md hover:bg-gray-800 transition-colors">{submitLabel}</button></div>
+      <div className="flex justify-end pt-1"><button type="submit" className="px-4 py-2 text-sm font-medium bg-[#00694C] text-white rounded-md hover:bg-[#085041] transition-colors">{submitLabel}</button></div>
     </form>
   );
 }
@@ -486,9 +486,9 @@ export default function SectionsPage() {
       title="Page Sections"
       description="Manage sections, their items and page assignments"
       actions={
-        tab === "sections" ? <button onClick={() => setSCreate(true)} className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-slate-900 text-white rounded-md hover:bg-gray-800 transition-colors"><Plus className="w-4 h-4" /> Add Section</button>
-        : tab === "items" ? <button onClick={() => setICreate(true)} className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-slate-900 text-white rounded-md hover:bg-gray-800 transition-colors"><Plus className="w-4 h-4" /> Add Item</button>
-        : <button onClick={() => setACreate(true)} className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-slate-900 text-white rounded-md hover:bg-gray-800 transition-colors"><Plus className="w-4 h-4" /> Add Assignment</button>
+        tab === "sections" ? <button onClick={() => setSCreate(true)} className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-[#00694C] text-white rounded-md hover:bg-[#085041] transition-colors"><Plus className="w-4 h-4" /> Add Section</button>
+        : tab === "items" ? <button onClick={() => setICreate(true)} className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-[#00694C] text-white rounded-md hover:bg-[#085041] transition-colors"><Plus className="w-4 h-4" /> Add Item</button>
+        : <button onClick={() => setACreate(true)} className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-[#00694C] text-white rounded-md hover:bg-[#085041] transition-colors"><Plus className="w-4 h-4" /> Add Assignment</button>
       }
     >
       {/* Tab Bar */}

@@ -288,20 +288,32 @@ class SupportTicketMessageSerializer(serializers.ModelSerializer):
         return ret
 
 
+from django.utils import timezone
+
 class SupportTicketSerializer(serializers.ModelSerializer):
     userName = serializers.CharField(source='user.name', read_only=True)
     userEmail = serializers.CharField(source='user.email', read_only=True)
     images = SupportTicketImageSerializer(many=True, read_only=True)
     messages = SupportTicketMessageSerializer(many=True, read_only=True)
+    is_user_typing = serializers.SerializerMethodField()
+    is_admin_typing = serializers.SerializerMethodField()
 
     class Meta:
         model = SupportTicket
         fields = [
             'id', 'subject', 'description', 'images', 'messages', 'category', 'priority',
             'status', 'admin_response', 'created_at', 'updated_at',
-            'userName', 'userEmail'
+            'userName', 'userEmail', 'is_user_typing', 'is_admin_typing'
         ]
         read_only_fields = ['id', 'status', 'admin_response', 'created_at', 'updated_at']
+
+    def get_is_user_typing(self, obj):
+        if not obj.user_typing_at: return False
+        return (timezone.now() - obj.user_typing_at).total_seconds() < 3
+
+    def get_is_admin_typing(self, obj):
+        if not obj.admin_typing_at: return False
+        return (timezone.now() - obj.admin_typing_at).total_seconds() < 3
 
     def create(self, validated_data):
         validated_data['user'] = self.context['request'].user

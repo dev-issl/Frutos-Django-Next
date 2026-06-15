@@ -62,7 +62,7 @@ function MethodForm({ initial = {}, onSubmit, submitLabel = "Save" }) {
         </div>
       </div>
       <div><label className={lbl}>Description</label><textarea rows={2} className={inp + " resize-none"} value={v.description || ""} onChange={e => set("description", e.target.value)} /></div>
-      <div className="flex justify-end pt-1"><button type="submit" className="px-4 py-2 text-sm font-medium bg-slate-900 text-white rounded-md hover:bg-gray-800 transition-colors">{submitLabel}</button></div>
+      <div className="flex justify-end pt-1"><button type="submit" className="px-4 py-2 text-sm font-medium bg-[#00694C] text-white rounded-md hover:bg-[#085041] transition-colors">{submitLabel}</button></div>
     </form>
   );
 }
@@ -92,7 +92,7 @@ function CategoryForm({ initial = {}, allMethods = [], onSubmit, submitLabel = "
           ))}
         </div>
       </div>
-      <div className="flex justify-end pt-1"><button type="submit" className="px-4 py-2 text-sm font-medium bg-slate-900 text-white rounded-md hover:bg-gray-800 transition-colors">{submitLabel}</button></div>
+      <div className="flex justify-end pt-1"><button type="submit" className="px-4 py-2 text-sm font-medium bg-[#00694C] text-white rounded-md hover:bg-[#085041] transition-colors">{submitLabel}</button></div>
     </form>
   );
 }
@@ -177,7 +177,7 @@ function TierForm({ initial = {}, allMethods = [], onSubmit, onAddAnother, submi
             Save &amp; Add Another
           </button>
         )}
-        <button type="submit" className="px-4 py-2 text-sm font-medium bg-slate-900 text-white rounded-md hover:bg-gray-800 transition-colors">{submitLabel}</button>
+        <button type="submit" className="px-4 py-2 text-sm font-medium bg-[#00694C] text-white rounded-md hover:bg-[#085041] transition-colors">{submitLabel}</button>
       </div>
     </form>
   );
@@ -249,7 +249,7 @@ function TiersGroupedView({ allMethods, tiers, loading, filterMethod, setFilterM
                 <button
                   type="button"
                   onClick={e => { e.stopPropagation(); onAddForMethod(method); }}
-                  className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium bg-slate-900 text-white rounded hover:bg-gray-700 transition-colors"
+                  className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium bg-[#00694C] text-white rounded hover:bg-gray-700 transition-colors"
                 >
                   <Plus className="w-3 h-3" /> Add Tier
                 </button>
@@ -391,9 +391,9 @@ export default function ShippingPage() {
       title="Shipping Management"
       description="Manage shipping methods, categories and pricing tiers"
       actions={
-        tab === "methods" ? <button onClick={() => setMCreate(true)} className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-slate-900 text-white rounded-md hover:bg-gray-800 transition-colors"><Plus className="w-4 h-4" /> Add Method</button>
-        : tab === "categories" ? <button onClick={() => setCCreate(true)} className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-slate-900 text-white rounded-md hover:bg-gray-800 transition-colors"><Plus className="w-4 h-4" /> Add Category</button>
-        : <button onClick={() => setTCreate(true)} className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-slate-900 text-white rounded-md hover:bg-gray-800 transition-colors"><Plus className="w-4 h-4" /> Add Tier</button>
+        tab === "methods" ? <button onClick={() => setMCreate(true)} className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-[#00694C] text-white rounded-md hover:bg-[#085041] transition-colors"><Plus className="w-4 h-4" /> Add Method</button>
+        : tab === "categories" ? <button onClick={() => setCCreate(true)} className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-[#00694C] text-white rounded-md hover:bg-[#085041] transition-colors"><Plus className="w-4 h-4" /> Add Category</button>
+        : <button onClick={() => setTCreate(true)} className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-[#00694C] text-white rounded-md hover:bg-[#085041] transition-colors"><Plus className="w-4 h-4" /> Add Tier</button>
 
       }
     >

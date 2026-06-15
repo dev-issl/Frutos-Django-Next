@@ -77,8 +77,18 @@ export default function PaymentSection({ paymentMethod, setPaymentMethod, cardFo
             </label>
             <input
               type="text" placeholder="0000 0000 0000 0000"
-              value={cardForm.number}
-              onChange={e => setCardForm({ ...cardForm, number: e.target.value })}
+              value={cardForm.number || ''}
+              onChange={e => {
+                const input = e.target.value
+                if (input.length < (cardForm.number || '').length) {
+                  setCardForm({ ...cardForm, number: input.endsWith(' ') ? input.slice(0, -1) : input })
+                  return
+                }
+                let val = input.replace(/\D/g, '')
+                val = val.substring(0, 16)
+                setCardForm({ ...cardForm, number: val.match(/.{1,4}/g)?.join(' ') || val })
+              }}
+              className="font-mono"
               style={INPUT_STYLE} onFocus={onFocus} onBlur={onBlur}
             />
           </div>
@@ -87,12 +97,40 @@ export default function PaymentSection({ paymentMethod, setPaymentMethod, cardFo
               <label className="block text-[10px] uppercase tracking-widest font-bold mb-2" style={{ color: '#6d7a73' }}>
                 Expiry *
               </label>
-              <input
-                type="text" placeholder="MM/YY"
-                value={cardForm.expiry}
-                onChange={e => setCardForm({ ...cardForm, expiry: e.target.value })}
-                style={INPUT_STYLE} onFocus={onFocus} onBlur={onBlur}
-              />
+              <div className="relative">
+                {/* Ghost text for MM/YY */}
+                <div 
+                  className="absolute top-0 left-0 h-full flex items-center pointer-events-none font-mono text-[14px]"
+                  style={{ paddingLeft: '16px' }}
+                >
+                  <span className="opacity-0">{cardForm.expiry || ''}</span>
+                  <span className="text-gray-400">{"MM/YY".substring((cardForm.expiry || '').length)}</span>
+                </div>
+                <input
+                  type="text"
+                  value={cardForm.expiry || ''}
+                  onChange={e => {
+                    const input = e.target.value
+                    if (input.length < (cardForm.expiry || '').length) {
+                      setCardForm({ ...cardForm, expiry: input.endsWith('/') ? input.slice(0, -1) : input })
+                      return
+                    }
+                    let digits = input.replace(/\D/g, '')
+                    digits = digits.substring(0, 4)
+                    if (digits.length >= 2) {
+                      let m = digits.substring(0, 2)
+                      if (parseInt(m, 10) > 12) m = '12'
+                      if (m === '00') m = '01'
+                      const y = digits.substring(2)
+                      setCardForm({ ...cardForm, expiry: y ? `${m}/${y}` : `${m}/` })
+                    } else {
+                      setCardForm({ ...cardForm, expiry: digits })
+                    }
+                  }}
+                  className="w-full bg-transparent font-mono relative z-10 text-[#151e13]"
+                  style={INPUT_STYLE} onFocus={onFocus} onBlur={onBlur}
+                />
+              </div>
             </div>
             <div>
               <label className="block text-[10px] uppercase tracking-widest font-bold mb-2" style={{ color: '#6d7a73' }}>
@@ -100,8 +138,12 @@ export default function PaymentSection({ paymentMethod, setPaymentMethod, cardFo
               </label>
               <input
                 type="text" placeholder="123"
-                value={cardForm.cvv}
-                onChange={e => setCardForm({ ...cardForm, cvv: e.target.value })}
+                value={cardForm.cvv || ''}
+                onChange={e => {
+                  let val = e.target.value.replace(/\D/g, '')
+                  setCardForm({ ...cardForm, cvv: val.substring(0, 4) })
+                }}
+                className="font-mono"
                 style={INPUT_STYLE} onFocus={onFocus} onBlur={onBlur}
               />
             </div>

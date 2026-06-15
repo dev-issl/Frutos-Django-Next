@@ -223,7 +223,7 @@ function ProductForm({
       {/* Tab nav */}
       <div className="flex gap-1 flex-wrap mb-4" style={{ borderBottom: "2px solid #f1f5f9", paddingBottom: "0" }}>
         {TABS.map(t => (
-          <button key={t.id} type="button" onClick={() => setActiveTab(t.id)}
+          <button style={{cursor: 'pointer'}} key={t.id} type="button" onClick={() => setActiveTab(t.id)}
             style={{
               padding: "8px 14px",
               fontSize: "12px",
@@ -369,7 +369,7 @@ function ProductForm({
 
           {/* Physical dimensions */}
           <div className="pt-2 border-t border-slate-100">
-            <button type="button" onClick={() => setShowPhysical(p => !p)}
+            <button style={{cursor: 'pointer'}} type="button" onClick={() => setShowPhysical(p => !p)}
               className="flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-700 mb-2">
               {showPhysical ? <ChevronUp className="w-3 h-3"/> : <ChevronDown className="w-3 h-3"/>}
               Physical dimensions (for shipping calculation)
@@ -427,7 +427,7 @@ function ProductForm({
                 <div className="relative">
                   <img src={thumbnailPreview} alt="thumb"
                     className="w-24 h-24 rounded-lg object-cover border border-slate-200" />
-                  <button type="button"
+                  <button style={{cursor: 'pointer'}} type="button"
                     onClick={() => { setThumbnail(null); setThumbnailPreview(""); setThumbnailRemoved(true); }}
                     className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center">
                     <X className="w-3 h-3" />
@@ -453,7 +453,7 @@ function ProductForm({
                 <div key={img.id} className="relative">
                   <img src={img.image} alt=""
                     className="w-20 h-20 rounded-lg object-cover border border-slate-200" />
-                  <button type="button"
+                  <button style={{cursor: 'pointer'}} type="button"
                     onClick={() => { setExistingImages(prev => prev.filter(i => i.id !== img.id)); setRemoveImageIds(prev => [...prev, img.id]); }}
                     className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center">
                     <X className="w-2.5 h-2.5" />
@@ -464,7 +464,7 @@ function ProductForm({
                 <div key={`n-${i}`} className="relative">
                   <img src={URL.createObjectURL(f)} alt=""
                     className="w-20 h-20 rounded-lg object-cover border border-slate-200" />
-                  <button type="button"
+                  <button style={{cursor: 'pointer'}} type="button"
                     onClick={() => setAdditionalImages(prev => prev.filter((_, j) => j !== i))}
                     className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center">
                     <X className="w-2.5 h-2.5" />
@@ -484,7 +484,7 @@ function ProductForm({
           <div>
             <div className="flex items-center justify-between mb-1">
               <label className={labelCls}>Colors</label>
-              <button type="button" onClick={() => setShowAddColor(v => !v)}
+              <button style={{cursor: 'pointer'}} type="button" onClick={() => setShowAddColor(v => !v)}
                 className="text-xs text-blue-600 hover:underline flex items-center gap-0.5">
                 <Plus className="w-3 h-3" /> New Color
               </button>
@@ -495,21 +495,21 @@ function ProductForm({
                   placeholder="Color name" className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded bg-white text-slate-800 focus:outline-none" />
                 <input type="color" value={newColorHex} onChange={e => setNewColorHex(e.target.value)}
                   className="w-8 h-7 rounded cursor-pointer border-0 p-0" />
-                <button type="button" onClick={handleAddColor} disabled={addingColor || !newColorName.trim()}
-                  className="px-2 py-1 text-xs bg-slate-900 text-white rounded disabled:opacity-50">
+                <button style={{cursor: 'pointer'}} type="button" onClick={handleAddColor} disabled={addingColor || !newColorName.trim()}
+                  className="px-2 py-1 text-xs bg-[#00694C] text-white rounded disabled:opacity-50">
                   {addingColor ? "..." : "Add"}
                 </button>
-                <button type="button" onClick={() => setShowAddColor(false)} className="text-slate-400 hover:text-slate-600">
+                <button style={{cursor: 'pointer'}} type="button" onClick={() => setShowAddColor(false)} className="text-slate-400 hover:text-slate-600">
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
             )}
             <div className="flex flex-wrap gap-2">
               {colors.map(c => (
-                <button key={c.id} type="button" onClick={() => toggleMulti("colors", c.id)}
+                <button style={{cursor: 'pointer'}} key={c.id} type="button" onClick={() => toggleMulti("colors", c.id)}
                   className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs border transition-colors ${
                     form.colors.includes(c.id)
-                      ? "border-gray-900 bg-slate-900 text-white"
+                      ? "border-gray-900 bg-[#00694C] text-white"
                       : "border-slate-200 text-slate-600 hover:border-gray-400"
                   }`}>
                   {c.hex_code && <span className="w-3 h-3 rounded-full border border-slate-200" style={{ background: c.hex_code }} />}
@@ -524,7 +524,7 @@ function ProductForm({
           <div>
             <div className="flex items-center justify-between mb-1">
               <label className={labelCls}>Sizes</label>
-              <button type="button" onClick={() => setShowAddSize(v => !v)}
+              <button style={{cursor: 'pointer'}} type="button" onClick={() => setShowAddSize(v => !v)}
                 className="text-xs text-blue-600 hover:underline flex items-center gap-0.5">
                 <Plus className="w-3 h-3" /> New Size
               </button>
@@ -533,21 +533,21 @@ function ProductForm({
               <div className="flex items-center gap-2 mb-2 p-2 border border-dashed border-gray-300 rounded-md">
                 <input type="text" value={newSizeName} onChange={e => setNewSizeName(e.target.value)}
                   placeholder="Size (e.g., XL, 42)" className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded bg-white text-slate-800 focus:outline-none" />
-                <button type="button" onClick={handleAddSize} disabled={addingSize || !newSizeName.trim()}
-                  className="px-2 py-1 text-xs bg-slate-900 text-white rounded disabled:opacity-50">
+                <button style={{cursor: 'pointer'}} type="button" onClick={handleAddSize} disabled={addingSize || !newSizeName.trim()}
+                  className="px-2 py-1 text-xs bg-[#00694C] text-white rounded disabled:opacity-50">
                   {addingSize ? "..." : "Add"}
                 </button>
-                <button type="button" onClick={() => setShowAddSize(false)} className="text-slate-400 hover:text-slate-600">
+                <button style={{cursor: 'pointer'}} type="button" onClick={() => setShowAddSize(false)} className="text-slate-400 hover:text-slate-600">
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
             )}
             <div className="flex flex-wrap gap-2">
               {sizes.map(s => (
-                <button key={s.id} type="button" onClick={() => toggleMulti("sizes", s.id)}
+                <button style={{cursor: 'pointer'}} key={s.id} type="button" onClick={() => toggleMulti("sizes", s.id)}
                   className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
                     form.sizes.includes(s.id)
-                      ? "border-gray-900 bg-slate-900 text-white"
+                      ? "border-gray-900 bg-[#00694C] text-white"
                       : "border-slate-200 text-slate-600 hover:border-gray-400"
                   }`}>
                   {s.name}
@@ -566,7 +566,7 @@ function ProductForm({
             <p className="text-xs text-slate-500">
               Key-value pairs shown on product page (e.g., Storage → Cool & dry).
             </p>
-            <button type="button"
+            <button style={{cursor: 'pointer'}} type="button"
               onClick={() => setSpecs(prev => [...prev, { name: "", value: "" }])}
               className="text-xs border border-gray-300 rounded px-2 py-1 text-slate-600 hover:bg-slate-50 flex items-center gap-1">
               <Plus className="w-3 h-3" /> Add Row
@@ -579,7 +579,7 @@ function ProductForm({
                   onChange={e => setSpecs(prev => prev.map((s, j) => j === i ? { ...s, name: e.target.value } : s))} />
                 <input className={inputCls} placeholder="Value (e.g., Cool & dry)" value={spec.value}
                   onChange={e => setSpecs(prev => prev.map((s, j) => j === i ? { ...s, value: e.target.value } : s))} />
-                <button type="button"
+                <button style={{cursor: 'pointer'}} type="button"
                   onClick={() => setSpecs(prev => prev.filter((_, j) => j !== i))}
                   className="text-red-400 hover:text-red-600 flex-shrink-0">
                   <X className="w-4 h-4" />
@@ -597,7 +597,7 @@ function ProductForm({
       <div className="flex justify-between items-center pt-3" style={{ borderTop: "1px solid #f1f5f9" }}>
         <div className="flex gap-1.5">
           {TABS.map(t => (
-            <button key={t.id} type="button" onClick={() => setActiveTab(t.id)}
+            <button style={{cursor: 'pointer'}} key={t.id} type="button" onClick={() => setActiveTab(t.id)}
               style={{
                 width: "8px",
                 height: "8px",
@@ -611,7 +611,7 @@ function ProductForm({
             />
           ))}
         </div>
-        <button type="submit" disabled={submitting} className="db-btn-primary" style={{ opacity: submitting ? 0.6 : 1 }}>
+        <button style={{cursor: 'pointer'}} type="submit" disabled={submitting} className="db-btn-primary" style={{ opacity: submitting ? 0.6 : 1 }}>
           {submitting && <Loader2 size={13} className="animate-spin" />}
           {submitting ? "Saving..." : submitLabel}
         </button>
@@ -717,7 +717,7 @@ function ProductView({ item }) {
 
           {item.nutritional_info && (
             <Section title="Nutritional Information">
-              <div className="bg-slate-900 rounded-xl p-5 shadow-inner">
+              <div className="bg-[#00694C] rounded-xl p-5 shadow-inner">
                 <pre className="font-mono text-xs text-emerald-400 whitespace-pre-wrap leading-relaxed">
                   {item.nutritional_info}
                 </pre>
@@ -854,7 +854,7 @@ export default function ProductsPage() {
       title="Products"
       description="Manage your product catalog"
       actions={
-        <button onClick={() => setCreateOpen(true)} className="db-btn-primary">
+        <button style={{cursor: 'pointer'}} onClick={() => setCreateOpen(true)} className="db-btn-primary">
           <Plus size={15} /> Add Product
         </button>
       }
@@ -866,15 +866,15 @@ export default function ProductsPage() {
         loading={loading} searchable
         actions={(row) => (
           <div className="flex items-center justify-end gap-1">
-            <button onClick={() => setViewItem(row)}
+            <button style={{cursor: 'pointer'}} onClick={() => setViewItem(row)}
               className="db-icon-btn">
               <Eye className="w-3.5 h-3.5" />
             </button>
-            <button onClick={() => setEditItem(row)}
+            <button style={{cursor: 'pointer'}} onClick={() => setEditItem(row)}
               className="db-icon-btn">
               <Pencil className="w-3.5 h-3.5" />
             </button>
-            <button onClick={() => setDeleteItem(row)}
+            <button style={{cursor: 'pointer'}} onClick={() => setDeleteItem(row)}
               className="db-icon-btn danger">
               <Trash2 className="w-3.5 h-3.5" />
             </button>

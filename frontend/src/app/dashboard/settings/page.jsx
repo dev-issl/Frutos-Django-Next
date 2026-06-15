@@ -102,7 +102,7 @@ export default function SettingsPage() {
                   onClick={() => setActiveTab(tab.id)}
                   className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm whitespace-nowrap transition-colors ${
                     activeTab === tab.id
-                      ? "bg-slate-900 text-white"
+                      ? "bg-[#00694C] text-white"
                       : "text-slate-600 hover:bg-slate-100"
                   }`}
                 >
@@ -231,7 +231,7 @@ export default function SettingsPage() {
                   <label className="block text-sm font-medium text-slate-700 mb-1">New Password</label>
                   <input name="new_password" type="password" placeholder="••••••••" className="w-full max-w-sm px-3 py-2 border border-gray-300 rounded-md text-sm bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-gray-400" />
                 </div>
-                <button type="submit" className="px-4 py-2 text-sm font-medium bg-slate-900 text-white rounded-md hover:bg-gray-800 transition-colors">
+                <button type="submit" className="px-4 py-2 text-sm font-medium bg-[#00694C] text-white rounded-md hover:bg-[#085041] transition-colors">
                   Change Password
                 </button>
               </div>
@@ -288,7 +288,7 @@ export default function SettingsPage() {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium bg-slate-900 text-white rounded-md hover:bg-gray-800 disabled:opacity-50 transition-colors"
+                className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium bg-[#00694C] text-white rounded-md hover:bg-[#085041] disabled:opacity-50 transition-colors"
               >
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 {saving ? "Saving..." : "Save Changes"}

@@ -1242,3 +1242,33 @@ class AdminSupportTicketMessageDetailView(APIView):
         msg.save(update_fields=['is_deleted'])
 
         return Response(SupportTicketMessageSerializer(msg).data)
+
+
+from django.utils import timezone
+
+class SupportTicketTypingView(APIView):
+    """
+    POST /api/auth/tickets/<ticket_id>/typing/
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, ticket_id):
+        from django.shortcuts import get_object_or_404
+        ticket = get_object_or_404(SupportTicket, id=ticket_id, user=request.user)
+        ticket.user_typing_at = timezone.now()
+        ticket.save(update_fields=['user_typing_at'])
+        return Response({'status': 'typing...'})
+
+
+class AdminSupportTicketTypingView(APIView):
+    """
+    POST /api/auth/admin/tickets/<ticket_id>/typing/
+    """
+    permission_classes = [permissions.IsAdminUser]
+
+    def post(self, request, ticket_id):
+        from django.shortcuts import get_object_or_404
+        ticket = get_object_or_404(SupportTicket, id=ticket_id)
+        ticket.admin_typing_at = timezone.now()
+        ticket.save(update_fields=['admin_typing_at'])
+        return Response({'status': 'typing...'})

@@ -55,9 +55,11 @@ urlpatterns = [
     path('tickets/', views.SupportTicketListCreateView.as_view(), name='ticket-list-create'),
     path('tickets/<int:ticket_id>/reply/', views.SupportTicketReplyView.as_view(), name='ticket-reply'),
     path('tickets/<int:ticket_id>/messages/<int:msg_id>/', views.SupportTicketMessageDetailView.as_view(), name='ticket-message-detail'),
+    path('tickets/<int:ticket_id>/typing/', views.SupportTicketTypingView.as_view(), name='ticket-typing'),
     
     path('admin/tickets/', views.AdminSupportTicketListView.as_view(), name='admin-ticket-list'),
     path('admin/tickets/<int:pk>/', views.AdminSupportTicketDetailView.as_view(), name='admin-ticket-detail'),
     path('admin/tickets/<int:ticket_id>/reply/', views.AdminSupportTicketReplyView.as_view(), name='admin-ticket-reply'),
     path('admin/tickets/<int:ticket_id>/messages/<int:msg_id>/', views.AdminSupportTicketMessageDetailView.as_view(), name='admin-ticket-message-detail'),
+    path('admin/tickets/<int:ticket_id>/typing/', views.AdminSupportTicketTypingView.as_view(), name='admin-ticket-typing'),
 ]
