@@ -295,6 +295,7 @@
 
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import StatusBadge  from '../components/StatusBadge'
 import ConfirmModal from '../components/ConfirmModal'
 
@@ -316,6 +317,7 @@ function toArray(data) {
 
 // initialNotifications — pre-fetched by the server component; no spinner on first load.
 export default function NotificationsTab({ authFetch, initialNotifications = null, onCountChange }) {
+  const router = useRouter()
   const [notifs,        setNotifs]        = useState(() => toArray(initialNotifications))
   const [loading,       setLoading]       = useState(true)  // always load fresh
   const [expanded,      setExpanded]      = useState(null)
@@ -338,15 +340,20 @@ export default function NotificationsTab({ authFetch, initialNotifications = nul
       }
       prevIdsRef.current = new Set(list.map(n => n.id))
       setNotifs(list)
-      // sync unread count to parent sidebar badge
-      const unread = list.filter(n => !n.isRead).length
-      if (onCountChange) onCountChange(unread)
     } catch {
       if (isInitial) setNotifs([])
     } finally {
       if (isInitial) setLoading(false)
     }
   }, [authFetch, onCountChange])
+
+  // ── Sync Unread Count ──────────────────────────────────────────────────────
+  useEffect(() => {
+    if (onCountChange) {
+      const unread = notifs.filter(n => !n.isRead).length
+      onCountChange(unread)
+    }
+  }, [notifs, onCountChange])
 
   // ── Initial full fetch ─────────────────────────────────────────────────────
   useEffect(() => {
@@ -370,12 +377,21 @@ export default function NotificationsTab({ authFetch, initialNotifications = nul
         try {
           const notif = JSON.parse(event.data)
           setNotifs(prev => {
-            // avoid duplicates
+            // avoid exact duplicates
             if (prev.some(n => n.id === notif.id)) return prev
+
+            // If it's a grouped ticket reply, remove the older one for the same ticket
+            let nextPrev = prev;
+            if (notif.type === 'ticket_reply' && notif.metadata?.ticket_id) {
+              const existingIdx = prev.findIndex(n => n.type === 'ticket_reply' && n.metadata?.ticket_id === notif.metadata.ticket_id);
+              if (existingIdx !== -1) {
+                nextPrev = [...prev];
+                nextPrev.splice(existingIdx, 1);
+              }
+            }
+
             setHasNew(true)
-            const next = [notif, ...prev]
-            const unread = next.filter(n => !n.isRead).length
-            if (onCountChange) onCountChange(unread)
+            const next = [notif, ...nextPrev]
             return next
           })
           prevIdsRef.current.add(notif.id)
@@ -420,6 +436,17 @@ export default function NotificationsTab({ authFetch, initialNotifications = nul
   }
 
   async function handleClick(notif) {
+    if (notif.type === 'ticket_reply' && notif.metadata?.ticket_id) {
+      if (!notif.isRead) {
+        authFetch(`${API_BASE}/auth/notifications/mark-read/`, {
+          method: 'POST', body: JSON.stringify({ ids: [notif.id] }),
+        })
+        setNotifs(p => p.map(n => n.id === notif.id ? { ...n, isRead: true } : n))
+      }
+      router.push(`/profile?tab=tickets&ticket_id=${notif.metadata.ticket_id}`)
+      return
+    }
+
     const isOpening = expanded !== notif.id
     setExpanded(isOpening ? notif.id : null)
     if (notif.id === expanded) setHasNew(false)
@@ -538,7 +565,14 @@ export default function NotificationsTab({ authFetch, initialNotifications = nul
                     </div>
                     <div className="flex-1 min-w-0 cursor-pointer" onClick={() => handleClick(notif)}>
                       <div className="flex items-start justify-between gap-2">
-                        <p className="text-sm font-bold" style={{ color: '#151e13' }}>{notif.title}</p>
+                        <p className="text-sm font-bold flex items-center gap-2" style={{ color: '#151e13' }}>
+                          {notif.title}
+                          {rawMeta.message_count > 1 && (
+                            <span className="inline-flex items-center justify-center bg-[#00694C] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-sm">
+                              {rawMeta.message_count}
+                            </span>
+                          )}
+                        </p>
                         <div className="flex items-center gap-1.5 flex-shrink-0">
                           {!notif.isRead && <div className="w-2 h-2 rounded-full" style={{ background: '#00694C' }} />}
                           <span className="material-symbols-outlined text-base"

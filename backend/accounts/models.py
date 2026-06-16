@@ -72,6 +72,7 @@ class Notification(models.Model):
         ('price_change',  'Price Change'),
         ('leftover_pack', 'Leftover Pack Available'),
         ('ticket_reply',  'Support Ticket Reply'),
+        ('admin_ticket_reply', 'Admin Ticket Reply'),
         ('admin_alert',   'Admin Alert'),
         ('out_of_stock',  'Out of Stock Alert'),
         ('wholesale_pending', 'Wholesale Pending Approval'),
@@ -103,6 +104,7 @@ class Notification(models.Model):
             'price_change':  'trending_down',
             'leftover_pack': 'inventory_2',
             'ticket_reply':  'support_agent',
+            'admin_ticket_reply': 'support_agent',
             'admin_alert':   'admin_panel_settings',
             'out_of_stock':  'warning',
             'wholesale_pending': 'storefront',
@@ -234,15 +236,70 @@ class SupportTicketMessageAttachment(models.Model):
 def notify_on_ticket_message(sender, instance, created, **kwargs):
     if created:
         ticket = instance.ticket
-        # If the sender is an admin (or not the ticket owner), notify the user
-        if instance.sender != ticket.user:
-            Notification.objects.create(
+        # If the message is an admin reply, notify the user (even if admin is testing their own ticket)
+        if instance.is_admin_reply or instance.sender != ticket.user:
+            from django.utils import timezone
+            # Check if there is an existing unread notification for this ticket
+            existing_notif = Notification.objects.filter(
                 user=ticket.user,
                 type='ticket_reply',
-                title=f'New reply on Ticket #{ticket.id}',
-                message=f'You received a new response regarding: {ticket.subject}',
-                metadata={'ticket_id': ticket.id, 'icon': 'support_agent'}
-            )
+                is_read=False,
+                metadata__ticket_id=ticket.id
+            ).first()
+
+            if existing_notif:
+                # To trigger SSE and bump to top, delete the old one and create a new one
+                meta = existing_notif.metadata or {}
+                count = meta.get('message_count', 1) + 1
+                existing_notif.delete()
+                
+                Notification.objects.create(
+                    user=ticket.user,
+                    type='ticket_reply',
+                    title=f'New reply on Ticket #{ticket.id}',
+                    message=f'You received {count} new responses regarding: {ticket.subject}',
+                    metadata={'ticket_id': ticket.id, 'icon': 'support_agent', 'message_count': count}
+                )
+            else:
+                Notification.objects.create(
+                    user=ticket.user,
+                    type='ticket_reply',
+                    title=f'New reply on Ticket #{ticket.id}',
+                    message=f'You received a new response regarding: {ticket.subject}',
+                    metadata={'ticket_id': ticket.id, 'icon': 'support_agent', 'message_count': 1}
+                )
         else:
             # We update the ticket's updated_at timestamp when a user replies so admins see it's active
             ticket.save(update_fields=['updated_at'])
+            
+            # Notify all admins
+            from django.contrib.auth import get_user_model
+            User = get_user_model()
+            admins = User.objects.filter(is_staff=True)
+            for admin_user in admins:
+                existing_notif = Notification.objects.filter(
+                    user=admin_user,
+                    type='admin_ticket_reply',
+                    is_read=False,
+                    metadata__ticket_id=ticket.id
+                ).first()
+                
+                if existing_notif:
+                    meta = existing_notif.metadata or {}
+                    count = meta.get('message_count', 1) + 1
+                    existing_notif.delete()
+                    Notification.objects.create(
+                        user=admin_user,
+                        type='admin_ticket_reply',
+                        title=f'New message on Ticket #{ticket.id}',
+                        message=f'User {ticket.user.email} sent {count} new messages',
+                        metadata={'ticket_id': ticket.id, 'icon': 'support_agent', 'message_count': count}
+                    )
+                else:
+                    Notification.objects.create(
+                        user=admin_user,
+                        type='admin_ticket_reply',
+                        title=f'New message on Ticket #{ticket.id}',
+                        message=f'User {ticket.user.email} replied to the ticket',
+                        metadata={'ticket_id': ticket.id, 'icon': 'support_agent', 'message_count': 1}
+                    )

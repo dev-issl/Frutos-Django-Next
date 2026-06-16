@@ -307,7 +307,7 @@ def notification_stream(request):
         return _HR('Unauthorized', status=401)
 
     context = request.GET.get('context', '')
-    admin_types = ['admin_alert', 'out_of_stock', 'wholesale_pending', 'ticket_created']
+    admin_types = ['admin_alert', 'out_of_stock', 'wholesale_pending', 'ticket_created', 'admin_ticket_reply']
 
     async def event_stream():
         import asyncio

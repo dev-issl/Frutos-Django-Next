@@ -785,6 +785,10 @@ const formatMessageTime = (dateString) => {
 
 export default function TicketsPage() {
   const toast = useToastContext();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const urlTicketId = searchParams?.get('ticket_id');
+
   const [activeStatus, setActiveStatus] = useState("all");
   const [tickets, setTickets] = useState([]);
   const [counts, setCounts] = useState({});
@@ -794,6 +798,34 @@ export default function TicketsPage() {
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const PAGE_SIZE = 15;
+
+  // Auto-open ticket from URL
+  useEffect(() => {
+    if (urlTicketId) {
+      const fetchSpecificTicket = async () => {
+        try {
+          const res = await api.get(`/api/auth/admin/tickets/${urlTicketId}/`);
+          setSelectedTicket(res);
+        } catch {
+          // ignore error if ticket not found
+        }
+      };
+      
+      const existing = tickets.find(t => t.id === Number(urlTicketId));
+      if (existing) {
+        setSelectedTicket(existing);
+      } else {
+        fetchSpecificTicket();
+      }
+    }
+  }, [urlTicketId, tickets]);
+
+  const handleCloseModal = () => {
+    setSelectedTicket(null);
+    if (urlTicketId) {
+      router.replace('/dashboard/tickets', { scroll: false });
+    }
+  };
 
   const fetchTickets = useCallback(async () => {
     setLoading(true);
@@ -849,10 +881,11 @@ export default function TicketsPage() {
 
   return (
     <Container title="Support Tickets" description="Review and respond to vendor support tickets">
+      {/* Modals */}
       {selectedTicket && (
         <TicketDetailModal
           ticket={selectedTicket}
-          onClose={() => setSelectedTicket(null)}
+          onClose={handleCloseModal}
           onReplySuccess={() => { fetchTickets(); fetchCounts(); }}
         />
       )}

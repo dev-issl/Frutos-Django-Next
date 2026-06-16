@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Plus, X, Upload, MessageSquare, Clock, CheckCircle2, AlertCircle, Loader2, ArrowLeft, Send, MoreVertical, ChevronDown, Smile, Paperclip, ZoomIn, Download, User, Tag, XCircle } from 'lucide-react'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'
@@ -57,8 +58,18 @@ export default function SupportTicketsTab({ authFetch }) {
   const [showForm, setShowForm] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   
+  const searchParams = useSearchParams()
+  const urlTicketId = searchParams?.get('ticket_id')
+
   // Selected ticket for chat
   const [selectedTicketId, setSelectedTicketId] = useState(null)
+  
+  // Auto-select ticket from URL if present
+  useEffect(() => {
+    if (urlTicketId) {
+      setSelectedTicketId(Number(urlTicketId))
+    }
+  }, [urlTicketId])
   
   // Form state
   const [subject, setSubject] = useState('')

@@ -46,18 +46,50 @@ function NotificationDropdown({ onClose }) {
           recent.map((notif) => {
             const isUnread = !notif.is_read;
             const iconName = notif.icon || notif.metadata?.icon || 'notifications';
+            const count = notif.metadata?.message_count || 1;
             
-            return (
-              <div key={notif.id} className={`flex gap-3 px-4 py-3 hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0 ${isUnread ? 'bg-indigo-50/30' : ''}`}>
+            const content = (
+              <>
                 <div className={`p-1.5 rounded-lg shrink-0 h-fit ${isUnread ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-500'}`}>
                   <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>{iconName}</span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className={`text-xs truncate ${isUnread ? 'font-bold text-slate-900' : 'font-semibold text-slate-800'}`}>{notif.title}</p>
+                  <p className={`text-xs flex items-center gap-2 truncate ${isUnread ? 'font-bold text-slate-900' : 'font-semibold text-slate-800'}`}>
+                    {notif.title}
+                    {count > 1 && (
+                      <span className="inline-flex items-center justify-center bg-indigo-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-sm">
+                        {count}
+                      </span>
+                    )}
+                  </p>
                   <p className="text-[11px] text-slate-500 line-clamp-2 mt-0.5 leading-snug">{notif.message}</p>
                   <p className="text-[10px] text-slate-400 mt-1">{new Date(notif.created_at).toLocaleString()}</p>
                 </div>
                 {isUnread && <div className="w-2 h-2 rounded-full bg-indigo-500 shrink-0 mt-1.5" />}
+              </>
+            );
+
+            if (notif.type === 'admin_ticket_reply' && notif.metadata?.ticket_id) {
+              return (
+                <Link 
+                  key={notif.id}
+                  href={`/dashboard/tickets?ticket_id=${notif.metadata.ticket_id}`}
+                  onClick={async () => {
+                    if (isUnread) {
+                      await api.post('/api/auth/notifications/mark-read/', { ids: [notif.id], context: 'dashboard' });
+                    }
+                    onClose();
+                  }}
+                  className={`flex gap-3 px-4 py-3 hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0 ${isUnread ? 'bg-indigo-50/30' : ''}`}
+                >
+                  {content}
+                </Link>
+              );
+            }
+
+            return (
+              <div key={notif.id} className={`flex gap-3 px-4 py-3 hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0 ${isUnread ? 'bg-indigo-50/30' : ''}`}>
+                {content}
               </div>
             );
           })
