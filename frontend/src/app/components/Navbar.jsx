@@ -11,7 +11,7 @@ import { useCart } from '@/app/context/CartContext'
 import { useAuth } from '@/app/context/AuthContext'
 import AuthModal from '@/app/components/AuthModal'
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://elarbol.icommerce.com.bd/api'
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || (process.env.NODE_ENV === 'development' ? 'http://127.0.0.1:8000/api' : 'https://elarbol.icommerce.com.bd/api')
 
 const navLinks = [
   { label: 'Shop',      href: '/shop'      },

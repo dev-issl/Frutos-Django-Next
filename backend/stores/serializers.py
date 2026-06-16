@@ -36,7 +36,8 @@ class LeftoverPackSerializer(serializers.ModelSerializer):
         model  = LeftoverPack
         fields = [
             'id', 'name', 'description', 'original_price', 'price', 
-            'shipping_charge', 'package_type', 'weight_quantity', 
+            'shipping_charge', 'shipping_category', 'weight',
+            'package_type', 'weight_quantity', 
             'stock', 'estimated_delivery', 'image', 'gallery', 
             'discount_percentage', 'is_active', 'created_at', 'updated_at'
         ]

@@ -454,7 +454,7 @@ class ShippingMethodSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'title', 'name', 'description', 'price',
             'delivery_estimated_time', 'max_weight', 'max_quantity',
-            'preferred_pricing_type', 'shipping_tiers',
+            'preferred_pricing_type', 'is_wholesale_only', 'shipping_tiers',
             'quantity_tiers', 'weight_tiers', 'shipping_categories',
         ]
 
@@ -625,6 +625,7 @@ class ShippingMethodWriteSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'name', 'description', 'price', 'delivery_estimated_time',
             'max_weight', 'max_quantity', 'preferred_pricing_type', 'is_active',
+            'is_wholesale_only',
         ]
 
 

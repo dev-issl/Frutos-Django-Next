@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { Plus, Eye, Pencil, Trash2, Truck, Tag, Layers } from "lucide-react";
@@ -27,11 +27,14 @@ function MethodForm({ initial = {}, onSubmit, submitLabel = "Save" }) {
   const [v, setV] = useState({
     name: "", description: "", price: "", delivery_estimated_time: "",
     max_weight: "", max_quantity: "", preferred_pricing_type: "quantity", is_active: "true",
-    ...initial, is_active: String(initial.is_active ?? true),
+    is_wholesale_only: false,
+    ...initial, 
+    is_active: String(initial.is_active ?? true),
+    is_wholesale_only: Boolean(initial.is_wholesale_only ?? false),
   });
   const set = (k, val) => setV(p => ({ ...p, [k]: val }));
   return (
-    <form onSubmit={e => { e.preventDefault(); onSubmit({ ...v, price: v.price || "0", is_active: v.is_active === "true", max_weight: v.max_weight || null, max_quantity: v.max_quantity ? parseInt(v.max_quantity) : null }); }} className="space-y-4">
+    <form onSubmit={e => { e.preventDefault(); onSubmit({ ...v, price: v.price || "0", is_active: v.is_active === "true", max_weight: v.max_weight || null, max_quantity: v.max_quantity ? parseInt(v.max_quantity) : null, is_wholesale_only: v.is_wholesale_only }); }} className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div><label className={lbl}>Method Name *</label><input required className={inp} value={v.name} onChange={e => set("name", e.target.value)} placeholder="e.g., Standard Shipping" /></div>
         <div><label className={lbl}>Base Price (৳) *</label><input required type="number" min="0" step="0.01" className={inp} value={v.price} onChange={e => set("price", e.target.value)} placeholder="0.00" /></div>
@@ -62,6 +65,10 @@ function MethodForm({ initial = {}, onSubmit, submitLabel = "Save" }) {
         </div>
       </div>
       <div><label className={lbl}>Description</label><textarea rows={2} className={inp + " resize-none"} value={v.description || ""} onChange={e => set("description", e.target.value)} /></div>
+      <label className="flex items-center gap-2.5 cursor-pointer pt-1">
+        <input type="checkbox" checked={v.is_wholesale_only} onChange={e => set("is_wholesale_only", e.target.checked)} className="rounded border-gray-300 w-4 h-4" />
+        <span className="text-sm text-slate-700 font-medium">Wholesale Only (Hide from retail customers)</span>
+      </label>
       <div className="flex justify-end pt-1"><button type="submit" className="px-4 py-2 text-sm font-medium bg-[#00694C] text-white rounded-md hover:bg-[#085041] transition-colors">{submitLabel}</button></div>
     </form>
   );
@@ -125,7 +132,7 @@ function TierForm({ initial = {}, allMethods = [], onSubmit, onAddAnother, submi
   const submit = e => { e.preventDefault(); onSubmit(buildData()); };
   return (
     <form onSubmit={submit} className="space-y-4">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
         <div className="sm:col-span-2">
           <label className={lbl}>Shipping Method *</label>
           <SearchableSelect
@@ -135,6 +142,7 @@ function TierForm({ initial = {}, allMethods = [], onSubmit, onAddAnother, submi
             placeholder="Select method…"
             options={allMethods.map(m => ({ value: m.id, label: `${m.name} — ৳${Number(m.price || 0).toLocaleString()}` }))}
           />
+          <p className="text-[11px] text-slate-500 mt-1">Select the shipping method this pricing rule applies to.</p>
         </div>
         <div>
           <label className={lbl}>Pricing Type</label>
@@ -146,32 +154,73 @@ function TierForm({ initial = {}, allMethods = [], onSubmit, onAddAnother, submi
               { value: "weight", label: "Weight-based" },
             ]}
           />
+          <p className="text-[11px] text-slate-500 mt-1">Is this rule calculated by item count or total weight?</p>
         </div>
-        <div><label className={lbl}>Base Price (৳) *</label><input required type="number" min="0" step="0.01" className={inp} value={v.base_price} onChange={e => set("base_price", e.target.value)} placeholder="0.00" /></div>
+        <div>
+          <label className={lbl}>Base Price (৳) *</label>
+          <input required type="number" min="0" step="0.01" className={inp} value={v.base_price} onChange={e => set("base_price", e.target.value)} placeholder="0.00" />
+          <p className="text-[11px] text-slate-500 mt-1">The fixed charge when an order falls into this range.</p>
+        </div>
+        
         {isQty ? (
           <>
-            <div><label className={lbl}>Min Quantity *</label><input required type="number" min="0" className={inp} value={v.min_quantity} onChange={e => set("min_quantity", e.target.value)} /></div>
-            <div><label className={lbl}>Max Quantity <span className="text-slate-400 font-normal text-xs">(blank = unlimited)</span></label><input type="number" min="0" className={inp} value={v.max_quantity || ""} onChange={e => set("max_quantity", e.target.value)} /></div>
+            <div>
+              <label className={lbl}>Min Quantity *</label>
+              <input required type="number" min="0" className={inp} value={v.min_quantity} onChange={e => set("min_quantity", e.target.value)} />
+              <p className="text-[11px] text-slate-500 mt-1">Order must have at least this many items.</p>
+            </div>
+            <div>
+              <label className={lbl}>Max Quantity <span className="text-slate-400 font-normal text-xs">(optional)</span></label>
+              <input type="number" min="0" className={inp} value={v.max_quantity || ""} onChange={e => set("max_quantity", e.target.value)} />
+              <p className="text-[11px] text-slate-500 mt-1">Leave blank if there is no upper limit.</p>
+            </div>
           </>
         ) : (
           <>
-            <div><label className={lbl}>Min Weight (kg) *</label><input required type="number" min="0" step="0.01" className={inp} value={v.min_weight} onChange={e => set("min_weight", e.target.value)} /></div>
-            <div><label className={lbl}>Max Weight (kg) <span className="text-slate-400 font-normal text-xs">(blank = unlimited)</span></label><input type="number" min="0" step="0.01" className={inp} value={v.max_weight || ""} onChange={e => set("max_weight", e.target.value)} /></div>
+            <div>
+              <label className={lbl}>Min Weight (kg) *</label>
+              <input required type="number" min="0" step="0.01" className={inp} value={v.min_weight} onChange={e => set("min_weight", e.target.value)} />
+              <p className="text-[11px] text-slate-500 mt-1">Order must weigh at least this much (in kg).</p>
+            </div>
+            <div>
+              <label className={lbl}>Max Weight (kg) <span className="text-slate-400 font-normal text-xs">(optional)</span></label>
+              <input type="number" min="0" step="0.01" className={inp} value={v.max_weight || ""} onChange={e => set("max_weight", e.target.value)} />
+              <p className="text-[11px] text-slate-500 mt-1">Leave blank if there is no upper limit.</p>
+            </div>
           </>
         )}
-        <div><label className={lbl}>Priority <span className="text-slate-400 font-normal text-xs">(higher = preferred when tiers overlap)</span></label><input type="number" min="0" className={inp} value={v.priority} onChange={e => set("priority", e.target.value)} /></div>
-      </div>
-      <label className="flex items-center gap-2.5 cursor-pointer">
-        <input type="checkbox" checked={v.has_incremental_pricing} onChange={e => set("has_incremental_pricing", e.target.checked)} className="rounded border-gray-300 w-4 h-4" />
-        <span className="text-sm text-slate-700">Enable incremental pricing above the minimum</span>
-      </label>
-      {v.has_incremental_pricing && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pl-6 border-l-2 border-emerald-200">
-          <div><label className={lbl}>Rate per additional {isQty ? "item" : "kg"} (৳) *</label><input required type="number" min="0" step="0.01" className={inp} value={v.increment_per_unit || ""} onChange={e => set("increment_per_unit", e.target.value)} /></div>
-          <div><label className={lbl}>Charge per every N {isQty ? "items" : "kg"}</label><input type="number" min="0.01" step="0.01" className={inp} value={v.increment_unit_size} onChange={e => set("increment_unit_size", e.target.value)} placeholder="1.0" /></div>
+        
+        <div className="sm:col-span-2">
+          <label className={lbl}>Priority <span className="text-slate-400 font-normal text-xs">(higher = preferred)</span></label>
+          <input type="number" min="0" className={inp} value={v.priority} onChange={e => set("priority", e.target.value)} />
+          <p className="text-[11px] text-slate-500 mt-1">If multiple tiers match an order, the one with the highest priority is used.</p>
         </div>
-      )}
-      <div className="flex justify-end gap-2 pt-1">
+      </div>
+
+      <div className="pt-2 border-t border-slate-100">
+        <label className="flex items-center gap-2.5 cursor-pointer">
+          <input type="checkbox" checked={v.has_incremental_pricing} onChange={e => set("has_incremental_pricing", e.target.checked)} className="rounded border-gray-300 w-4 h-4" />
+          <span className="text-sm font-medium text-slate-800">Enable incremental pricing above the minimum</span>
+        </label>
+        <p className="text-[11px] text-slate-500 mt-1 ml-7">E.g., Charge an extra ৳50 for every 1 kg above the minimum weight.</p>
+        
+        {v.has_incremental_pricing && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pl-7 mt-3 border-l-2 border-emerald-200">
+            <div>
+              <label className={lbl}>Rate per additional {isQty ? "item" : "kg"} (৳) *</label>
+              <input required type="number" min="0" step="0.01" className={inp} value={v.increment_per_unit || ""} onChange={e => set("increment_per_unit", e.target.value)} />
+              <p className="text-[11px] text-slate-500 mt-1">How much to add to the base price.</p>
+            </div>
+            <div>
+              <label className={lbl}>Charge per every N {isQty ? "items" : "kg"}</label>
+              <input type="number" min="0.01" step="0.01" className={inp} value={v.increment_unit_size} onChange={e => set("increment_unit_size", e.target.value)} placeholder="1.0" />
+              <p className="text-[11px] text-slate-500 mt-1">The step size (e.g. 1.0 means charge per every 1 {isQty ? "item" : "kg"}).</p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="flex justify-end gap-2 pt-3">
         {onAddAnother && (
           <button type="button" onClick={e => { e.preventDefault(); onAddAnother(buildData()); }} className="px-4 py-2 text-sm font-medium border border-gray-300 text-slate-700 rounded-md hover:bg-slate-50 transition-colors">
             Save &amp; Add Another
@@ -366,7 +415,12 @@ export default function ShippingPage() {
   const handleDeleteTier = () => withToast(() => tiersModel.remove(tDel.id), "Tier deleted", () => setTDel(null));
 
   const methodCols = [
-    { key: "name", label: "Method Name" },
+    { key: "name", label: "Method Name", render: (v, row) => (
+        <div className="flex items-center gap-2">
+            <span>{v}</span>
+            {row.is_wholesale_only && <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-100 text-purple-700">Wholesale Only</span>}
+        </div>
+    ) },
     { key: "price", label: "Base Price", render: v => `৳${Number(v || 0).toLocaleString()}` },
     { key: "delivery_estimated_time", label: "Delivery", render: v => v || "—" },
     { key: "preferred_pricing_type", label: "Pricing", render: v => v === "weight" ? "By Weight" : "By Quantity" },
@@ -442,7 +496,7 @@ export default function ShippingPage() {
         {mView && (
           <div className="space-y-4">
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {[["Name",mView.name],["Base Price",`৳${Number(mView.price||0).toLocaleString()}`],["Delivery",mView.delivery_estimated_time||"—"],["Pricing",mView.preferred_pricing_type==="weight"?"By Weight":"By Quantity"],["Max Weight",mView.max_weight?`${mView.max_weight} kg`:"No limit"],["Max Qty",mView.max_quantity||"No limit"],["Status",mView.is_active?"Active":"Inactive"]].map(([k,val])=>(
+              {[["Name",mView.name],["Base Price",`৳${Number(mView.price||0).toLocaleString()}`],["Delivery",mView.delivery_estimated_time||"—"],["Pricing",mView.preferred_pricing_type==="weight"?"By Weight":"By Quantity"],["Max Weight",mView.max_weight?`${mView.max_weight} kg`:"No limit"],["Max Qty",mView.max_quantity||"No limit"],["Status",mView.is_active?"Active":"Inactive"],["Wholesale Only",mView.is_wholesale_only?"Yes":"No"]].map(([k,val])=>(
                 <div key={k} className="bg-slate-50 rounded-md p-3">
                   <p className="text-xs text-slate-400 mb-0.5">{k}</p>
                   <p className="text-sm font-medium text-slate-800">{String(val)}</p>

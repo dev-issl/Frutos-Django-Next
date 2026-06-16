@@ -409,7 +409,11 @@ class HomePageContent(models.Model):
             'primary_cta_text': 'Shop the Harvest',
             'primary_cta_href': '/products',
             'secondary_cta_text': 'Learn more',
-            'secondary_cta_href': '/about'
+            'secondary_cta_href': '/about',
+            'top_badge_text': '100% Fresh & Organic',
+            'feature_1_text': 'Farm Fresh',
+            'feature_2_text': 'Fast Delivery',
+            'feature_3_text': 'Quality Guaranteed'
         }
 
     def default_how_it_works():

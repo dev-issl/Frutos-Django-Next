@@ -47,6 +47,7 @@ class ShippingMethod(models.Model):
     )
     
     is_active = models.BooleanField(default=True)
+    is_wholesale_only = models.BooleanField(default=False, help_text="If checked, this shipping method will only be available for wholesale orders")
 
     class Meta:
         ordering = ['name']

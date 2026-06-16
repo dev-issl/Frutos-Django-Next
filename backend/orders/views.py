@@ -61,49 +61,49 @@ def analyze_cart_shipping(request):
                 'error': 'cart_items is required'
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        # Extract and validate product IDs from cart items
+        # Extract and validate IDs from cart items
         product_ids = []
+        leftover_pack_ids = []
         invalid_items = []
         
         for item in cart_items:
-            # Support multiple productId field names for compatibility
             product_id = item.get('product_id') or item.get('productId') or item.get('id') or item.get('uuid')
+            leftover_pack_id = item.get('leftover_pack_id') or item.get('leftoverPackId')
             
-            if not product_id:
+            if product_id:
+                product_id_str = str(product_id)
+                try:
+                    import uuid
+                    uuid.UUID(product_id_str)
+                    product_ids.append(product_id_str)
+                except (ValueError, TypeError):
+                    invalid_items.append({
+                        **item,
+                        'error': f'Invalid product ID format: {product_id}. Expected UUID.',
+                        'received_type': 'invalid'
+                    })
+            elif leftover_pack_id:
+                try:
+                    leftover_pack_ids.append(int(leftover_pack_id))
+                except (ValueError, TypeError):
+                    invalid_items.append({
+                        **item,
+                        'error': f'Invalid leftover_pack ID format: {leftover_pack_id}. Expected Integer.',
+                        'received_type': 'invalid'
+                    })
+            else:
                 invalid_items.append(item)
-                continue
-            
-            # Convert to string and validate UUID format
-            product_id_str = str(product_id)
-            
-            # Check if it looks like a valid UUID (basic validation)
-            try:
-                import uuid
-                # Try to parse as UUID to validate format
-                uuid.UUID(product_id_str)
-                product_ids.append(product_id_str)
-            except (ValueError, TypeError):
-                # Invalid UUID format
-                invalid_items.append({
-                    **item,
-                    'error': f'Invalid product ID format: {product_id}. Expected UUID format.',
-                    'received_type': 'invalid'
-                })
-                continue
         
-        # Return error if no valid products found
-        if not product_ids:
+        if not product_ids and not leftover_pack_ids:
             return Response({
-                'error': 'No valid product IDs found in cart items',
+                'error': 'No valid product IDs or leftover pack IDs found in cart items',
                 'invalid_items': invalid_items,
-                'help': 'Product IDs must be in valid UUID format (e.g., 12345678-1234-5678-9abc-123456789def)'
             }, status=status.HTTP_400_BAD_REQUEST)
             
-        # If some items are invalid but some are valid, log the invalid ones but continue
         if invalid_items:
-            logger.warning(f"Some cart items have invalid product IDs: {invalid_items}")
+            logger.warning(f"Some cart items have invalid IDs: {invalid_items}")
         
-        # Fetch products with their shipping categories (optimized for N+1 queries)
+        # Fetch products
         products = Product.objects.select_related(
             'shipping_category',
             'shop',
@@ -114,56 +114,86 @@ def analyze_cart_shipping(request):
             'shipping_category__allowed_shipping_methods',
             'shipping_category__allowed_shipping_methods__shipping_tiers'
         ).filter(id__in=product_ids)
-        
-        # Create product lookup for easy access
         product_lookup = {str(p.id): p for p in products}
+
+        # Fetch leftover packs
+        from stores.models import LeftoverPack
+        leftover_packs = LeftoverPack.objects.select_related('shipping_category').filter(id__in=leftover_pack_ids) if leftover_pack_ids else []
+        leftover_pack_lookup = {p.id: p for p in leftover_packs}
         
         # Calculate cart totals
         cart_subtotal = Decimal('0')
         total_quantity = 0
-        total_weight = Decimal('0')  # Calculate actual total weight from products
+        total_weight = Decimal('0')
         
-        # Collect shipping categories
         shipping_categories = set()
         cart_analysis = []
+        missing_items = []
         
-        missing_products = []
         for item in cart_items:
-            # Extract product_id using the same logic as above
-            product_id = str(item.get('product_id') or item.get('productId') or item.get('id') or item.get('uuid'))
             quantity = item.get('quantity', 1)
-
-            if product_id not in product_lookup:
-                # Collect missing instead of aborting entire analysis
-                missing_products.append(product_id)
-                continue
-
-            product = product_lookup[product_id]
-            item_total = product.price * quantity
-            cart_subtotal += item_total
-            total_quantity += quantity
             
-            # Calculate weight for this item
-            item_weight = Decimal('0')
-            if product.weight:
-                item_weight = product.weight * quantity
-                total_weight += item_weight
+            product_id_raw = item.get('product_id') or item.get('productId') or item.get('id') or item.get('uuid')
+            product_id = str(product_id_raw) if product_id_raw else None
+            
+            leftover_pack_id_raw = item.get('leftover_pack_id') or item.get('leftoverPackId')
+            leftover_pack_id = int(leftover_pack_id_raw) if leftover_pack_id_raw else None
 
-            # Collect shipping category
-            if product.shipping_category:
-                shipping_categories.add(product.shipping_category.id)
+            if product_id and product_id in product_lookup:
+                product = product_lookup[product_id]
+                item_total = product.price * quantity
+                cart_subtotal += item_total
+                total_quantity += quantity
+                
+                item_weight = Decimal('0')
+                if product.weight:
+                    item_weight = product.weight * quantity
+                    total_weight += item_weight
 
-            cart_analysis.append({
-                'product_id': product_id,
-                'product_name': product.name,
-                'quantity': quantity,
-                'unit_price': str(product.price),
-                'item_total': str(item_total),
-                'unit_weight': str(product.weight) if product.weight else '0.00',
-                'item_weight': str(item_weight),
-                'shipping_category': product.shipping_category.name if product.shipping_category else None,
-                'shipping_category_id': product.shipping_category.id if product.shipping_category else None,
-            })
+                if product.shipping_category:
+                    shipping_categories.add(product.shipping_category.id)
+
+                cart_analysis.append({
+                    'product_id': product_id,
+                    'leftover_pack_id': None,
+                    'product_name': product.name,
+                    'quantity': quantity,
+                    'unit_price': str(product.price),
+                    'item_total': str(item_total),
+                    'unit_weight': str(product.weight) if product.weight else '0.00',
+                    'item_weight': str(item_weight),
+                    'shipping_category': product.shipping_category.name if product.shipping_category else None,
+                    'shipping_category_id': product.shipping_category.id if product.shipping_category else None,
+                })
+            elif leftover_pack_id and leftover_pack_id in leftover_pack_lookup:
+                lp = leftover_pack_lookup[leftover_pack_id]
+                item_total = lp.price * quantity
+                cart_subtotal += item_total
+                total_quantity += quantity
+
+                item_weight = Decimal('0')
+                if getattr(lp, 'weight', None):
+                    item_weight = lp.weight * quantity
+                    total_weight += item_weight
+
+                if lp.shipping_category:
+                    shipping_categories.add(lp.shipping_category.id)
+
+                cart_analysis.append({
+                    'product_id': None,
+                    'leftover_pack_id': leftover_pack_id,
+                    'product_name': lp.name,
+                    'quantity': quantity,
+                    'unit_price': str(lp.price),
+                    'item_total': str(item_total),
+                    'unit_weight': str(lp.weight) if getattr(lp, 'weight', None) else '0.00',
+                    'item_weight': str(item_weight),
+                    'shipping_category': lp.shipping_category.name if lp.shipping_category else None,
+                    'shipping_category_id': lp.shipping_category.id if lp.shipping_category else None,
+                })
+            else:
+                missing_items.append(item)
+        
         
         # Determine available shipping methods
         available_methods = []
@@ -218,6 +248,14 @@ def analyze_cart_shipping(request):
                         union_ids = all_active_method_ids  # extreme fallback
                     available_methods = ShippingMethod.objects.filter(id__in=union_ids, is_active=True).prefetch_related('shipping_tiers')
         
+        # Filter wholesale specific methods if not wholesale context
+        is_wholesale_context = False
+        if hasattr(request, 'auth') and getattr(request.auth, 'get', None):
+            is_wholesale_context = request.auth.get('is_wholesale') == True
+            
+        if not is_wholesale_context:
+            available_methods = [m for m in available_methods if not getattr(m, 'is_wholesale_only', False)]
+            
         # Apply quantity and weight constraints and collect constraint violations
         filtered_methods = []
         constraint_violations = []
@@ -1212,9 +1250,17 @@ class ShippingMethodListAPIView(generics.ListAPIView):
     Public API endpoint that returns all available shipping methods.
     No authentication required.
     """
-    queryset = ShippingMethod.objects.filter(is_active=True)
     serializer_class = ShippingMethodSerializer
     permission_classes = [permissions.AllowAny]
+
+    def get_queryset(self):
+        qs = ShippingMethod.objects.filter(is_active=True)
+        is_wholesale_context = False
+        if hasattr(self.request, 'auth') and getattr(self.request.auth, 'get', None):
+            is_wholesale_context = self.request.auth.get('is_wholesale') == True
+        if not is_wholesale_context:
+            qs = qs.filter(is_wholesale_only=False)
+        return qs
 
 class CouponViewSet(viewsets.ModelViewSet):
     serializer_class   = CouponSerializer

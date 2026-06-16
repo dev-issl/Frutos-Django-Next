@@ -336,6 +336,53 @@ export default function HomeDashboardPage() {
                   </div>
                 </div>
 
+                {/* Extra Highlights */}
+                <div>
+                  <h4 className="text-md font-semibold text-slate-700 border-b pb-2 mb-4">Extra Highlights</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Top Badge Text</label>
+                      <input 
+                        type="text" 
+                        value={data?.hero_section?.top_badge_text || ''}
+                        onChange={(e) => setData({ ...data, hero_section: { ...data.hero_section, top_badge_text: e.target.value } })}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-[#00694c]"
+                        placeholder="100% Fresh & Organic"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Feature 1 Text</label>
+                      <input 
+                        type="text" 
+                        value={data?.hero_section?.feature_1_text || ''}
+                        onChange={(e) => setData({ ...data, hero_section: { ...data.hero_section, feature_1_text: e.target.value } })}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-[#00694c]"
+                        placeholder="Farm Fresh"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Feature 2 Text</label>
+                      <input 
+                        type="text" 
+                        value={data?.hero_section?.feature_2_text || ''}
+                        onChange={(e) => setData({ ...data, hero_section: { ...data.hero_section, feature_2_text: e.target.value } })}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-[#00694c]"
+                        placeholder="Fast Delivery"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Feature 3 Text</label>
+                      <input 
+                        type="text" 
+                        value={data?.hero_section?.feature_3_text || ''}
+                        onChange={(e) => setData({ ...data, hero_section: { ...data.hero_section, feature_3_text: e.target.value } })}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-[#00694c]"
+                        placeholder="Quality Guaranteed"
+                      />
+                    </div>
+                  </div>
+                </div>
+
                 <button 
                   onClick={handleSaveAll}
                   disabled={saving}

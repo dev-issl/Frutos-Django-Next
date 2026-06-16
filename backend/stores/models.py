@@ -182,6 +182,23 @@ class LeftoverPack(models.Model):
     price       = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)], help_text="Selling price")
     shipping_charge = models.DecimalField(max_digits=10, decimal_places=2, default=0, validators=[MinValueValidator(0)])
 
+    # Shipping Config
+    shipping_category = models.ForeignKey(
+        'products.Category',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='shipping_category_leftover_packs',
+        help_text="Optional: Restrict to specific shipping methods"
+    )
+    weight = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        null=True, 
+        blank=True,
+        help_text="Weight in kg for weight-based shipping calculation"
+    )
+
     # Product Details
     package_type = models.CharField(max_length=50, choices=PACKAGE_TYPE_CHOICES, default='Box')
     weight_quantity = models.CharField(max_length=100, blank=True, help_text='e.g., 5 KG, 2 Boxes')

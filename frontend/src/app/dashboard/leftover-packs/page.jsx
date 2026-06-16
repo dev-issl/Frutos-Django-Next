@@ -7,8 +7,7 @@ import {
 } from 'lucide-react'
 import api, { adminFetch } from '@/app/dashboard/_lib/api'
 import { useDashboardAuth } from '@/app/dashboard/_context/DashboardAuthContext'
-
-// ─── Input Components ─────────────────────────────────────────────────────────
+import { categoriesService } from '@/app/dashboard/_lib/services'
 
 function Input({ label, error, className = '', ...props }) {
   return (
@@ -71,7 +70,7 @@ function ImageUpload({ label, value, onChange, preview }) {
 
 // ─── Modal ────────────────────────────────────────────────────────────────────
 
-function PackFormModal({ pack, stores, storeSlug, onClose, onSave }) {
+function PackFormModal({ pack, stores, categories, storeSlug, onClose, onSave }) {
   const isEdit = !!pack?.id
   const [form, setForm] = useState({
     name: pack?.name || '',
@@ -83,6 +82,8 @@ function PackFormModal({ pack, stores, storeSlug, onClose, onSave }) {
     stock: pack?.stock || 0,
     store_slug: pack?.store?.slug || storeSlug || (stores[0]?.slug || ''),
     is_active: pack?.is_active ?? true,
+    shipping_category: pack?.shipping_category?.id || pack?.shipping_category || '',
+    weight: pack?.weight || '',
   })
   const [image, setImage] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -176,6 +177,16 @@ function PackFormModal({ pack, stores, storeSlug, onClose, onSave }) {
                 <Input label="Stock" type="number" value={form.stock} onChange={e => set('stock', e.target.value)} required />
             </div>
 
+            <div className="grid grid-cols-2 gap-4">
+                <Select label="Shipping Category" value={form.shipping_category} onChange={e => set('shipping_category', e.target.value)}>
+                    <option value="">Select a category</option>
+                    {(categories || []).map(c => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                </Select>
+                <Input label="Weight (kg)" type="number" step="0.01" value={form.weight} onChange={e => set('weight', e.target.value)} placeholder="(Optional) for shipping" />
+            </div>
+
             <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Description</label>
                 <textarea
@@ -250,6 +261,7 @@ export default function LeftoverPacksPage() {
   const { user } = useDashboardAuth()
   const [stores, setStores] = useState([])
   const [packs, setPacks] = useState([])
+  const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [search, setSearch] = useState('')
@@ -265,10 +277,12 @@ export default function LeftoverPacksPage() {
     setLoading(true)
     setError('')
     try {
-      // Fetch stores owned by user (adminFetch sends token, backend views filter by owner automatically if not superuser)
       const storesData = await adminFetch('/api/fulfillment/stores/admin/')
       const storesList = Array.isArray(storesData) ? storesData : (storesData.results || [])
       setStores(storesList)
+      
+      const catsData = await categoriesService.list()
+      setCategories(Array.isArray(catsData) ? catsData : (catsData.results || []))
       
       let initialStoreSlug = selectedStoreSlug
       if (!initialStoreSlug && storesList.length > 0) {
@@ -462,6 +476,7 @@ export default function LeftoverPacksPage() {
         <PackFormModal
           pack={editPack}
           stores={stores}
+          categories={categories}
           storeSlug={selectedStoreSlug}
           onClose={handleClose}
           onSave={handleSaved}

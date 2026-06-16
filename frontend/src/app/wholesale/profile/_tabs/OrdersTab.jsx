@@ -124,6 +124,11 @@ function CancelModal({ orderNumber, onConfirm, onClose }) {
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function OrdersTab({ orders, onDeleteOrder }) {
   const [confirmOrder, setConfirmOrder] = useState(null) // orderNumber | null
+  const [expandedOrders, setExpandedOrders] = useState({})
+
+  const toggleOrder = (orderId) => {
+    setExpandedOrders(prev => ({ ...prev, [orderId]: !prev[orderId] }))
+  }
 
   const handleCancelClick = (orderNumber) => {
     setConfirmOrder(orderNumber)
@@ -167,6 +172,7 @@ export default function OrdersTab({ orders, onDeleteOrder }) {
             {orders.map(order => {
               const sc = STATUS_CONFIG[order.status] || { label: order.status, bg: '#F3F4F6', color: '#374151' }
               const cancellable = !['out_for_delivery', 'delivered'].includes(order.status)
+              const isExpanded = !!expandedOrders[order.id]
 
               return (
                 <div key={order.id} style={{
@@ -174,14 +180,26 @@ export default function OrdersTab({ orders, onDeleteOrder }) {
                   borderRadius: 12, overflow: 'hidden',
                 }}>
                   {/* Header */}
-                  <div style={{
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
-                    padding: '11px 14px', borderBottom: '1px solid #F0F5F2',
-                    flexWrap: 'wrap', gap: 8,
+                  <div 
+                    onClick={() => toggleOrder(order.id)}
+                    style={{
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
+                      padding: '11px 14px', borderBottom: isExpanded ? '1px solid #F0F5F2' : 'none',
+                      flexWrap: 'wrap', gap: 8, cursor: 'pointer',
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <svg 
+                        width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"
+                        style={{ 
+                          color: '#085041', 
+                          transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                          transition: 'transform 0.2s ease'
+                        }}
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                      </svg>
                       <span style={{ fontFamily: 'monospace', fontSize: 12, fontWeight: 700, color: '#085041' }}>
-                        #{order.orderNumber}
+                        #{order.order_number}
                       </span>
                       <span style={{
                         fontSize: 10.5, fontWeight: 700, padding: '3px 9px',
@@ -193,11 +211,11 @@ export default function OrdersTab({ orders, onDeleteOrder }) {
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
                       <span style={{ fontSize: 13, fontWeight: 800, color: '#085041' }}>
-                        €{Number(order.total).toFixed(2)}
+                        €{Number(order.total_amount).toFixed(2)}
                       </span>
                       {cancellable && (
                         <button
-                          onClick={() => handleCancelClick(order.orderNumber)}
+                          onClick={(e) => { e.stopPropagation(); handleCancelClick(order.order_number); }}
                           style={{
                             background: 'none', border: '1px solid #FEE2E2', borderRadius: 8,
                             padding: '4px 9px', cursor: 'pointer', color: '#991B1B',
@@ -215,9 +233,12 @@ export default function OrdersTab({ orders, onDeleteOrder }) {
                     </div>
                   </div>
 
-                  {/* Date */}
-                  <div style={{ padding: '4px 14px', fontSize: 11.5, color: '#9DAAA3' }}>
-                    {new Date(order.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  {/* Expandable Content */}
+                  {isExpanded && (
+                    <div style={{ animation: 'fadeIn 0.2s ease-in-out' }}>
+                      {/* Date */}
+                      <div style={{ padding: '4px 14px', fontSize: 11.5, color: '#9DAAA3' }}>
+                    {new Date(order.ordered_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                   </div>
 
                   {/* Items */}
@@ -225,20 +246,20 @@ export default function OrdersTab({ orders, onDeleteOrder }) {
                     {(order.items || []).map(item => (
                       <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-                          {item.productImage && (
+                          {item.product_image && (
                             <div style={{ width: 30, height: 30, borderRadius: 6, overflow: 'hidden', flexShrink: 0 }}>
-                              <img src={item.productImage} alt={item.productName}
+                              <img src={item.product_image} alt={item.product_name}
                                 style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                             </div>
                           )}
                           <span style={{ color: '#151E13', fontWeight: 500, fontSize: 13, wordBreak: 'break-word' }}>
-                            {item.productName}
+                            {item.product_name}
                           </span>
                         </div>
                         <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexShrink: 0 }}>
                           <span style={{ color: '#6D7A73', fontSize: 12 }}>×{item.quantity}</span>
                           <span style={{ fontWeight: 600, color: '#151E13', fontSize: 13 }}>
-                            €{Number(item.lineTotal).toFixed(2)}
+                            €{Number(item.line_total).toFixed(2)}
                           </span>
                         </div>
                       </div>
@@ -246,13 +267,15 @@ export default function OrdersTab({ orders, onDeleteOrder }) {
                   </div>
 
                   {/* Delivery info */}
-                  {(order.deliveryDate || order.deliverySlot) && (
+                  {(order.delivery_date || order.delivery_slot_label) && (
                     <div style={{
                       padding: '8px 14px', borderTop: '1px solid #F0F5F2',
                       fontSize: 11.5, color: '#6D7A73', display: 'flex', gap: 12, flexWrap: 'wrap',
                     }}>
-                      {order.deliveryDate && <span> {order.deliveryDate}</span>}
-                      {order.deliverySlot && <span> {order.deliverySlot}</span>}
+                      {order.delivery_date && <span> {order.delivery_date}</span>}
+                      {order.delivery_slot_label && <span> {order.delivery_slot_label}</span>}
+                    </div>
+                  )}
                     </div>
                   )}
                 </div>

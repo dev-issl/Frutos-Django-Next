@@ -1,6 +1,6 @@
 "use client";
 
-import { Euro, ShoppingCart, Users, Package, Loader2, Store, MapPin, ToggleLeft, ToggleRight, Archive, Tag } from "lucide-react";
+import { Euro, ShoppingCart, Users, Package, Loader2, Store, MapPin, ToggleLeft, ToggleRight, Archive, Tag, UserCircle, ShieldCheck, Briefcase, Clock, BadgeCheck, UserX } from "lucide-react";
 import useSWR from "swr";
 import { AreaChart, Area, BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import Container from "@/app/dashboard/_components/Container";
@@ -23,38 +23,79 @@ const BAR_COLORS = {
 
 function UserSegmentGrid({ stats, loading }) {
   if (loading) return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
-      {Array.from({ length: 7 }).map((_, i) => (
-        <div key={i} className="h-24 rounded-xl bg-slate-100 animate-pulse" />
-      ))}
-    </div>
+    <div className="h-32 rounded-2xl bg-white border border-slate-100 shadow-sm animate-pulse" />
   );
 
-  const segments = [
-    { label: "Customers",    value: stats?.total_customers,   color: "border-l-blue-500", bg: "bg-blue-50" },
-    { label: "Sellers",      value: stats?.total_sellers,     color: "border-l-indigo-500", bg: "bg-indigo-50" },
-    { label: "Admins",       value: stats?.total_admins,      color: "border-l-red-500", bg: "bg-red-50" },
-    { label: "Wholesale",    value: stats?.total_wholesale,   color: "border-l-emerald-500", bg: "bg-emerald-50" },
-    { label: "WS Approved",  value: stats?.wholesale_approved,color: "border-l-teal-500", bg: "bg-teal-50" },
-    { label: "WS Pending",   value: stats?.wholesale_pending, color: "border-l-amber-500", bg: "bg-amber-50" },
-    { label: "Inactive",     value: stats?.inactive_users,    color: "border-l-slate-400", bg: "bg-slate-50" },
+  const mainSegments = [
+    { label: "Customers", value: stats?.total_customers, icon: UserCircle, color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-100" },
+    { label: "Sellers", value: stats?.total_sellers, icon: Briefcase, color: "text-indigo-600", bg: "bg-indigo-50", border: "border-indigo-100" },
+    { label: "Wholesale", value: stats?.total_wholesale, icon: Users, color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-100" },
+    { label: "Admins", value: stats?.total_admins, icon: ShieldCheck, color: "text-rose-600", bg: "bg-rose-50", border: "border-rose-100" },
   ];
 
   return (
-    <div className="mt-4">
-      <h3 className="text-sm font-bold text-slate-700 uppercase tracking-widest mb-3">
-        User Breakdown
-      </h3>
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
-        {segments.map(({ label, value, color, bg }) => (
-          <div
-            key={label}
-            className={`bg-white shadow-sm hover:shadow-md transition-shadow border border-slate-100 border-l-4 ${color} rounded-xl p-4`}
-          >
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">{label}</p>
-            <p className="text-2xl font-black text-slate-800">
-              {Number(value || 0).toLocaleString()}
-            </p>
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+      <div className="px-6 py-5 border-b border-slate-50/80 bg-gradient-to-r from-slate-50/50 to-white flex justify-between items-center">
+        <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
+          <div className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg">
+            <Users className="w-4 h-4" />
+          </div>
+          User Demographics
+        </h3>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 divide-y md:divide-y-0 lg:divide-x divide-slate-100">
+        {mainSegments.map((seg, i) => (
+          <div key={seg.label} className="p-6 hover:bg-slate-50/50 transition-colors group flex flex-col justify-between">
+            <div className="flex items-center gap-4">
+              <div className={`p-3 rounded-xl ${seg.bg} ${seg.color} border ${seg.border} group-hover:scale-110 transition-transform duration-300`}>
+                <seg.icon className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">{seg.label}</p>
+                <p className="text-3xl font-black text-slate-800 tracking-tight">{Number(seg.value || 0).toLocaleString()}</p>
+              </div>
+            </div>
+            
+            {seg.label === "Wholesale" && (
+              <div className="mt-5 pt-4 border-t border-slate-100/80 grid grid-cols-2 gap-2">
+                <div className="bg-white rounded-lg border border-slate-100 p-2.5 flex flex-col justify-center items-center shadow-sm">
+                   <div className="flex items-center gap-1.5 mb-1 text-[10px] font-bold text-slate-500 uppercase">
+                     <BadgeCheck className="w-3 h-3 text-teal-500" />
+                     Approved
+                   </div>
+                   <span className="text-lg font-black text-slate-700">{Number(stats?.wholesale_approved || 0).toLocaleString()}</span>
+                </div>
+                <div className="bg-white rounded-lg border border-slate-100 p-2.5 flex flex-col justify-center items-center shadow-sm">
+                   <div className="flex items-center gap-1.5 mb-1 text-[10px] font-bold text-slate-500 uppercase">
+                     <Clock className="w-3 h-3 text-amber-500" />
+                     Pending
+                   </div>
+                   <span className="text-lg font-black text-slate-700">{Number(stats?.wholesale_pending || 0).toLocaleString()}</span>
+                </div>
+              </div>
+            )}
+            {seg.label === "Customers" && (
+               <div className="mt-5 pt-4 border-t border-slate-100/80">
+                  <div className="bg-white rounded-lg border border-slate-100 p-3 flex items-center justify-between shadow-sm">
+                    <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase">
+                      <UserX className="w-3.5 h-3.5 text-slate-400" />
+                      Inactive Users
+                    </div>
+                    <span className="text-sm font-black text-slate-700">{Number(stats?.inactive_users || 0).toLocaleString()}</span>
+                  </div>
+               </div>
+            )}
+            {seg.label === "Sellers" && (
+               <div className="mt-5 pt-4 border-t border-slate-100/80 opacity-0 pointer-events-none">
+                 <div className="p-3"/>
+               </div>
+            )}
+            {seg.label === "Admins" && (
+               <div className="mt-5 pt-4 border-t border-slate-100/80 opacity-0 pointer-events-none">
+                 <div className="p-3"/>
+               </div>
+            )}
           </div>
         ))}
       </div>
