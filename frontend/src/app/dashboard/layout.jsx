@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { usePathname } from "next/navigation";
-import { ThemeProvider } from "next-themes";
 import { DashboardAuthProvider, useDashboardAuth } from "@/app/dashboard/_context/DashboardAuthContext";
 import { ToastProvider } from "@/app/dashboard/_components/Toaster";
 import Sidebar from "@/app/dashboard/_components/Sidebar";
@@ -55,13 +54,11 @@ function DashboardShell({ children }) {
 
 export default function DashboardLayout({ children }) {
   return (
-    <ThemeProvider attribute="class" defaultTheme="light" forcedTheme="light" enableSystem={false}>
-      <DashboardAuthProvider>
-        <ToastProvider>
-          <DashboardShell>{children}</DashboardShell>
-        </ToastProvider>
-      </DashboardAuthProvider>
-    </ThemeProvider>
+    <DashboardAuthProvider>
+      <ToastProvider>
+        <DashboardShell>{children}</DashboardShell>
+      </ToastProvider>
+    </DashboardAuthProvider>
   );
 }
 

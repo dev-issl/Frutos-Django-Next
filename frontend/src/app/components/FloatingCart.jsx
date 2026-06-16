@@ -59,32 +59,33 @@ export default function FloatingCart() {
         }
         .cart-top {
           width: 100%;
-          padding: 8px 2px 4px 2px;
+          padding: 6px 2px 2px 2px;
           display: flex;
           flex-direction: column;
           align-items: center;
           justify-content: center;
         }
         .cart-icon {
-          width: 30px;
-          height: 30px;
+          width: 22px;
+          height: 22px;
           fill: none;
           stroke: #ffffff;
           stroke-width: 1.5;
           stroke-linecap: round;
           stroke-linejoin: round;
+          margin-bottom: -2px;
         }
         .cart-items-text {
           color: #ffffff;
-          font-size: 12px;
+          font-size: 11px;
           font-weight: 700;
-          margin-top: 1px;
+          margin-top: 2px;
           font-family: system-ui, -apple-system, sans-serif;
         }
         .cart-bottom {
           background: #1A1A1A;
           width: 100%;
-          padding: 5px 2px;
+          padding: 4px 2px;
           text-align: center;
         }
         .cart-price-text {

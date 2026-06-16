@@ -5,6 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useWishlist } from '@/app/context/WishlistContext'
 import { slugify } from '@/app/lib/slugify'
+import AddToCartButton from '@/app/components/AddToCartButton'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'
 
@@ -125,7 +126,6 @@ function ConfirmModal({ title, message, confirmLabel = 'Remove', confirmColor = 
   )
 }
 
-// ── Product card (grid view) ──────────────────────────────────────────────────
 function WishlistCard({ product, onRemove }) {
   const slug = product.slug || slugify(product.name)
   const [imgError, setImgError] = useState(false)
@@ -133,92 +133,70 @@ function WishlistCard({ product, onRemove }) {
 
   function handleRemove(e) {
     e.preventDefault()
+    e.stopPropagation()
     setRemoving(true)
     setTimeout(() => onRemove(), 250)
   }
 
+  const cleanOrigin = product.origin?.replace(/^from\s+/i, '')
+  const displayPrice = product.wholesalePrice ? product.wholesalePrice : product.price
+  const isWholesalePrice = !!product.wholesalePrice
+
   return (
-    <div style={{
-      background: '#fff',
-      border: '1.5px solid #eaeaea',
-      borderRadius: 20,
-      overflow: 'hidden',
-      display: 'flex',
-      flexDirection: 'column',
-      transition: 'transform 0.22s ease, box-shadow 0.22s ease, opacity 0.22s ease',
-      opacity: removing ? 0 : 1,
-      transform: removing ? 'scale(0.96)' : 'scale(1)',
-    }}
-      onMouseEnter={e => {
-        e.currentTarget.style.transform = removing ? 'scale(0.96)' : 'translateY(-3px)'
-        e.currentTarget.style.boxShadow = '0 12px 36px rgba(8,30,19,0.1)'
-      }}
-      onMouseLeave={e => {
-        e.currentTarget.style.transform = removing ? 'scale(0.96)' : 'translateY(0)'
-        e.currentTarget.style.boxShadow = 'none'
+    <div className={`flex flex-col w-full min-w-0 bg-white rounded-2xl overflow-hidden border border-gray-100 transition-all duration-200 group ${removing ? 'scale-[0.96] opacity-0' : 'hover:shadow-sm'}`}
+      style={{
+        boxShadow: removing ? 'none' : undefined,
       }}
     >
-      {/* Image */}
-      <Link href={`/products/${slug}`} style={{ display: 'block', position: 'relative', aspectRatio: '4/3', background: '#ECF7E4', textDecoration: 'none', flexShrink: 0 }}>
+      <Link href={`/products/${slug}`} className="block relative w-full aspect-[4/3] overflow-hidden flex-shrink-0 bg-[#ECF7E4]">
         {product.image && !imgError ? (
           <Image
             src={product.image}
             alt={product.name}
             fill
             sizes="(max-width: 640px) 50vw, 33vw"
-            className="object-cover"
+            className="object-cover transition-opacity duration-300 hover:opacity-95"
             onError={() => setImgError(true)}
           />
         ) : (
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span className="material-symbols-outlined" style={{ fontSize: 32, color: '#BCCAC1' }}>eco</span>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="material-symbols-outlined text-3xl text-[#BCCAC1]">eco</span>
           </div>
+        )}
+
+        {/* Left badge */}
+        {product.badge && (
+          <span className={`absolute top-2 left-2 text-[10px] font-bold tracking-widest px-2.5 py-1 rounded-full ${product.badgeColor || ''}`}>
+            {product.badge}
+          </span>
+        )}
+        {product.onSale && !isWholesalePrice && !product.badge && (
+          <span className="absolute top-2 left-2 text-[10px] font-bold tracking-widest px-2.5 py-1 rounded-full bg-[#151E13] text-white">
+            SALE
+          </span>
+        )}
+        {isWholesalePrice && (
+          <span className="absolute top-2 left-2 text-[10px] font-bold tracking-widest px-2 py-1 rounded-full text-white"
+            style={{ background: 'linear-gradient(135deg,#7C3AED,#5B21B6)' }}>
+            WHL
+          </span>
         )}
 
         {/* Remove heart button */}
         <button
           onClick={handleRemove}
           title="Remove from saved"
-          style={{
-            position: 'absolute', top: 8, right: 8,
-            width: 32, height: 32,
-            background: 'rgba(255,255,255,0.92)',
-            backdropFilter: 'blur(4px)',
-            border: 'none', borderRadius: '50%',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer',
-            boxShadow: '0 2px 10px rgba(0,0,0,0.12)',
-            zIndex: 10,
-            transition: 'transform 0.18s cubic-bezier(0.34,1.56,0.64,1), background 0.15s',
-          }}
-          onMouseEnter={e => {
-            e.currentTarget.style.transform = 'scale(1.15)'
-            e.currentTarget.style.background = '#FEE2E2'
-          }}
-          onMouseLeave={e => {
-            e.currentTarget.style.transform = 'scale(1)'
-            e.currentTarget.style.background = 'rgba(255,255,255,0.92)'
-          }}
+          className="absolute top-2 right-2 w-[30px] h-[30px] rounded-full bg-white/90 backdrop-blur-[4px] flex items-center justify-center shadow-sm z-10 transition-transform duration-200 hover:scale-110 hover:bg-red-50"
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="#E53935" stroke="#E53935" strokeWidth="1.5">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="#E53935" stroke="#E53935" strokeWidth="2">
             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
           </svg>
         </button>
 
         {/* Out of stock overlay */}
-        {product.inStock === false && (
-          <div style={{
-            position: 'absolute', inset: 0,
-            background: 'rgba(255,255,255,0.55)',
-            backdropFilter: 'blur(2px)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <span style={{
-              background: '#fff', borderRadius: 99,
-              padding: '5px 14px', fontSize: 11, fontWeight: 700,
-              color: '#4B5563', letterSpacing: '0.05em',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-            }}>
+        {!product.inStock && (
+          <div className="absolute inset-0 bg-white/40 backdrop-blur-[1px] flex items-center justify-center z-0">
+            <span className="bg-white text-gray-800 text-xs font-semibold px-3 py-1.5 rounded-full shadow-sm">
               OUT OF STOCK
             </span>
           </div>
@@ -226,63 +204,69 @@ function WishlistCard({ product, onRemove }) {
       </Link>
 
       {/* Info */}
-      <div style={{ padding: '12px 14px 14px', display: 'flex', flexDirection: 'column', flex: 1 }}>
-        <Link href={`/products/${slug}`} style={{ textDecoration: 'none' }}>
-          <p style={{
-            fontWeight: 700, fontSize: 13.5,
-            color: '#151e13', lineHeight: 1.35,
-            margin: '0 0 3px',
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
-            transition: 'color 0.15s',
-          }}
-            onMouseEnter={e => e.currentTarget.style.color = '#00694C'}
-            onMouseLeave={e => e.currentTarget.style.color = '#151e13'}
-          >
-            {product.name}
-          </p>
-          {product.origin && (
-            <p style={{ fontSize: 11, color: '#9daaa3', fontStyle: 'italic', margin: 0 }}>
-              from {product.origin}
-            </p>
-          )}
-        </Link>
-
-        {product.unit && (
-          <p style={{ fontSize: 11, color: '#b0bcb5', margin: '4px 0 0' }}>{product.unit}</p>
-        )}
-
-        {/* Price + CTA */}
-        <div style={{ marginTop: 'auto', paddingTop: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
-            <span style={{ fontWeight: 800, fontSize: 17, color: '#A05000', lineHeight: 1 }}>
-              €{Number(product.price).toFixed(2)}
-            </span>
-            {product.oldPrice && (
-              <span style={{ fontSize: 11, color: '#b0bcb5', textDecoration: 'line-through' }}>
-                €{Number(product.oldPrice).toFixed(2)}
-              </span>
+      <div className="flex flex-col flex-1 p-3 md:p-4 min-w-0">
+        <Link href={`/products/${slug}`} className="flex-1 min-w-0 block">
+          <div className="flex items-start gap-1.5 mb-1 min-w-0 w-full">
+            <h3 className="font-sans font-bold text-gray-900 text-[13px] md:text-[15px] leading-snug flex-1 min-w-0 group-hover:text-[#00694C] transition-colors line-clamp-2">
+              {product.name}
+            </h3>
+            {cleanOrigin && (
+              <div className="flex-shrink-0 text-right" style={{ maxWidth: '72px' }}>
+                <span className="font-serif italic text-[10px] md:text-[11px] text-gray-400 leading-tight block">from</span>
+                <span className="font-serif italic text-[10px] md:text-[11px] text-gray-400 leading-tight block line-clamp-2">
+                  {cleanOrigin}
+                </span>
+              </div>
             )}
           </div>
-          <Link
-            href={`/products/${slug}`}
+
+          {product.unit && <p className="text-[11px] md:text-[12px] text-gray-400 mb-2 leading-tight">{product.unit}</p>}
+        </Link>
+
+        {product.inStock ? (
+          <div className="flex flex-col gap-2 mt-auto pt-2">
+            <div className="flex items-center justify-between gap-3 min-w-0 flex-wrap">
+              <div className="flex items-baseline gap-1 min-w-0">
+                <span className={`text-lg md:text-xl font-bold leading-none ${isWholesalePrice ? 'text-purple-600' : 'text-amber-500'}`}>
+                  €{Number(displayPrice).toFixed(2)}
+                </span>
+                {isWholesalePrice && <span className="text-xs text-gray-400 line-through">€{Number(product.price).toFixed(2)}</span>}
+                {!isWholesalePrice && product.oldPrice && <span className="text-xs text-gray-400 line-through">€{Number(product.oldPrice).toFixed(2)}</span>}
+              </div>
+              <div onClick={e => e.preventDefault()} className="flex-shrink-0">
+                <AddToCartButton
+                  product={product} inStock={product.inStock}
+                  isWholesale={isWholesalePrice}
+                  minWholesaleQty={product.minWholesaleQty || 1}
+                  effectivePrice={displayPrice}
+                />
+              </div>
+            </div>
+            {isWholesalePrice && (
+              <div className="flex items-center gap-1 bg-[#F5F3FF] p-1.5 rounded-[6px]">
+                <svg width="9" height="9" fill="#7C3AED" viewBox="0 0 24 24">
+                  <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/>
+                </svg>
+                <span className="text-[9px] md:text-[10px] text-[#6D28D9] font-semibold">
+                  Min. {product.minWholesaleQty || 1} {product.wholesaleUnit || 'units'}
+                </span>
+              </div>
+            )}
+          </div>
+        ) : (
+          <button
+            onClick={e => { e.preventDefault(); }}
+            className="w-full rounded-lg border transition-colors mt-auto"
             style={{
-              fontSize: 12, fontWeight: 700,
-              padding: '7px 14px',
-              background: product.inStock === false ? '#f3f4f6' : '#00694C',
-              color: product.inStock === false ? '#9daaa3' : '#fff',
-              borderRadius: 10,
-              textDecoration: 'none',
-              whiteSpace: 'nowrap',
-              transition: 'background 0.15s',
-              pointerEvents: product.inStock === false ? 'none' : 'auto',
+              fontSize:'12px', fontWeight:500,
+              color: '#151E13',
+              borderColor: '#BCCAC1',
+              padding:'7px 0',
             }}
           >
-            {product.inStock === false ? 'Sold Out' : 'View →'}
-          </Link>
-        </div>
+            Notify Me
+          </button>
+        )}
       </div>
     </div>
   )
@@ -437,11 +421,7 @@ export default function SavedItemsTab({ authFetch, initialWishlist = null }) {
       </div>
 
       {/* Grid */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-        gap: 16,
-      }}>
+      <div className="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-8">
         {items.map(product => (
           <WishlistCard
             key={product.id}

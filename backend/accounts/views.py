@@ -243,7 +243,7 @@ class NotificationMarkReadView(APIView):
         qs = Notification.objects.filter(user=request.user)
         
         context = request.query_params.get('context', '') or request.data.get('context', '')
-        admin_types = ['admin_alert', 'out_of_stock', 'wholesale_pending', 'ticket_created']
+        admin_types = ['admin_alert', 'out_of_stock', 'wholesale_pending', 'ticket_created', 'admin_ticket_reply']
         
         if context == 'dashboard':
             qs = qs.filter(type__in=admin_types)
@@ -269,7 +269,7 @@ class UnreadCountView(APIView):
         qs = Notification.objects.filter(user=request.user, is_read=False)
         
         context = request.query_params.get('context', '')
-        admin_types = ['admin_alert', 'out_of_stock', 'wholesale_pending', 'ticket_created']
+        admin_types = ['admin_alert', 'out_of_stock', 'wholesale_pending', 'ticket_created', 'admin_ticket_reply']
         
         if context == 'dashboard':
             qs = qs.filter(type__in=admin_types)

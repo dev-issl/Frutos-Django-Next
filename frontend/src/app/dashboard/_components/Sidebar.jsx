@@ -88,7 +88,6 @@ const navGroups = [
     items: [
       { name: "Import / Export", href: "/dashboard/import-export", icon: ArrowLeftRight },
       { name: "Notifications", href: "/dashboard/notifications", icon: Bell },
-      { name: "Settings", href: "/dashboard/settings", icon: Settings },
     ],
   },
 ];

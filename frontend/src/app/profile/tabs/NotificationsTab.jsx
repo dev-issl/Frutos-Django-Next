@@ -436,14 +436,20 @@ export default function NotificationsTab({ authFetch, initialNotifications = nul
   }
 
   async function handleClick(notif) {
-    if (notif.type === 'ticket_reply' && notif.metadata?.ticket_id) {
+    if ((notif.type === 'ticket_reply' || notif.type === 'admin_ticket_reply') && notif.metadata?.ticket_id) {
       if (!notif.isRead) {
         authFetch(`${API_BASE}/auth/notifications/mark-read/`, {
           method: 'POST', body: JSON.stringify({ ids: [notif.id] }),
         })
         setNotifs(p => p.map(n => n.id === notif.id ? { ...n, isRead: true } : n))
+        if (onCountChange) onCountChange(-1) // Optimistically decrement unread count
       }
-      router.push(`/profile?tab=tickets&ticket_id=${notif.metadata.ticket_id}`)
+      
+      if (notif.type === 'admin_ticket_reply') {
+        router.push(`/dashboard/tickets?ticket_id=${notif.metadata.ticket_id}`)
+      } else {
+        router.push(`/profile?tab=tickets&ticket_id=${notif.metadata.ticket_id}`)
+      }
       return
     }
 

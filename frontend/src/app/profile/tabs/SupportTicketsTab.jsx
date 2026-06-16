@@ -95,6 +95,24 @@ export default function SupportTicketsTab({ authFetch }) {
     }
   }, [authFetch])
 
+  // Explicitly fetch specific ticket if not in list
+  useEffect(() => {
+    if (selectedTicketId && tickets.length > 0) {
+      const exists = tickets.some(t => t.id === selectedTicketId)
+      if (!exists) {
+        authFetch(`${API_BASE}/auth/tickets/${selectedTicketId}/`)
+          .then(res => {
+            if (res.ok) return res.json()
+            throw new Error()
+          })
+          .then(data => {
+            setTickets(prev => [data, ...prev])
+          })
+          .catch(() => {})
+      }
+    }
+  }, [selectedTicketId, tickets, authFetch])
+
   // Polling for updates if a ticket is selected
   // Remove polling; we now use WebSockets in TicketChat
   useEffect(() => {
