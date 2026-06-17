@@ -151,10 +151,12 @@ class OrderCreateSerializer(serializers.Serializer):
                     })
 
             # ── Wholesale validation ──────────────────────────────
+            is_wholesale = False
             if user and getattr(user, 'user_type', None) == 'WHOLESALER':
                 profile = getattr(user, 'wholesaler_profile', None)
                 if profile and getattr(profile, 'approval_status', None) == 'APPROVED':
                     self._validate_wholesale_minimums(cart_items)
+                    is_wholesale = True
                 else:
                     raise serializers.ValidationError(
                         "Your wholesaler account is not yet approved."
@@ -182,6 +184,7 @@ class OrderCreateSerializer(serializers.Serializer):
             # ── Create Order ──────────────────────────────────────
             order = Order.objects.create(
                 user                = user,
+                wholesale_user      = user if is_wholesale else None,
                 customer_name       = validated_data['customer_name'],
                 customer_email      = validated_data['customer_email'],
                 customer_phone      = validated_data['customer_phone'],
@@ -392,7 +395,18 @@ class OrderReadSerializer(serializers.ModelSerializer):
         ]
 
     def get_is_wholesale_order(self, obj):
-        return bool(obj.wholesale_user_id)
+        if getattr(obj, 'is_wholesale_order', False) or obj.wholesale_user_id:
+            return True
+        if obj.user_id and getattr(obj.user, 'user_type', None) == 'WHOLESALER':
+            return True
+        if obj.customer_email:
+            try:
+                from wholesale.models import WholesaleUser
+                if WholesaleUser.objects.filter(email__iexact=obj.customer_email).exists():
+                    return True
+            except Exception:
+                pass
+        return False
 
 
 # ══════════════════════════════════════════════════════════════════
@@ -669,4 +683,15 @@ class OrderSerializer(serializers.ModelSerializer):
         ]
 
     def get_is_wholesale_order(self, obj):
-        return bool(obj.wholesale_user_id)
+        if getattr(obj, 'is_wholesale_order', False) or obj.wholesale_user_id:
+            return True
+        if obj.user_id and getattr(obj.user, 'user_type', None) == 'WHOLESALER':
+            return True
+        if obj.customer_email:
+            try:
+                from wholesale.models import WholesaleUser
+                if WholesaleUser.objects.filter(email__iexact=obj.customer_email).exists():
+                    return True
+            except Exception:
+                pass
+        return False

@@ -11,12 +11,13 @@ import {
   markWholesaleNotificationsRead, deleteWholesaleOrder, deleteWholesaleNotification,
 } from '@/lib/api'
 
-import ProfileHeader      from './ProfileHeader'
+import ProfileSidebar      from './ProfileSidebar'
 import OverviewTab        from './_tabs/OverviewTab'
 import OrdersTab          from './_tabs/OrdersTab'
 import NotificationsTab   from './_tabs/NotificationsTab'
 import SettingsTab        from './_tabs/SettingsTab'
-
+import OrderLineTab       from './_tabs/OrderLineTab'
+import AccountInfoTab     from './_tabs/AccountInfoTab'
 export default function WholesaleProfileClient({ initialProfile, initialNotifications, initialOrders, accessToken }) {
   const router = useRouter()
   const { update: updateSession } = useSession()
@@ -60,8 +61,13 @@ export default function WholesaleProfileClient({ initialProfile, initialNotifica
     setImageUploading(true)
     try {
       const updated = await uploadWholesaleProfileImage(accessToken, file)
-      setProfile(p => ({ ...p, profile_image: updated.profile_image_url || p.profile_image }))
-      await updateSession({ profileImage: updated.profile_image_url })
+      const newImageUrl = updated.profile_image_url || updated.profile_image || p.profile_image;
+      setProfile(p => ({ 
+        ...p, 
+        profile_image: newImageUrl,
+        profile_image_url: newImageUrl
+      }))
+      await updateSession({ profileImage: newImageUrl })
     } catch (err) {
       console.error('Failed to upload image:', err)
       alert('Failed to upload image. Please try again.')
@@ -123,25 +129,31 @@ export default function WholesaleProfileClient({ initialProfile, initialNotifica
   }
 
   const tabs = [
-    { id: 'overview',       label: 'Overview' },
+    { id: 'overview',       label: 'Dashboard' },
+    { id: 'order_line',     label: 'Order Line' },
+    { id: 'account_info',   label: 'Account Info' },
     { id: 'orders',         label: `Orders${orders.length ? ` (${orders.length})` : ''}` },
     { id: 'notifications',  label: `Notification${unreadCount ? ` (${unreadCount})` : ''}` },
     { id: 'settings',       label: 'Settings' },
   ]
 
   return (
-    <div className="bg-gray-50/50 min-h-screen pb-12">
-      <ProfileHeader
+    <div className="bg-[#f8fcfb] min-h-screen flex flex-col md:flex-row">
+      <ProfileSidebar
         profile={profile} activeTab={activeTab} setActiveTab={setActiveTab}
         tabs={tabs} onLogout={handleLogout}
-        onImageUpload={handleImageUpload}
-        imageUploading={imageUploading}
       />
 
-      <div className="max-w-5xl mx-auto px-4 md:px-6 py-8">
-        <div className="flex flex-col gap-6">
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-4 md:p-6 h-full">
           {activeTab === 'overview' && (
-            <OverviewTab profile={profile} orders={orders} />
+            <OverviewTab profile={profile} orders={orders} setActiveTab={setActiveTab} />
+          )}
+          {activeTab === 'order_line' && (
+            <OrderLineTab accessToken={accessToken} />
+          )}
+          {activeTab === 'account_info' && (
+            <AccountInfoTab profile={profile} onImageUpload={handleImageUpload} imageUploading={imageUploading} />
           )}
           {activeTab === 'orders' && (
             <OrdersTab orders={orders} onDeleteOrder={handleDeleteOrder} />

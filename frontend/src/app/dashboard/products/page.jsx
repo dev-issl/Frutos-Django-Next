@@ -262,8 +262,19 @@ function ProductForm({
             </div>
             <div>
               <label className={labelCls}>Display Unit</label>
-              <input className={inputCls} value={form.unit || ""}
-                onChange={e => handleChange("unit", e.target.value)} placeholder='e.g., per kg' />
+              <select className={inputCls} value={form.unit || ""} onChange={e => handleChange("unit", e.target.value)}>
+                <option value="">Select a unit...</option>
+                <option value="kg">kg</option>
+                <option value="g">g</option>
+                <option value="L">L</option>
+                <option value="ml">ml</option>
+                <option value="box">box</option>
+                <option value="pcs">pcs</option>
+                <option value="pack">pack</option>
+                <option value="dozen">dozen</option>
+                <option value="case">case</option>
+                <option value="pallet">pallet</option>
+              </select>
             </div>
             <div>
               <label className={labelCls}>Badge Label</label>
@@ -404,8 +415,19 @@ function ProductForm({
             </div>
             <div>
               <label className={labelCls}>Wholesale Unit</label>
-              <input className={inputCls} value={form.wholesale_unit || ""}
-                onChange={e => handleChange("wholesale_unit", e.target.value)} placeholder='e.g., per case' />
+              <select className={inputCls} value={form.wholesale_unit || ""} onChange={e => handleChange("wholesale_unit", e.target.value)}>
+                <option value="">Select a unit...</option>
+                <option value="kg">kg</option>
+                <option value="g">g</option>
+                <option value="L">L</option>
+                <option value="ml">ml</option>
+                <option value="box">box</option>
+                <option value="pcs">pcs</option>
+                <option value="pack">pack</option>
+                <option value="dozen">dozen</option>
+                <option value="case">case</option>
+                <option value="pallet">pallet</option>
+              </select>
             </div>
             <div>
               <label className={labelCls}>Min Purchase Qty</label>

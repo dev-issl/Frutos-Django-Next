@@ -29,7 +29,7 @@ async function apiAuthFetch(path, accessToken, options = {}) {
 // Normalizer 
 
 function normalizeProduct(p) {
-    let image = p.image_url || p.image || null
+    let image = p.image_url || p.image || p.thumbnail_url || null
     if (image && !image.startsWith('http')) {
         image = `${MEDIA_BASE}/media/${image.replace(/^\/+/, '')}`
     }
@@ -60,7 +60,8 @@ export async function getProducts({ category, search, inStock, accessToken } = {
     const query = params.toString() ? `?${params}` : ''
     const path = `${PRODUCT_BASE}/${query}`.replace(/([^:]\/)\/+/g, "$1")
     const data = await apiAuthFetch(path, accessToken)
-    return data.map(normalizeProduct)
+    const results = Array.isArray(data) ? data : (data.results || [])
+    return results.map(normalizeProduct)
 }
 
 export async function getProductBySlug(slug, accessToken) {
@@ -83,7 +84,8 @@ export async function getProductById(id, accessToken) {
 
 export async function getCategories() {
     const data = await apiFetch('/products/categories/')
-    const names = data.map(cat => cat.name)
+    const results = Array.isArray(data) ? data : (data.results || [])
+    const names = results.map(cat => cat.name)
     return ['All', ...names, 'On Sale']
 }
 

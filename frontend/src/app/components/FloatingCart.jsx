@@ -16,7 +16,7 @@ export default function FloatingCart() {
     return () => clearTimeout(timer)
   }, [totalItems])
 
-  if (pathname?.startsWith('/dashboard')) return null
+  if (pathname?.startsWith('/dashboard') || pathname?.startsWith('/wholesale/profile')) return null
 
   return (
     <>
