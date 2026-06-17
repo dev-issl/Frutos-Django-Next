@@ -214,6 +214,16 @@ export function CartProvider({ children }) {
     }
   }, [state.items, hydrated])
 
+  // ── Listen for cross-component clear cart events (e.g. logout) ─────────────
+  useEffect(() => {
+    function handleClear() {
+      dispatch({ type: 'CLEAR_CART' })
+      setPromoState(null)
+    }
+    window.addEventListener('cart_clear', handleClear)
+    return () => window.removeEventListener('cart_clear', handleClear)
+  }, [])
+
   const totalItems = state.items.reduce((sum, i) => sum + i.qty, 0)
   const subtotal   = state.items.reduce((sum, i) => sum + i.price * i.qty, 0)
 

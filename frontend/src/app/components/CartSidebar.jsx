@@ -338,9 +338,17 @@ export default function CartSidebar() {
                   </div>
                   <div className="flex items-center justify-between mt-2">
                     <div className="flex items-center bg-[#f0f4f0] rounded-lg p-0.5">
-                      <button onClick={() => updateQty(item.id, item.qty - 1, item.item_type || 'product')} className="w-7 cursor-pointer h-7 flex items-center justify-center hover:bg-[#e2e8e2] rounded transition-colors">
-                        <span className="material-symbols-outlined text-[16px]">remove</span>
-                      </button>
+                      {(() => {
+                        const minQty = (item.wholesalePrice && item.minWholesaleQty) ? Math.max(1, parseInt(item.minWholesaleQty, 10)) : 1;
+                        const disabled = item.qty <= minQty;
+                        return (
+                          <button onClick={() => updateQty(item.id, Math.max(minQty, item.qty - 1), item.item_type || 'product')} 
+                            disabled={disabled}
+                            className={`w-7 h-7 flex items-center justify-center rounded transition-colors ${disabled ? 'text-gray-400 cursor-not-allowed' : 'cursor-pointer hover:bg-[#e2e8e2]'}`}>
+                            <span className="material-symbols-outlined text-[16px]">remove</span>
+                          </button>
+                        );
+                      })()}
                       <span className="w-7 text-center font-bold text-sm">{item.qty}</span>
                       <button onClick={() => updateQty(item.id, item.stock ? Math.min(item.stock, item.qty + 1) : item.qty + 1, item.item_type || 'product')} 
                         disabled={item.stock && item.qty >= item.stock}

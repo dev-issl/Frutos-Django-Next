@@ -115,7 +115,12 @@ export default function WholesaleProfileClient({ initialProfile, initialNotifica
   }
 }
 
-  const handleLogout = async () => { await signOut({ redirect: false }); router.push('/wholesale') }
+  const handleLogout = async () => {
+    localStorage.removeItem('cart_items')
+    if (typeof window !== 'undefined') window.dispatchEvent(new Event('cart_clear'))
+    await signOut({ redirect: false })
+    router.push('/wholesale')
+  }
 
   const tabs = [
     { id: 'overview',       label: 'Overview' },

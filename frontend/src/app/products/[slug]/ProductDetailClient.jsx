@@ -425,7 +425,12 @@ export default function ProductDetailClient({ product: initialProduct, related }
   const [added, setAdded]             = useState(false)
   const { addItem, setSidebarOpen }   = useCart()
   const [activeImg, setActiveImg]     = useState(0)
-  const [qty, setQty]                 = useState(1)
+  const minQty = (product.wholesalePrice && product.minWholesaleQty) ? Math.max(1, parseInt(product.minWholesaleQty, 10) || 1) : 1;
+  const [qty, setQty]                 = useState(minQty)
+
+  useEffect(() => {
+    setQty(prev => Math.max(prev, minQty))
+  }, [minQty])
   const [fulfillment, setFulfillment] = useState('delivery')
   const galleryRef = useRef(null)
 
@@ -588,8 +593,9 @@ export default function ProductDetailClient({ product: initialProduct, related }
             </p>
             <div className="flex items-center justify-between bg-[#F2FDEA] border border-[#BCCAC1]/40
                             rounded-xl px-2 py-1 flex-1">
-              <button onClick={() => setQty((q) => Math.max(1, q - 1))}
-                className="p-2 cursor-pointer hover:bg-[#ddf0d0] rounded-lg text-[#00694C] transition-colors">
+              <button onClick={() => setQty((q) => Math.max(minQty, q - 1))}
+                disabled={qty <= minQty}
+                className={`p-2 rounded-lg transition-colors ${qty <= minQty ? 'text-gray-400 cursor-not-allowed' : 'cursor-pointer hover:bg-[#ddf0d0] text-[#00694C]'}`}>
                 <Minus size={16} />
               </button>
               <span className="font-bold text-lg text-[#151E13]">{qty}</span>
@@ -776,9 +782,9 @@ export default function ProductDetailClient({ product: initialProduct, related }
                     </label>
                     <div className="flex items-center justify-between bg-white border
                                     border-[#BCCAC1]/40 rounded-xl px-2 py-1">
-                      <button onClick={() => setQty((q) => Math.max(1, q - 1))}
-                        className="p-2 cursor-pointer hover:bg-[#E7F1DF] rounded-lg
-                                   text-[#00694C] transition-colors">
+                      <button onClick={() => setQty((q) => Math.max(minQty, q - 1))}
+                        disabled={qty <= minQty}
+                        className={`p-2 rounded-lg transition-colors ${qty <= minQty ? 'text-gray-400 cursor-not-allowed' : 'cursor-pointer hover:bg-[#E7F1DF] text-[#00694C]'}`}>
                         <Minus size={16} />
                       </button>
                       <span className="font-bold text-lg text-[#151E13]">{qty}</span>

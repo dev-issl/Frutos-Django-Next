@@ -165,6 +165,13 @@ export function AuthProvider({ children }) {
     } catch { /* ignore */ }
     clearTokens()
     setUser(null)
+    
+    // Clear cart on logout to prevent wholesale/normal user mixups
+    localStorage.removeItem('cart_items')
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('cart_clear'))
+    }
+    
     if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current)
   }
 

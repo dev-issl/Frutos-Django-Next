@@ -435,6 +435,8 @@ export default function WholesaleModal({ isOpen, onClose }) {
   }
 
   const handleLogout = async () => {
+    localStorage.removeItem('cart_items')
+    if (typeof window !== 'undefined') window.dispatchEvent(new Event('cart_clear'))
     await signOut({ redirect: false })
     onClose()
   }
