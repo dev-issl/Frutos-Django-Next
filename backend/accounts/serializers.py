@@ -132,7 +132,7 @@ class UserReadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model  = User
-        fields = ['id', 'email', 'username', 'firstName', 'lastName', 'fullName', 'profile']
+        fields = ['id', 'email', 'username', 'firstName', 'lastName', 'fullName', 'profile', 'user_type']
 
     def get_fullName(self, obj):
         return getattr(obj, 'full_name', None) or getattr(obj, 'name', None) or obj.email

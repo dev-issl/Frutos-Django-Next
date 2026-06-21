@@ -36,6 +36,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         ('VENDOR', 'Vendor'),
         ('AFFILIATE', 'Affiliate'),
         ('ADMIN', 'Admin'),
+        ('STAFF', 'Staff'),
     ]
     
     email = models.EmailField(unique=True, db_index=True)

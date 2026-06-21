@@ -70,6 +70,7 @@ INSTALLED_APPS = [
     'sections',  # Sections management app
     'utils',  # Utility functions
     'dashboard',  # Custom Admin Dashboard
+    'staff',  # Staff Management and Dashboard
 ]
 
 MIDDLEWARE = [

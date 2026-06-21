@@ -64,6 +64,7 @@ const navGroups = [
     label: "People",
     items: [
       { name: "Users", href: "/dashboard/users", icon: Users },
+      { name: "Staff", href: "/dashboard/staff", icon: Users },
       { name: 'Stores', href: '/dashboard/stores', icon: Store },
       { name: "Shops", href: "/dashboard/shops", icon: Store },
     ],

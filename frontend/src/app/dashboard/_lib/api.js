@@ -25,12 +25,12 @@ const API_BASE_URL = (() => {
 
 export function getAccessToken() {
     if (typeof window === "undefined") return null;
-    return localStorage.getItem("admin_access_token");
+    return localStorage.getItem("admin_access_token") || localStorage.getItem("icommerce_admin_access");
 }
 
 export function getRefreshToken() {
     if (typeof window === "undefined") return null;
-    return localStorage.getItem("admin_refresh_token");
+    return localStorage.getItem("admin_refresh_token") || localStorage.getItem("icommerce_admin_refresh");
 }
 
 export function setTokens(access, refresh) {

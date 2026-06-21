@@ -429,29 +429,29 @@ import {
 
 const LeafletMap = dynamic(() => import('./LeafletMap'), { ssr: false })
 
-const DISTANCES       = [2, 5, 10, null]
+const DISTANCES = [2, 5, 10, null]
 const DISTANCE_LABELS = ['2 km', '5 km', '10 km', 'All stores']
 
 // ── Icons ─────────────────────────────────────────────────────────────────────
-const IconSearch   = () => <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-const IconPin      = () => <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-const IconArrow    = () => <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-const IconExternal = () => <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
-const IconChevron  = () => <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
-const IconFilter   = () => <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="10" y1="18" x2="14" y2="18"/></svg>
+const IconSearch = () => <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>
+const IconPin = () => <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
+const IconArrow = () => <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+const IconExternal = () => <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H7M17 7v10" /></svg>
+const IconChevron = () => <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6" /></svg>
+const IconFilter = () => <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6" /><line x1="8" y1="12" x2="16" y2="12" /><line x1="10" y1="18" x2="14" y2="18" /></svg>
 
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function StoreFinderClient({ initialStores = [] }) {
-  const [userLocation,        setUserLocation]        = useState(null)
-  const [sortedStores,        setSortedStores]        = useState(Array.isArray(initialStores) ? initialStores : [])
-  const [activeStoreId,       setActiveStoreId]       = useState(
+  const [userLocation, setUserLocation] = useState(null)
+  const [sortedStores, setSortedStores] = useState(Array.isArray(initialStores) ? initialStores : [])
+  const [activeStoreId, setActiveStoreId] = useState(
     Array.isArray(initialStores) ? (initialStores[0]?.id ?? null) : null
   )
-  const [searchQuery,         setSearchQuery]         = useState('')
-  const [distanceFilter,      setDistanceFilter]      = useState(null)
-  const [showLeftoverOnly,    setShowLeftoverOnly]    = useState(false)
-  const [locationLoading,     setLocationLoading]     = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [distanceFilter, setDistanceFilter] = useState(null)
+  const [showLeftoverOnly, setShowLeftoverOnly] = useState(false)
+  const [locationLoading, setLocationLoading] = useState(false)
   const [bottomSheetExpanded, setBottomSheetExpanded] = useState(false)
 
   const geoRequested = useRef(false)
@@ -463,7 +463,7 @@ export default function StoreFinderClient({ initialStores = [] }) {
     setLocationLoading(true)
     navigator.geolocation.getCurrentPosition(
       ({ coords }) => {
-        const loc    = { lat: coords.latitude, lng: coords.longitude }
+        const loc = { lat: coords.latitude, lng: coords.longitude }
         const sorted = sortStoresByDistance(initialStores, loc.lat, loc.lng)
         setUserLocation(loc)
         setSortedStores(sorted)
@@ -512,17 +512,17 @@ export default function StoreFinderClient({ initialStores = [] }) {
     return (
       <div className="flex gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
         {DISTANCE_LABELS.map((label, i) => {
-          const val      = DISTANCES[i]
+          const val = DISTANCES[i]
           const isActive = distanceFilter === val
           const spinning = locationLoading && val !== null && !userLocation && distanceFilter === val
           return (
             <button key={label} onClick={() => handleDistanceClick(val)}
               className="shrink-0 flex items-center gap-1.5 rounded-full font-semibold transition-all"
               style={{
-                padding:    mobile ? '8px 16px' : '6px 16px',
-                fontSize:   mobile ? '14px' : '12px',
+                padding: mobile ? '8px 16px' : '6px 16px',
+                fontSize: mobile ? '14px' : '12px',
                 background: isActive ? '#00694c' : mobile ? 'rgba(255,255,255,0.95)' : '#ECF7E4',
-                color:      isActive ? '#fff' : '#3d4943',
+                color: isActive ? '#fff' : '#3d4943',
                 border: 'none', cursor: 'pointer',
                 boxShadow: mobile ? '0 1px 4px rgba(0,0,0,0.1)' : 'none',
               }}>
@@ -540,11 +540,11 @@ export default function StoreFinderClient({ initialStores = [] }) {
 
   // ── Store card ─────────────────────────────────────────────────────────────
   function StoreCard({ store, compact = false }) {
-    const isActive  = store.id === activeStoreId
-    const dist      = getDist(store)
-    const open      = isStoreOpen(store)
+    const isActive = store.id === activeStoreId
+    const dist = getDist(store)
+    const open = isStoreOpen(store)
     // Format close time with AM/PM
-    const closeFmt  = formatTime12h(store.closeTime)
+    const closeFmt = formatTime12h(store.closeTime)
 
     return (
       <div onClick={() => { setActiveStoreId(store.id); if (compact) setBottomSheetExpanded(false) }}
@@ -625,7 +625,7 @@ export default function StoreFinderClient({ initialStores = [] }) {
                 style={{ background: '#ECF7E4', color: '#151e13', fontSize: '13px', border: 'none' }} />
               {searchQuery && (
                 <button onClick={() => setSearchQuery('')} className="absolute right-3 flex items-center justify-center w-4 h-4 rounded-full" style={{ background: '#BCCAC1' }}>
-                  <svg width="8" height="8" fill="none" stroke="white" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                  <svg width="8" height="8" fill="none" stroke="white" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" /></svg>
                 </button>
               )}
             </div>
@@ -638,8 +638,8 @@ export default function StoreFinderClient({ initialStores = [] }) {
               style={{ background: showLeftoverOnly ? '#E7F1DF' : '#ECF7E4', border: `1.5px solid ${showLeftoverOnly ? 'rgba(0,105,76,0.2)' : 'transparent'}` }}>
               <div className="flex items-center gap-2.5">
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" style={{ color: showLeftoverOnly ? '#00694c' : '#6D7A73' }}>
-                  <path d="M17 8C8 10 5.9 16.17 3.82 19.3A10 10 0 0 0 19 5c-1-1-2-1.71-2-1.71V8z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill={showLeftoverOnly ? 'rgba(0,105,76,0.15)' : 'none'}/>
-                  <path d="M3.82 19.3C4 18 5 13 9 11" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                  <path d="M17 8C8 10 5.9 16.17 3.82 19.3A10 10 0 0 0 19 5c-1-1-2-1.71-2-1.71V8z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill={showLeftoverOnly ? 'rgba(0,105,76,0.15)' : 'none'} />
+                  <path d="M3.82 19.3C4 18 5 13 9 11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                 </svg>
                 <span style={{ fontSize: '13px', color: showLeftoverOnly ? '#00694c' : '#151e13', fontWeight: 600 }}>Show stores with Leftover Pack</span>
               </div>
@@ -660,7 +660,7 @@ export default function StoreFinderClient({ initialStores = [] }) {
                   {' '}store{filteredStores.length !== 1 ? 's' : ''}{' '}
                   {userLocation ? 'near you' : 'available'}
                   {showLeftoverOnly && ' · Leftover Packs only'}
-                  {distanceFilter  && ` · within ${distanceFilter} km`}
+                  {distanceFilter && ` · within ${distanceFilter} km`}
                 </>
               )}
             </p>
@@ -737,85 +737,108 @@ export default function StoreFinderClient({ initialStores = [] }) {
 
         {/* Bottom sheet */}
         {activeStore && (() => {
-          const activeOpen     = isStoreOpen(activeStore)
+          const activeOpen = isStoreOpen(activeStore)
           const activeCloseFmt = formatTime12h(activeStore.closeTime)
           return (
-            <div className="absolute bottom-0 left-0 right-0 z-20 rounded-t-3xl"
-              style={{ background: '#fff', boxShadow: '0 -8px 40px rgba(0,33,21,0.12)', transform: bottomSheetExpanded ? 'translateY(0)' : 'translateY(calc(100% - 240px))', transition: 'transform 0.35s cubic-bezier(0.32, 0.72, 0, 1)', height: '70vh', overflowY: 'auto', overscrollBehavior: 'contain' }}>
+            <div className="absolute bottom-0 left-0 right-0 z-20 rounded-t-[2rem] flex flex-col bg-white"
+              style={{
+                boxShadow: '0 -8px 40px rgba(0,33,21,0.12)',
+                transform: bottomSheetExpanded ? 'translateY(0)' : 'translateY(calc(100% - 240px))',
+                transition: 'transform 0.35s cubic-bezier(0.32, 0.72, 0, 1)',
+                height: '80vh',
+              }}>
 
-              <div className="flex justify-center pt-3 pb-1 cursor-pointer" onClick={() => setBottomSheetExpanded(!bottomSheetExpanded)}>
-                <div className="w-10 h-1 rounded-full" style={{ background: '#BCCAC1' }} />
+              {/* Drag handle / toggle area */}
+              <div className="shrink-0 pt-4 pb-2 cursor-pointer flex justify-center" onClick={() => setBottomSheetExpanded(!bottomSheetExpanded)}>
+                <div className="w-12 h-1.5 rounded-full bg-[#E5E7EB]" />
               </div>
 
-              <div className="px-5 pb-4">
-                <div className="flex items-start justify-between mb-3">
-                  <div style={{ flex: 1, paddingRight: '12px' }}>
-                    <span className="block text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: '#00694c' }}>
-                      {userLocation ? 'Closest to you' : 'Featured store'}
-                    </span>
-                    <h2 style={{ fontFamily: '"Playfair Display", Georgia, serif', fontSize: '21px', fontWeight: 700, color: '#151e13', lineHeight: 1.2 }}>
-                      {activeStore.name}
-                    </h2>
-                    <div className="flex items-center gap-1.5 mt-1">
-                      <span className="text-[#6D7A73]"><IconPin /></span>
-                      <span style={{ fontSize: '13px', color: '#6D7A73' }}>{activeStore.address}</span>
-                    </div>
-                  </div>
-                  {getDist(activeStore) !== null && (
-                    <div className="shrink-0 px-3 py-2 rounded-xl text-center" style={{ background: '#ECF7E4' }}>
-                      <span className="block font-bold leading-none" style={{ fontSize: '20px', color: '#151e13' }}>{getDist(activeStore)?.toFixed(1)}</span>
-                      <span className="text-[10px] font-bold uppercase" style={{ color: '#6D7A73' }}>km</span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full" style={{ background: activeOpen ? '#E7F1DF' : '#FEE2E2' }}>
-                    <div className="w-1.5 h-1.5 rounded-full" style={{ background: activeOpen ? '#00694c' : '#e11d48' }} />
-                    <span style={{ fontSize: '12px', fontWeight: 600, color: activeOpen ? '#00694c' : '#e11d48' }}>
-                      {/* ← AM/PM time */}
-                      {activeOpen ? `Open until ${activeCloseFmt}` : 'Closed'}
-                    </span>
-                  </div>
-                  <a href={`https://www.google.com/maps/dir/?api=1&destination=${activeStore.lat},${activeStore.lng}`}
-                    target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 font-bold" style={{ fontSize: '13px', color: '#855000' }}>
-                    Directions <IconExternal />
-                  </a>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <Link href={`/stores/${activeStore.slug}`} className="py-3.5 rounded-xl text-center font-bold text-sm text-white" style={{ background: 'linear-gradient(135deg, #00694c 0%, #008560 100%)' }}>
-                    SHOP THIS STORE
-                  </Link>
-                  <Link href={`/stores/${activeStore.slug}`} className="py-3.5 rounded-xl text-center font-bold text-sm" style={{ background: '#ECF7E4', color: '#151e13' }}>
-                    STORE INFO
-                  </Link>
-                </div>
-              </div>
-
-              <div className="px-5 pt-4" style={{ borderTop: '1px solid rgba(188,202,193,0.2)' }}>
-                <h3 style={{ fontFamily: '"Playfair Display", Georgia, serif', fontSize: '18px', fontStyle: 'italic', color: '#151e13', marginBottom: '8px' }}>
-                  Other locations near you
-                </h3>
-                <div className="pb-6">
-                  {filteredStores.filter((s) => s.id !== activeStore.id).map((store) => {
-                    const sOpen     = isStoreOpen(store)
-                    const sCloseFmt = formatTime12h(store.closeTime)
-                    return (
-                      <div key={store.id} onClick={() => { setActiveStoreId(store.id); setBottomSheetExpanded(false) }}
-                        className="flex items-center justify-between py-3 cursor-pointer" style={{ borderBottom: '1px solid rgba(188,202,193,0.15)' }}>
-                        <div>
-                          <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#151e13' }}>{store.name}</h4>
-                          <p style={{ fontSize: '12px', color: '#6D7A73', marginTop: '2px' }}>
-                            {getDist(store) ? formatDistance(getDist(store)) + ' · ' : ''}
-                            {/* ← AM/PM time */}
-                            {sOpen ? `Closes ${sCloseFmt}` : 'Closed'}
-                          </p>
-                        </div>
-                        <span className="text-[#BCCAC1]"><IconChevron /></span>
+              {/* Scrollable content area */}
+              <div className="flex-1 overflow-y-auto"
+                   style={{
+                     WebkitOverflowScrolling: 'touch',
+                     overscrollBehavior: 'contain',
+                     overflowY: bottomSheetExpanded ? 'auto' : 'hidden'
+                   }}
+                   onClick={() => { if (!bottomSheetExpanded) setBottomSheetExpanded(true) }}>
+                
+                <div className="px-5 pb-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <div style={{ flex: 1, paddingRight: '12px' }}>
+                      <span className="block text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: '#00694c' }}>
+                        {userLocation ? 'Closest to you' : 'Featured store'}
+                      </span>
+                      <h2 style={{ fontFamily: '"Playfair Display", Georgia, serif', fontSize: '22px', fontWeight: 700, color: '#151e13', lineHeight: 1.2 }}>
+                        {activeStore.name}
+                      </h2>
+                      <div className="flex items-center gap-1.5 mt-1.5">
+                        <span className="text-[#6D7A73]"><IconPin /></span>
+                        <span style={{ fontSize: '13px', color: '#6D7A73' }}>{activeStore.address}</span>
                       </div>
-                    )
-                  })}
+                    </div>
+                    {getDist(activeStore) !== null && (
+                      <div className="shrink-0 px-3 py-2 rounded-xl text-center" style={{ background: '#ECF7E4' }}>
+                        <span className="block font-bold leading-none" style={{ fontSize: '20px', color: '#151e13' }}>{getDist(activeStore)?.toFixed(1)}</span>
+                        <span className="text-[10px] font-bold uppercase" style={{ color: '#6D7A73' }}>km</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-3 mb-5">
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full" style={{ background: activeOpen ? '#E7F1DF' : '#FEE2E2' }}>
+                      <div className="w-1.5 h-1.5 rounded-full" style={{ background: activeOpen ? '#00694c' : '#e11d48' }} />
+                      <span style={{ fontSize: '12px', fontWeight: 600, color: activeOpen ? '#00694c' : '#e11d48' }}>
+                        {activeOpen ? `Open until ${activeCloseFmt}` : 'Closed'}
+                      </span>
+                    </div>
+                    <a href={`https://www.google.com/maps/dir/?api=1&destination=${activeStore.lat},${activeStore.lng}`}
+                      target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 font-bold" style={{ fontSize: '13px', color: '#855000' }}>
+                      Directions <IconExternal />
+                    </a>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <Link href={`/stores/${activeStore.slug}`} className="py-3.5 rounded-xl text-center font-bold text-sm text-white" style={{ background: 'linear-gradient(135deg, #00694c 0%, #008560 100%)' }}>
+                      SHOP THIS STORE
+                    </Link>
+                    <Link href={`/stores/${activeStore.slug}`} className="py-3.5 rounded-xl text-center font-bold text-sm" style={{ background: '#ECF7E4', color: '#151e13' }}>
+                      STORE INFO
+                    </Link>
+                  </div>
+                </div>
+
+                {/* Other locations */}
+                <div className="px-5 pt-5 pb-8" style={{ borderTop: '1px solid rgba(188,202,193,0.2)' }}>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 style={{ fontFamily: '"Playfair Display", Georgia, serif', fontSize: '18px', fontStyle: 'italic', color: '#151e13' }}>
+                      Other locations near you
+                    </h3>
+                    {!bottomSheetExpanded && (
+                      <span className="text-[11px] font-bold uppercase tracking-widest text-[#00694c] flex items-center gap-1">
+                        Tap to View <IconChevron />
+                      </span>
+                    )}
+                  </div>
+                  
+                  <div className="pb-6">
+                    {filteredStores.filter((s) => s.id !== activeStore.id).map((store) => {
+                      const sOpen     = isStoreOpen(store)
+                      const sCloseFmt = formatTime12h(store.closeTime)
+                      return (
+                        <div key={store.id} onClick={(e) => { e.stopPropagation(); setActiveStoreId(store.id); setBottomSheetExpanded(false); }}
+                          className="flex items-center justify-between py-3.5 cursor-pointer" style={{ borderBottom: '1px solid rgba(188,202,193,0.15)' }}>
+                          <div>
+                            <h4 style={{ fontSize: '14.5px', fontWeight: 700, color: '#151e13' }}>{store.name}</h4>
+                            <p style={{ fontSize: '12.5px', color: '#6D7A73', marginTop: '2px' }}>
+                              {getDist(store) ? formatDistance(getDist(store)) + ' · ' : ''}
+                              {sOpen ? `Closes ${sCloseFmt}` : 'Closed'}
+                            </p>
+                          </div>
+                          <span className="text-[#BCCAC1]"><IconChevron /></span>
+                        </div>
+                      )
+                    })}
+                  </div>
                 </div>
               </div>
             </div>
