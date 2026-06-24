@@ -25,25 +25,42 @@ const API_BASE_URL = (() => {
 
 export function getAccessToken() {
     if (typeof window === "undefined") return null;
+    if (window.location.pathname.startsWith('/staff')) {
+        return localStorage.getItem("staff_access_token");
+    }
     return localStorage.getItem("admin_access_token") || localStorage.getItem("icommerce_admin_access");
 }
 
 export function getRefreshToken() {
     if (typeof window === "undefined") return null;
+    if (window.location.pathname.startsWith('/staff')) {
+        return localStorage.getItem("staff_refresh_token");
+    }
     return localStorage.getItem("admin_refresh_token") || localStorage.getItem("icommerce_admin_refresh");
 }
 
 export function setTokens(access, refresh) {
     if (typeof window === "undefined") return;
-    localStorage.setItem("admin_access_token", access);
-    if (refresh) localStorage.setItem("admin_refresh_token", refresh);
+    if (window.location.pathname.startsWith('/staff')) {
+        localStorage.setItem("staff_access_token", access);
+        if (refresh) localStorage.setItem("staff_refresh_token", refresh);
+    } else {
+        localStorage.setItem("admin_access_token", access);
+        if (refresh) localStorage.setItem("admin_refresh_token", refresh);
+    }
 }
 
 export function clearTokens() {
     if (typeof window === "undefined") return;
-    localStorage.removeItem("admin_access_token");
-    localStorage.removeItem("admin_refresh_token");
-    localStorage.removeItem("admin_user");
+    if (window.location.pathname.startsWith('/staff')) {
+        localStorage.removeItem("staff_access_token");
+        localStorage.removeItem("staff_refresh_token");
+        localStorage.removeItem("icommerce_staff_user");
+    } else {
+        localStorage.removeItem("admin_access_token");
+        localStorage.removeItem("admin_refresh_token");
+        localStorage.removeItem("admin_user");
+    }
 }
 
 export function getStoredUser() {

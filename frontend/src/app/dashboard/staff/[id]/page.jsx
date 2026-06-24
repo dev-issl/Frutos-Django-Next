@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Trash2, Calendar, ClipboardList } from "lucide-react";
+import { Plus, Trash2, Calendar, ClipboardList, Edit, Ban } from "lucide-react";
 import Container from "@/app/dashboard/_components/Container";
 import DataTable from "@/app/dashboard/_components/DataTable";
 import Modal from "@/app/dashboard/_components/Modal";
@@ -18,10 +18,16 @@ export default function StaffDetailsPage() {
   const toast = useToastContext();
   
   // Modals state
+  const [activeTab, setActiveTab] = useState("SHIFTS");
   const [shiftOpen, setShiftOpen] = useState(false);
   const [taskOpen, setTaskOpen] = useState(false);
+  const [offDayOpen, setOffDayOpen] = useState(false);
+  const [editShift, setEditShift] = useState(null);
+  const [editTask, setEditTask] = useState(null);
+  const [editOffDay, setEditOffDay] = useState(null);
   const [deleteTask, setDeleteTask] = useState(null);
   const [deleteShift, setDeleteShift] = useState(null);
+  const [deleteOffDay, setDeleteOffDay] = useState(null);
 
   const { data: staffProfile, isLoading: isStaffLoading } = useSWR(
     staffId ? `/api/staff/admin/employees/${staffId}/` : null,
@@ -38,28 +44,60 @@ export default function StaffDetailsPage() {
     (url) => api.get(url)
   );
 
-  const shifts = shiftsRaw?.results || (Array.isArray(shiftsRaw) ? shiftsRaw : []);
+  const allShifts = shiftsRaw?.results || (Array.isArray(shiftsRaw) ? shiftsRaw : []);
+  const shifts = allShifts.filter(s => s.status !== 'DAY_OFF');
+  const offDays = allShifts.filter(s => s.status === 'DAY_OFF');
   const tasks = tasksRaw?.results || (Array.isArray(tasksRaw) ? tasksRaw : []);
 
-  const handleCreateShift = async (values) => {
+  const handleSaveShift = async (values) => {
     try {
-      await api.post("/api/staff/admin/shifts/", { ...values, staff: staffId });
-      toast.success("Shift added successfully");
+      if (editShift) {
+        await api.patch(`/api/staff/admin/shifts/${editShift.id}/`, values);
+        toast.success("Shift updated successfully");
+      } else {
+        await api.post("/api/staff/admin/shifts/", { ...values, staff: staffId });
+        toast.success("Shift added successfully");
+      }
       setShiftOpen(false);
+      setEditShift(null);
       mutateShifts();
     } catch (err) {
-      toast.error(err?.message || "Failed to add shift");
+      toast.error(err?.message || "Failed to save shift");
     }
   };
 
-  const handleCreateTask = async (values) => {
+  const handleSaveTask = async (values) => {
     try {
-      await api.post("/api/staff/admin/tasks/", { ...values, staff: staffId });
-      toast.success("Task added successfully");
+      if (editTask) {
+        await api.patch(`/api/staff/admin/tasks/${editTask.id}/`, values);
+        toast.success("Task updated successfully");
+      } else {
+        await api.post("/api/staff/admin/tasks/", { ...values, staff: staffId });
+        toast.success("Task added successfully");
+      }
       setTaskOpen(false);
+      setEditTask(null);
       mutateTasks();
     } catch (err) {
-      toast.error(err?.message || "Failed to add task");
+      toast.error(err?.message || "Failed to save task");
+    }
+  };
+
+  const handleSaveOffDay = async (values) => {
+    try {
+      const payload = { ...values, status: 'DAY_OFF', staff: staffId };
+      if (editOffDay) {
+        await api.patch(`/api/staff/admin/shifts/${editOffDay.id}/`, payload);
+        toast.success("Off Day updated");
+      } else {
+        await api.post("/api/staff/admin/shifts/", payload);
+        toast.success("Off Day added");
+      }
+      setOffDayOpen(false);
+      setEditOffDay(null);
+      mutateShifts();
+    } catch (err) {
+      toast.error(err?.message || "Failed to save off day");
     }
   };
 
@@ -85,6 +123,17 @@ export default function StaffDetailsPage() {
     }
   };
 
+  const handleDeleteOffDay = async () => {
+    try {
+      await api.delete(`/api/staff/admin/shifts/${deleteOffDay.id}/`);
+      toast.success("Off Day deleted");
+      setDeleteOffDay(null);
+      mutateShifts();
+    } catch (err) {
+      toast.error("Failed to delete off day");
+    }
+  };
+
   if (isStaffLoading) return <div className="p-8 text-center text-slate-500">Loading...</div>;
   if (!staffProfile) return <div className="p-8 text-center text-red-500">Staff member not found</div>;
 
@@ -92,8 +141,9 @@ export default function StaffDetailsPage() {
     { key: "date", label: "Date", required: true, type: "date" },
     { key: "start_time", label: "Start Time", type: "time" },
     { key: "end_time", label: "End Time", type: "time" },
+    { key: "break_start", label: "Break Start", type: "time" },
+    { key: "break_end", label: "Break End", type: "time" },
     { key: "break_duration_minutes", label: "Break Duration (mins)", type: "number", placeholder: "30" },
-    { key: "location", label: "Location", placeholder: "e.g. Móstoles Centro" },
     { key: "status", label: "Status", type: "select", options: [
       { value: "SCHEDULED", label: "Scheduled" },
       { value: "DAY_OFF", label: "Day Off" },
@@ -109,13 +159,13 @@ export default function StaffDetailsPage() {
       { value: "IN_PROGRESS", label: "In Progress" },
       { value: "COMPLETED", label: "Completed" },
     ]},
+    { key: "progress_percentage", label: "Progress (%)", type: "number", placeholder: "0" },
   ];
 
   const shiftColumns = [
     { key: "date", label: "Date" },
     { key: "time", label: "Time", render: (_, row) => row.start_time && row.end_time ? `${row.start_time.slice(0,5)} - ${row.end_time.slice(0,5)}` : "—" },
     { key: "status", label: "Status", render: (v) => <span className={`px-2 py-0.5 text-xs rounded-full ${v === 'DAY_OFF' ? 'bg-slate-100 text-slate-600' : 'bg-emerald-100 text-emerald-700'}`}>{v}</span> },
-    { key: "location", label: "Location", render: (v) => v || "—" },
   ];
 
   const taskColumns = [
@@ -125,62 +175,131 @@ export default function StaffDetailsPage() {
     { key: "created_at", label: "Created", render: (v) => new Date(v).toLocaleDateString() },
   ];
 
+  const offDayFields = [
+    { key: "date", label: "Date", required: true, type: "date" },
+  ];
+
+  const offDayColumns = [
+    { key: "date", label: "Date" },
+    { key: "status", label: "Status", render: () => <span className="px-2 py-0.5 text-xs rounded-full bg-slate-100 text-slate-600">DAY OFF</span> },
+  ];
+
   return (
-    <Container title={`Staff: ${staffProfile.user?.name}`} description={`${staffProfile.role} • ${staffProfile.branch_location}`}>
+    <Container title={`Staff: ${staffProfile.user?.name}`} description={`${staffProfile.role} • ${staffProfile.store_name || "Unassigned"}`}>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+      {/* Tabs */}
+      <div className="flex bg-slate-100 p-1 rounded-xl w-fit mb-6">
+        <button 
+          onClick={() => setActiveTab("SHIFTS")}
+          className={`px-6 py-2.5 font-semibold text-sm flex items-center gap-2 rounded-lg transition-all cursor-pointer ${activeTab === "SHIFTS" ? 'bg-white text-[#00694C] shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+        >
+          <Calendar size={16} /> Shifts
+        </button>
+        <button 
+          onClick={() => setActiveTab("TASKS")}
+          className={`px-6 py-2.5 font-semibold text-sm flex items-center gap-2 rounded-lg transition-all cursor-pointer ${activeTab === "TASKS" ? 'bg-white text-[#00694C] shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+        >
+          <ClipboardList size={16} /> Tasks
+        </button>
+        <button 
+          onClick={() => setActiveTab("OFF_DAYS")}
+          className={`px-6 py-2.5 font-semibold text-sm flex items-center gap-2 rounded-lg transition-all cursor-pointer ${activeTab === "OFF_DAYS" ? 'bg-white text-[#00694C] shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+        >
+          <Ban size={16} /> Off Days
+        </button>
+      </div>
+
+      <div className="w-full">
         
         {/* Shifts Section */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-            <h3 className="font-bold flex items-center gap-2"><Calendar size={18} className="text-slate-500" /> Shifts</h3>
-            <button onClick={() => setShiftOpen(true)} className="text-xs bg-white border border-slate-200 px-3 py-1.5 rounded-lg hover:bg-slate-50 font-medium flex items-center gap-1">
-              <Plus size={14} /> Add
-            </button>
+        {activeTab === "SHIFTS" && (
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+              <h3 className="font-bold flex items-center gap-2"><Calendar size={18} className="text-slate-500" /> Shifts</h3>
+              <button onClick={() => { setEditShift(null); setShiftOpen(true); }} className="text-xs bg-[#00694C] text-white px-4 py-2 rounded-lg hover:bg-[#085041] font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-sm">
+                <Plus size={14} /> Add Shift
+              </button>
+            </div>
+            <div className="p-0">
+              <DataTable 
+                columns={shiftColumns} 
+                data={shifts} 
+                actions={(row) => (
+                  <div className="flex justify-end gap-2">
+                    <button onClick={() => { setEditShift(row); setShiftOpen(true); }} className="db-icon-btn" title="Edit"><Edit size={14} /></button>
+                    <button onClick={() => setDeleteShift(row)} className="db-icon-btn danger" title="Delete"><Trash2 size={14} /></button>
+                  </div>
+                )}
+              />
+            </div>
           </div>
-          <div className="p-0">
-            <DataTable 
-              columns={shiftColumns} 
-              data={shifts} 
-              actions={(row) => (
-                <button onClick={() => setDeleteShift(row)} className="db-icon-btn danger" title="Delete"><Trash2 size={14} /></button>
-              )}
-            />
-          </div>
-        </div>
+        )}
 
         {/* Tasks Section */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-            <h3 className="font-bold flex items-center gap-2"><ClipboardList size={18} className="text-slate-500" /> Tasks</h3>
-            <button onClick={() => setTaskOpen(true)} className="text-xs bg-white border border-slate-200 px-3 py-1.5 rounded-lg hover:bg-slate-50 font-medium flex items-center gap-1">
-              <Plus size={14} /> Add
-            </button>
+        {activeTab === "TASKS" && (
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+              <h3 className="font-bold flex items-center gap-2"><ClipboardList size={18} className="text-slate-500" /> Tasks</h3>
+              <button onClick={() => { setEditTask(null); setTaskOpen(true); }} className="text-xs bg-[#00694C] text-white px-4 py-2 rounded-lg hover:bg-[#085041] font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-sm">
+                <Plus size={14} /> Add Task
+              </button>
+            </div>
+            <div className="p-0">
+              <DataTable 
+                columns={taskColumns} 
+                data={tasks} 
+                actions={(row) => (
+                  <div className="flex justify-end gap-2">
+                    <button onClick={() => { setEditTask(row); setTaskOpen(true); }} className="db-icon-btn" title="Edit"><Edit size={14} /></button>
+                    <button onClick={() => setDeleteTask(row)} className="db-icon-btn danger" title="Delete"><Trash2 size={14} /></button>
+                  </div>
+                )}
+              />
+            </div>
           </div>
-          <div className="p-0">
-            <DataTable 
-              columns={taskColumns} 
-              data={tasks} 
-              actions={(row) => (
-                <button onClick={() => setDeleteTask(row)} className="db-icon-btn danger" title="Delete"><Trash2 size={14} /></button>
-              )}
-            />
+        )}
+
+        {/* Off Days Section */}
+        {activeTab === "OFF_DAYS" && (
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+              <h3 className="font-bold flex items-center gap-2"><Ban size={18} className="text-slate-500" /> Off Days</h3>
+              <button onClick={() => { setEditOffDay(null); setOffDayOpen(true); }} className="text-xs bg-[#00694C] text-white px-4 py-2 rounded-lg hover:bg-[#085041] font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-sm">
+                <Plus size={14} /> Add Off Day
+              </button>
+            </div>
+            <div className="p-0">
+              <DataTable 
+                columns={offDayColumns} 
+                data={offDays} 
+                actions={(row) => (
+                  <div className="flex justify-end gap-2">
+                    <button onClick={() => { setEditOffDay(row); setOffDayOpen(true); }} className="db-icon-btn" title="Edit"><Edit size={14} /></button>
+                    <button onClick={() => setDeleteOffDay(row)} className="db-icon-btn danger" title="Delete"><Trash2 size={14} /></button>
+                  </div>
+                )}
+              />
+            </div>
           </div>
-        </div>
+        )}
 
       </div>
 
-      {/* Modals */}
-      <Modal open={shiftOpen} onClose={() => setShiftOpen(false)} title="Add Shift">
-        <FormModal fields={shiftFields} onSubmit={handleCreateShift} submitLabel="Save Shift" />
+      <Modal open={shiftOpen} onClose={() => { setShiftOpen(false); setEditShift(null); }} title={editShift ? "Edit Shift" : "Add Shift"}>
+        <FormModal fields={shiftFields} initialValues={editShift || {}} onSubmit={handleSaveShift} submitLabel={editShift ? "Update Shift" : "Save Shift"} />
       </Modal>
 
-      <Modal open={taskOpen} onClose={() => setTaskOpen(false)} title="Add Task">
-        <FormModal fields={taskFields} onSubmit={handleCreateTask} submitLabel="Save Task" />
+      <Modal open={taskOpen} onClose={() => { setTaskOpen(false); setEditTask(null); }} title={editTask ? "Edit Task" : "Add Task"}>
+        <FormModal fields={taskFields} initialValues={editTask || {}} onSubmit={handleSaveTask} submitLabel={editTask ? "Update Task" : "Save Task"} />
+      </Modal>
+
+      <Modal open={offDayOpen} onClose={() => { setOffDayOpen(false); setEditOffDay(null); }} title={editOffDay ? "Edit Off Day" : "Add Off Day"}>
+        <FormModal fields={offDayFields} initialValues={editOffDay || {}} onSubmit={handleSaveOffDay} submitLabel={editOffDay ? "Update Off Day" : "Save Off Day"} />
       </Modal>
 
       <ConfirmDialog open={!!deleteShift} onClose={() => setDeleteShift(null)} onConfirm={handleDeleteShift} title="Delete Shift" message="Are you sure you want to delete this shift?" />
       <ConfirmDialog open={!!deleteTask} onClose={() => setDeleteTask(null)} onConfirm={handleDeleteTask} title="Delete Task" message="Are you sure you want to delete this task?" />
+      <ConfirmDialog open={!!deleteOffDay} onClose={() => setDeleteOffDay(null)} onConfirm={handleDeleteOffDay} title="Delete Off Day" message="Are you sure you want to delete this off day?" />
 
     </Container>
   );

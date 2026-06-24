@@ -275,9 +275,9 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
     permission_classes = [IsOwnerOrAdmin]
 
     def get_object(self):
-        # If admin, they can access any user profile via URL parameter
+        # If admin or staff, they can access any user profile via URL parameter
         if (hasattr(self.request.user, 'user_type') and 
-            self.request.user.user_type == 'ADMIN'):
+            self.request.user.user_type in ['ADMIN', 'STAFF']):
             user_id = self.kwargs.get('pk')
             if user_id:
                 return generics.get_object_or_404(User, pk=user_id)

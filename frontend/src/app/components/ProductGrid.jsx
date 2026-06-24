@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 // import { products, categories } from '@/app/data/products'
 
 import { getProducts, getCategories } from '@/lib/api_product'
@@ -14,14 +15,22 @@ export default function ProductGrid({ initialProducts = [], categories = [] }) {
   const [products, setProducts] = useState(initialProducts)
   const [active, setActive] = useState('All')
   const [notified, setNotified] = useState({})
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 8
 
   // Props change হলে sync করো
   useEffect(() => { setProducts(initialProducts) }, [initialProducts])
+  
+  // Reset page when category changes
+  useEffect(() => { setCurrentPage(1) }, [active])
 
   const filtered =
     active === 'All'      ? products
     : active === 'On Sale'  ? products.filter(p => p.onSale)
     : products.filter(p => p.category === active) 
+
+  const totalPages = Math.ceil(filtered.length / itemsPerPage)
+  const paginatedProducts = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
 
   return (
     <section className="bg-[var(--section-color)] pb-12 md:pb-20">
@@ -90,7 +99,7 @@ export default function ProductGrid({ initialProducts = [], categories = [] }) {
         {/* ── Product grid ─────────────────────────────── */}
         {/* Mobile: 2 cols | Desktop: 3-4 cols */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-5">
-          {filtered.map((p) => (
+          {paginatedProducts.map((p) => (
             <ProductCard
               key={p.id}
               product={p}
@@ -104,6 +113,40 @@ export default function ProductGrid({ initialProducts = [], categories = [] }) {
           <p className="py-20 text-center" style={{ color: '#6D7A73', fontSize: '14px' }}>
             No products in this category.
           </p>
+        )}
+
+        {totalPages > 1 && (
+          <div className="flex justify-center items-center mt-10 gap-2">
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="p-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <div className="flex gap-1">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setCurrentPage(p)}
+                  className={`w-9 h-9 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
+                    currentPage === p
+                      ? 'bg-[#00694C] text-white shadow-sm'
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              className="p-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronRight size={18} />
+            </button>
+          </div>
         )}
       </div>
     </section>

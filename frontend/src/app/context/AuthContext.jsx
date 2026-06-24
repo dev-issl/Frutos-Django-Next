@@ -2,6 +2,7 @@
 // src/app/context/AuthContext.jsx
 
 import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react'
+import { signOut } from 'next-auth/react'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'
 
@@ -46,27 +47,52 @@ export function AuthProvider({ children }) {
     } catch { /* ignore decode errors */ }
   }
 
+  const isRefreshingRef = useRef(false);
+  const refreshPromiseRef = useRef(null);
+
   const refreshAccessToken = useCallback(async () => {
     const refresh = getRefresh()
     if (!refresh) { setUser(null); setLoading(false); return }
 
-    try {
-      const res  = await fetch(`${API_BASE}/auth/token/refresh/`, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ refresh }),
-      })
-      if (!res.ok) throw new Error('refresh failed')
+    if (isRefreshingRef.current && refreshPromiseRef.current) {
+      try {
+        await refreshPromiseRef.current;
+        return;
+      } catch (err) {
+        // Fall through or ignore
+      }
+    }
 
-      const data = await res.json()
-      storeTokens(data.access, data.refresh || refresh)
-      scheduleRefresh(data.access)
-      // Decode user from new token
-      const payload = JSON.parse(atob(data.access.split('.')[1]))
-      setUser(prev => prev ? { ...prev, _tokenPayload: payload } : null)
+    isRefreshingRef.current = true;
+    refreshPromiseRef.current = (async () => {
+      try {
+        const res  = await fetch(`${API_BASE}/auth/token/refresh/`, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ refresh }),
+        })
+        if (!res.ok) throw new Error('refresh failed')
+
+        const data = await res.json()
+        storeTokens(data.access, data.refresh || refresh)
+        scheduleRefresh(data.access)
+        // Decode user from new token
+        const payload = JSON.parse(atob(data.access.split('.')[1]))
+        setUser(prev => prev ? { ...prev, _tokenPayload: payload } : null)
+      } catch (err) {
+        clearTokens()
+        setUser(null)
+        throw err;
+      } finally {
+        isRefreshingRef.current = false;
+        setTimeout(() => { refreshPromiseRef.current = null; }, 5000);
+      }
+    })();
+
+    try {
+      await refreshPromiseRef.current;
     } catch {
-      clearTokens()
-      setUser(null)
+      // already handled
     }
   }, [])
 
@@ -122,6 +148,14 @@ export function AuthProvider({ children }) {
     }
 
     if (!res.ok) throw new Error(data.detail || data.non_field_errors?.[0] || data.error || 'Login failed')
+
+    if (data.user && (data.user.user_type === 'ADMIN' || data.user.user_type === 'STAFF')) {
+      throw new Error('Admin and staff cannot log in from the website. Use the dashboard.')
+    }
+
+    try {
+      await signOut({ redirect: false })
+    } catch (err) { /* ignore */ }
 
     storeTokens(data.access, data.refresh)
     scheduleRefresh(data.access)

@@ -34,7 +34,7 @@ export default function ProfileSidebar({ activeTab, setActiveTab, tabs, onLogout
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex-shrink-0 flex items-center gap-2 md:gap-3 px-4 py-2 md:px-6 md:py-3 text-sm font-medium transition-all duration-200 cursor-pointer rounded-full md:rounded-r-full md:rounded-l-none ${
+                  className={`flex-shrink-0 flex items-center gap-2 md:gap-3 px-3 py-1.5 md:px-4 md:py-2.5 text-[13px] md:text-sm font-medium transition-all duration-200 cursor-pointer rounded-full md:rounded-r-full md:rounded-l-none ${
                     isActive 
                       ? 'bg-[#e8f5e9] text-[#085041]' 
                       : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50/50'
@@ -50,7 +50,7 @@ export default function ProfileSidebar({ activeTab, setActiveTab, tabs, onLogout
 
             <button
               onClick={onLogout}
-              className="flex-shrink-0 flex items-center gap-2 md:gap-3 px-4 py-2 md:px-6 md:py-3 text-sm font-medium transition-all duration-200 cursor-pointer rounded-full md:rounded-r-full md:rounded-l-none text-gray-500 hover:text-red-600 hover:bg-red-50"
+              className="flex-shrink-0 flex items-center gap-2 md:gap-3 px-3 py-1.5 md:px-4 md:py-2.5 text-[13px] md:text-sm font-medium transition-all duration-200 cursor-pointer rounded-full md:rounded-r-full md:rounded-l-none text-gray-500 hover:text-red-600 hover:bg-red-50"
             >
               <span className="text-gray-400">
                 <LogOut size={18} />

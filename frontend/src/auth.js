@@ -150,24 +150,48 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     secret: process.env.AUTH_SECRET,
 })
 
+let isRefreshing = false;
+let refreshPromise = null;
+
 async function refreshAccessToken(token) {
+    if (isRefreshing && refreshPromise) {
+        try {
+            const data = await refreshPromise;
+            return Object.assign({}, token, {
+                accessToken: data.access,
+                refreshToken: data.refresh || token.refreshToken,
+                accessTokenExpiry: Date.now() + 55 * 60 * 1000,
+                error: undefined,
+            });
+        } catch (err) {
+            return Object.assign({}, token, { error: 'RefreshAccessTokenError' });
+        }
+    }
+
+    isRefreshing = true;
+    refreshPromise = fetch(WHOLESALE_BASE + '/auth/refresh/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh: token.refreshToken }),
+    }).then(async (res) => {
+        if (!res.ok) throw new Error('Refresh failed');
+        return await res.json();
+    });
+
     try {
-        const res = await fetch(WHOLESALE_BASE + '/auth/refresh/', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ refresh: token.refreshToken }),
-        })
-
-        if (!res.ok) throw new Error('Refresh failed')
-
-        const data = await res.json()
+        const data = await refreshPromise;
         return Object.assign({}, token, {
             accessToken: data.access,
             refreshToken: data.refresh || token.refreshToken,
             accessTokenExpiry: Date.now() + 55 * 60 * 1000,
             error: undefined,
-        })
+        });
     } catch (err) {
-        return Object.assign({}, token, { error: 'RefreshAccessTokenError' })
+        return Object.assign({}, token, { error: 'RefreshAccessTokenError' });
+    } finally {
+        isRefreshing = false;
+        // Keep the promise for a short grace period (e.g. 10 seconds)
+        // just in case of slightly delayed concurrent requests
+        setTimeout(() => { refreshPromise = null; }, 10000);
     }
 }

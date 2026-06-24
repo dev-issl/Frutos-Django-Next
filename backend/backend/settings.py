@@ -552,6 +552,7 @@ CSRF_COOKIE_HTTPONLY = True  # Prevents JavaScript access to CSRF cookie
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
+        'wholesale.authentication.WholesaleJWTAuthentication',
         'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ],

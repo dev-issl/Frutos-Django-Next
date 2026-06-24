@@ -430,6 +430,34 @@ class OrderViewSet(viewsets.ModelViewSet):
         
         return [permission() for permission in permission_classes]
 
+    def check_permissions(self, request):
+        super().check_permissions(request)
+        user = request.user
+        if not user or not user.is_authenticated:
+            return
+
+        # ── STAFF ONLY: check StaffProfile order permissions ──────────────
+        # This runs EXCLUSIVELY for users with user_type == 'STAFF'.
+        # Admins (user_type='ADMIN' or is_superuser=True) are NEVER affected.
+        user_type = str(getattr(user, 'user_type', '') or '').upper()
+        if user_type != 'STAFF':
+            return
+
+        try:
+            profile = user.staff_profile
+        except Exception:
+            return
+
+        if self.action in ['create', 'confirm_payment', 'submit_order']:
+            if not profile.can_create_orders:
+                self.permission_denied(request, message="You do not have permission to create orders.")
+        elif self.action in ['update', 'partial_update']:
+            if not profile.can_update_orders:
+                self.permission_denied(request, message="You do not have permission to update orders.")
+        elif self.action == 'destroy':
+            if not profile.can_delete_orders:
+                self.permission_denied(request, message="You do not have permission to delete orders.")
+
     def get_queryset(self):
         """
         Custom queryset logic:
@@ -463,10 +491,10 @@ class OrderViewSet(viewsets.ModelViewSet):
         # API: filter by user id if provided
         if user_param:
             # Security check: only allow admin to fetch any user's orders, or users to fetch their own
+            # NOTE: STAFF users are explicitly excluded from admin access — they have their own permission system
             is_admin = not is_wholesale_token and user.is_authenticated and (
-                (hasattr(user, 'user_type') and user.user_type == 'ADMIN') or 
-                user.is_superuser or 
-                user.is_staff
+                (hasattr(user, 'user_type') and user.user_type == 'ADMIN' and getattr(user, 'user_type', '') != 'STAFF') or 
+                (user.is_superuser and getattr(user, 'user_type', '') != 'STAFF')
             )
             
             if is_admin:
@@ -485,10 +513,10 @@ class OrderViewSet(viewsets.ModelViewSet):
         elif order_number_param:
             queryset = queryset.filter(order_number=order_number_param)
             # Additional security: non-admin users can only see their own orders
+            # NOTE: STAFF users are explicitly excluded — they have their own permission system
             is_admin = not is_wholesale_token and user.is_authenticated and (
-                (hasattr(user, 'user_type') and user.user_type == 'ADMIN') or 
-                user.is_superuser or 
-                user.is_staff
+                (hasattr(user, 'user_type') and user.user_type == 'ADMIN' and getattr(user, 'user_type', '') != 'STAFF') or 
+                (user.is_superuser and getattr(user, 'user_type', '') != 'STAFF')
             )
             if not is_admin:
                 if is_wholesale_token:
@@ -504,14 +532,17 @@ class OrderViewSet(viewsets.ModelViewSet):
                 return queryset
 
             # Check if user is admin
+            # NOTE: STAFF users are explicitly excluded from admin access — they use staff-specific permission checks
             is_admin = not is_wholesale_token and user.is_authenticated and (
-                (hasattr(user, 'user_type') and user.user_type == 'ADMIN') or 
-                user.is_superuser or 
-                user.is_staff
+                (hasattr(user, 'user_type') and user.user_type == 'ADMIN' and getattr(user, 'user_type', '') != 'STAFF') or 
+                (user.is_superuser and getattr(user, 'user_type', '') != 'STAFF')
             )
             
-            if is_admin:
-                # Admin can see all orders
+            # STAFF users can see all orders (for tracking/managing), but only through staff permission system
+            is_staff_user = user.is_authenticated and getattr(user, 'user_type', '') == 'STAFF'
+            
+            if is_admin or is_staff_user:
+                # Admin or staff can see all orders
                 return queryset.order_by('-ordered_at')
             
             if is_wholesale_token:
@@ -1069,7 +1100,7 @@ class ShippingMethodViewSet(viewsets.ModelViewSet):
         # Public endpoint only shows active methods
         if not (self.request.user and self.request.user.is_authenticated
                 and hasattr(self.request.user, 'user_type')
-                and self.request.user.user_type == 'ADMIN'):
+                and self.request.user.user_type in ['ADMIN', 'STAFF']):
             qs = qs.filter(is_active=True)
         return qs
 
@@ -1301,7 +1332,7 @@ class CouponViewSet(viewsets.ModelViewSet):
         is_admin = (
             user.is_staff or
             user.is_superuser or
-            getattr(user, 'user_type', '') in ['ADMIN', 'SELLER']
+            getattr(user, 'user_type', '') in ['ADMIN', 'STAFF', 'SELLER']
         )
         if user.is_authenticated and is_admin:
             return Coupon.objects.all().order_by('-created_at')

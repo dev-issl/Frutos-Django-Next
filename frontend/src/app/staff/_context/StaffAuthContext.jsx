@@ -5,8 +5,8 @@ import { useRouter, usePathname } from "next/navigation";
 import api from "@/app/dashboard/_lib/api";
 
 // We'll reuse the auth mechanism but ensure user_type is STAFF
-const TOKEN_KEY = "admin_access_token";
-const REFRESH_KEY = "admin_refresh_token";
+const TOKEN_KEY = "staff_access_token";
+const REFRESH_KEY = "staff_refresh_token";
 const STAFF_USER_KEY = "icommerce_staff_user";
 
 const StaffAuthContext = createContext(null);

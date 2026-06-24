@@ -44,3 +44,6 @@ class WholesaleJWTAuthentication(BaseAuthentication):
             raise AuthenticationFailed('Token expired. Please log in again.')  # ← was: return None
         except WholesaleUser.DoesNotExist:
             raise AuthenticationFailed('User not found.')  # ← was: return None
+
+    def authenticate_header(self, request):
+        return 'Bearer realm="api"'

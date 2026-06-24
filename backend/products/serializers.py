@@ -118,7 +118,9 @@ class ReviewCreateSerializer(serializers.ModelSerializer):
         user = request.user
         product = attrs.get('product')
 
-        if user.is_staff or getattr(user, 'user_type', '') == 'ADMIN':
+        # Only true admins (superuser or ADMIN user_type) can bypass purchase check
+        # NOTE: STAFF users must go through the same review purchase check
+        if user.is_superuser or getattr(user, 'user_type', '') == 'ADMIN':
             return attrs
 
         has_purchased = OrderItem.objects.filter(
@@ -186,22 +188,34 @@ class ProductSerializer(serializers.ModelSerializer):
             return {"can_review": False, "message": "Please log in to submit a review."}
         
         user = request.user
-        if user.is_staff or getattr(user, 'user_type', '') == 'ADMIN':
+        # Only true admins (superuser or ADMIN user_type) can bypass purchase check
+        # NOTE: STAFF users are NOT treated as admin
+        if getattr(user, 'is_superuser', False) or getattr(user, 'user_type', '') == 'ADMIN':
             return {"can_review": True, "message": ""}
             
-        has_purchased = OrderItem.objects.filter(
-            Q(order__user=user) | Q(order__wholesale_user=user) | Q(order__customer_email=user.email),
-            order__status='DELIVERED',
-            product=obj
-        ).exists()
-        
-        if not has_purchased:
-            return {"can_review": False, "message": "You can only review products you have purchased and received."}
+        if user.__class__.__name__ == 'WholesaleUser':
+            has_purchased = OrderItem.objects.filter(
+                order__customer_email=user.email,
+                order__status='DELIVERED',
+                product=obj
+            ).exists()
+            if not has_purchased:
+                return {"can_review": False, "message": "You can only review products you have purchased and received."}
+            return {"can_review": True, "message": ""}
+        else:
+            has_purchased = OrderItem.objects.filter(
+                Q(order__user=user) | Q(order__wholesale_user=user) | Q(order__customer_email=user.email),
+                order__status='DELIVERED',
+                product=obj
+            ).exists()
             
-        if Review.objects.filter(user=user, product=obj).exists():
-            return {"can_review": False, "message": "You have already reviewed this product."}
-            
-        return {"can_review": True, "message": ""}
+            if not has_purchased:
+                return {"can_review": False, "message": "You can only review products you have purchased and received."}
+                
+            if Review.objects.filter(user=user, product=obj).exists():
+                return {"can_review": False, "message": "You have already reviewed this product."}
+                
+            return {"can_review": True, "message": ""}
 
     def to_representation(self, instance):
         """
@@ -220,9 +234,11 @@ class ProductSerializer(serializers.ModelSerializer):
         
         # Check if user is authenticated and get wholesaler info
         if (request and hasattr(request, 'user') and request.user and request.user.is_authenticated):
-            if request.user.is_staff or getattr(request.user, 'user_type', '') == 'ADMIN':
+            # Only superusers and ADMIN user_type are treated as admin
+            # NOTE: STAFF users are NOT admin
+            if request.user.is_superuser or getattr(request.user, 'user_type', '') == 'ADMIN':
                 user_context['is_admin'] = True
-            elif request.user.user_type == 'WHOLESALER':
+            elif getattr(request.user, 'user_type', '') == 'WHOLESALER' or request.user.__class__.__name__ == 'WholesaleUser':
                 user_context['is_wholesaler'] = True
                 # Check wholesaler approval status
                 try:
@@ -230,6 +246,10 @@ class ProductSerializer(serializers.ModelSerializer):
                         profile = request.user.wholesaler_profile
                         user_context['wholesaler_status'] = profile.approval_status
                         if profile.approval_status == 'APPROVED':
+                            user_context['is_approved_wholesaler'] = True
+                    elif hasattr(request.user, 'is_approved'):
+                        user_context['wholesaler_status'] = getattr(request.user, 'status', 'PENDING').upper()
+                        if request.user.is_approved:
                             user_context['is_approved_wholesaler'] = True
                 except:
                     # If wholesaler_profile doesn't exist, user is not approved

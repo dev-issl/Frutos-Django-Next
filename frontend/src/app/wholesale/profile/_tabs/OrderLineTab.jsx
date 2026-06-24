@@ -22,7 +22,7 @@ export default function OrderLineTab({ accessToken }) {
   const [orderNumber] = useState(`ORD-${Math.floor(Math.random() * 10000)}`)
 
   const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 6
+  const itemsPerPage = 9
 
   // Reset page when category or search changes
   useEffect(() => {
@@ -68,14 +68,14 @@ export default function OrderLineTab({ accessToken }) {
       const existing = prev.find(item => item.id === product.id)
       const step = parseInt(product.minimum_purchase) || parseInt(product.minWholesaleQty) || 1
       const stock = product.inStock || 0
-      
+
       if (existing) {
         return prev.map(item => item.id === product.id ? { ...item, quantity: Math.min(item.quantity + step, stock) } : item)
       }
-      
+
       const initialQty = Math.min(step, stock)
       if (initialQty <= 0) return prev
-      
+
       return [...prev, { ...product, quantity: initialQty }]
     })
   }
@@ -103,7 +103,7 @@ export default function OrderLineTab({ accessToken }) {
     }
     const num = parseInt(value)
     if (isNaN(num)) return
-    
+
     if (num <= 0) {
       removeFromCart(productId)
       return
@@ -131,13 +131,13 @@ export default function OrderLineTab({ accessToken }) {
   }
 
   const subtotal = cart.reduce((sum, item) => sum + (getDisplayPrice(item) * (parseInt(item.quantity) || 0)), 0)
-  
+
   // Calculate tax per product using its individual tax_rate (defaulting to 5% if missing)
   const tax = cart.reduce((sum, item) => {
     const itemTaxRate = item.tax_rate ? parseFloat(item.tax_rate) / 100 : 0.05
     return sum + (getDisplayPrice(item) * (parseInt(item.quantity) || 0) * itemTaxRate)
   }, 0)
-  
+
   const effectiveTaxRate = subtotal > 0 ? (tax / subtotal * 100) : 0
   const total = subtotal + tax
 
@@ -167,24 +167,24 @@ export default function OrderLineTab({ accessToken }) {
       <div className="flex-1 flex flex-col min-h-0 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
 
         {/* Top Search Bar */}
-        <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-white z-10">
+        <div className="px-3 py-2 border-b border-gray-100 flex justify-between items-center bg-white z-10">
           <div className="relative w-full max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
             <input
               type="text"
               placeholder="Search products..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#085041]/20 focus:border-[#085041] transition-all"
+              className="w-full pl-8 pr-3 py-1.5 bg-gray-50 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#085041]/20 focus:border-[#085041] transition-all"
             />
           </div>
         </div>
 
         {/* Categories Tabs */}
-        <div className="px-4 py-3 border-b border-gray-100 bg-white flex flex-wrap gap-3 z-10">
+        <div className="px-3 py-2 border-b border-gray-100 bg-white flex flex-wrap gap-2 z-10">
           <button
             onClick={() => setActiveCategory('All')}
-            className={`whitespace-nowrap px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${activeCategory === 'All'
+            className={`whitespace-nowrap px-3 py-1.5 rounded-md text-[13px] font-medium transition-colors cursor-pointer ${activeCategory === 'All'
               ? 'bg-[#085041] text-white'
               : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
               }`}
@@ -200,7 +200,7 @@ export default function OrderLineTab({ accessToken }) {
               <button
                 key={idx}
                 onClick={() => setActiveCategory(catName)}
-                className={`whitespace-nowrap px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${activeCategory === catName
+                className={`whitespace-nowrap px-3 py-1.5 rounded-md text-[13px] font-medium transition-colors cursor-pointer ${activeCategory === catName
                   ? 'bg-[#085041] text-white'
                   : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
                   }`}
@@ -212,7 +212,7 @@ export default function OrderLineTab({ accessToken }) {
         </div>
 
         {/* Product Grid */}
-        <div className="flex-1 overflow-y-auto p-4 bg-gray-50/30">
+        <div className="flex-1 overflow-y-auto p-3 bg-gray-50/30">
           {loading ? (
             <div className="flex justify-center items-center h-40">
               <div className="w-8 h-8 border-4 border-[#085041] border-t-transparent rounded-full animate-spin"></div>
@@ -221,112 +221,105 @@ export default function OrderLineTab({ accessToken }) {
             <div className="text-center text-gray-500 py-10">No products found.</div>
           ) : (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-5">
+              <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))' }}>
                 {paginatedProducts.map((product) => {
-                const qty = getQuantityInCart(product.id)
-                const isSelected = qty > 0
-                const step = parseInt(product.minimum_purchase) || parseInt(product.minWholesaleQty) || 1
-                const stock = product.inStock || 0
-                const canAddMore = (qty + step) <= stock
-                return (
-                  <div key={product.id} className={`bg-white rounded-2xl border transition-all duration-300 flex flex-col h-full overflow-hidden group ${isSelected ? 'border-[#085041] shadow-[0_4px_16px_rgb(8,80,65,0.08)] ring-1 ring-[#085041]/20' : 'border-gray-100 shadow-sm hover:shadow-md hover:border-gray-200'}`}>
+                  const qty = getQuantityInCart(product.id)
+                  const isSelected = qty > 0
+                  const step = parseInt(product.minimum_purchase) || parseInt(product.minWholesaleQty) || 1
+                  const stock = product.inStock || 0
+                  const canAddMore = (qty + step) <= stock
+                  return (
+                    <div key={product.id} className={`bg-white rounded-xl border transition-all duration-300 flex flex-row h-[88px] overflow-hidden group ${isSelected ? 'border-[#085041] shadow-sm ring-1 ring-[#085041]/10' : 'border-gray-200 shadow-sm hover:shadow hover:border-gray-300'}`}>
 
-                    {/* Image Area */}
-                    <div className="relative w-full aspect-[5/3] sm:aspect-[16/10] bg-[#f8faf9] overflow-hidden group-hover:bg-[#f1f5f3] transition-colors duration-300 shrink-0">
-                      {product.image_url || product.image ? (
-                        <Image 
-                          src={product.image_url || product.image} 
-                          alt={product.name || product.title} 
-                          fill 
-                          className="object-contain mix-blend-multiply p-6 transition-transform duration-500 group-hover:scale-105" 
-                          sizes="(max-width: 768px) 100vw, 33vw" 
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-xs text-[#085041]/60 bg-[#e8f5e9]/50 font-medium">No Image</div>
-                      )}
-                      
-                      {/* Optional Badge */}
-                      {product.discount_price && parseFloat(product.discount_price) < parseFloat(product.price) && (
-                        <div className="absolute top-3 left-3 bg-[#D32F2F] text-white text-[10px] font-bold px-2.5 py-1 rounded-md tracking-wider uppercase shadow-sm">
-                          Sale
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Content Area */}
-                    <div className="p-2.5 sm:p-3 flex flex-col flex-1 bg-white">
-                      <div className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-1">
-                        {typeof product.category === 'string' ? product.category : product.category?.name || 'Category'}
+                      {/* Image Area (Left) */}
+                      <div className="relative w-[88px] h-full bg-[#f8faf9] shrink-0 border-r border-gray-100 flex items-center justify-center overflow-hidden">
+                        {product.image_url || product.image ? (
+                          <Image
+                            src={product.image_url || product.image}
+                            alt={product.name || product.title}
+                            fill
+                            className="object-contain mix-blend-multiply p-2 transition-transform duration-300 group-hover:scale-105"
+                            sizes="88px"
+                          />
+                        ) : (
+                          <div className="text-[9px] text-[#085041]/50 font-medium">No Image</div>
+                        )}
+                        {product.discount_price && parseFloat(product.discount_price) < parseFloat(product.price) && (
+                          <div className="absolute top-0 left-0 bg-[#D32F2F] text-white text-[8px] font-bold px-1.5 py-0.5 rounded-br-md tracking-wider uppercase shadow-sm">
+                            Sale
+                          </div>
+                        )}
                       </div>
-                      <h4 className="font-semibold text-gray-900 text-[14px] sm:text-[15px] leading-tight mb-2 line-clamp-2 transition-colors group-hover:text-[#085041]">
-                        {product.name || product.title}
-                      </h4>
 
-                      <div className="mt-auto flex flex-col gap-2">
-                        {/* Price Area */}
-                        <div className="flex items-baseline gap-2">
-                          <span className="font-bold text-gray-900 text-[16px] sm:text-[18px] leading-none">
+                      {/* Content Area (Middle) */}
+                      <div className="flex flex-col justify-center flex-1 min-w-0 pl-3 py-2">
+                        <div className="text-[9px] font-bold uppercase tracking-wider text-gray-400 mb-0.5 truncate">
+                          {typeof product.category === 'string' ? product.category : product.category?.name || 'Category'}
+                        </div>
+                        <h4 className="font-semibold text-gray-800 text-[13px] leading-tight truncate mb-1 group-hover:text-[#085041]" title={product.name || product.title}>
+                          {product.name || product.title}
+                        </h4>
+                        <div className="flex items-baseline gap-1 truncate">
+                          <span className="font-extrabold text-[#085041] text-[14px] leading-none">
                             €{getDisplayPrice(product).toFixed(2)}
                           </span>
-                          {product.discount_price && parseFloat(product.discount_price) < parseFloat(product.price) && (
-                            <span className="text-xs text-gray-400 line-through decoration-gray-300 decoration-1">
-                              €{parseFloat(product.price).toFixed(2)}
-                            </span>
-                          )}
-                          {getDisplayUnit(product) && <span className="text-[11px] text-gray-500 font-medium ml-auto">/ {getDisplayUnit(product)}</span>}
-                        </div>
-
-                        {/* Controls */}
-                        <div className={`pt-2 border-t ${isSelected ? 'border-[#085041]/10' : 'border-gray-50'}`}>
-                          {isSelected ? (
-                            <div className="flex items-center w-full justify-between bg-gray-50/80 rounded-xl p-1 border border-gray-100">
-                              <button
-                                onClick={() => qty > step && updateQuantity(product.id, -1)}
-                                disabled={qty <= step}
-                                className={`w-7 h-7 shrink-0 flex items-center justify-center rounded-lg transition-colors ${qty > step ? 'bg-white text-gray-700 shadow-sm cursor-pointer hover:bg-gray-100 border border-gray-200' : 'text-gray-300 cursor-not-allowed bg-transparent'}`}
-                              >
-                                <Minus size={14} strokeWidth={2.5} />
-                              </button>
-
-                              <input
-                                type="text"
-                                value={qty}
-                                onChange={(e) => setExactQuantity(product.id, e.target.value)}
-                                onBlur={() => {
-                                  if (qty === '' || parseInt(qty) < step) {
-                                    setExactQuantity(product.id, step)
-                                  }
-                                }}
-                                className="w-12 text-[14px] font-bold text-center leading-none bg-transparent outline-none border-none p-0 text-[#085041]"
-                              />
-
-                              <button
-                                onClick={() => updateQuantity(product.id, 1)}
-                                disabled={!canAddMore}
-                                title={!canAddMore ? "Stock limit reached" : ""}
-                                className={`w-7 h-7 shrink-0 flex items-center justify-center rounded-lg transition-all shadow-sm ${canAddMore
-                                  ? 'bg-[#085041] text-white hover:bg-[#064034] cursor-pointer'
-                                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                                  }`}
-                              >
-                                <Plus size={14} strokeWidth={2.5} />
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              onClick={() => addToCart(product)}
-                              className="w-full flex items-center justify-center gap-2 bg-white border-2 border-gray-100 hover:border-[#085041] text-gray-700 hover:text-[#085041] rounded-xl py-1.5 text-sm font-semibold transition-all duration-200 cursor-pointer"
-                            >
-                              <Plus size={16} strokeWidth={2.5} />
-                              Add to Order
-                            </button>
-                          )}
+                          {getDisplayUnit(product) && <span className="text-[9px] text-gray-500 font-medium truncate">/ {getDisplayUnit(product)}</span>}
                         </div>
                       </div>
+
+                      {/* Controls Area (Right) */}
+                      <div className="flex items-center justify-center shrink-0 pr-3 pl-1">
+                        {isSelected ? (
+                          <div className="flex items-center bg-gray-50 rounded-lg p-0.5 border border-gray-200">
+                            <button
+                              onClick={() => qty > step && updateQuantity(product.id, -1)}
+                              disabled={qty <= step}
+                              className={`w-6 h-6 shrink-0 flex items-center justify-center rounded-md transition-colors ${qty > step ? 'bg-white text-gray-700 shadow-sm cursor-pointer hover:bg-gray-100' : 'text-gray-300 cursor-not-allowed bg-transparent'}`}
+                            >
+                              <Minus size={12} strokeWidth={2.5} />
+                            </button>
+
+                            <input
+                              type="text"
+                              value={qty}
+                              onChange={(e) => setExactQuantity(product.id, e.target.value)}
+                              onBlur={() => {
+                                if (qty === '' || parseInt(qty) < step) {
+                                  setExactQuantity(product.id, step)
+                                }
+                              }}
+                              className="w-8 text-[12px] font-bold text-center leading-none bg-transparent outline-none border-none p-0 text-[#085041]"
+                            />
+
+                            <button
+                              onClick={() => canAddMore && updateQuantity(product.id, 1)}
+                              disabled={!canAddMore}
+                              className={`w-6 h-6 shrink-0 flex items-center justify-center rounded-md transition-colors ${canAddMore ? 'bg-[#085041] text-white shadow-sm cursor-pointer hover:bg-[#064034]' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
+                            >
+                              <Plus size={12} strokeWidth={2.5} />
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => addToCart(product, step)}
+                            disabled={stock < step}
+                            className={`px-3 py-1.5 text-[11px] font-bold rounded-lg flex items-center justify-center gap-1 transition-all duration-200 ${stock < step
+                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                : 'bg-[#085041]/10 text-[#085041] cursor-pointer hover:bg-[#085041] hover:text-white hover:shadow-md'
+                              }`}
+                          >
+                            {stock < step ? 'Out of Stock' : (
+                              <>
+                                <Plus size={12} strokeWidth={3} />
+                                <span>Add</span>
+                              </>
+                            )}
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )
-              })}
+                  )
+                })}
               </div>
 
               {totalPages > 1 && (
@@ -338,7 +331,7 @@ export default function OrderLineTab({ accessToken }) {
                   >
                     <ChevronLeft size={18} />
                   </button>
-                  
+
                   <div className="flex gap-1">
                     {Array.from({ length: totalPages }, (_, i) => i + 1)
                       .filter(p => p === 1 || p === totalPages || Math.abs(currentPage - p) <= 1)
@@ -354,11 +347,10 @@ export default function OrderLineTab({ accessToken }) {
                           <button
                             key={p}
                             onClick={() => setCurrentPage(p)}
-                            className={`w-9 h-9 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
-                              currentPage === p
-                                ? 'bg-[#085041] text-white shadow-sm'
-                                : 'text-gray-600 hover:bg-gray-100'
-                            }`}
+                            className={`w-9 h-9 rounded-lg text-sm font-medium transition-colors cursor-pointer ${currentPage === p
+                              ? 'bg-[#085041] text-white shadow-sm'
+                              : 'text-gray-600 hover:bg-gray-100'
+                              }`}
                           >
                             {p}
                           </button>
@@ -382,100 +374,102 @@ export default function OrderLineTab({ accessToken }) {
       </div>
 
       {/* Right Sidebar - Cart */}
-      <div className="w-full lg:w-80 flex-shrink-0 bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col h-[600px] lg:h-auto">
-        <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-[#085041] text-white rounded-t-xl">
-          <div>
-            <h3 className="font-semibold text-lg">Current Order</h3>
-            <p className="text-white/70 text-xs">Order {orderNumber}</p>
-          </div>
-          <div className="bg-white/20 px-3 py-1 rounded-full text-xs font-medium">
-            {cart.reduce((s, i) => s + i.quantity, 0)} Items
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {cart.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-gray-400 space-y-2">
-              <ShoppingCart size={48} className="opacity-20" />
-              <p className="text-sm">No items in order</p>
+      {cart.length > 0 && (
+        <div className="w-full lg:w-80 flex-shrink-0 bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col h-[600px] lg:h-auto animate-in slide-in-from-right-8 fade-in duration-500">
+          <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-[#085041] text-white rounded-t-xl">
+            <div>
+              <h3 className="font-semibold text-lg">Current Order</h3>
+              <p className="text-white/70 text-xs">Order {orderNumber}</p>
             </div>
-          ) : (
-            cart.map(item => {
-              const step = parseInt(item.minimum_purchase) || parseInt(item.minWholesaleQty) || 1
-              const stock = item.inStock || 0
-              const canAddMore = (item.quantity + step) <= stock
-              const canDecrease = item.quantity > step
-              return (
-                <div key={item.id} className="flex gap-3">
-                  <div className="w-12 h-12 rounded-lg bg-gray-100 overflow-hidden relative flex-shrink-0">
-                    {(item.image_url || item.image) && <Image src={item.image_url || item.image} alt={item.name || item.title} fill className="object-contain mix-blend-multiply p-1" />}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h5 className="text-sm font-medium text-gray-900 line-clamp-1">{item.name || item.title}</h5>
-                    <p className="text-xs text-gray-500">
-                      €{getDisplayPrice(item).toFixed(2)}
-                      {getDisplayUnit(item) ? <span className="text-gray-400"> / {getDisplayUnit(item)}</span> : ''}
-                    </p>
-                  </div>
-                  <div className="flex flex-col items-end gap-1">
-                    <span className="text-sm font-bold text-gray-900">€{(getDisplayPrice(item) * item.quantity).toFixed(2)}</span>
-                    <div className="flex items-center gap-2 bg-gray-50 rounded-full p-1 px-2 border border-gray-100">
-                      {canDecrease ? (
-                        <button onClick={() => updateQuantity(item.id, -1)} className="text-gray-400 hover:text-red-500 transition-colors cursor-pointer">
-                          <Minus size={12} strokeWidth={2.5} />
+            <div className="bg-white/20 px-3 py-1 rounded-full text-xs font-medium">
+              {cart.reduce((s, i) => s + i.quantity, 0)} Items
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {cart.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-gray-400 space-y-2">
+                <ShoppingCart size={48} className="opacity-20" />
+                <p className="text-sm">No items in order</p>
+              </div>
+            ) : (
+              cart.map(item => {
+                const step = parseInt(item.minimum_purchase) || parseInt(item.minWholesaleQty) || 1
+                const stock = item.inStock || 0
+                const canAddMore = (item.quantity + step) <= stock
+                const canDecrease = item.quantity > step
+                return (
+                  <div key={item.id} className="flex gap-3">
+                    <div className="w-12 h-12 rounded-lg bg-gray-100 overflow-hidden relative flex-shrink-0">
+                      {(item.image_url || item.image) && <Image src={item.image_url || item.image} alt={item.name || item.title} fill className="object-contain mix-blend-multiply p-1" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h5 className="text-sm font-medium text-gray-900 line-clamp-1">{item.name || item.title}</h5>
+                      <p className="text-xs text-gray-500">
+                        €{getDisplayPrice(item).toFixed(2)}
+                        {getDisplayUnit(item) ? <span className="text-gray-400"> / {getDisplayUnit(item)}</span> : ''}
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-end gap-1">
+                      <span className="text-sm font-bold text-gray-900">€{(getDisplayPrice(item) * item.quantity).toFixed(2)}</span>
+                      <div className="flex items-center gap-2 bg-gray-50 rounded-full p-1 px-2 border border-gray-100">
+                        {canDecrease ? (
+                          <button onClick={() => updateQuantity(item.id, -1)} className="text-gray-400 hover:text-red-500 transition-colors cursor-pointer">
+                            <Minus size={12} strokeWidth={2.5} />
+                          </button>
+                        ) : (
+                          <button onClick={() => removeFromCart(item.id)} className="text-red-400 hover:text-red-600 transition-colors cursor-pointer">
+                            <Trash2 size={12} strokeWidth={2.5} />
+                          </button>
+                        )}
+                        <span className="text-xs font-bold min-w-[24px] text-center flex items-baseline justify-center gap-0.5">
+                          {item.quantity}
+                          {getDisplayUnit(item) && <span className="text-[9px] font-medium text-gray-500 uppercase tracking-wider">{getDisplayUnit(item)}</span>}
+                        </span>
+                        <button
+                          onClick={() => updateQuantity(item.id, 1)}
+                          disabled={!canAddMore}
+                          title={!canAddMore ? "Stock limit reached" : ""}
+                          className={canAddMore ? "text-gray-400 hover:text-[#085041]" : "text-gray-300 cursor-not-allowed"}
+                        >
+                          <Plus size={14} />
                         </button>
-                      ) : (
-                        <button onClick={() => removeFromCart(item.id)} className="text-red-400 hover:text-red-600 transition-colors cursor-pointer">
-                          <Trash2 size={12} strokeWidth={2.5} />
-                        </button>
-                      )}
-                      <span className="text-xs font-bold min-w-[24px] text-center flex items-baseline justify-center gap-0.5">
-                        {item.quantity}
-                        {getDisplayUnit(item) && <span className="text-[9px] font-medium text-gray-500 uppercase tracking-wider">{getDisplayUnit(item)}</span>}
-                      </span>
-                      <button
-                        onClick={() => updateQuantity(item.id, 1)}
-                        disabled={!canAddMore}
-                        title={!canAddMore ? "Stock limit reached" : ""}
-                        className={canAddMore ? "text-gray-400 hover:text-[#085041]" : "text-gray-300 cursor-not-allowed"}
-                      >
-                        <Plus size={14} />
-                      </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )
-            })
-          )}
-        </div>
-
-        <div className="p-4 border-t border-gray-100 bg-gray-50 rounded-b-xl">
-          <div className="space-y-2 mb-4 text-sm">
-            <div className="flex justify-between text-gray-600">
-              <span>Subtotal</span>
-              <span>€{subtotal.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between text-gray-600">
-              <span>Tax {cart.length > 0 ? `(${Number(effectiveTaxRate.toFixed(1))}%)` : ''}</span>
-              <span>€{tax.toFixed(2)}</span>
-            </div>
-            <div className="pt-2 border-t border-gray-200 flex justify-between font-bold text-lg text-[#085041]">
-              <span>Total Payable</span>
-              <span>€{total.toFixed(2)}</span>
-            </div>
+                )
+              })
+            )}
           </div>
 
-          <div className="flex gap-2">
-            <button
-              onClick={handlePlaceOrder}
-              disabled={cart.length === 0 || placingOrder}
-              className="flex-1 bg-[#085041] text-white rounded-lg font-medium py-3 hover:bg-[#064034] transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center"
-            >
-              {placingOrder ? 'Processing...' : 'Place Order'}
-            </button>
+          <div className="p-4 border-t border-gray-100 bg-gray-50 rounded-b-xl">
+            <div className="space-y-2 mb-4 text-sm">
+              <div className="flex justify-between text-gray-600">
+                <span>Subtotal</span>
+                <span>€{subtotal.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-gray-600">
+                <span>Tax {cart.length > 0 ? `(${Number(effectiveTaxRate.toFixed(1))}%)` : ''}</span>
+                <span>€{tax.toFixed(2)}</span>
+              </div>
+              <div className="pt-2 border-t border-gray-200 flex justify-between font-bold text-lg text-[#085041]">
+                <span>Total Payable</span>
+                <span>€{total.toFixed(2)}</span>
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={handlePlaceOrder}
+                disabled={cart.length === 0 || placingOrder}
+                className="flex-1 bg-[#085041] text-white rounded-lg font-medium py-3 hover:bg-[#064034] transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center"
+              >
+                {placingOrder ? 'Processing...' : 'Place Order'}
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
     </div>
   )

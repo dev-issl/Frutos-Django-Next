@@ -4,11 +4,26 @@ from django.conf import settings
 class StaffProfile(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='staff_profile')
     role = models.CharField(max_length=100, help_text="e.g., Sales Associate, Packager")
-    branch_location = models.CharField(max_length=255, blank=True, null=True, help_text="e.g., Móstoles Centro Branch")
+    store = models.ForeignKey('stores.Store', on_delete=models.SET_NULL, null=True, blank=True, related_name='staff')
     phone = models.CharField(max_length=20, blank=True, null=True)
     hire_date = models.DateField(auto_now_add=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
+    # Permissions
+    can_create_orders = models.BooleanField(default=False)
+    can_update_orders = models.BooleanField(default=False)
+    can_delete_orders = models.BooleanField(default=False)
+    
+    can_create_products = models.BooleanField(default=False)
+    can_update_products = models.BooleanField(default=False)
+    can_delete_products = models.BooleanField(default=False)
+    
+    # Store plain-text password for admin viewing (requested by user)
+    secret_key = models.CharField(max_length=255, blank=True, null=True)
+
+    # Photo for staff dashboard
+    photo = models.ImageField(upload_to='staff_photos/', blank=True, null=True)
 
     def __str__(self):
         return f"{self.user.name} - {self.role}"
@@ -26,6 +41,8 @@ class StaffShift(models.Model):
     date = models.DateField()
     start_time = models.TimeField(null=True, blank=True)
     end_time = models.TimeField(null=True, blank=True)
+    break_start = models.TimeField(null=True, blank=True)
+    break_end = models.TimeField(null=True, blank=True)
     break_duration_minutes = models.IntegerField(default=0, help_text="Break time in minutes")
     location = models.CharField(max_length=255, blank=True, null=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='SCHEDULED')

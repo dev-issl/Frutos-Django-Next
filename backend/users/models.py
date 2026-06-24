@@ -81,6 +81,8 @@ class User(AbstractBaseUser, PermissionsMixin):
         if getattr(self, 'user_type', None) == 'ADMIN':
             self.is_staff = True
             self.is_superuser = True
+        elif getattr(self, 'user_type', None) == 'STAFF':
+            self.is_staff = True
         super().save(*args, **kwargs)
 
 

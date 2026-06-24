@@ -24,8 +24,9 @@ class IsShopOwnerOrReadOnly(permissions.BasePermission):
 
         user = request.user
 
-        # Admin users can do anything
-        if user.is_staff or user.is_superuser or getattr(user, 'user_type', '') == 'ADMIN':
+        # Admin users (superuser or ADMIN user_type) can do anything
+        # NOTE: STAFF users are explicitly excluded — they have their own permission system
+        if user.is_superuser or getattr(user, 'user_type', '') == 'ADMIN':
             return True
 
         # Products tied to the platform's own shop ("Kidsmall") are admin-only

@@ -42,14 +42,18 @@ def _create_notification(notification_type, title, message='', actor=None):
         logger.warning(f"Failed to create notification: {exc}")
 
 class IsAdminOrReadOnly(permissions.BasePermission):
-    """Allow read access to anyone, write access only to admin users."""
+    """Allow read access to anyone, write access only to admin users.
+    NOTE: STAFF users (user_type='STAFF') are NOT granted admin write access here."""
     def has_permission(self, request, view):
         if request.method in permissions.SAFE_METHODS:
             return True
         return (
             request.user and
             request.user.is_authenticated and
-            (request.user.is_staff or getattr(request.user, 'user_type', '') == 'ADMIN')
+            (
+                request.user.is_superuser or
+                (getattr(request.user, 'user_type', '') == 'ADMIN' and getattr(request.user, 'user_type', '') != 'STAFF')
+            )
         )
 
 class StandardResultsSetPagination(PageNumberPagination):
@@ -80,7 +84,9 @@ class ProductViewSet(viewsets.ModelViewSet):
         ).order_by('-created_at')
         
         if self.request.user and self.request.user.is_authenticated and (
-            self.request.user.is_staff or getattr(self.request.user, 'user_type', '') == 'ADMIN'
+            # NOTE: STAFF users are explicitly excluded — they must not be treated as admin
+            getattr(self.request.user, 'user_type', '') == 'ADMIN' or
+            self.request.user.is_superuser
         ):
             return qs
         return qs.filter(is_active=True)
@@ -148,15 +154,45 @@ class ProductViewSet(viewsets.ModelViewSet):
         context.update({"request": self.request})
         return context
 
+    def _get_user_type(self, user):
+        """Return normalised (uppercase) user_type string."""
+        return str(getattr(user, 'user_type', '') or '').upper()
+
+    def _is_admin(self, user):
+        """Return True for superusers or ADMIN user_type (case-insensitive).
+        STAFF users are NEVER treated as admin."""
+        user_type = self._get_user_type(user)
+        return bool(getattr(user, 'is_superuser', False) or user_type == 'ADMIN')
+
+    def _is_staff_user(self, user):
+        """Return True ONLY for users whose user_type is STAFF."""
+        return self._get_user_type(user) == 'STAFF'
+
     def perform_create(self, serializer):
         user = self.request.user
-        is_admin = user.is_staff or getattr(user, 'user_type', '') == 'ADMIN'
-        if is_admin:
+
+        # ── ADMIN: always allowed, skip all staff checks ──────────────────
+        if self._is_admin(user):
             if 'shop' not in serializer.validated_data:
                 from rest_framework.exceptions import ValidationError
                 raise ValidationError({"shop": "Please select a shop for this product."})
             serializer.save()
-        elif user.shops.exists():
+            return
+
+        # ── STAFF: check StaffProfile permission ──────────────────────────
+        # This block runs EXCLUSIVELY for users with user_type == 'STAFF'.
+        # Admins, vendors, sellers, customers will never reach this block.
+        if self._is_staff_user(user):
+            from rest_framework.exceptions import PermissionDenied
+            profile = getattr(user, 'staff_profile', None)
+            if profile is None or not profile.can_create_products:
+                raise PermissionDenied("You do not have permission to create products.")
+            # Staff with permission — they don't own a shop, so just save without shop
+            serializer.save()
+            return
+
+        # ── VENDOR / SELLER: must have a shop ─────────────────────────────
+        if user.shops.exists():
             serializer.save(shop=user.shops.first())
         else:
             from rest_framework.exceptions import ValidationError
@@ -192,6 +228,38 @@ class ProductViewSet(viewsets.ModelViewSet):
         return Response(read_serializer.data, status=status.HTTP_201_CREATED)
 
     def update(self, request, *args, **kwargs):
+        user = self.request.user
+        user_type = self._get_user_type(user)
+        logger.info(
+            f"[PRODUCT UPDATE] user={getattr(user, 'email', '?')} user_type={user_type} "
+            f"is_superuser={getattr(user, 'is_superuser', False)} "
+            f"is_admin={self._is_admin(user)} is_staff={self._is_staff_user(user)}"
+        )
+
+        # ── ABSOLUTE ADMIN SAFEGUARD ───────────────────────────────────────
+        # Admins and superusers ALWAYS skip all permission checks below.
+        # This guard runs before ANY staff check.
+        if self._is_admin(user):
+            pass  # fall through to the actual update logic below
+
+        # ── STAFF ONLY: check StaffProfile permission ─────────────────────
+        # This block runs EXCLUSIVELY for STAFF users.
+        # Admins (user_type='ADMIN' or is_superuser=True) will NEVER enter here.
+        elif self._is_staff_user(user):
+            from rest_framework.exceptions import PermissionDenied
+            profile = getattr(user, 'staff_profile', None)
+            if profile is None or not profile.can_update_products:
+                logger.warning(
+                    f"[PRODUCT UPDATE BLOCKED] STAFF user={getattr(user, 'email', '?')} "
+                    f"can_update_products={getattr(profile, 'can_update_products', None)}"
+                )
+                raise PermissionDenied("You do not have permission to update products.")
+        else:
+            # Neither ADMIN nor STAFF — VENDOR/SELLER/CUSTOMER etc.
+            logger.info(
+                f"[PRODUCT UPDATE] Non-admin, non-staff user={getattr(user, 'email', '?')} user_type={user_type}"
+            )
+
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
@@ -262,6 +330,17 @@ class ProductViewSet(viewsets.ModelViewSet):
         return self.update(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
+        user = self.request.user
+
+        # ── STAFF ONLY: check StaffProfile permission ─────────────────────
+        # Admins (user_type='ADMIN' or is_superuser=True) will NEVER enter here.
+        if self._is_staff_user(user):
+            from rest_framework.exceptions import PermissionDenied
+            profile = getattr(user, 'staff_profile', None)
+            if profile is None or not profile.can_delete_products:
+                raise PermissionDenied("You do not have permission to delete products.")
+
+
         instance = self.get_object()
         product_name = instance.name
         shop_name = instance.shop.name if instance.shop else 'N/A'
@@ -502,8 +581,9 @@ class BrandViewSet(viewsets.ModelViewSet):
         """Filter brands by active status for non-admins, and optionally by category."""
         qs = super().get_queryset()
         # Hide inactive brands from non-admin users
+        # NOTE: STAFF users are NOT treated as admin here
         if not (self.request.user and self.request.user.is_authenticated and
-                (self.request.user.is_staff or getattr(self.request.user, 'user_type', '') == 'ADMIN')):
+                (self.request.user.is_superuser or getattr(self.request.user, 'user_type', '') == 'ADMIN')):
             qs = qs.filter(is_active=True)
         # Optional category filter
         category = self.request.query_params.get('category', None)
@@ -600,7 +680,7 @@ class OfferViewSet(viewsets.ModelViewSet):
             'items__product__sub_category',
             'items__product__additional_images',
         ).order_by('-created_at')
-        if self.request.user and self.request.user.is_authenticated and (self.request.user.is_staff or getattr(self.request.user, 'user_type', '') == 'ADMIN'):
+        if self.request.user and self.request.user.is_authenticated and (self.request.user.is_superuser or getattr(self.request.user, 'user_type', '') == 'ADMIN'):
             return qs
         return qs.filter(is_active=True)
 

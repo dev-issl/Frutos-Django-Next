@@ -40,19 +40,14 @@ class IsSeller(permissions.BasePermission):
 
 class IsAdmin(permissions.BasePermission):
     """
-    Custom permission to only allow admins to access a view.
+    Custom permission to only allow ADMIN and STAFF users.
     """
-    message = "Access denied. This action is only available to administrators."
-
     def has_permission(self, request, view):
-        """
-        Check if the user is authenticated and has admin user type
-        """
-        return (
-            request.user and
-            request.user.is_authenticated and
+        return bool(
+            request.user and 
+            request.user.is_authenticated and 
             hasattr(request.user, 'user_type') and
-            request.user.user_type == 'ADMIN'
+            request.user.user_type in ['ADMIN', 'STAFF']
         )
 
 
@@ -88,7 +83,7 @@ class IsSellerOrAdmin(permissions.BasePermission):
             request.user and
             request.user.is_authenticated and
             hasattr(request.user, 'user_type') and
-            request.user.user_type in ['SELLER', 'ADMIN']
+            request.user.user_type in ['SELLER', 'ADMIN', 'STAFF']
         )
 
 
@@ -108,9 +103,9 @@ class IsOwnerOrAdmin(permissions.BasePermission):
         """
         Check if the user is the owner of the object or an admin
         """
-        # Check if user is admin
+        # Check if user is admin or staff
         if (hasattr(request.user, 'user_type') and 
-            request.user.user_type == 'ADMIN'):
+            request.user.user_type in ['ADMIN', 'STAFF']):
             return True
         
         # Check if user is the owner of the object
@@ -136,16 +131,16 @@ class IsSellerOwnerOrAdmin(permissions.BasePermission):
             request.user and
             request.user.is_authenticated and
             hasattr(request.user, 'user_type') and
-            request.user.user_type in ['SELLER', 'ADMIN']
+            request.user.user_type in ['SELLER', 'ADMIN', 'STAFF']
         )
 
     def has_object_permission(self, request, view, obj):
         """
         Check if the user is admin or the seller who owns the object
         """
-        # Check if user is admin
+        # Check if user is admin or staff
         if (hasattr(request.user, 'user_type') and 
-            request.user.user_type == 'ADMIN'):
+            request.user.user_type in ['ADMIN', 'STAFF']):
             return True
         
         # Check if user is a seller and owns the object
@@ -178,10 +173,10 @@ class ReadOnlyOrIsAdmin(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return True
         
-        # Allow write access only to admins
+        # Allow write access only to admins and staff
         return (
             hasattr(request.user, 'user_type') and
-            request.user.user_type == 'ADMIN'
+            request.user.user_type in ['ADMIN', 'STAFF']
         )
 
 
@@ -199,9 +194,9 @@ class IsCustomerForOrder(permissions.BasePermission):
         if not (request.user and request.user.is_authenticated):
             return False
         
-        # Admins can do anything
+        # Admins and Staff can do anything
         if (hasattr(request.user, 'user_type') and 
-            request.user.user_type == 'ADMIN'):
+            request.user.user_type in ['ADMIN', 'STAFF']):
             return True
         
         # For POST (create), only customers allowed
@@ -221,9 +216,9 @@ class IsCustomerForOrder(permissions.BasePermission):
         """
         Check object-level permissions for orders
         """
-        # Admins can access any order
+        # Admins and Staff can access any order
         if (hasattr(request.user, 'user_type') and 
-            request.user.user_type == 'ADMIN'):
+            request.user.user_type in ['ADMIN', 'STAFF']):
             return True
         
         # Customers can only access their own orders
@@ -258,7 +253,7 @@ class IsVendorOrAdmin(permissions.BasePermission):
         if not (request.user and request.user.is_authenticated):
             return False
         if hasattr(request.user, 'user_type'):
-            if request.user.user_type == 'ADMIN':
+            if request.user.user_type in ['ADMIN', 'STAFF']:
                 return True
             if request.user.user_type == 'VENDOR':
                 try:
@@ -282,8 +277,8 @@ class IsApprovedVendorOrReadOnly(permissions.BasePermission):
         # Safe methods allowed for all authenticated users
         if request.method in permissions.SAFE_METHODS:
             return True
-        # Admin can always write
-        if hasattr(request.user, 'user_type') and request.user.user_type == 'ADMIN':
+        # Admin and staff can always write
+        if hasattr(request.user, 'user_type') and request.user.user_type in ['ADMIN', 'STAFF']:
             return True
         # Vendor must be approved for writes
         if hasattr(request.user, 'user_type') and request.user.user_type == 'VENDOR':

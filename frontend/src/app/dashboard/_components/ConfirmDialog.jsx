@@ -15,7 +15,7 @@ export default function ConfirmDialog({ open, onClose, onConfirm, title, message
         className="relative w-full max-w-sm"
         style={{
           background: "#ffffff",
-          borderRadius: "16px",
+          borderRadius: "20px",
           border: "1px solid #f1f5f9",
           boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
           padding: "24px",
@@ -62,10 +62,10 @@ export default function ConfirmDialog({ open, onClose, onConfirm, title, message
           <button
             onClick={onClose}
             style={{
-              padding: "9px 18px",
+              padding: "10px 20px",
               fontSize: "13px",
               fontWeight: "600",
-              borderRadius: "10px",
+              borderRadius: "12px",
               border: "1.5px solid #e2e8f0",
               background: "#ffffff",
               color: "#374151",
@@ -80,16 +80,16 @@ export default function ConfirmDialog({ open, onClose, onConfirm, title, message
           <button
             onClick={() => { onConfirm(); onClose(); }}
             style={{
-              padding: "9px 18px",
+              padding: "10px 20px",
               fontSize: "13px",
               fontWeight: "700",
-              borderRadius: "10px",
+              borderRadius: "12px",
               border: "none",
               background: destructive ? "#ef4444" : "#f59e0b",
               color: "#ffffff",
               cursor: "pointer",
               transition: "all 0.15s",
-              boxShadow: destructive ? "0 2px 8px rgba(239,68,68,0.3)" : "0 2px 8px rgba(245,158,11,0.3)",
+              boxShadow: destructive ? "0 4px 12px rgba(239,68,68,0.2)" : "0 4px 12px rgba(245,158,11,0.2)",
             }}
             onMouseEnter={e => { e.currentTarget.style.background = destructive ? "#dc2626" : "#d97706"; }}
             onMouseLeave={e => { e.currentTarget.style.background = destructive ? "#ef4444" : "#f59e0b"; }}

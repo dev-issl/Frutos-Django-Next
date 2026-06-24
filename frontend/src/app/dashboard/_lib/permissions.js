@@ -12,6 +12,7 @@
 
 export const ROLES = {
   ADMIN: "ADMIN",
+  STAFF: "STAFF",
   SELLER: "SELLER",
   VENDOR: "VENDOR",
   CUSTOMER: "CUSTOMER",
@@ -20,10 +21,10 @@ export const ROLES = {
 };
 
 // Admin-level roles that can access the dashboard
-export const DASHBOARD_ROLES = [ROLES.ADMIN, ROLES.SELLER, ROLES.VENDOR];
+export const DASHBOARD_ROLES = [ROLES.ADMIN, ROLES.STAFF, ROLES.SELLER, ROLES.VENDOR];
 
 // Full admin roles (unrestricted access)
-export const ADMIN_ROLES = [ROLES.ADMIN];
+export const ADMIN_ROLES = [ROLES.ADMIN, ROLES.STAFF];
 
 // ── Route permissions ─────────────────────────────────────────────
 
