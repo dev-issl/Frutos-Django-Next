@@ -102,7 +102,7 @@ export default function ProductCard({ product, notified, onNotify }) {
 
   const slug = product.slug || slugify(product.name)
   const { name, badge, badgeColor = '', origin, unit, price, oldPrice,
-    wholesalePrice, minWholesaleQty = 1, inStock, image, onSale } = product
+    wholesalePrice, minWholesaleQty = 1, inStock, image, onSale, variant } = product
 
   const displayPrice = wholesalePrice ? wholesalePrice : price
   const isWholesalePrice = !!wholesalePrice
@@ -177,7 +177,14 @@ export default function ProductCard({ product, notified, onNotify }) {
               )}
             </div>
 
-            {unit && <p className="text-[11px] md:text-[12px] text-gray-400 mb-2 leading-tight">{unit}</p>}
+            <div className="flex items-center gap-2 mb-2">
+              {variant && (
+                <span className="text-[10px] md:text-[11px] font-bold text-[#00694C] bg-[#ECF7E4] px-1.5 py-0.5 rounded">
+                  Clase {variant}
+                </span>
+              )}
+              {unit && <p className="text-[11px] md:text-[12px] text-gray-400 leading-tight m-0">{unit}</p>}
+            </div>
 
             {inStock ? (
               <div className="flex flex-col gap-1.5 mt-auto">

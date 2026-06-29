@@ -1,7 +1,7 @@
 'use client'
 // src/app/shop/ProductListingClient.jsx
 
-import { useState, useMemo, useEffect, useCallback } from 'react'
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import ProductCard from '@/app/components/ProductCard'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
@@ -150,12 +150,13 @@ export default function ProductListingClient({ initialProducts = [], categories 
   const searchParams = useSearchParams()
   const initialCatParam = searchParams.get('category')
 
-  // Build CATEGORY_PILLS from API categories (same logic as before)
-  const CATEGORY_PILLS = ['All Produce', ...categories.filter(c => c !== 'All' && c !== 'On Sale')]
+  const CATEGORY_PILLS = ['All Produce', ...categories.filter(c => c.name !== 'All' && c.name !== 'On Sale').map(c => c.name)]
 
   const initCat = initialCatParam && CATEGORY_PILLS.includes(initialCatParam) ? initialCatParam : 'All Produce'
 
   const [activeCategory, setActiveCategory]   = useState(initCat)
+  const [activeSubCategory, setActiveSubCategory] = useState(null)
+  const [activeVariant, setActiveVariant] = useState(null)
   const [sortBy, setSortBy]                   = useState('Promotional first')
   const [inStockOnly, setInStockOnly]         = useState(false)
   const maxProductPrice = useMemo(
@@ -168,6 +169,24 @@ export default function ProductListingClient({ initialProducts = [], categories 
   const itemsPerPage = 6
   const [notified, setNotified]               = useState({})
   const [searchQuery, setSearchQuery]         = useState('')
+  
+  const [isQualityOpen, setIsQualityOpen]     = useState(false)
+  const qualityRef                            = useRef(null)
+  const [isSortOpen, setIsSortOpen]           = useState(false)
+  const sortRef                               = useRef(null)
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (qualityRef.current && !qualityRef.current.contains(event.target)) {
+        setIsQualityOpen(false)
+      }
+      if (sortRef.current && !sortRef.current.contains(event.target)) {
+        setIsSortOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   // Map "All Produce" → "All" for data layer
   const dataCat = activeCategory === 'All Produce' ? 'All' : activeCategory
@@ -179,12 +198,22 @@ export default function ProductListingClient({ initialProducts = [], categories 
     if (storeParam)             list = list.filter(p => (p.stores && p.stores.some(s => s.slug === storeParam)) || p.shop?.slug === storeParam)
 
     if (dataCat !== 'All')      list = list.filter(p => p.category === dataCat)
+    if (activeSubCategory)      list = list.filter(p => p.sub_category?.name === activeSubCategory || p.sub_category === activeSubCategory || p.sub_category_name === activeSubCategory)
+    if (activeVariant)          list = list.filter(p => p.variant === activeVariant)
     if (dataCat === 'On Sale')  list = list.filter(p => p.onSale)
     if (inStockOnly)            list = list.filter(p => p.inStock)
-    if (searchQuery)            list = list.filter(p =>
-      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.origin?.toLowerCase().includes(searchQuery.toLowerCase())
-    )
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase()
+      list = list.filter(p => {
+        const subCatStr = (p.sub_category?.name || (typeof p.sub_category === 'string' ? p.sub_category : '') || p.sub_category_name || '').toLowerCase()
+        return (
+          p.name.toLowerCase().includes(q) ||
+          p.origin?.toLowerCase().includes(q) ||
+          p.category?.toLowerCase().includes(q) ||
+          subCatStr.includes(q)
+        )
+      })
+    }
     list = list.filter(p => p.price <= priceMax)
 
     if (sortBy === 'Price: Low to High') list.sort((a, b) => a.price - b.price)
@@ -192,17 +221,19 @@ export default function ProductListingClient({ initialProducts = [], categories 
     if (sortBy === 'Promotional first')  list.sort((a, b) => (b.onSale ? 1 : 0) - (a.onSale ? 1 : 0))
 
     return list
-  },  [products, dataCat, inStockOnly, priceMax, sortBy, searchQuery, searchParams])
+  },  [products, dataCat, activeSubCategory, activeVariant, inStockOnly, priceMax, sortBy, searchQuery, searchParams])
 
   useEffect(() => {
     setCurrentPage(1)
-  }, [dataCat, inStockOnly, priceMax, sortBy, searchQuery, searchParams])
+  }, [dataCat, activeSubCategory, activeVariant, inStockOnly, priceMax, sortBy, searchQuery, searchParams])
 
   const totalPages = Math.ceil(filtered.length / itemsPerPage)
   const visibleProducts = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
 
   function clearFilters() {
     setActiveCategory('All Produce')
+    setActiveSubCategory(null)
+    setActiveVariant(null)
     setInStockOnly(false)
     setPriceMax(50)
     setSortBy('Promotional first')
@@ -217,6 +248,53 @@ export default function ProductListingClient({ initialProducts = [], categories 
     if (cat === 'All Produce') return list.length 
     return list.filter(p => p.category === cat).length 
   }
+  
+  function subCatCount(subCatName) {
+    let list = products
+    const storeParam = searchParams.get('store')
+    if (storeParam) list = list.filter(p => (p.stores && p.stores.some(s => s.slug === storeParam)) || p.shop?.slug === storeParam)
+
+    return list.filter(p => p.sub_category?.name === subCatName || p.sub_category === subCatName || p.sub_category_name === subCatName).length
+  }
+  
+  const availableVariants = useMemo(() => {
+    const variants = new Set()
+    products.forEach(p => {
+      if (p.variant) variants.add(p.variant)
+    })
+    return Array.from(variants).sort()
+  }, [products])
+
+  function variantCount(v) {
+    let list = products
+    const storeParam = searchParams.get('store')
+    if (storeParam) list = list.filter(p => (p.stores && p.stores.some(s => s.slug === storeParam)) || p.shop?.slug === storeParam)
+    return list.filter(p => p.variant === v).length
+  }
+  
+  // ── Empty State ───────────────────────────────────────────────────────────
+  const EmptyState = () => (
+    <div className="flex flex-col items-center justify-center py-10 md:py-16 px-4 text-center rounded-2xl md:rounded-3xl" style={{ background: 'linear-gradient(to bottom, #ffffff, #f9fcf6)', border: '1px dashed rgba(188, 202, 193, 0.5)' }}>
+      <div className="relative inline-flex items-center justify-center w-16 h-16 md:w-20 md:h-20 rounded-full mb-4 md:mb-5" style={{ background: 'linear-gradient(135deg, #f2fdea 0%, #e7f1df 100%)', boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.5), 0 8px 24px rgba(0, 105, 76, 0.06)' }}>
+        <svg className="w-8 h-8 md:w-10 md:h-10" viewBox="0 0 24 24" fill="none" stroke="#00694C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="10" cy="10" r="7" />
+          <path d="M21 21l-6-6" />
+          <path d="M8 10h4" />
+        </svg>
+        <div className="absolute top-1 right-0 w-2.5 h-2.5 md:w-3 md:h-3 bg-[#adedd8] rounded-full shadow-sm" />
+        <div className="absolute bottom-2 left-0 w-2 h-2 md:w-2.5 md:h-2.5 bg-[#00694c] opacity-30 rounded-full" />
+        <div className="absolute top-1/2 -right-2 w-1 h-1 md:w-1.5 md:h-1.5 bg-[#BCCAC1] rounded-full" />
+      </div>
+      
+      <h3 className="text-xl md:text-2xl" style={{ fontFamily: '"Newsreader", Georgia, serif', fontWeight: 700, color: '#151e13', marginBottom: '6px' }}>
+        No products found
+      </h3>
+      <p className="text-xs md:text-sm" style={{ color: '#6D7A73', maxWidth: '280px', marginBottom: '0', lineHeight: 1.5 }}>
+        We couldn't find anything matching your current filters. Try adjusting your search or categories.
+      </p>
+    </div>
+  )
+
   // ── Sidebar ───────────────────────────────────────────────────────────────
   const Sidebar = () => (
     <aside className="space-y-8">
@@ -229,23 +307,60 @@ export default function ProductListingClient({ initialProducts = [], categories 
         <div className="space-y-2.5">
           {CATEGORY_PILLS.map((cat, index) => {
             const isActive = activeCategory === cat
+            const categoryObj = categories.find(c => c.name === cat)
+            const subcategories = categoryObj?.subcategories || []
+            
             return (
-              <button
-                key={`sidebar-${cat}-${index}`}
-                onClick={() => setActiveCategory(cat)}
-                className="flex items-center justify-between w-full text-left"
-                style={{ opacity: isActive ? 1 : 0.65, border: 'none', background: 'none', cursor: 'pointer', padding: '2px 0' }}
-              >
-                <span style={{ fontSize: '14px', fontWeight: isActive ? 700 : 500, color: isActive ? '#00694c' : '#151e13' }}>
-                  {cat}
-                </span>
-                <span
-                  className="px-2 py-0.5 rounded text-[10px] font-bold"
-                  style={{ background: isActive ? '#adedd8' : '#e7f1df', color: isActive ? '#2f6d5d' : '#6D7A73' }}
+              <div key={`sidebar-${cat}-${index}`}>
+                <button
+                  onClick={() => {
+                    if (isActive && cat !== 'All Produce') {
+                      setActiveCategory('All Produce');
+                      setActiveSubCategory(null);
+                    } else {
+                      setActiveCategory(cat);
+                      setActiveSubCategory(null);
+                    }
+                  }}
+                  className="flex items-center justify-between w-full text-left gap-2"
+                  style={{ opacity: isActive ? 1 : 0.65, border: 'none', background: 'none', cursor: 'pointer', padding: '2px 0' }}
                 >
-                  {catCount(cat)}
-                </span>
-              </button>
+                  <span className="truncate" style={{ fontSize: '14px', fontWeight: isActive ? 700 : 500, color: isActive ? '#00694c' : '#151e13', flex: 1 }}>
+                    {cat}
+                  </span>
+                  <span
+                    className="px-2 py-0.5 rounded text-[10px] font-bold shrink-0"
+                    style={{ background: isActive ? '#adedd8' : '#e7f1df', color: isActive ? '#2f6d5d' : '#6D7A73' }}
+                  >
+                    {catCount(cat)}
+                  </span>
+                </button>
+                {isActive && subcategories.length > 0 && (
+                  <div className="ml-4 mt-2 space-y-2 border-l-2 border-[#e7f1df] pl-3">
+                    {subcategories.map((sub, idx) => {
+                      const isSubActive = activeSubCategory === sub.name
+                      return (
+                        <button
+                          key={`sub-${sub.id}-${idx}`}
+                          onClick={() => setActiveSubCategory(isSubActive ? null : sub.name)}
+                          className="flex items-center justify-between w-full text-left gap-2"
+                          style={{ opacity: isSubActive ? 1 : 0.65, border: 'none', background: 'none', cursor: 'pointer', padding: '2px 0' }}
+                        >
+                          <span className="truncate" style={{ fontSize: '13px', fontWeight: isSubActive ? 600 : 400, color: isSubActive ? '#00694c' : '#151e13', flex: 1 }}>
+                            {sub.name}
+                          </span>
+                          <span
+                            className="px-1.5 py-0.5 rounded text-[9px] font-bold shrink-0"
+                            style={{ background: isSubActive ? '#adedd8' : '#f1f5f9', color: isSubActive ? '#2f6d5d' : '#94a3b8' }}
+                          >
+                            {subCatCount(sub.name)}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
             )
           })}
         </div>
@@ -287,7 +402,7 @@ export default function ProductListingClient({ initialProducts = [], categories 
   )
 
   return (
-    <div style={{ background: '#f2fdea', minHeight: '100vh' }} className='pb-10'>
+    <div style={{ background: '#f9fcf6', minHeight: '100vh' }} className='pb-10'>
 
       {/*  DESKTOP  */}
       <div className="hidden md:block">
@@ -349,19 +464,130 @@ export default function ProductListingClient({ initialProducts = [], categories 
                   <line x1="10" y1="18" x2="14" y2="18"/>
                 </svg>
                 <span style={{ fontSize: '12px', color: '#6D7A73', fontWeight: 500 }}>Sort:</span>
-                <div className="relative">
-                  <select
-                    value={sortBy} onChange={e => setSortBy(e.target.value)}
-                    className="appearance-none pl-3 pr-8 py-1.5 rounded-lg text-sm font-semibold focus:outline-none"
-                    style={{ background: '#f2fdea', border: '1px solid rgba(0,105,76,0.1)', color: '#151e13', cursor: 'pointer' }}
+                <div className="relative" ref={sortRef}>
+                  <button
+                    onClick={() => setIsSortOpen(!isSortOpen)}
+                    className="flex items-center justify-between pl-3 pr-3 py-1.5 rounded-lg text-sm font-semibold transition-all duration-200 min-w-[150px]"
+                    style={{ 
+                      background: isSortOpen ? '#fff' : '#f9fcf6', 
+                      border: `1px solid ${isSortOpen ? '#00694c' : 'rgba(0,105,76,0.1)'}`, 
+                      color: '#151e13', 
+                      cursor: 'pointer',
+                      boxShadow: isSortOpen ? '0 4px 12px rgba(0,105,76,0.08)' : 'none'
+                    }}
                   >
-                    {SORT_OPTIONS.map(o => <option key={o}>{o}</option>)}
-                  </select>
-                  <span className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: '#6D7A73' }}>
-                    <ChevronDown />
-                  </span>
+                    <span className="truncate">{sortBy}</span>
+                    <span className="ml-2 transition-transform duration-200 shrink-0" style={{ transform: isSortOpen ? 'rotate(180deg)' : 'rotate(0deg)', color: '#6D7A73' }}>
+                      <ChevronDown />
+                    </span>
+                  </button>
+
+                  {/* Dropdown Menu */}
+                  {isSortOpen && (
+                    <div 
+                      className="absolute top-full right-0 lg:left-0 mt-2 w-[180px] bg-white rounded-xl overflow-hidden z-50"
+                      style={{ 
+                        border: '1px solid rgba(0,105,76,0.1)', 
+                        boxShadow: '0 8px 24px rgba(0,33,21,0.08)',
+                        animation: 'dropdownFade 0.2s ease forwards'
+                      }}
+                    >
+                      {SORT_OPTIONS.map(o => (
+                        <button
+                          key={o}
+                          onClick={() => { setSortBy(o); setIsSortOpen(false); }}
+                          className="w-full text-left px-4 py-2.5 text-sm font-medium transition-colors hover:bg-[#f9fcf6]"
+                          style={{ 
+                            background: sortBy === o ? '#f2fdea' : 'transparent',
+                            color: sortBy === o ? '#00694c' : '#151e13',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {o}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
+
+              {/* Quality */}
+              {availableVariants.length > 0 && (
+                <>
+                  <div className="w-px h-6 shrink-0" style={{ background: 'rgba(188,202,193,0.4)' }} />
+                  <div className="flex items-center gap-2 shrink-0 relative" ref={qualityRef}>
+                    <span style={{ fontSize: '12px', color: '#6D7A73', fontWeight: 500 }}>Quality:</span>
+                    <button
+                      onClick={() => setIsQualityOpen(!isQualityOpen)}
+                      className="flex items-center justify-between pl-3 pr-3 py-1.5 rounded-lg text-sm font-semibold transition-all duration-200 min-w-[120px]"
+                      style={{ 
+                        background: isQualityOpen ? '#fff' : '#f9fcf6', 
+                        border: `1px solid ${isQualityOpen ? '#00694c' : 'rgba(0,105,76,0.1)'}`, 
+                        color: activeVariant ? '#00694c' : '#151e13', 
+                        cursor: 'pointer',
+                        boxShadow: isQualityOpen ? '0 4px 12px rgba(0,105,76,0.08)' : 'none'
+                      }}
+                    >
+                      <span>{activeVariant ? `Clase ${activeVariant}` : 'All Qualities'}</span>
+                      <span className="ml-2 transition-transform duration-200" style={{ transform: isQualityOpen ? 'rotate(180deg)' : 'rotate(0deg)', color: '#6D7A73' }}>
+                        <ChevronDown />
+                      </span>
+                    </button>
+
+                    {/* Dropdown Menu */}
+                    {isQualityOpen && (
+                      <div 
+                        className="absolute top-full left-0 mt-2 w-full bg-white rounded-xl overflow-hidden z-50"
+                        style={{ 
+                          border: '1px solid rgba(0,105,76,0.1)', 
+                          boxShadow: '0 8px 24px rgba(0,33,21,0.08)',
+                          animation: 'dropdownFade 0.2s ease forwards'
+                        }}
+                      >
+                        <style>{`
+                          @keyframes dropdownFade {
+                            from { opacity: 0; transform: translateY(-4px); }
+                            to { opacity: 1; transform: translateY(0); }
+                          }
+                        `}</style>
+                        <button
+                          onClick={() => { setActiveVariant(null); setIsQualityOpen(false); }}
+                          className="w-full text-left px-4 py-2.5 text-sm font-medium transition-colors"
+                          style={{ 
+                            background: !activeVariant ? '#f2fdea' : 'transparent',
+                            color: !activeVariant ? '#00694c' : '#151e13',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          All Qualities
+                        </button>
+                        {availableVariants.map(v => (
+                          <button
+                            key={v}
+                            onClick={() => { setActiveVariant(v); setIsQualityOpen(false); }}
+                            className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-medium transition-colors hover:bg-[#f9fcf6]"
+                            style={{ 
+                              background: activeVariant === v ? '#f2fdea' : 'transparent',
+                              color: activeVariant === v ? '#00694c' : '#151e13',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            <span>Clase {v}</span>
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-sm"
+                              style={{ 
+                                background: activeVariant === v ? 'rgba(0,105,76,0.1)' : '#f2fdea',
+                                color: activeVariant === v ? '#00694c' : '#6D7A73'
+                              }}
+                            >
+                              {variantCount(v)}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
 
               {/* Divider */}
               <div className="w-px h-6 shrink-0" style={{ background: 'rgba(188,202,193,0.4)' }} />
@@ -390,12 +616,7 @@ export default function ProductListingClient({ initialProducts = [], categories 
 
               {/* Product grid */}
               {visibleProducts.length === 0 ? (
-                <div className="text-center py-20">
-                  <p style={{ fontSize: '16px', color: '#6D7A73' }}>No products match your filters.</p>
-                  {/* <button onClick={clearFilters} className="mt-4 text-sm font-bold" style={{ color: '#00694c' }}>
-                    Clear all filters
-                  </button> */}
-                </div>
+                <EmptyState />
               ) : (
                 <div className="grid grid-cols-2 xl:grid-cols-3 gap-8">
                   {visibleProducts.map(p => (
@@ -424,7 +645,7 @@ export default function ProductListingClient({ initialProducts = [], categories 
       <div className="md:hidden" style={{ paddingBottom: '100px' }}>
 
         {/* Sub-header */}
-        <div style={{ background: '#ecf7e4', padding: '16px 20px 0' }}>
+        <div style={{ background: '#f4fbf0', padding: '16px 20px 0' }}>
           <div className="flex items-end justify-between mb-4">
             <div>
               <h1 style={{ fontFamily: '"Newsreader", Georgia, serif', fontSize: '36px', fontWeight: 700, color: '#151e13', lineHeight: 1.1 }}>
@@ -448,8 +669,6 @@ export default function ProductListingClient({ initialProducts = [], categories 
               )}
             </button>
           </div>
-
-
         </div>
 
         {/* Mobile filter drawer */}
@@ -461,7 +680,7 @@ export default function ProductListingClient({ initialProducts = [], categories 
           >
             <div
               className="mt-auto rounded-t-3xl overflow-y-auto"
-              style={{ background: '#f2fdea', maxHeight: '80vh', padding: '24px 20px 40px' }}
+              style={{ background: '#f9fcf6', maxHeight: '80vh', padding: '24px 20px 40px' }}
               onClick={e => e.stopPropagation()}
             >
               <div className="flex justify-center mb-6">
@@ -492,10 +711,7 @@ export default function ProductListingClient({ initialProducts = [], categories 
         {/* Mobile grid */}
         <div style={{ padding: '0 16px' }}>
           {visibleProducts.length === 0 ? (
-            <div className="text-center py-16">
-              <p style={{ fontSize: '14px', color: '#6D7A73' }}>No products match your filters.</p>
-              <button onClick={clearFilters} className="mt-3 text-sm font-bold" style={{ color: '#00694c' }}>Clear all filters</button>
-            </div>
+            <EmptyState />
           ) : (
             <div className="grid grid-cols-2 gap-4">
               {visibleProducts.map(p => (

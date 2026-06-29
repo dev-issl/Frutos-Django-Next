@@ -239,6 +239,7 @@ class Product(models.Model):
     wholesale_unit = models.CharField(max_length=200, blank=True, null=True, help_text='Wholesale unit (e.g., "per case")')
     badge = models.CharField(max_length=100, blank=True, null=True, help_text='Promo label (NEW, ORGANIC)')
     badge_color = models.CharField(max_length=200, blank=True, null=True, help_text='Tailwind CSS classes or hex for badge')
+    variant = models.CharField(max_length=100, blank=True, null=True, help_text='Product quality or variant (e.g., C, B)')
     colors = models.ManyToManyField(Color, blank=True, related_name='products')
     sizes = models.ManyToManyField(Size, blank=True, related_name='products')
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)

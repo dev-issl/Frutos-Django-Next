@@ -1,5 +1,5 @@
 // src/app/shop/page.jsx
-import { getProducts, getCategories } from '@/lib/api_product'
+import { getProducts, getCategories, getCategoryObjects } from '@/lib/api_product'
 import ProductListingClient from './ProductListingClient'
 
 import { Suspense } from 'react'
@@ -17,16 +17,16 @@ export default async function MarketPage() {
   const session = await auth()
   const token = session?.user?.accessToken
 
-  const [products, categories] = await Promise.all([
+  const [products, categoryObjects] = await Promise.all([
     getProducts({ token }),
-    getCategories(),
+    getCategoryObjects(),
   ])
 
   return (
     <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading Market...</div>}>
       <ProductListingClient
         initialProducts={products}
-        categories={categories}
+        categories={categoryObjects}
       />
     </Suspense>
   )

@@ -498,7 +498,7 @@ export default function ProductDetailClient({ product: initialProduct, related }
   const unitLabel = selectedUnit?.label || product.unit || ''
 
   return (
-    <main className="bg-[#F2FDEA] min-h-screen">
+    <main className="bg-[#f9fcf6] min-h-screen">
       {showStockError && (
         <div style={{
           position: 'fixed', bottom: '24px', left: '50%',

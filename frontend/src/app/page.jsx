@@ -50,7 +50,7 @@ export default async function HomePage() {
         <LeftoverPackBanner banner={leftover_banner} />
       </div>
 
-      <div style={{ backgroundColor: '#ECF7E4' }}>
+      <div style={{ backgroundColor: '#f9fcf6' }}>
         <HowItWorks
           heading={how_it_works.heading}
           steps={normalizedSteps}

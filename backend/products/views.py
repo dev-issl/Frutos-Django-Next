@@ -9,7 +9,7 @@ from rest_framework import status
 
 from orders.models import Order
 from .models import Product, Category, SubCategory, Color, Brand, Size, ProductSpecification, ProductAdditionalImage, Review, Offer
-from django.db.models import Count, ProtectedError
+from django.db.models import Count, ProtectedError, Prefetch
 from .serializers import (
     ProductSerializer, ProductWriteSerializer,
     CategorySerializer, SubCategorySerializer,
@@ -361,7 +361,9 @@ class ProductViewSet(viewsets.ModelViewSet):
 class CategoryViewSet(viewsets.ModelViewSet):
     # Annotate with product & subcategory counts for richer frontend data
     # Prefetch subcategories to avoid N+1 queries
-    queryset = Category.objects.prefetch_related('subcategories').annotate(
+    queryset = Category.objects.prefetch_related(
+        Prefetch('subcategories', queryset=SubCategory.objects.annotate(total_products=Count('products', distinct=True)))
+    ).annotate(
         total_products=Count('subcategories__products', distinct=True),
         sub_category_count=Count('subcategories', distinct=True)
     ).order_by('name')

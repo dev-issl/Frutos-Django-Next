@@ -25,7 +25,7 @@ export default function ProductForm({
 }) {
   const [form, setForm] = useState({
     name: "", slug: "", description: "", nutritional_info: "",
-    origin: "", unit: "", wholesale_unit: "", badge: "", badge_color: "",
+    origin: "", unit: "", wholesale_unit: "", badge: "", badge_color: "", variant: "",
     price: "", discount_price: "", wholesale_price: "",
     minimum_purchase: "", tax_rate: "",
     stock: "", is_active: "true",
@@ -117,6 +117,7 @@ export default function ProductForm({
         wholesale_unit:           form.wholesale_unit || "",
         badge:                    form.badge || "",
         badge_color:              form.badge_color || "",
+        variant:                  form.variant || "",
         price:                    form.price,
         discount_price:           form.discount_price  || null,
         wholesale_price:          form.wholesale_price || null,
@@ -176,7 +177,7 @@ export default function ProductForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 pb-2">
+    <form onSubmit={handleSubmit} noValidate className="space-y-4 pb-2">
 
       {/* Error */}
       {error && (
@@ -242,6 +243,11 @@ export default function ProductForm({
               </select>
             </div>
             <div>
+              <label className={labelCls}>Variant / Quality</label>
+              <input className={inputCls} value={form.variant || ""}
+                onChange={e => handleChange("variant", e.target.value)} placeholder="e.g., C, B, Premium" />
+            </div>
+            <div>
               <label className={labelCls}>Badge Label</label>
               <input className={inputCls} value={form.badge || ""}
                 onChange={e => handleChange("badge", e.target.value)} placeholder="e.g., NEW, ORGANIC" />
@@ -269,6 +275,11 @@ export default function ProductForm({
               <label className={labelCls}>Category</label>
               <SearchableSelect value={form.category} onChange={v => handleChange("category", v)}
                 placeholder="Select category..." options={categories.map(c => ({ value: c.id, label: c.name }))} />
+            </div>
+            <div>
+              <label className={labelCls}>Sub Category</label>
+              <SearchableSelect value={form.sub_category} onChange={v => handleChange("sub_category", v)}
+                placeholder="Select sub category..." options={subcategories.filter(sc => !form.category || sc.category === form.category).map(sc => ({ value: sc.id, label: sc.name }))} />
             </div>
             <div>
               <label className={labelCls}>Shipping Category</label>

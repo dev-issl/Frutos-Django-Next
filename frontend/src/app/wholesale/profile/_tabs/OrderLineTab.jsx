@@ -264,6 +264,11 @@ export default function OrderLineTab({ accessToken }) {
                           </span>
                           {getDisplayUnit(product) && <span className="text-[9px] text-gray-500 font-medium truncate">/ {getDisplayUnit(product)}</span>}
                         </div>
+                        {step > 1 && (
+                          <div className="text-[9px] text-orange-600 font-medium mt-0.5">
+                            Min: {step}
+                          </div>
+                        )}
                       </div>
 
                       {/* Controls Area (Right) */}
@@ -281,13 +286,8 @@ export default function OrderLineTab({ accessToken }) {
                             <input
                               type="text"
                               value={qty}
-                              onChange={(e) => setExactQuantity(product.id, e.target.value)}
-                              onBlur={() => {
-                                if (qty === '' || parseInt(qty) < step) {
-                                  setExactQuantity(product.id, step)
-                                }
-                              }}
-                              className="w-8 text-[12px] font-bold text-center leading-none bg-transparent outline-none border-none p-0 text-[#085041]"
+                              readOnly
+                              className="w-8 text-[12px] font-bold text-center leading-none bg-transparent outline-none border-none p-0 text-[#085041] cursor-default"
                             />
 
                             <button

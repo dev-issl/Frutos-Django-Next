@@ -39,9 +39,14 @@ class SizeSerializer(serializers.ModelSerializer):
 class SubCategorySerializer(serializers.ModelSerializer):
     image_url = serializers.SerializerMethodField()
     category_name = serializers.CharField(source='category.name', read_only=True)
+    total_products = serializers.SerializerMethodField()
+
     class Meta:
         model = SubCategory
-        fields = ['id','name','slug','image','image_url','category', 'category_name']
+        fields = ['id','name','slug','image','image_url','category', 'category_name', 'total_products']
+
+    def get_total_products(self, obj):
+        return getattr(obj, 'total_products', obj.products.count())
 
     def get_image_url(self, obj):
         request = self.context.get('request')
@@ -171,7 +176,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'price', 'discount_price', 'wholesale_price', 'minimum_purchase', 'tax_rate', 'stock', 'is_active',
             'weight', 'length', 'width', 'height',  # Added physical properties for shipping
             'thumbnail_url', 'specifications', 'additional_images',
-            'origin', 'unit', 'wholesale_unit', 'badge', 'badge_color',
+            'origin', 'unit', 'wholesale_unit', 'badge', 'badge_color', 'variant',
             'colors', 'sizes', 'reviews', 'rating', 'review_count', 'user_can_review',
             'created_at', 'updated_at'
         ]
@@ -275,8 +280,7 @@ class ProductSerializer(serializers.ModelSerializer):
             if not wholesale_price or wholesale_price < 1:
                 # Remove wholesale pricing if not available
                 data.pop('wholesale_price', None)
-                data.pop('minimum_purchase', None)
-            # If wholesale_price >= 1, keep both wholesale_price and minimum_purchase
+            # Always keep minimum_purchase for approved wholesalers
         else:
             # For non-approved wholesalers, customers, and unauthenticated users: 
             # Remove wholesale_price and minimum_purchase for security
@@ -305,7 +309,7 @@ class ProductWriteSerializer(serializers.ModelSerializer):
             'category', 'sub_category', 'shipping_category',
             'price', 'discount_price', 'wholesale_price',
             'minimum_purchase', 'tax_rate',
-            'origin', 'unit', 'wholesale_unit', 'badge', 'badge_color',
+            'origin', 'unit', 'wholesale_unit', 'badge', 'badge_color', 'variant',
             'stock', 'is_active',
             'weight', 'length', 'width', 'height',
             'thumbnail', 'colors', 'sizes',

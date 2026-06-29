@@ -655,7 +655,7 @@ class Order(models.Model):
     original_subtotal = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, help_text='Subtotal before discounts')
     promo_discount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, default=0)
     wholesale_user = models.ForeignKey(
-        'users.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='wholesale_orders'
+        'wholesale.WholesaleUser', on_delete=models.SET_NULL, null=True, blank=True, related_name='wholesale_orders'
     )
     
     # Make shipping fields nullable for safe migration of existing data

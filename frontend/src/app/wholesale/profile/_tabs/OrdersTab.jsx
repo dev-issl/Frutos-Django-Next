@@ -13,12 +13,52 @@ export default function OrdersTab({ orders, onDeleteOrder, setProfileActiveTab, 
   const [dailyReports, setDailyReports] = useState([])
   const [loadingReports, setLoadingReports] = useState(false)
   const [showReportModal, setShowReportModal] = useState(false)
+  const [hiddenOrderIds, setHiddenOrderIds] = useState(new Set())
+  const [permanentlyDeletedOrderIds, setPermanentlyDeletedOrderIds] = useState(new Set())
+  const [orderToDelete, setOrderToDelete] = useState(null)
+  const [orderToPermanentDelete, setOrderToPermanentDelete] = useState(null)
+  const [isLoaded, setIsLoaded] = useState(false)
   
   const ITEMS_PER_PAGE = 10
+
+  // Load hidden orders from localStorage on mount
+  useEffect(() => {
+    try {
+      const storedHidden = localStorage.getItem('wholesale_hidden_orders')
+      if (storedHidden) {
+        setHiddenOrderIds(new Set(JSON.parse(storedHidden)))
+      }
+      const storedPerm = localStorage.getItem('wholesale_perm_deleted_orders')
+      if (storedPerm) {
+        setPermanentlyDeletedOrderIds(new Set(JSON.parse(storedPerm)))
+      }
+    } catch (e) {
+      console.error('Failed to load hidden orders', e)
+    }
+    setIsLoaded(true)
+  }, [])
+
+  // Save hidden orders to localStorage whenever it changes
+  useEffect(() => {
+    if (isLoaded) {
+      localStorage.setItem('wholesale_hidden_orders', JSON.stringify(Array.from(hiddenOrderIds)))
+      localStorage.setItem('wholesale_perm_deleted_orders', JSON.stringify(Array.from(permanentlyDeletedOrderIds)))
+    }
+  }, [hiddenOrderIds, permanentlyDeletedOrderIds, isLoaded])
 
   // Filter orders based on active tab
   const filteredOrders = useMemo(() => {
     return orders.filter(order => {
+      const orderId = order.id || order.order_number
+      
+      if (permanentlyDeletedOrderIds.has(orderId)) return false
+      
+      if (activeTab === 'RECYCLE BIN') {
+        return hiddenOrderIds.has(orderId)
+      }
+      
+      if (hiddenOrderIds.has(orderId)) return false
+      
       if (activeTab === 'ALL') return true
       const status = (order.status || '').toUpperCase()
       if (activeTab === 'PENDING') return status === 'PENDING'
@@ -28,7 +68,7 @@ export default function OrdersTab({ orders, onDeleteOrder, setProfileActiveTab, 
       if (activeTab === 'CANCELLED') return status === 'CANCELLED'
       return true
     })
-  }, [orders, activeTab])
+  }, [orders, activeTab, hiddenOrderIds, permanentlyDeletedOrderIds])
 
   const displayOrders = mainTab === 'TRACK YOUR ORDER' 
     ? (filteredOrders.length > 0 ? [filteredOrders[0]] : []) 
@@ -164,7 +204,7 @@ export default function OrdersTab({ orders, onDeleteOrder, setProfileActiveTab, 
             {mainTab === 'TRACK YOUR ORDER' ? 'Your latest order' : 'Your all orders'}
           </h2>
           <div className="flex gap-2 overflow-x-auto w-full lg:w-auto py-1 [&::-webkit-scrollbar]:hidden">
-            {['ALL', 'PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'].map(tab => (
+            {['ALL', 'PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'RECYCLE BIN'].map(tab => (
               <button
                 key={tab}
                 onClick={() => { setActiveTab(tab); setCurrentPage(1); }}
@@ -213,13 +253,47 @@ export default function OrdersTab({ orders, onDeleteOrder, setProfileActiveTab, 
                       {getStatusBadge(order.status)}
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <button 
-                        onClick={() => setViewOrder(order)}
-                        className="bg-white border border-[#085041] text-[#085041] p-1.5 rounded-lg hover:bg-[#085041] hover:text-white transition-all duration-200 cursor-pointer shadow-sm mx-auto flex items-center justify-center group"
-                        title="View Invoice"
-                      >
-                        <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" className="group-hover:scale-110 transition-transform"><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                      </button>
+                      <div className="flex items-center justify-center gap-2">
+                        <button 
+                          onClick={() => setViewOrder(order)}
+                          className="bg-white border border-[#085041] text-[#085041] p-1.5 rounded-lg hover:bg-[#085041] hover:text-white transition-all duration-200 cursor-pointer shadow-sm flex items-center justify-center group"
+                          title="View Invoice"
+                        >
+                          <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" className="group-hover:scale-110 transition-transform"><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                        </button>
+                        {activeTab === 'RECYCLE BIN' ? (
+                          <>
+                            <button 
+                              onClick={() => {
+                                setHiddenOrderIds(prev => {
+                                  const newSet = new Set(prev)
+                                  newSet.delete(order.id || order.order_number)
+                                  return newSet
+                                })
+                              }}
+                              className="bg-white border border-indigo-500 text-indigo-500 p-1.5 rounded-lg hover:bg-indigo-500 hover:text-white transition-all duration-200 cursor-pointer shadow-sm flex items-center justify-center group"
+                              title="Restore Order"
+                            >
+                              <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" className="group-hover:scale-110 transition-transform"><path strokeLinecap="round" strokeLinejoin="round" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
+                            </button>
+                            <button 
+                              onClick={() => setOrderToPermanentDelete(order)}
+                              className="bg-white border border-gray-500 text-gray-500 p-1.5 rounded-lg hover:bg-gray-500 hover:text-white transition-all duration-200 cursor-pointer shadow-sm flex items-center justify-center group"
+                              title="Permanently Delete"
+                            >
+                              <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" className="group-hover:scale-110 transition-transform"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            </button>
+                          </>
+                        ) : (
+                          <button 
+                            onClick={() => setOrderToDelete(order)}
+                            className="bg-white border border-red-500 text-red-500 p-1.5 rounded-lg hover:bg-red-500 hover:text-white transition-all duration-200 cursor-pointer shadow-sm flex items-center justify-center group"
+                            title="Remove Order"
+                          >
+                            <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" className="group-hover:scale-110 transition-transform"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -258,13 +332,47 @@ export default function OrdersTab({ orders, onDeleteOrder, setProfileActiveTab, 
                     <span className="text-sm text-gray-700">{order.customer_name || 'Wholesale Shop'}</span>
                   </div>
                 </div>
-                <button 
-                  onClick={() => setViewOrder(order)}
-                  className="w-full bg-white border border-[#085041] text-[#085041] py-2.5 rounded-lg font-bold hover:bg-[#085041] hover:text-white hover:shadow-md transition-all duration-200 cursor-pointer flex justify-center items-center gap-2 text-sm"
-                >
-                  <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                  View Order Details
-                </button>
+                <div className="flex gap-2 w-full">
+                  <button 
+                    onClick={() => setViewOrder(order)}
+                    className="flex-1 bg-white border border-[#085041] text-[#085041] py-2.5 rounded-lg font-bold hover:bg-[#085041] hover:text-white hover:shadow-md transition-all duration-200 cursor-pointer flex justify-center items-center gap-2 text-sm"
+                  >
+                    <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                    View Order
+                  </button>
+                  {activeTab === 'RECYCLE BIN' ? (
+                    <>
+                      <button 
+                        onClick={() => {
+                          setHiddenOrderIds(prev => {
+                            const newSet = new Set(prev)
+                            newSet.delete(order.id || order.order_number)
+                            return newSet
+                          })
+                        }}
+                        className="flex-1 bg-white border border-indigo-500 text-indigo-500 py-2.5 rounded-lg font-bold hover:bg-indigo-500 hover:text-white hover:shadow-md transition-all duration-200 cursor-pointer flex justify-center items-center gap-2 text-sm"
+                      >
+                        <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
+                        Restore
+                      </button>
+                      <button 
+                        onClick={() => setOrderToPermanentDelete(order)}
+                        className="flex-1 bg-white border border-gray-500 text-gray-500 py-2.5 rounded-lg font-bold hover:bg-gray-500 hover:text-white hover:shadow-md transition-all duration-200 cursor-pointer flex justify-center items-center gap-2 text-sm"
+                      >
+                        <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        Perm. Delete
+                      </button>
+                    </>
+                  ) : (
+                    <button 
+                      onClick={() => setOrderToDelete(order)}
+                      className="flex-1 bg-white border border-red-500 text-red-500 py-2.5 rounded-lg font-bold hover:bg-red-500 hover:text-white hover:shadow-md transition-all duration-200 cursor-pointer flex justify-center items-center gap-2 text-sm"
+                    >
+                      <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                      Remove Order
+                    </button>
+                  )}
+                </div>
               </div>
             ))
           ) : (
@@ -319,6 +427,82 @@ export default function OrdersTab({ orders, onDeleteOrder, setProfileActiveTab, 
           onClose={() => setShowReportModal(false)}
           onReportCreated={(newReport) => setDailyReports(prev => [newReport, ...(Array.isArray(prev) ? prev : [])])}
         />
+      )}
+
+      {/* Permanent Delete Confirmation Modal */}
+      {orderToPermanentDelete && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden transform transition-all">
+            <div className="p-6">
+              <h3 className="text-xl font-bold text-gray-900 mb-2 text-red-600">Permanently Remove</h3>
+              <p className="text-gray-600 mb-6 text-sm leading-relaxed">
+                Are you sure you want to permanently remove order <span className="font-semibold">{orderToPermanentDelete.order_number}</span> from your view? This action cannot be undone, though it will not delete it from the main database.
+              </p>
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setOrderToPermanentDelete(null)}
+                  className="px-4 py-2 rounded-lg font-semibold text-gray-600 border border-gray-200 hover:bg-gray-100 transition-colors cursor-pointer text-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    setPermanentlyDeletedOrderIds(prev => {
+                      const newSet = new Set(prev)
+                      newSet.add(orderToPermanentDelete.id || orderToPermanentDelete.order_number)
+                      return newSet
+                    })
+                    // Also remove it from hiddenOrderIds just to keep things clean
+                    setHiddenOrderIds(prev => {
+                      const newSet = new Set(prev)
+                      newSet.delete(orderToPermanentDelete.id || orderToPermanentDelete.order_number)
+                      return newSet
+                    })
+                    setOrderToPermanentDelete(null)
+                  }}
+                  className="px-4 py-2 rounded-lg font-semibold bg-gray-600 text-white hover:bg-gray-700 shadow-sm hover:shadow-md transition-all cursor-pointer text-sm"
+                >
+                  Permanently Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {orderToDelete && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden transform transition-all">
+            <div className="p-6">
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Remove Order</h3>
+              <p className="text-gray-600 mb-6 text-sm leading-relaxed">
+                Are you sure you want to remove order <span className="font-semibold">{orderToDelete.order_number}</span> from this list? This will only hide it from your view.
+              </p>
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setOrderToDelete(null)}
+                  className="px-4 py-2 rounded-lg font-semibold text-gray-600 border border-gray-200 hover:bg-gray-100 transition-colors cursor-pointer text-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    setHiddenOrderIds(prev => {
+                      const newSet = new Set(prev)
+                      newSet.add(orderToDelete.id || orderToDelete.order_number)
+                      return newSet
+                    })
+                    setOrderToDelete(null)
+                  }}
+                  className="px-4 py-2 rounded-lg font-semibold bg-red-600 text-white hover:bg-red-700 shadow-sm hover:shadow-md transition-all cursor-pointer text-sm"
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

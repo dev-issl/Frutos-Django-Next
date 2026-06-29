@@ -178,15 +178,21 @@ class OrderCreateSerializer(serializers.Serializer):
 
             # ── Wholesale validation ──────────────────────────────
             is_wholesale = False
-            if user and getattr(user, 'user_type', None) == 'WHOLESALER':
-                profile = getattr(user, 'wholesaler_profile', None)
-                if profile and getattr(profile, 'approval_status', None) == 'APPROVED':
-                    self._validate_wholesale_minimums(cart_items)
-                    is_wholesale = True
-                else:
-                    raise serializers.ValidationError(
-                        "Your wholesaler account is not yet approved."
-                    )
+            if user:
+                is_wholesale_user = (getattr(user, 'user_type', None) == 'WHOLESALER') or (user.__class__.__name__ == 'WholesaleUser')
+                if is_wholesale_user:
+                    is_approved = False
+                    if user.__class__.__name__ == 'WholesaleUser':
+                        is_approved = getattr(user, 'status', '').lower() == 'approved' or getattr(user, 'is_approved', False)
+                    else:
+                        profile = getattr(user, 'wholesaler_profile', None)
+                        is_approved = profile and getattr(profile, 'approval_status', None) == 'APPROVED'
+                        
+                    if is_approved:
+                        self._validate_wholesale_minimums(cart_items)
+                        is_wholesale = True
+                    else:
+                        raise serializers.ValidationError("Your wholesaler account is not yet approved.")
 
             # ── Coupon ────────────────────────────────────────────
             product_discount = Decimal('0.00')
@@ -208,9 +214,18 @@ class OrderCreateSerializer(serializers.Serializer):
             total_amount = cart_subtotal - product_discount
 
             # ── Create Order ──────────────────────────────────────
+            final_user = None
+            final_wholesale_user = None
+            
+            if user:
+                if user.__class__.__name__ == 'WholesaleUser':
+                    final_wholesale_user = user
+                else:
+                    final_user = user
+
             order = Order.objects.create(
-                user                = user,
-                wholesale_user      = user if is_wholesale else None,
+                user                = final_user,
+                wholesale_user      = final_wholesale_user,
                 customer_name       = validated_data['customer_name'],
                 customer_email      = validated_data['customer_email'],
                 customer_phone      = validated_data['customer_phone'],
@@ -368,6 +383,8 @@ class OrderItemReadSerializer(serializers.ModelSerializer):
 
     def get_product_name(self, obj):
         if obj.product:
+            if obj.product.variant:
+                return f"{obj.product.name} ({obj.product.variant})"
             return obj.product.name
         if obj.leftover_pack:
             return f"Leftover Pack: {obj.leftover_pack.name}"
@@ -642,6 +659,8 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
     def get_product(self, obj):
         if obj.product:
+            if obj.product.variant:
+                return f"{obj.product.name} ({obj.product.variant})"
             return obj.product.name
         if obj.leftover_pack:
             return f"Pack: {obj.leftover_pack.name}"
