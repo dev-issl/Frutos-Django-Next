@@ -166,6 +166,11 @@ export default function ProductCard({ product, notified, onNotify }) {
               <h3 className="font-sans font-bold text-gray-900 text-[13px] md:text-[15px] leading-snug flex-1 min-w-0 group-hover:text-[#00694C] transition-colors line-clamp-2">
                 {name}
               </h3>
+              {variant && (
+                <span className="flex-shrink-0 text-[10px] md:text-[11px] font-bold text-[#00694C] bg-[#ECF7E4] px-1.5 py-0.5 rounded mt-0.5">
+                  {variant}
+                </span>
+              )}
               {cleanOrigin && (
                 <div className="flex-shrink-0 text-right" style={{ maxWidth: '72px' }}>
                   <span className="font-serif italic text-[10px] md:text-[11px] text-gray-400 leading-tight block">from</span>
@@ -177,14 +182,11 @@ export default function ProductCard({ product, notified, onNotify }) {
               )}
             </div>
 
-            <div className="flex items-center gap-2 mb-2">
-              {variant && (
-                <span className="text-[10px] md:text-[11px] font-bold text-[#00694C] bg-[#ECF7E4] px-1.5 py-0.5 rounded">
-                  Clase {variant}
-                </span>
-              )}
-              {unit && <p className="text-[11px] md:text-[12px] text-gray-400 leading-tight m-0">{unit}</p>}
-            </div>
+            {unit && (
+              <div className="mb-2">
+                <p className="text-[11px] md:text-[12px] text-gray-400 leading-tight m-0">{unit}</p>
+              </div>
+            )}
 
             {inStock ? (
               <div className="flex flex-col gap-1.5 mt-auto">

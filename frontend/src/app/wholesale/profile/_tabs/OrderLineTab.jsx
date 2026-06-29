@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation'
 import { signOut } from 'next-auth/react'
 import { useCart } from '@/app/context/CartContext'
 import { siteSettingsService } from '@/app/dashboard/_lib/services'
+import SearchableSelect from '@/app/dashboard/_components/SearchableSelect'
 
 export default function OrderLineTab({ accessToken }) {
   const router = useRouter()
@@ -16,6 +17,8 @@ export default function OrderLineTab({ accessToken }) {
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)
   const [activeCategory, setActiveCategory] = useState('All')
+  const [activeSubCategory, setActiveSubCategory] = useState('All')
+  const [activeClass, setActiveClass] = useState('All')
   const [searchQuery, setSearchQuery] = useState('')
   const [cart, setCart] = useState([])
   const [placingOrder, setPlacingOrder] = useState(false)
@@ -27,7 +30,12 @@ export default function OrderLineTab({ accessToken }) {
   // Reset page when category or search changes
   useEffect(() => {
     setCurrentPage(1)
-  }, [searchQuery, activeCategory])
+  }, [searchQuery, activeCategory, activeSubCategory, activeClass])
+
+  // Reset dependent filters
+  useEffect(() => {
+    setActiveSubCategory('All')
+  }, [activeCategory])
 
   useEffect(() => {
     async function fetchData() {
@@ -53,11 +61,28 @@ export default function OrderLineTab({ accessToken }) {
     fetchData()
   }, [accessToken])
 
+  const availableSubCategories = Array.from(new Set(
+    products
+      .filter(p => activeCategory === 'All' || p.category?.name === activeCategory || p.category === activeCategory)
+      .map(p => p.sub_category?.name || p.sub_category || p.sub_category_name)
+      .filter(Boolean)
+  )).sort()
+
+  const availableClasses = Array.from(new Set(
+    products.map(p => p.variant).filter(Boolean)
+  )).sort()
+
   const filteredProducts = products.filter(p => {
     const productTitle = p.name || p.title || ''
     const matchesSearch = productTitle.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesCategory = activeCategory === 'All' || p.category?.name === activeCategory || p.category === activeCategory
-    return matchesSearch && matchesCategory
+    
+    const subCatStr = p.sub_category?.name || p.sub_category || p.sub_category_name
+    const matchesSubCategory = activeSubCategory === 'All' || subCatStr === activeSubCategory
+    
+    const matchesClass = activeClass === 'All' || p.variant === activeClass
+
+    return matchesSearch && matchesCategory && matchesSubCategory && matchesClass
   })
 
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage)
@@ -180,35 +205,54 @@ export default function OrderLineTab({ accessToken }) {
           </div>
         </div>
 
-        {/* Categories Tabs */}
-        <div className="px-3 py-2 border-b border-gray-100 bg-white flex flex-wrap gap-2 z-10">
-          <button
-            onClick={() => setActiveCategory('All')}
-            className={`whitespace-nowrap px-3 py-1.5 rounded-md text-[13px] font-medium transition-colors cursor-pointer ${activeCategory === 'All'
-              ? 'bg-[#085041] text-white'
-              : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
-              }`}
-          >
-            All Products
-          </button>
-          {categories.filter(cat => {
-            const catName = typeof cat === 'string' ? cat : cat.name;
-            return catName !== 'All';
-          }).map((cat, idx) => {
-            const catName = typeof cat === 'string' ? cat : cat.name
-            return (
-              <button
-                key={idx}
-                onClick={() => setActiveCategory(catName)}
-                className={`whitespace-nowrap px-3 py-1.5 rounded-md text-[13px] font-medium transition-colors cursor-pointer ${activeCategory === catName
-                  ? 'bg-[#085041] text-white'
-                  : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
-                  }`}
-              >
-                {catName}
-              </button>
-            )
-          })}
+        {/* Filters */}
+        <div className="px-3 py-3 border-b border-gray-100 bg-white flex flex-wrap gap-3 z-10 items-center">
+          <span className="text-[12px] font-semibold text-gray-500 uppercase tracking-widest pl-1 hidden sm:block">Filters:</span>
+          <div className="w-[180px] sm:flex-none">
+            <SearchableSelect
+              value={activeCategory}
+              onChange={(val) => setActiveCategory(val)}
+              options={[
+                { label: 'All Categories', value: 'All' },
+                ...categories.filter(cat => {
+                  const catName = typeof cat === 'string' ? cat : cat.name;
+                  return catName !== 'All';
+                }).map(cat => {
+                  const catName = typeof cat === 'string' ? cat : cat.name;
+                  return { label: catName, value: catName };
+                })
+              ]}
+              placeholder="All Categories"
+            />
+          </div>
+
+          {availableSubCategories.length > 0 && (
+            <div className="w-[180px] sm:flex-none">
+              <SearchableSelect
+                value={activeSubCategory}
+                onChange={(val) => setActiveSubCategory(val)}
+                options={[
+                  { label: 'All Subcategories', value: 'All' },
+                  ...availableSubCategories.map(sub => ({ label: sub, value: sub }))
+                ]}
+                placeholder="All Subcategories"
+              />
+            </div>
+          )}
+
+          {availableClasses.length > 0 && (
+            <div className="w-[180px] sm:flex-none">
+              <SearchableSelect
+                value={activeClass}
+                onChange={(val) => setActiveClass(val)}
+                options={[
+                  { label: 'All Qualities', value: 'All' },
+                  ...availableClasses.map(cls => ({ label: cls, value: cls }))
+                ]}
+                placeholder="All Qualities"
+              />
+            </div>
+          )}
         </div>
 
         {/* Product Grid */}
@@ -221,7 +265,7 @@ export default function OrderLineTab({ accessToken }) {
             <div className="text-center text-gray-500 py-10">No products found.</div>
           ) : (
             <>
-              <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))' }}>
+              <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
                 {paginatedProducts.map((product) => {
                   const qty = getQuantityInCart(product.id)
                   const isSelected = qty > 0
@@ -229,7 +273,7 @@ export default function OrderLineTab({ accessToken }) {
                   const stock = product.inStock || 0
                   const canAddMore = (qty + step) <= stock
                   return (
-                    <div key={product.id} className={`bg-white rounded-xl border transition-all duration-300 flex flex-row h-[72px] overflow-hidden group ${isSelected ? 'border-[#085041] shadow-sm ring-1 ring-[#085041]/10' : 'border-gray-200 shadow-sm hover:shadow hover:border-gray-300'}`}>
+                    <div key={product.id} className={`bg-white rounded-xl border transition-all duration-300 flex flex-row min-h-[84px] h-auto overflow-hidden group items-center ${isSelected ? 'border-[#085041] shadow-sm ring-1 ring-[#085041]/10' : 'border-gray-200 shadow-sm hover:shadow hover:border-gray-300'}`}>
 
                       {/* Image Area (Left) */}
                       <div className="relative w-[72px] h-full bg-transparent shrink-0 flex items-center justify-center overflow-hidden">
@@ -264,9 +308,15 @@ export default function OrderLineTab({ accessToken }) {
                           </span>
                           {getDisplayUnit(product) && <span className="text-[9px] text-gray-500 font-medium truncate">/ {getDisplayUnit(product)}</span>}
                         </div>
-                        {step > 1 && (
-                          <div className="text-[9px] text-orange-600 font-medium mt-0.5">
-                            Min: {step}
+                        {(step > 1 || product.variant) && (
+                          <div className="text-[9px] text-orange-600 font-medium mt-1 flex items-center flex-wrap gap-1">
+                            {step > 1 && <span>Min: {step}</span>}
+                            {step > 1 && product.variant && <span className="text-gray-300">•</span>}
+                            {product.variant && (
+                              <span className="text-[#00694C] bg-[#ECF7E4] px-1 rounded font-bold">
+                                {product.variant}
+                              </span>
+                            )}
                           </div>
                         )}
                       </div>

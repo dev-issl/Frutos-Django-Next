@@ -596,13 +596,20 @@ export default function ProductDetailClient({ product: initialProduct, related }
           </span>
           <div className="flex-1 h-px bg-[#BCCAC1]/30" />
         </div>
-        <h1 className="font-bold tracking-tight text-[#151E13] mb-3"
-          style={{
-            fontFamily: '"Newsreader", Georgia, serif',
-            fontSize: 'clamp(2.4rem, 8vw, 3rem)', lineHeight: 1.1
-          }}>
-          {product.name}
-        </h1>
+        <div className="flex items-center gap-3 mb-3">
+          <h1 className="font-bold tracking-tight text-[#151E13] flex-1"
+            style={{
+              fontFamily: '"Newsreader", Georgia, serif',
+              fontSize: 'clamp(2.4rem, 8vw, 3rem)', lineHeight: 1.1
+            }}>
+            {product.name}
+          </h1>
+          {product.variant && (
+            <span className="text-xs font-bold text-[#00694C] bg-[#ECF7E4] px-2 py-1 rounded shrink-0">
+              {product.variant}
+            </span>
+          )}
+        </div>
         <div className="flex items-center gap-3 flex-wrap">
           <StarRating rating={product.rating} reviews={product.reviews} size={14} />
           {unitLabel && <span style={{ fontSize: '13px', color: '#6D7A73' }}>{unitLabel}</span>}
@@ -741,16 +748,23 @@ export default function ProductDetailClient({ product: initialProduct, related }
             <div className="col-span-5 flex flex-col gap-4">
 
               <div>
-                <h1 className="font-bold tracking-tight text-[#151E13] mb-2"
-                  style={{
-                    fontFamily: '"Newsreader", Georgia, serif',
-                    fontSize: 'clamp(2rem, 3vw, 2.6rem)', lineHeight: 1.1
-                  }}>
-                  {product.name}
-                </h1>
+                <div className="flex items-center gap-4 mb-2">
+                  <h1 className="font-bold tracking-tight text-[#151E13]"
+                    style={{
+                      fontFamily: '"Newsreader", Georgia, serif',
+                      fontSize: 'clamp(2rem, 3vw, 2.6rem)', lineHeight: 1.1
+                    }}>
+                    {product.name}
+                  </h1>
+                  {product.variant && (
+                    <span className="text-sm font-bold text-[#00694C] bg-[#ECF7E4] px-2.5 py-1 rounded shrink-0">
+                      {product.variant}
+                    </span>
+                  )}
+                </div>
                 <p className="italic text-lg text-[#00694C] mb-3"
                   style={{ fontFamily: '"Newsreader", Georgia, serif' }}>
-                  Class A — Fresh from {cleanOrigin}
+                  Fresh from {cleanOrigin}
                 </p>
                 <StarRating rating={product.rating} reviews={product.reviews} size={16} />
               </div>

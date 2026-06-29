@@ -126,7 +126,8 @@ function Pagination({ currentPage, totalPages, onPageChange }) {
 // Props:
 //   initialProducts — array of products fetched server-side from the API
 //   categories      — ['All', 'Fruits', 'Vegetables', ...] from the API
-export default function ProductListingClient({ initialProducts = [], categories = [] }) {
+//   productClasses  — ['Class A', 'Class B', ...] from site settings
+export default function ProductListingClient({ initialProducts = [], categories = [], productClasses = [] }) {
 
   const [products, setProducts] = useState(initialProducts)
   const [cats, setCats] = useState(categories)
@@ -258,12 +259,19 @@ export default function ProductListingClient({ initialProducts = [], categories 
   }
   
   const availableVariants = useMemo(() => {
-    const variants = new Set()
+    const variants = new Set(productClasses)
     products.forEach(p => {
       if (p.variant) variants.add(p.variant)
     })
-    return Array.from(variants).sort()
-  }, [products])
+    return Array.from(variants) // Do not sort because we want to preserve the admin dashboard order for productClasses, or we can sort if they prefer. The user didn't specify, so preserving original order or appending others is fine. Actually, let's keep the dashboard order first, then append any stray variants, then return.
+  }, [products, productClasses])
+
+  // Better sorting logic to keep configured classes first
+  const sortedVariants = useMemo(() => {
+      const configured = [...productClasses];
+      const others = availableVariants.filter(v => !configured.includes(v)).sort();
+      return [...configured, ...others];
+  }, [availableVariants, productClasses])
 
   function variantCount(v) {
     let list = products
@@ -512,7 +520,7 @@ export default function ProductListingClient({ initialProducts = [], categories 
               </div>
 
               {/* Quality */}
-              {availableVariants.length > 0 && (
+              {sortedVariants.length > 0 && (
                 <>
                   <div className="w-px h-6 shrink-0" style={{ background: 'rgba(188,202,193,0.4)' }} />
                   <div className="flex items-center gap-2 shrink-0 relative" ref={qualityRef}>
@@ -528,7 +536,7 @@ export default function ProductListingClient({ initialProducts = [], categories 
                         boxShadow: isQualityOpen ? '0 4px 12px rgba(0,105,76,0.08)' : 'none'
                       }}
                     >
-                      <span>{activeVariant ? `Clase ${activeVariant}` : 'All Qualities'}</span>
+                      <span>{activeVariant ? activeVariant : 'All Qualities'}</span>
                       <span className="ml-2 transition-transform duration-200" style={{ transform: isQualityOpen ? 'rotate(180deg)' : 'rotate(0deg)', color: '#6D7A73' }}>
                         <ChevronDown />
                       </span>
@@ -561,7 +569,7 @@ export default function ProductListingClient({ initialProducts = [], categories 
                         >
                           All Qualities
                         </button>
-                        {availableVariants.map(v => (
+                        {sortedVariants.map(v => (
                           <button
                             key={v}
                             onClick={() => { setActiveVariant(v); setIsQualityOpen(false); }}
@@ -572,7 +580,7 @@ export default function ProductListingClient({ initialProducts = [], categories 
                               cursor: 'pointer'
                             }}
                           >
-                            <span>Clase {v}</span>
+                            <span>{v}</span>
                             <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-sm"
                               style={{ 
                                 background: activeVariant === v ? 'rgba(0,105,76,0.1)' : '#f2fdea',

@@ -21,7 +21,7 @@ const labelCls = "block text-xs font-bold text-slate-500 uppercase tracking-wide
 
 export default function ProductForm({
   initialValues, onSubmit, submitLabel = "Save",
-  categories, brands, colors: propColors, sizes: propSizes, subcategories, stores,
+  categories, brands, colors: propColors, sizes: propSizes, subcategories, stores, productClasses,
 }) {
   const [form, setForm] = useState({
     name: "", slug: "", description: "", nutritional_info: "",
@@ -244,8 +244,13 @@ export default function ProductForm({
             </div>
             <div>
               <label className={labelCls}>Variant / Quality</label>
-              <input className={inputCls} value={form.variant || ""}
-                onChange={e => handleChange("variant", e.target.value)} placeholder="e.g., C, B, Premium" />
+              <SearchableSelect
+                value={form.variant || ""}
+                onChange={v => handleChange("variant", v)}
+                options={productClasses?.map(c => ({ label: c, value: c })) || []}
+                placeholder="Select class..."
+                className={inputCls}
+              />
             </div>
             <div>
               <label className={labelCls}>Badge Label</label>

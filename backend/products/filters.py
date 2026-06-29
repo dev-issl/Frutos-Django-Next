@@ -18,6 +18,7 @@ class ProductFilter(filters.FilterSet):
     colors = CharInFilter(field_name='colors__name', lookup_expr='in') # Filter by color name
     shipping_categories = NumberInFilter(field_name='shipping_category__id', lookup_expr='in') # Filter by shipping category ID
     search = filters.CharFilter(method='filter_search')  # Custom search filter
+    variant = filters.CharFilter(field_name='variant', lookup_expr='iexact')
     min_price = filters.NumberFilter(field_name='price', lookup_expr='gte')
     max_price = filters.NumberFilter(field_name='price', lookup_expr='lte')
     ordering = filters.OrderingFilter(
@@ -30,7 +31,7 @@ class ProductFilter(filters.FilterSet):
 
     class Meta:
         model = Product
-        fields = ['category', 'subcategory', 'subcategories', 'brand', 'brands', 'colors', 'shipping_categories', 'search', 'min_price', 'max_price', 'ordering']
+        fields = ['category', 'subcategory', 'subcategories', 'brand', 'brands', 'colors', 'shipping_categories', 'variant', 'search', 'min_price', 'max_price', 'ordering']
 
     def filter_category(self, queryset, name, value):
         from django.db.models import Q

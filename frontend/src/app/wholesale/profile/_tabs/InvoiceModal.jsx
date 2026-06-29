@@ -60,6 +60,17 @@ export default function InvoiceModal({ order, onClose }) {
 
   const statusLabel = order.status ? order.status.toUpperCase() : 'ORDER'
 
+  const calculatedSubtotal = (order.items || []).reduce((sum, item) => sum + (Number(item.line_total) || (Number(item.unit_price) * Number(item.quantity))), 0)
+  
+  const calculatedTax = (order.items || []).reduce((sum, item) => {
+    const itemTaxRate = item.tax_rate ? parseFloat(item.tax_rate) / 100 : 0.05
+    const itemLineTotal = Number(item.line_total) || (Number(item.unit_price) * Number(item.quantity))
+    return sum + (itemLineTotal * itemTaxRate)
+  }, 0)
+
+  const displaySubtotal = Number(order.cart_subtotal || calculatedSubtotal)
+  const displayTax = Number(order.total_tax || calculatedTax)
+  const displayTotal = Number(order.total_amount || (displaySubtotal + displayTax))
   const modalContent = (
     <>
       <div 
@@ -164,17 +175,29 @@ export default function InvoiceModal({ order, onClose }) {
                     </tr>
                   ))}
                   
-                  {/* Summary Rows (Sub Total, Grand Total, Paid Amount, Due Amount) */}
+                  {/* Summary Rows */}
                   <tr>
                     <td colSpan="8" className="border-0"></td>
-                    <td className="border border-gray-200 p-2 text-right font-bold text-gray-900 bg-white">Sub Total</td>
-                    <td className="border border-gray-200 p-2 text-center font-bold text-gray-900 bg-white">€{Number(order.cart_subtotal || order.total_amount).toFixed(2)}</td>
+                    <td className="border border-gray-200 p-2 text-right font-bold text-gray-900 bg-white">Subtotal (Excl. Tax)</td>
+                    <td className="border border-gray-200 p-2 text-center font-bold text-gray-900 bg-white">
+                      €{displaySubtotal.toFixed(2)}
+                    </td>
                     <td className="border-0"></td>
                   </tr>
                   <tr>
                     <td colSpan="8" className="border-0"></td>
-                    <td className="border border-gray-200 p-2 text-right font-bold text-gray-900 bg-white">Grand Total</td>
-                    <td className="border border-gray-200 p-2 text-center font-bold text-gray-900 bg-white">€{Number(order.total_amount).toFixed(2)}</td>
+                    <td className="border border-gray-200 p-2 text-right font-bold text-gray-900 bg-white">Tax Amount</td>
+                    <td className="border border-gray-200 p-2 text-center font-bold text-gray-900 bg-white">
+                      €{displayTax.toFixed(2)}
+                    </td>
+                    <td className="border-0"></td>
+                  </tr>
+                  <tr>
+                    <td colSpan="8" className="border-0"></td>
+                    <td className="border border-gray-200 p-2 text-right font-bold text-gray-900 bg-white">Total (Incl. Tax)</td>
+                    <td className="border border-gray-200 p-2 text-center font-bold text-gray-900 bg-white">
+                      €{displayTotal.toFixed(2)}
+                    </td>
                     <td className="border-0"></td>
                   </tr>
                   <tr>

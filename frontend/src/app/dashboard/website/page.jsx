@@ -39,6 +39,7 @@ const TABS = [
   { id: "settings", label: "Meta Config" },
   { id: "navbar", label: "Navbar" },
   { id: "footer", label: "Footer" },
+  { id: "catalog", label: "Catalog" },
 ];
 
 /* ─── Column / Field definitions per tab ─────────────────────── */
@@ -906,6 +907,220 @@ function NavbarConfigForm() {
   );
 }
 
+/* ─── Custom Catalog Config Form ───────────────────────────────── */
+function CatalogConfigForm() {
+  const router = useRouter();
+  const toast = useToastContext();
+  const [data, setData] = useState({
+    product_classes: { id: null, value: "" },
+  });
+  const [classesList, setClassesList] = useState([]);
+  const [newClass, setNewClass] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      let items = [];
+      let page = 1;
+      let hasMore = true;
+      while (hasMore) {
+        const res = await siteSettingsService.list({ page, group: "catalog" });
+        const resItems = res?.results || res || [];
+        items = [...items, ...resItems];
+        if (!res?.next) hasMore = false;
+        else page++;
+      }
+
+      const newData = {
+        product_classes: { id: null, value: "" },
+      };
+      
+      let fetchedClassesStr = "";
+      items.forEach(item => {
+        if (newData[item.key] !== undefined) {
+          newData[item.key] = { id: item.id, value: item.value || "", file: null };
+          if (item.key === 'product_classes') {
+            fetchedClassesStr = item.value || "";
+          }
+        }
+      });
+
+      setData(newData);
+      setClassesList(fetchedClassesStr.split(',').map(s => s.trim()).filter(Boolean));
+    } catch (e) {
+      toast.error("Failed to load catalog settings");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddClass = async () => {
+    const trimmed = newClass.trim();
+    if (!trimmed) return;
+    if (classesList.includes(trimmed)) {
+      toast.error("This class already exists.");
+      return;
+    }
+    const newClasses = [...classesList, trimmed];
+    setClassesList(newClasses);
+    setNewClass("");
+
+    // Auto-save on add
+    try {
+      const finalValue = newClasses.join(', ');
+      const updatedData = { ...data };
+      updatedData.product_classes = { ...data.product_classes, value: finalValue };
+      
+      for (const [key, item] of Object.entries(updatedData)) {
+        if (item.id) {
+          await siteSettingsService.patch(item.id, { value: item.value });
+        } else if (item.value) {
+          await siteSettingsService.create({ key, value: item.value, setting_type: 'text', group: 'catalog', is_active: true });
+        }
+      }
+      toast.success("Class added successfully");
+      fetchData();
+      router.refresh();
+    } catch (e) {
+      toast.error("Failed to add class");
+    }
+  };
+
+  const handleRemoveClass = async (indexToRemove) => {
+    const newClasses = classesList.filter((_, i) => i !== indexToRemove);
+    setClassesList(newClasses);
+    
+    // Auto-save on remove
+    try {
+      const finalValue = newClasses.join(', ');
+      const updatedData = { ...data };
+      updatedData.product_classes = { ...data.product_classes, value: finalValue };
+      
+      for (const [key, item] of Object.entries(updatedData)) {
+        if (item.id) {
+          await siteSettingsService.patch(item.id, { value: item.value });
+        } else if (item.value) {
+          await siteSettingsService.create({ key, value: item.value, setting_type: 'text', group: 'catalog', is_active: true });
+        }
+      }
+      toast.success("Class removed successfully");
+      fetchData();
+      router.refresh();
+    } catch (e) {
+      toast.error("Failed to remove class");
+    }
+  };
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    
+    // Update data with the new comma-separated string
+    let currentClasses = [...classesList];
+    const trimmed = newClass.trim();
+    if (trimmed && !currentClasses.includes(trimmed)) {
+      currentClasses.push(trimmed);
+      setClassesList(currentClasses);
+      setNewClass("");
+    }
+    
+    const finalValue = currentClasses.join(', ');
+    const updatedData = { ...data };
+    updatedData.product_classes = { ...data.product_classes, value: finalValue };
+    
+    try {
+      for (const [key, item] of Object.entries(updatedData)) {
+        if (item.id) {
+          await siteSettingsService.patch(item.id, { value: item.value });
+        } else if (item.value) {
+          await siteSettingsService.create({ key, value: item.value, setting_type: 'text', group: 'catalog', is_active: true });
+        }
+      }
+      toast.success("Catalog config saved successfully");
+      fetchData();
+      router.refresh();
+    } catch (e) {
+      toast.error("Failed to save catalog config");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) return <div className="p-8 text-center text-slate-500 font-medium">Loading catalog data...</div>;
+
+  return (
+    <form onSubmit={handleSave} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden max-w-3xl">
+      <div className="p-6 space-y-6">
+        <div>
+          <h3 className="text-sm font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+            Catalog Settings
+          </h3>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2 cursor-pointer">Product Quality Classes</label>
+              
+              <div className="flex gap-2 mb-4">
+                <input 
+                  type="text" 
+                  value={newClass} 
+                  onChange={(e) => setNewClass(e.target.value)} 
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddClass();
+                    }
+                  }}
+                  className="flex-1 px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-slate-900" 
+                  placeholder="e.g., Class A, Premium..." 
+                />
+                <button 
+                  type="button" 
+                  onClick={handleAddClass}
+                  className="px-4 py-2 bg-slate-900 text-white rounded-md text-sm font-medium hover:bg-slate-800 transition-colors cursor-pointer"
+                >
+                  Add Class
+                </button>
+              </div>
+
+              {classesList.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {classesList.map((cls, i) => (
+                    <div key={i} className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-lg text-sm font-medium">
+                      <span>{cls}</span>
+                      <button 
+                        type="button" 
+                        onClick={() => handleRemoveClass(i)}
+                        className="text-emerald-600 hover:text-emerald-900 focus:outline-none cursor-pointer"
+                        title="Remove class"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-slate-500 italic">No classes added yet. Add one above.</p>
+              )}
+              
+              <p className="text-[10px] text-slate-500 mt-3">These quality classes will be available for selection when creating or filtering products.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex justify-end">
+        <button type="submit" disabled={saving} className="px-4 py-2 bg-[#00694C] text-white rounded-md text-sm font-medium hover:bg-[#085041] disabled:opacity-50 cursor-pointer">
+          {saving ? "Saving..." : "Save Catalog Config"}
+        </button>
+      </div>
+    </form>
+  );
+}
+
 /* ─── Generic Tab Table ──────────────────────────────────────── */
 function TabTable({ service, columns, formFields, lookupField = "id", boolFields = ["is_active"], defaultParams = {} }) {
   const router = useRouter();
@@ -1018,6 +1233,8 @@ export default function WebsitePage() {
         <MetaConfigForm />
       ) : activeTab === "navbar" ? (
         <NavbarConfigForm />
+      ) : activeTab === "catalog" ? (
+        <CatalogConfigForm />
       ) : (
         <TabTable
           key={activeTab}
