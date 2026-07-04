@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Plus, Eye, Trash2, Edit, Store as StoreIcon, Shield, User, UserPlus, Mail, Lock, Briefcase, Phone, Image as ImageIcon, Calendar } from "lucide-react";
+import { Plus, Eye, Trash2, Edit, Store as StoreIcon, Shield, User, UserPlus, Mail, Lock, Briefcase, Phone, Image as ImageIcon, Calendar, Trophy, BarChart2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Container from "@/app/dashboard/_components/Container";
@@ -12,7 +12,8 @@ import ConfirmDialog from "@/app/dashboard/_components/ConfirmDialog";
 import { useToastContext } from "@/app/dashboard/_components/Toaster";
 import useSWR from "swr";
 import api from "@/app/dashboard/_lib/api";
-
+import StaffRankingTab from "./_components/StaffRankingTab";
+import StaffAttendanceTab from "./_components/StaffAttendanceTab";
 const PAGE_SIZE = 20;
 
 const columns = [
@@ -31,8 +32,6 @@ const columns = [
   )},
   { key: "email", label: "Email", render: (v, row) => row.user?.email },
   { key: "role", label: "Role", render: (v) => <span className="px-2 py-0.5 text-xs rounded-full font-medium bg-emerald-100 text-emerald-700">{v || "Staff"}</span> },
-  { key: "store_name", label: "Store", render: (v) => v || <span className="text-slate-400">—</span> },
-
   { key: "phone", label: "Phone", render: (v) => v || <span className="text-slate-400">—</span> },
   { key: "hire_date", label: "Hire Date", render: (v) => v ? new Date(v).toLocaleDateString() : "—" },
 ];
@@ -41,6 +40,7 @@ export default function StaffPage() {
   const router = useRouter();
   const toast = useToastContext();
   const [page, setPage] = useState(1);
+  const [activeTab, setActiveTab] = useState("staff");
   const [createOpen, setCreateOpen] = useState(false);
   const [deleteItem, setDeleteItem] = useState(null);
   const [viewStaff, setViewStaff] = useState(null);
@@ -150,6 +150,28 @@ export default function StaffPage() {
 
   return (
     <Container title="Staff Management" description="Manage your staff, their roles, and branch locations">
+      {/* Tabs */}
+      <div className="flex gap-1 bg-slate-100 rounded-xl p-1 mb-6 max-w-md">
+        <button onClick={() => setActiveTab("staff")}
+          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-semibold transition-all cursor-pointer ${activeTab === "staff" ? "bg-white text-[#00694C] shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>
+          <User className="w-4 h-4" /> Staff
+        </button>
+        <button onClick={() => setActiveTab("ranking")}
+          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-semibold transition-all cursor-pointer ${activeTab === "ranking" ? "bg-white text-[#00694C] shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>
+          <Trophy className="w-4 h-4" /> Rankings
+        </button>
+        <button onClick={() => setActiveTab("attendance")}
+          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-semibold transition-all cursor-pointer ${activeTab === "attendance" ? "bg-white text-[#00694C] shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>
+          <Calendar className="w-4 h-4" /> Attendance
+        </button>
+      </div>
+
+      {activeTab === "ranking" ? (
+        <StaffRankingTab stores={stores} />
+      ) : activeTab === "attendance" ? (
+        <StaffAttendanceTab stores={stores} />
+      ) : (
+        <>
       <div className="flex justify-end mb-4">
         <button onClick={() => setCreateOpen(true)} className="db-btn-primary">
           <Plus size={15} /> Add New Staff
@@ -187,6 +209,9 @@ export default function StaffPage() {
       />
 
       
+      </>
+      )}
+
       <Modal open={createOpen} onClose={() => setCreateOpen(false)} title={
         <div className="flex items-center gap-2.5 text-emerald-700">
           <UserPlus size={18} className="text-emerald-500" />
@@ -225,36 +250,6 @@ export default function StaffPage() {
                   <Briefcase className="h-4 w-4 text-slate-400" />
                 </div>
                 <input required name="role" className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all" placeholder="e.g. Sales Associate" />
-              </div>
-            </div>
-
-            {/* Store */}
-            <div className="space-y-2.5">
-              <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">Store</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <StoreIcon className="h-4 w-4 text-slate-400" />
-                </div>
-                <select name="store_id" className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all appearance-none cursor-pointer">
-                  <option value="">Select a Store</option>
-                  {stores.map(store => (
-                    <option key={store.id} value={store.id}>{store.name}</option>
-                  ))}
-                </select>
-                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                  <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                </div>
-              </div>
-            </div>
-
-            {/* Password */}
-            <div className="space-y-2.5">
-              <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">Password *</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-4 w-4 text-slate-400" />
-                </div>
-                <input required name="password" type="password" className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all" placeholder="Min 8 characters" />
               </div>
             </div>
 
@@ -340,36 +335,6 @@ export default function StaffPage() {
                     <Briefcase className="h-4 w-4 text-slate-400" />
                   </div>
                   <input required name="role" defaultValue={editItem.role} className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all" placeholder="e.g. Sales Associate" />
-                </div>
-              </div>
-
-              {/* Store */}
-              <div className="space-y-2.5">
-                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">Store</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <StoreIcon className="h-4 w-4 text-slate-400" />
-                  </div>
-                  <select name="store_id" defaultValue={editItem.store_id || editItem.store?.id || ""} className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all appearance-none cursor-pointer">
-                    <option value="">Select a Store</option>
-                    {stores.map(store => (
-                      <option key={store.id} value={store.id}>{store.name}</option>
-                    ))}
-                  </select>
-                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                    <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                  </div>
-                </div>
-              </div>
-
-              {/* Password */}
-              <div className="space-y-2.5">
-                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">Password</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Lock className="h-4 w-4 text-slate-400" />
-                  </div>
-                  <input name="password" type="password" className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all" placeholder="Leave blank to keep current" />
                 </div>
               </div>
 

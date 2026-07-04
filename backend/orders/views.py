@@ -703,7 +703,19 @@ class OrderViewSet(viewsets.ModelViewSet):
                 # Create the order with atomic transaction
                 order = serializer.save()
                 
+                # Track which staff member created this order
+                user = request.user
+                if user and user.is_authenticated and getattr(user, 'user_type', '') == 'STAFF':
+                    try:
+                        from staff.models import StaffProfile
+                        staff_profile = StaffProfile.objects.get(user=user)
+                        order.created_by_staff = staff_profile
+                        order.save(update_fields=['created_by_staff'])
+                    except Exception:
+                        pass
+                
                 logger.info(f"Order created successfully: {order.order_number}")
+
                 
                 from accounts.notifications import send_admin_notification
                 

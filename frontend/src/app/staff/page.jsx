@@ -14,11 +14,12 @@ import StaffStoreInfo from "./_components/StaffStoreInfo";
 import StaffProfileSettings from "./_components/StaffProfileSettings";
 import StaffAttendanceView from "./_components/StaffAttendanceView";
 import StaffAttendanceTab from "./_components/StaffAttendanceTab";
+import StaffStoreSession from "./_components/StaffStoreSession";
 
 export default function StaffDashboardPage() {
   const { user, logout } = useStaffAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("MY_SHIFTS");
+  const [activeTab, setActiveTab] = useState("SETTINGS");
   const [showAttendanceModal, setShowAttendanceModal] = useState(false);
   const [selectedStoreForCheckIn, setSelectedStoreForCheckIn] = useState("");
   const [isCheckingIn, setIsCheckingIn] = useState(false);
@@ -57,7 +58,7 @@ export default function StaffDashboardPage() {
       if (!current_active_shift && !has_completed_shift_today) {
         const timer = setTimeout(() => {
           setShowAttendanceModal(true);
-        }, 3000);
+        }, 2000);
         return () => clearTimeout(timer);
       } else {
         setShowAttendanceModal(false);
@@ -408,17 +409,13 @@ export default function StaffDashboardPage() {
             <div className="flex items-center gap-4">
                {/* Attendance button */}
                <button
-                 onClick={() => { setShowStoreSwitcherModal(true); }}
+                 onClick={() => { setShowAttendanceModal(true); }}
                  className="flex items-center gap-2 px-4 py-2 rounded-full text-[#00694C] bg-[#E4EFDA] hover:bg-[#D9EFE5] font-bold text-xs transition-all cursor-pointer border border-[#BCE4D3]"
                >
                  <ClipboardCheck className="w-3.5 h-3.5" />
                  Attendance
                </button>
-               {/* Search bar */}
-               <div className="relative">
-                 <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                 <input type="text" placeholder="Search resources..." className="pl-11 pr-4 py-2.5 rounded-full border border-white/50 bg-white/80 backdrop-blur-sm text-sm focus:outline-none focus:ring-2 focus:ring-[#00694C]/20 shadow-sm w-64 transition-all" />
-               </div>
+
                <button className="w-9 h-9 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-600 hover:bg-white transition-colors cursor-pointer">
                  <HelpCircle className="w-5 h-5" />
                </button>
@@ -428,7 +425,7 @@ export default function StaffDashboardPage() {
                    disabled={isCheckingOut}
                    className="flex items-center gap-2 px-4 py-2 rounded-full text-white bg-red-600 font-semibold hover:bg-red-700 transition-all cursor-pointer shadow-sm text-sm"
                  >
-                   {isCheckingOut ? "Ending..." : "End Shift"}
+                   {isCheckingOut ? "Leaving..." : "Leave"}
                  </button>
                )}
                <button 
@@ -453,11 +450,12 @@ export default function StaffDashboardPage() {
               }}
             />
           ) : activeTab === "STORE_SESSION" && selectedViewStore ? (
-            <StaffAttendanceView
+            <StaffStoreSession
               store={selectedViewStore}
+              profile={profile}
               currentActiveShift={current_active_shift}
               sessionStartTime={sessionStartTime}
-              onSwitchStore={() => {
+              onBack={() => {
                 setSelectedViewStore(null);
                 setSessionStartTime(null);
                 setActiveTab("ATTENDANCE");
@@ -799,34 +797,89 @@ export default function StaffDashboardPage() {
 
       {/* Attendance Modal */}
       {showAttendanceModal && (
-        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-300">
-            <div className="bg-[#00694C] p-6 text-white text-center">
-              <StoreIcon className="w-12 h-12 mx-auto mb-3 opacity-90" />
-              <h2 className="text-2xl font-serif font-bold mb-1">Start Your Shift</h2>
-              <p className="text-[#BCE4D3] text-sm">Please select the store you are working at today.</p>
+        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-700" onClick={() => { if (current_active_shift || has_completed_shift_today) setShowAttendanceModal(false); }}>
+          <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-700 ease-out" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-[#00694C] p-5 text-white text-center relative">
+              {(current_active_shift || has_completed_shift_today) && (
+                <button onClick={() => setShowAttendanceModal(false)} className="absolute top-3 right-3 bg-white/10 rounded-full p-1.5 text-white flex items-center justify-center cursor-pointer">
+                  <XIcon className="w-4 h-4" strokeWidth={2.5} />
+                </button>
+              )}
+              <StoreIcon className="w-10 h-10 mx-auto mb-2 opacity-90" />
+              <h2 className="text-xl font-serif font-bold mb-1">Start Your Shift</h2>
+              <p className="text-[#BCE4D3] text-xs">Please select the store you are working at today.</p>
             </div>
-            <div className="p-6">
-              <div className="mb-6">
+            <div className="p-5">
+              <div className="mb-4">
                 <label className="block text-sm font-semibold text-[#004A3A] mb-2">Select Store</label>
-                <select 
-                  className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 text-slate-700 font-medium focus:outline-none focus:border-[#00694C] bg-slate-50 transition-colors"
-                  value={selectedStoreForCheckIn}
-                  onChange={(e) => setSelectedStoreForCheckIn(e.target.value)}
-                >
-                  <option value="">-- Select a store --</option>
-                  {active_stores?.map(store => (
-                    <option key={store.id} value={store.id}>{store.name}</option>
-                  ))}
-                </select>
+                <div className="max-h-48 overflow-y-auto pr-2 space-y-2 db-scroll">
+                  {active_stores?.length === 0 ? (
+                    <div className="text-center py-4 text-slate-500 text-sm border-2 border-dashed border-slate-200 rounded-xl">No active stores available.</div>
+                  ) : (
+                    active_stores?.map(store => {
+                      const isStoreCurrentlyOpen = (openStr, closeStr) => {
+                        if (!openStr || !closeStr) return false;
+                        const now = new Date();
+                        const [oH, oM] = openStr.split(':').map(Number);
+                        const openTime = new Date(); openTime.setHours(oH, oM, 0, 0);
+                        const [cH, cM] = closeStr.split(':').map(Number);
+                        const closeTime = new Date(); closeTime.setHours(cH, cM, 0, 0);
+                        if (closeTime < openTime) {
+                          return now >= openTime || now <= closeTime;
+                        } else {
+                          return now >= openTime && now <= closeTime;
+                        }
+                      };
+                      const formatTime12h = (timeStr) => {
+                        if (!timeStr) return '';
+                        const [h, m] = timeStr.split(':');
+                        let hours = parseInt(h, 10);
+                        const ampm = hours >= 12 ? 'PM' : 'AM';
+                        hours = hours % 12;
+                        hours = hours ? hours : 12;
+                        return `${hours.toString().padStart(2, '0')}:${m} ${ampm}`;
+                      };
+                      const isOpen = isStoreCurrentlyOpen(store.openTime, store.closeTime);
+                      return (
+                        <div 
+                          key={store.id} 
+                          onClick={() => setSelectedStoreForCheckIn(store.id)}
+                          className={`flex items-center justify-between p-2.5 rounded-xl border-2 cursor-pointer transition-all ${selectedStoreForCheckIn === store.id ? 'border-[#00694C] bg-emerald-50' : 'border-slate-100 bg-white hover:border-[#00694C]/30 hover:bg-slate-50'}`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-lg bg-white shadow-sm border border-slate-100 flex items-center justify-center overflow-hidden shrink-0">
+                              {store.image ? (
+                                <img src={store.image} alt={store.name} className="w-full h-full object-cover" />
+                              ) : (
+                                <StoreIcon className="w-5 h-5 text-[#00694C]" />
+                              )}
+                            </div>
+                            <div>
+                              <div className={`font-bold text-sm transition-colors ${selectedStoreForCheckIn === store.id ? 'text-[#00694C]' : 'text-slate-700'}`}>{store.name}</div>
+                              {store.address && <div className="text-[10px] text-slate-400 truncate max-w-[150px]">{store.address}</div>}
+                              {store.openTime && store.closeTime && (
+                                <div className="text-[9px] font-bold text-slate-500 mt-0.5 tracking-wide">
+                                  {formatTime12h(store.openTime)} — {formatTime12h(store.closeTime)}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <span className={`${isOpen ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'} text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wide shrink-0`}>
+                            {isOpen ? 'Open' : 'Closed'}
+                          </span>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
               </div>
               <button 
                 onClick={handleCheckIn}
                 disabled={!selectedStoreForCheckIn || isCheckingIn}
-                className="w-full bg-[#E88C30] hover:bg-[#d47a25] disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold py-3.5 rounded-xl shadow-md transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full bg-[#00694C] hover:bg-[#005940] disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl shadow-md transition-colors flex items-center justify-center gap-2 cursor-pointer"
               >
                 {isCheckingIn ? "Starting..." : "Start Shift Now"}
-                {!isCheckingIn && <ArrowRight className="w-5 h-5" />}
+                {!isCheckingIn && <ArrowRight className="w-4 h-4" />}
               </button>
             </div>
           </div>

@@ -69,18 +69,27 @@ function NotificationDropdown({ onClose }) {
               </>
             );
 
+            let href = null;
             if (notif.type === 'admin_ticket_reply' && notif.metadata?.ticket_id) {
+              href = `/dashboard/tickets?ticket_id=${notif.metadata.ticket_id}`;
+            } else if (notif.type === 'new_order' || notif.type === 'order_paid' || notif.title?.toLowerCase().includes('order')) {
+              href = `/dashboard/orders`;
+            }
+
+            const itemClass = `flex gap-3 px-4 py-3 hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0 cursor-pointer ${isUnread ? 'bg-indigo-50/30' : ''}`;
+
+            if (href) {
               return (
                 <Link 
                   key={notif.id}
-                  href={`/dashboard/tickets?ticket_id=${notif.metadata.ticket_id}`}
+                  href={href}
                   onClick={async () => {
                     if (isUnread) {
                       await api.post('/api/auth/notifications/mark-read/', { ids: [notif.id], context: 'dashboard' });
                     }
                     onClose();
                   }}
-                  className={`flex gap-3 px-4 py-3 hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0 ${isUnread ? 'bg-indigo-50/30' : ''}`}
+                  className={itemClass}
                 >
                   {content}
                 </Link>
@@ -88,7 +97,7 @@ function NotificationDropdown({ onClose }) {
             }
 
             return (
-              <div key={notif.id} className={`flex gap-3 px-4 py-3 hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0 ${isUnread ? 'bg-indigo-50/30' : ''}`}>
+              <div key={notif.id} className={itemClass}>
                 {content}
               </div>
             );
@@ -174,7 +183,7 @@ export default function Header({ onMenuClick }) {
         <div className="relative" ref={notifRef}>
           <button
             onClick={() => setShowNotifications(!showNotifications)}
-            className="p-2 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100 relative transition-colors"
+            className="p-2 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100 relative transition-colors cursor-pointer"
             title="Notifications"
           >
             <Bell className="w-4 h-4" />

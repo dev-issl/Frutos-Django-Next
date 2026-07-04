@@ -13,7 +13,7 @@ import PaymentSection from "@/app/checkout/components/PaymentSection";
 
 export default function AdminCreateOrder({ onBack }) {
   const toast = useToastContext();
-  
+
   // Step State (1 = Product Selection, 2 = Checkout Details)
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -26,7 +26,7 @@ export default function AdminCreateOrder({ onBack }) {
 
   // Order Items State
   // Format: { [productId]: { selected: boolean, qty: number, size: string } }
-  const [orderItems, setOrderItems] = useState({}); 
+  const [orderItems, setOrderItems] = useState({});
 
   // Checkout State
   const [form, setForm] = useState({
@@ -196,7 +196,7 @@ export default function AdminCreateOrder({ onBack }) {
         size: newOrderItems[p.id]?.size || "kg"
       };
       if (!isChecked) {
-         newOrderItems[p.id].qty = 0;
+        newOrderItems[p.id].qty = 0;
       }
     });
     setOrderItems(newOrderItems);
@@ -218,7 +218,7 @@ export default function AdminCreateOrder({ onBack }) {
     if (!form.email.trim()) return toast.error('Please enter email address.');
     if (!form.street.trim()) return toast.error('Please enter street address.');
     if (!form.city.trim()) return toast.error('Please enter city.');
-    
+
     setIsSubmitting(true);
     try {
       const itemsPayload = getSelectedItemsArray().map(item => ({
@@ -236,16 +236,16 @@ export default function AdminCreateOrder({ onBack }) {
         customer_phone: form.phone.trim(),
         items: itemsPayload,
         shipping_address: {
-           address_line_1: form.street.trim(),
-           city: form.city.trim(),
-           state: form.city.trim() || "N/A",
-           country: "Spain",
-           postal_code: form.postcode.trim() || "00000"
+          address_line_1: form.street.trim(),
+          city: form.city.trim(),
+          state: form.city.trim() || "N/A",
+          country: "Spain",
+          postal_code: form.postcode.trim() || "00000"
         },
         payment: {
-           transaction_id: "MANUAL_ORDER_" + Date.now(),
-           payment_method: paymentMethod.toUpperCase(),
-           sender_number: "POS_ADMIN"
+          transaction_id: "MANUAL_ORDER_" + Date.now(),
+          payment_method: paymentMethod.toUpperCase(),
+          sender_number: "POS_ADMIN"
         },
         delivery_date: dateObj?.date || dateObj?.full || dateObj?.label || '',
         delivery_slot: slotObj?.id ?? selectedSlot,
@@ -257,7 +257,7 @@ export default function AdminCreateOrder({ onBack }) {
       };
 
       await api.post("/api/orders/confirm-payment/", payload);
-      
+
       toast.success("Order created successfully!");
       if (onBack) onBack();
     } catch (error) {
@@ -269,7 +269,7 @@ export default function AdminCreateOrder({ onBack }) {
 
   return (
     <div className="flex flex-col bg-white border border-slate-200 rounded-xl overflow-hidden min-h-[70vh]">
-      
+
       {/* Header */}
       <div className="flex items-center justify-between p-5 border-b border-slate-100 bg-slate-50">
         <div>
@@ -282,14 +282,14 @@ export default function AdminCreateOrder({ onBack }) {
         </div>
         <div className="flex gap-2">
           {step === 2 && (
-            <button 
+            <button
               onClick={() => setStep(1)}
               className="px-4 py-2 bg-white border border-slate-200 text-slate-600 font-semibold rounded-md text-sm hover:bg-slate-50 shadow-sm flex items-center gap-2"
             >
               <ArrowLeft className="w-4 h-4" /> Back to Products
             </button>
           )}
-          <button 
+          <button
             onClick={onBack}
             className="cursor-pointer px-4 py-2 bg-white border border-slate-200 text-slate-600 font-semibold rounded-md text-sm hover:bg-red-50 hover:text-red-600 hover:border-red-200 shadow-sm transition-colors"
           >
@@ -302,7 +302,7 @@ export default function AdminCreateOrder({ onBack }) {
         <div className="flex flex-col flex-1">
           {/* Filters */}
           <div className="p-4 pb-2 border-b border-slate-100 flex flex-col sm:flex-row gap-4 items-center justify-between bg-white">
-            <div 
+            <div
               ref={categoryScrollRef}
               onMouseDown={handleCategoryMouseDown}
               onMouseLeave={handleCategoryMouseLeave}
@@ -312,11 +312,10 @@ export default function AdminCreateOrder({ onBack }) {
             >
               <button
                 onClick={() => handleCategoryClick("ALL")}
-                className={`cursor-pointer px-4 py-2 rounded-md text-sm font-semibold transition-all whitespace-nowrap ${
-                  activeCategory === "ALL" 
-                    ? "bg-[#00694C] text-white shadow-sm" 
-                    : "bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100"
-                }`}
+                className={`cursor-pointer px-4 py-2 rounded-md text-sm font-semibold transition-all whitespace-nowrap ${activeCategory === "ALL"
+                  ? "bg-[#00694C] text-white shadow-sm"
+                  : "bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100"
+                  }`}
               >
                 All Products
               </button>
@@ -324,20 +323,19 @@ export default function AdminCreateOrder({ onBack }) {
                 <button
                   key={cat}
                   onClick={() => handleCategoryClick(cat)}
-                  className={`cursor-pointer px-4 py-2 rounded-md text-sm font-semibold transition-all whitespace-nowrap ${
-                    activeCategory === cat 
-                      ? "bg-[#00694C] text-white shadow-sm" 
-                      : "bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100"
-                  }`}
+                  className={`cursor-pointer px-4 py-2 rounded-md text-sm font-semibold transition-all whitespace-nowrap ${activeCategory === cat
+                    ? "bg-[#00694C] text-white shadow-sm"
+                    : "bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100"
+                    }`}
                 >
                   {cat}
                 </button>
               ))}
             </div>
             <div className="w-full sm:w-64 shrink-0">
-              <input 
-                type="text" 
-                placeholder="Search products..." 
+              <input
+                type="text"
+                placeholder="Search products..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:border-[#00694C]"
@@ -358,8 +356,8 @@ export default function AdminCreateOrder({ onBack }) {
                     <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-200">
                       <tr>
                         <th className="px-3 py-2 w-12 text-center">
-                          <input 
-                            type="checkbox" 
+                          <input
+                            type="checkbox"
                             className="w-4 h-4 accent-[#00694C] rounded cursor-pointer"
                             checked={allDisplayedSelected}
                             onChange={toggleSelectAll}
@@ -380,8 +378,8 @@ export default function AdminCreateOrder({ onBack }) {
                         paginatedProducts.map(product => (
                           <tr key={product.id} className="hover:bg-slate-50/50 transition-colors">
                             <td className="px-3 py-1.5 text-center">
-                              <input 
-                                type="checkbox" 
+                              <input
+                                type="checkbox"
                                 className="w-4 h-4 accent-[#00694C] rounded cursor-pointer"
                                 checked={!!orderItems[product.id]?.selected}
                                 onChange={(e) => handleUpdateItem(product.id, "selected", e.target.checked)}
@@ -401,7 +399,7 @@ export default function AdminCreateOrder({ onBack }) {
                             <td className="px-3 py-1.5 font-medium">€{Number(product.price).toLocaleString()}</td>
                             <td className="px-3 py-1.5">
                               <div className="flex justify-center">
-                                <input 
+                                <input
                                   type="number" min="0" placeholder="0"
                                   value={orderItems[product.id]?.qty || ""}
                                   onChange={(e) => handleUpdateItem(product.id, "qty", parseInt(e.target.value) || 0)}
@@ -437,7 +435,7 @@ export default function AdminCreateOrder({ onBack }) {
                       Showing <span className="font-medium text-slate-800">{(currentPage - 1) * PAGE_SIZE + 1}</span> to <span className="font-medium text-slate-800">{Math.min(currentPage * PAGE_SIZE, displayedProducts.length)}</span> of <span className="font-medium text-slate-800">{displayedProducts.length}</span> products
                     </p>
                     <div className="flex items-center gap-2">
-                      <button 
+                      <button
                         onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                         disabled={currentPage === 1}
                         className="px-3 py-1 text-sm border border-slate-200 rounded text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -448,25 +446,24 @@ export default function AdminCreateOrder({ onBack }) {
                         {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
                           // Simple pagination: show current, first, last, and neighbors
                           if (
-                            page === 1 || 
-                            page === totalPages || 
+                            page === 1 ||
+                            page === totalPages ||
                             (page >= currentPage - 1 && page <= currentPage + 1)
                           ) {
                             return (
                               <button
                                 key={page}
                                 onClick={() => setCurrentPage(page)}
-                                className={`w-8 h-8 flex items-center justify-center text-sm rounded ${
-                                  currentPage === page 
-                                    ? "bg-[#00694C] text-white" 
-                                    : "text-slate-600 hover:bg-slate-100"
-                                }`}
+                                className={`w-8 h-8 flex items-center justify-center text-sm rounded ${currentPage === page
+                                  ? "bg-[#00694C] text-white"
+                                  : "text-slate-600 hover:bg-slate-100"
+                                  }`}
                               >
                                 {page}
                               </button>
                             );
                           } else if (
-                            page === currentPage - 2 || 
+                            page === currentPage - 2 ||
                             page === currentPage + 2
                           ) {
                             return <span key={page} className="px-1 text-slate-400">...</span>;
@@ -474,7 +471,7 @@ export default function AdminCreateOrder({ onBack }) {
                           return null;
                         })}
                       </div>
-                      <button 
+                      <button
                         onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                         disabled={currentPage === totalPages}
                         className="px-3 py-1 text-sm border border-slate-200 rounded text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -503,7 +500,7 @@ export default function AdminCreateOrder({ onBack }) {
             <button
               onClick={proceedToCheckout}
               disabled={calculateTotalItems() === 0}
-              className="flex items-center gap-2 bg-[#00694C] hover:bg-[#005940] text-white px-6 py-3 rounded-lg font-bold shadow-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 bg-[#00694C] hover:bg-[#005940] text-white px-6 py-3 rounded-lg font-bold shadow-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               Proceed to Checkout <ArrowRight className="w-5 h-5" />
             </button>
@@ -514,14 +511,14 @@ export default function AdminCreateOrder({ onBack }) {
       {step === 2 && (
         <div className="p-6 md:p-8 bg-slate-50 flex-1 overflow-y-auto">
           <div className="max-w-4xl mx-auto space-y-6">
-            
+
             {/* Delivery Section (from Website) */}
             <DeliverySection
               form={form}
               setForm={setForm}
-              selectedDate={selectedDate} 
+              selectedDate={selectedDate}
               setSelectedDate={setSelectedDate}
-              selectedSlot={selectedSlot} 
+              selectedSlot={selectedSlot}
               setSelectedSlot={setSelectedSlot}
               deliveryDates={deliveryDates}
               deliverySlots={deliverySlots}
@@ -532,9 +529,9 @@ export default function AdminCreateOrder({ onBack }) {
 
             {/* Payment Section (from Website) */}
             <PaymentSection
-              paymentMethod={paymentMethod} 
+              paymentMethod={paymentMethod}
               setPaymentMethod={setPaymentMethod}
-              cardForm={cardForm} 
+              cardForm={cardForm}
               setCardForm={setCardForm}
             />
 
@@ -549,7 +546,7 @@ export default function AdminCreateOrder({ onBack }) {
                         {item.product.thumbnail_url || item.product.image ? (
                           <img src={item.product.thumbnail_url || item.product.image} className="w-full h-full object-cover rounded" alt="" />
                         ) : (
-                           <Package className="w-5 h-5 text-slate-400" />
+                          <Package className="w-5 h-5 text-slate-400" />
                         )}
                       </div>
                       <div>
@@ -580,7 +577,7 @@ export default function AdminCreateOrder({ onBack }) {
                 <button
                   onClick={handleSubmitOrder}
                   disabled={isSubmitting}
-                  className="w-full flex items-center justify-center gap-2 bg-[#00694C] hover:bg-[#005940] text-white px-6 py-4 rounded-xl font-bold text-lg shadow-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full flex items-center justify-center gap-2 bg-[#00694C] hover:bg-[#005940] text-white px-6 py-4 rounded-xl font-bold text-lg shadow-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
                   {isSubmitting ? <Loader2 className="w-6 h-6 animate-spin" /> : <Check className="w-6 h-6" />}
                   Confirm Order

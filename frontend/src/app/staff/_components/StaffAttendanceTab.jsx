@@ -52,6 +52,9 @@ export default function StaffAttendanceTab({
   active_stores = [],
   onSelectStore,
 }) {
+  const [historyFilter, setHistoryFilter] = useState("all");
+  const [storeFilter, setStoreFilter] = useState("all");
+
   // Fetch full shift history (more than 7 days)
   const { data: allShiftsRaw, isLoading: shiftsLoading } = useSWR(
     "/api/staff/me/dashboard/",
@@ -65,8 +68,26 @@ export default function StaffAttendanceTab({
   const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`;
   const todayShift = allShifts.find((s) => s.date === todayStr);
 
-  // This week total hours
-  const weekTotal = allShifts.reduce((acc, s) => {
+  // Filter logic
+  const now = new Date();
+  const startOfWeek = new Date(now);
+  startOfWeek.setDate(now.getDate() - now.getDay());
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  const uniqueStores = [...new Set(allShifts.map(s => s.store_name).filter(Boolean))].sort();
+
+  const filteredShifts = allShifts.filter(shift => {
+    if (storeFilter !== 'all' && shift.store_name !== storeFilter) return false;
+
+    if (historyFilter === 'all') return true;
+    const shiftDate = new Date(shift.date);
+    if (historyFilter === 'month') return shiftDate >= startOfMonth;
+    if (historyFilter === 'week') return shiftDate >= startOfWeek;
+    return true;
+  });
+
+  // Calculate hours for filtered shifts
+  const periodHours = filteredShifts.reduce((acc, s) => {
     if (!s.start_time || !s.end_time || s.status === "DAY_OFF" || s.status === "ABSENT") return acc;
     const start = new Date(`2000-01-01T${s.start_time}`);
     const end   = new Date(`2000-01-01T${s.end_time}`);
@@ -149,10 +170,10 @@ export default function StaffAttendanceTab({
         <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
             <TrendingUp className="w-4 h-4 text-slate-400" />
-            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">This Week</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{historyFilter === 'all' ? 'All Time' : historyFilter === 'month' ? 'This Month' : 'This Week'}</span>
           </div>
           <div className="text-4xl font-bold text-[#00694C] font-mono leading-none mb-1">
-            {weekTotal.toFixed(1)}
+            {periodHours.toFixed(1)}
           </div>
           <div className="text-xs text-slate-400 font-semibold uppercase tracking-wide">Hours Worked</div>
         </div>
@@ -164,7 +185,7 @@ export default function StaffAttendanceTab({
             <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Shift History</span>
           </div>
           <div className="text-4xl font-bold text-[#00694C] font-mono leading-none mb-1">
-            {allShifts.filter((s) => s.status === "COMPLETED" || s.status === "IN_PROGRESS").length}
+            {filteredShifts.filter((s) => s.status === "COMPLETED" || s.status === "IN_PROGRESS").length}
           </div>
           <div className="text-xs text-slate-400 font-semibold uppercase tracking-wide">Total Shifts</div>
         </div>
@@ -172,9 +193,46 @@ export default function StaffAttendanceTab({
 
       {/* ── Recent shift history */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-          <h2 className="text-sm font-bold text-[#004A3A] uppercase tracking-widest">Recent Shifts</h2>
-          <span className="text-xs text-slate-400 font-medium">{allShifts.length} record{allShifts.length !== 1 ? "s" : ""}</span>
+        <div className="px-6 py-4 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <h2 className="text-sm font-bold text-[#004A3A] uppercase tracking-widest shrink-0">Working History</h2>
+          
+          <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+            {/* Store Filter */}
+            {uniqueStores.length > 0 && (
+              <div className="relative w-full sm:w-48 shrink-0">
+                <StoreIcon className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <select
+                  value={storeFilter}
+                  onChange={(e) => setStoreFilter(e.target.value)}
+                  className="w-full pl-9 pr-8 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg appearance-none focus:outline-none focus:border-[#00694C] cursor-pointer hover:bg-slate-50 transition-colors shadow-sm"
+                >
+                  <option value="all">All Stores</option>
+                  {uniqueStores.map(store => (
+                    <option key={store} value={store}>{store}</option>
+                  ))}
+                </select>
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                  <svg className="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+              </div>
+            )}
+
+            {/* Time Filter */}
+            <div className="flex items-center bg-slate-100 p-1 rounded-lg w-full sm:w-auto overflow-x-auto shrink-0">
+              <button 
+                onClick={() => setHistoryFilter('all')}
+                className={`flex-1 sm:flex-none px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${historyFilter === 'all' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              >All Time</button>
+              <button 
+                onClick={() => setHistoryFilter('month')}
+                className={`flex-1 sm:flex-none px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${historyFilter === 'month' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              >This Month</button>
+              <button 
+                onClick={() => setHistoryFilter('week')}
+                className={`flex-1 sm:flex-none px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${historyFilter === 'week' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              >This Week</button>
+            </div>
+          </div>
         </div>
 
         {shiftsLoading ? (
@@ -187,53 +245,59 @@ export default function StaffAttendanceTab({
             <p className="text-sm text-slate-400 font-medium">No shift records yet</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-100">
-                  <th className="text-left px-6 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Date</th>
-                  <th className="text-left px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Store</th>
-                  <th className="text-left px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Start</th>
-                  <th className="text-left px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">End</th>
-                  <th className="text-left px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Hours</th>
-                  <th className="text-left px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {[...allShifts].sort((a, b) => new Date(b.date) - new Date(a.date)).map((s) => {
-                  let hrs = "—";
-                  if (s.start_time && s.end_time) {
-                    const st = new Date(`2000-01-01T${s.start_time}`);
-                    const en = new Date(`2000-01-01T${s.end_time}`);
-                    let d = (en - st) / 3600000;
-                    if (s.break_start && s.break_end) {
-                      const bs = new Date(`2000-01-01T${s.break_start}`);
-                      const be = new Date(`2000-01-01T${s.break_end}`);
-                      d -= (be - bs) / 3600000;
-                    }
-                    hrs = `${Math.max(0, d).toFixed(1)}h`;
-                  }
-                  const isToday = s.date === todayStr;
-                  return (
-                    <tr key={s.id} className={`hover:bg-slate-50/50 transition-colors ${isToday ? "bg-[#F1F6EB]/50" : ""}`}>
-                      <td className="px-6 py-3 font-semibold text-slate-700">
-                        {new Date(s.date + "T00:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
-                        {isToday && <span className="ml-2 text-[9px] font-bold bg-[#00694C] text-white px-1.5 py-0.5 rounded-full uppercase">Today</span>}
-                      </td>
-                      <td className="px-4 py-3 text-slate-500 font-medium">{s.store_name || "—"}</td>
-                      <td className="px-4 py-3 text-slate-600 font-mono">{formatAMPM(s.start_time)}</td>
-                      <td className="px-4 py-3 text-slate-600 font-mono">{formatAMPM(s.end_time)}</td>
-                      <td className="px-4 py-3 font-bold text-[#00694C]">{hrs}</td>
-                      <td className="px-4 py-3">
-                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${STATUS_STYLE[s.status] || "bg-slate-100 text-slate-500 border-slate-200"}`}>
-                          {(s.status || "").replace("_", " ")}
+          <div className="flex flex-col">
+            {[...filteredShifts].sort((a, b) => new Date(b.date) - new Date(a.date)).map((s, index) => {
+              let hrs = "—";
+              if (s.start_time && s.end_time) {
+                const st = new Date(`2000-01-01T${s.start_time}`);
+                const en = new Date(`2000-01-01T${s.end_time}`);
+                let d = (en - st) / 3600000;
+                if (s.break_start && s.break_end) {
+                  const bs = new Date(`2000-01-01T${s.break_start}`);
+                  const be = new Date(`2000-01-01T${s.break_end}`);
+                  d -= (be - bs) / 3600000;
+                }
+                hrs = `${Math.max(0, d).toFixed(1)}h`;
+              }
+              const isToday = s.date === todayStr;
+              
+              return (
+                <div key={s.id} className={`p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors ${index !== 0 ? 'border-t border-slate-100' : ''} hover:bg-slate-50/50 ${isToday ? 'bg-[#F1F6EB]/30' : ''}`}>
+                  <div className="flex items-center gap-5">
+                    {/* Date Block */}
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-b from-[#00694C]/10 to-[#00694C]/5 text-[#00694C] flex flex-col items-center justify-center shrink-0 border border-[#00694C]/20 shadow-sm">
+                      <span className="text-[10px] font-bold uppercase leading-none mb-0.5">{new Date(s.date + "T00:00:00").toLocaleDateString("en-US", { month: "short" })}</span>
+                      <span className="text-base font-black leading-none">{new Date(s.date + "T00:00:00").toLocaleDateString("en-US", { day: "numeric" })}</span>
+                    </div>
+                    
+                    {/* Shift Info */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <h4 className="text-sm font-bold text-slate-800 tracking-tight">{s.store_name || "Unknown Store"}</h4>
+                        {isToday && <span className="text-[9px] font-bold bg-[#00694C] text-white px-1.5 py-0.5 rounded-full uppercase shadow-sm">Today</span>}
+                      </div>
+                      <div className="flex items-center gap-3 text-xs text-slate-500 font-medium bg-slate-100/50 px-2.5 py-1 rounded-md border border-slate-100 w-fit">
+                        <span className="flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5 text-slate-400" /> 
+                          {formatAMPM(s.start_time)} <ArrowRight className="w-3 h-3 text-slate-300" /> {formatAMPM(s.end_time)}
                         </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Stats & Status */}
+                  <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto mt-3 sm:mt-0 pl-[68px] sm:pl-0">
+                    <div className="text-left sm:text-right flex flex-col sm:items-end">
+                      <span className="text-lg font-black text-[#00694C] leading-none mb-0.5">{hrs}</span>
+                      <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Total Hours</span>
+                    </div>
+                    <span className={`text-[10px] font-bold px-3 py-1 rounded-full border shadow-sm ${STATUS_STYLE[s.status] || "bg-slate-100 text-slate-500 border-slate-200"}`}>
+                      {(s.status || "").replace("_", " ")}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

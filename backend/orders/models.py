@@ -666,7 +666,12 @@ class Order(models.Model):
     # Customer visibility
     is_hidden_from_customer = models.BooleanField(default=False, help_text="If True, order is hidden from the customer's history.")
     
-    # Required customer information fields
+    # Track which staff created this order (for staff order history)
+    created_by_staff = models.ForeignKey(
+        'staff.StaffProfile', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='created_orders', help_text="Staff member who created this order"
+    )
+
     customer_name = models.CharField(max_length=100, help_text="Required customer name")
     customer_email = models.EmailField(help_text="Required customer email", db_index=True)
     customer_phone = models.CharField(max_length=50, help_text="Required customer phone number")

@@ -186,7 +186,13 @@ class MyStaffCheckInView(APIView):
         # Check if already checked in today
         active_shift = StaffShift.objects.filter(staff=staff_profile, date=today, status='IN_PROGRESS').first()
         if active_shift:
-            return Response({"detail": "Already checked in"}, status=status.HTTP_400_BAD_REQUEST)
+            if str(active_shift.store_id) == str(store.id):
+                return Response({"detail": "Already checked in to this store"}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                # Automatically check out of the previous store
+                active_shift.end_time = timezone.now().time()
+                active_shift.status = 'COMPLETED'
+                active_shift.save()
             
         # Try to find a scheduled shift for today
         shift = StaffShift.objects.filter(staff=staff_profile, date=today, status='SCHEDULED').first()
@@ -372,3 +378,172 @@ class AnnouncementViewSet(viewsets.ModelViewSet):
         stores = Store.objects.filter(is_active=True).prefetch_related('staff', 'staff__user')
         serializer = StoreStaffTreeSerializer(stores, many=True)
         return Response(serializer.data)
+
+
+# ==========================================
+# STAFF SHIFT HISTORY
+# ==========================================
+
+class MyStaffShiftHistoryView(APIView):
+    """GET /api/staff/me/shift-history/ — full shift history for logged-in staff"""
+    permission_classes = [IsStaffUser]
+
+    def get(self, request):
+        from datetime import datetime
+        staff_profile = get_object_or_404(StaffProfile, user=request.user)
+        shifts = StaffShift.objects.filter(
+            staff=staff_profile
+        ).select_related('store').order_by('-date', '-start_time')
+
+        result = []
+        total_hours = 0
+        for s in shifts:
+            hours = 0
+            if s.start_time and s.end_time:
+                from datetime import datetime as dt
+                start = dt.combine(s.date, s.start_time)
+                end = dt.combine(s.date, s.end_time)
+                diff = (end - start).total_seconds() / 3600
+                if s.break_start and s.break_end:
+                    bs = dt.combine(s.date, s.break_start)
+                    be = dt.combine(s.date, s.break_end)
+                    diff -= (be - bs).total_seconds() / 3600
+                hours = max(0, round(diff, 2))
+                if s.status in ('COMPLETED', 'IN_PROGRESS'):
+                    total_hours += hours
+            result.append({
+                'id': s.id,
+                'date': str(s.date),
+                'store_id': s.store_id,
+                'store_name': s.store.name if s.store else None,
+                'start_time': str(s.start_time) if s.start_time else None,
+                'end_time': str(s.end_time) if s.end_time else None,
+                'status': s.status,
+                'hours': hours,
+            })
+
+        return Response({
+            'shifts': result,
+            'total_shifts': len(result),
+            'total_hours': round(total_hours, 2),
+        })
+
+
+class AdminStaffShiftStatsView(APIView):
+    """GET /api/staff/admin/shift-stats/ — per-staff shift stats and ranking"""
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        from datetime import datetime as dt
+        store_id = request.query_params.get('store_id')
+        
+        qs = StaffProfile.objects.select_related('user').prefetch_related(
+            models.Prefetch(
+                'shifts',
+                queryset=StaffShift.objects.select_related('store').order_by('-date', '-start_time')
+            )
+        )
+        
+        if store_id:
+            qs = qs.filter(shifts__store_id=store_id).distinct()
+
+        results = []
+        for sp in qs:
+            shifts = sp.shifts.all()
+            if store_id:
+                shifts = [s for s in shifts if str(s.store_id) == str(store_id)]
+            
+            total_hours = 0
+            shift_details = []
+            stores_worked = {}
+            
+            for s in shifts:
+                is_working_shift = s.status in ['COMPLETED', 'IN_PROGRESS']
+                hours = 0
+                if s.start_time and s.end_time and is_working_shift:
+                    start = dt.combine(s.date, s.start_time)
+                    end = dt.combine(s.date, s.end_time)
+                    diff = (end - start).total_seconds() / 3600
+                    if s.break_start and s.break_end:
+                        bs = dt.combine(s.date, s.break_start)
+                        be = dt.combine(s.date, s.break_end)
+                        diff -= (be - bs).total_seconds() / 3600
+                    hours = max(0, round(diff, 2))
+                    total_hours += hours
+
+                sname = s.store.name if s.store else 'Unassigned'
+                
+                # Only add to stores_worked if it's a working shift
+                if is_working_shift:
+                    if sname not in stores_worked:
+                        stores_worked[sname] = {'days': 0, 'hours': 0}
+                    stores_worked[sname]['days'] += 1
+                    stores_worked[sname]['hours'] += hours
+
+                shift_details.append({
+                    'id': s.id,
+                    'date': str(s.date),
+                    'store_name': sname,
+                    'start_time': str(s.start_time) if s.start_time else None,
+                    'end_time': str(s.end_time) if s.end_time else None,
+                    'hours': hours,
+                    'status': s.status,
+                })
+            
+            results.append({
+                'staff_id': sp.id,
+                'staff_code': sp.staff_id,
+                'name': sp.user.name or sp.user.email,
+                'photo': sp.photo.url if sp.photo else None,
+                'role': sp.role,
+                'total_shifts': len(shifts),
+                'total_hours': round(total_hours, 2),
+                'stores_worked': stores_worked,
+                'shifts': shift_details,
+            })
+
+        # Sort by total_hours descending (ranking)
+        results.sort(key=lambda x: x['total_hours'], reverse=True)
+        for i, r in enumerate(results):
+            r['rank'] = i + 1
+
+        return Response({'results': results, 'total_staff': len(results)})
+
+
+class MyStaffOrderHistoryView(APIView):
+    """GET /api/staff/me/orders/ — orders created by this staff member"""
+    permission_classes = [IsStaffUser]
+
+    def get(self, request):
+        from orders.models import Order
+        from orders.serializers import OrderReadSerializer
+        staff_profile = get_object_or_404(StaffProfile, user=request.user)
+        
+        status_filter = request.query_params.get('status')
+        store_id = request.query_params.get('store_id')
+        
+        qs = Order.objects.filter(created_by_staff=staff_profile).order_by('-ordered_at')
+        if status_filter:
+            qs = qs.filter(status=status_filter.upper())
+        if store_id:
+            # Filter by orders with items from this store's products
+            pass
+        
+        orders = qs[:100]
+        serializer = OrderReadSerializer(orders, many=True, context={'request': request})
+        
+        # Stats summary
+        all_orders = Order.objects.filter(created_by_staff=staff_profile)
+        stats = {
+            'total': all_orders.count(),
+            'pending': all_orders.filter(status='PENDING').count(),
+            'processing': all_orders.filter(status='PROCESSING').count(),
+            'delivered': all_orders.filter(status='DELIVERED').count(),
+            'cancelled': all_orders.filter(status='CANCELLED').count(),
+        }
+        
+        return Response({
+            'results': serializer.data,
+            'stats': stats,
+        })
+

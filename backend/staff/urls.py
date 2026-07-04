@@ -10,7 +10,8 @@ router.register(r'announcements', views.AnnouncementViewSet, basename='announcem
 urlpatterns = [
     # Admin APIs
     path('', include(router.urls)),
-    
+    path('admin/shift-stats/', views.AdminStaffShiftStatsView.as_view(), name='admin-shift-stats'),
+
     # Staff APIs
     path('me/dashboard/', views.MyStaffDashboardView.as_view(), name='staff-dashboard'),
     path('me/check-in/', views.MyStaffCheckInView.as_view(), name='staff-check-in'),
@@ -20,6 +21,8 @@ urlpatterns = [
     path('me/tasks/', views.MyStaffTasksView.as_view(), name='staff-tasks-list'),
     path('me/tasks/<int:pk>/', views.MyStaffTaskUpdateView.as_view(), name='staff-task-update'),
     path('me/notifications/<int:pk>/', views.MyStaffNotificationDetailView.as_view(), name='staff-notification-detail'),
+    path('me/shift-history/', views.MyStaffShiftHistoryView.as_view(), name='staff-shift-history'),
+    path('me/orders/', views.MyStaffOrderHistoryView.as_view(), name='staff-order-history'),
     path('store/<int:store_id>/staff/', views.StoreStaffListView.as_view(), name='store-staff-list'),
     
     # Staff Day Off Requests handled via Router

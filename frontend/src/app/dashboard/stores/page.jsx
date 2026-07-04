@@ -519,12 +519,53 @@ function StoreFormModal({ store, onClose, onSave }) {
                   <Input label="Close Time" type="time" value={form.close_time} onChange={e => set('close_time', e.target.value)} />
                 </div>
                 {form.open_time && form.close_time && (
-                  <div style={{ display:'flex', alignItems:'center', gap:'8px', padding:'12px 14px', background:'#f0fdf4', borderRadius:'10px', border:'1px solid #dcfce7' }}>
-                    <Clock size={14} style={{ color:'#16a34a' }} />
-                    <p style={{ fontSize:'13px', color:'#166534', margin:0 }}>
-                      Hours: <span style={{ fontWeight:'700' }}>{form.open_time} — {form.close_time}</span>
-                    </p>
-                  </div>
+                  (() => {
+                    const formatTime12h = (timeStr) => {
+                      if (!timeStr) return '';
+                      const [h, m] = timeStr.split(':');
+                      let hours = parseInt(h, 10);
+                      const ampm = hours >= 12 ? 'PM' : 'AM';
+                      hours = hours % 12;
+                      hours = hours ? hours : 12;
+                      return `${hours.toString().padStart(2, '0')}:${m} ${ampm}`;
+                    };
+                    const isStoreCurrentlyOpen = (openStr, closeStr) => {
+                      if (!openStr || !closeStr) return false;
+                      const now = new Date();
+                      const [oH, oM] = openStr.split(':').map(Number);
+                      const openTime = new Date(); openTime.setHours(oH, oM, 0, 0);
+                      const [cH, cM] = closeStr.split(':').map(Number);
+                      const closeTime = new Date(); closeTime.setHours(cH, cM, 0, 0);
+                      if (closeTime < openTime) {
+                        return now >= openTime || now <= closeTime;
+                      } else {
+                        return now >= openTime && now <= closeTime;
+                      }
+                    };
+                    const isOpen = isStoreCurrentlyOpen(form.open_time, form.close_time);
+                    return (
+                      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 14px', background: isOpen ? '#f0fdf4' : '#fef2f2', borderRadius:'10px', border: isOpen ? '1px solid #dcfce7' : '1px solid #fee2e2' }}>
+                        <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
+                          <Clock size={14} style={{ color: isOpen ? '#16a34a' : '#ef4444' }} />
+                          <p style={{ fontSize:'13px', color: isOpen ? '#166534' : '#991b1b', margin:0 }}>
+                            Hours: <span style={{ fontWeight:'700' }}>{formatTime12h(form.open_time)} — {formatTime12h(form.close_time)}</span>
+                          </p>
+                        </div>
+                        <span style={{
+                          fontSize: '10px',
+                          fontWeight: '800',
+                          padding: '3px 8px',
+                          borderRadius: '6px',
+                          textTransform: 'uppercase',
+                          background: isOpen ? '#16a34a' : '#ef4444',
+                          color: 'white',
+                          letterSpacing: '0.5px'
+                        }}>
+                          {isOpen ? 'Currently Open' : 'Currently Closed'}
+                        </span>
+                      </div>
+                    );
+                  })()
                 )}
                 <div style={{ marginTop:'8px' }}>
                   <SectionHeader icon={MapPin} title="Google Maps" subtitle="Paste a Google Maps URL — lat/lng is extracted automatically" />

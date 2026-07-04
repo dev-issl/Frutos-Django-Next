@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Trash2, Calendar, ClipboardList, Edit, Ban, MapPin } from "lucide-react";
+import { Plus, Trash2, Calendar, ClipboardList, Edit, Ban, MapPin, ChevronLeft } from "lucide-react";
 import Container from "@/app/dashboard/_components/Container";
 import DataTable from "@/app/dashboard/_components/DataTable";
 import Modal from "@/app/dashboard/_components/Modal";
@@ -10,10 +10,11 @@ import ConfirmDialog from "@/app/dashboard/_components/ConfirmDialog";
 import { useToastContext } from "@/app/dashboard/_components/Toaster";
 import useSWR from "swr";
 import api from "@/app/dashboard/_lib/api";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 
 export default function StaffDetailsPage() {
   const params = useParams();
+  const router = useRouter();
   const staffId = params.id;
   const toast = useToastContext();
   
@@ -207,7 +208,18 @@ export default function StaffDetailsPage() {
   const activeShift = shifts.find(s => s.status === 'IN_PROGRESS');
 
   return (
-    <Container title={`Staff: ${staffProfile.user?.name}`} description={`${staffProfile.role} • ${staffProfile.store_name || "Unassigned"}`}>
+    <Container 
+      title={`Staff: ${staffProfile.user?.name}`} 
+      description={`${staffProfile.role} • ${staffProfile.store_name || "Unassigned"}`}
+      actions={
+        <button 
+          onClick={() => router.back()}
+          className="px-4 py-2 rounded-lg bg-white border border-slate-200 text-slate-600 hover:text-slate-800 hover:bg-slate-50 flex items-center gap-2 font-semibold text-sm transition-colors shadow-sm cursor-pointer"
+        >
+          <ChevronLeft className="w-4 h-4" /> Back to Staff
+        </button>
+      }
+    >
       
       {/* Active Shift Banner */}
       {activeShift && (
