@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from orders.models import Order
-from .models import Product, Category, SubCategory, Color, Brand, Size, ProductSpecification, ProductAdditionalImage, Review, Offer
+from .models import Product, Category, SubCategory, Color, Brand, Size, ProductSpecification, ProductAdditionalImage, Review, Offer, ProductStoreStock
 from django.db.models import Count, ProtectedError, Prefetch
 from .serializers import (
     ProductSerializer, ProductWriteSerializer,
@@ -235,6 +235,20 @@ class ProductViewSet(viewsets.ModelViewSet):
                 f'New product added to shop "{product.shop.name if product.shop else "N/A"}".',
                 actor=request.user,
             )
+
+        # Handle store stocks
+        stock_value = product.stock
+        if 'stock' in request.data:
+            try:
+                stock_value = int(request.data['stock'])
+            except ValueError:
+                pass
+        for store in product.stores.all():
+            ProductStoreStock.objects.get_or_create(
+                product=product, store=store,
+                defaults={'stock': stock_value}
+            )
+
         return Response(read_serializer.data, status=status.HTTP_201_CREATED)
 
     def update(self, request, *args, **kwargs):

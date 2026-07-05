@@ -44,7 +44,7 @@ class DayOffRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = DayOffRequest
         fields = '__all__'
-        read_only_fields = ('staff', 'status')
+        read_only_fields = ('staff',)
 
 class CreateStaffSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=255)

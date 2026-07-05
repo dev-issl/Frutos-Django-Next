@@ -5,6 +5,7 @@
  * with optimistic updates, error rollback, and toast-ready callbacks.
  */
 
+// Force cache invalidation
 "use client";
 
 import { useState, useCallback, useMemo } from "react";
@@ -93,10 +94,10 @@ export function useModel(service, opts = {}) {
             try {
                 const result = await service.create(formData);
                 await mutate();
-                onSuccess ? .("Created successfully");
+                onSuccess?.("Created successfully");
                 return result;
             } catch (err) {
-                onError ? .(err);
+                onError?.(err);
                 throw err;
             } finally {
                 setMutating(false);
@@ -110,10 +111,10 @@ export function useModel(service, opts = {}) {
             try {
                 const result = await service.update(lookup, formData);
                 await mutate();
-                onSuccess ? .("Updated successfully");
+                onSuccess?.("Updated successfully");
                 return result;
             } catch (err) {
-                onError ? .(err);
+                onError?.(err);
                 throw err;
             } finally {
                 setMutating(false);
@@ -127,10 +128,10 @@ export function useModel(service, opts = {}) {
             try {
                 const result = await service.patch(lookup, formData);
                 await mutate();
-                onSuccess ? .("Updated successfully");
+                onSuccess?.("Updated successfully");
                 return result;
             } catch (err) {
-                onError ? .(err);
+                onError?.(err);
                 throw err;
             } finally {
                 setMutating(false);
@@ -144,9 +145,9 @@ export function useModel(service, opts = {}) {
             try {
                 await service.delete(lookup);
                 await mutate();
-                onSuccess ? .("Deleted successfully");
+                onSuccess?.("Deleted successfully");
             } catch (err) {
-                onError ? .(err);
+                onError?.(err);
                 throw err;
             } finally {
                 setMutating(false);

@@ -53,7 +53,7 @@
 
 //     return {
 //         ...p,
-//         category: p.category || p.sub_category ? .category ? .name || null,
+//         category: p.category || p.sub_category?.category?.name || null,
 //         price: Number(p.price),
 //         oldPrice: p.oldPrice != null ? Number(p.oldPrice) : (p.old_price != null ? Number(p.old_price) : null),
 //         rating: Number(p.rating),

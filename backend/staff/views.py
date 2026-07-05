@@ -547,3 +547,83 @@ class MyStaffOrderHistoryView(APIView):
             'stats': stats,
         })
 
+class MyStaffDayOffRequestViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsStaffUser]
+    serializer_class = DayOffRequestSerializer
+
+    def get_queryset(self):
+        staff_profile = get_object_or_404(StaffProfile, user=self.request.user)
+        return DayOffRequest.objects.filter(staff=staff_profile).order_by('-created_at')
+
+    def perform_create(self, serializer):
+        from django.core.mail import send_mail
+        from django.conf import settings
+        from users.models import Notification
+
+        staff_profile = get_object_or_404(StaffProfile, user=self.request.user)
+        request_obj = serializer.save(staff=staff_profile, status='PENDING')
+
+        # Notify Admin via Email
+        subject = f"New Day Off Request from {staff_profile.user.name}"
+        message = f"Staff {staff_profile.user.name} has requested a day off on {request_obj.date}.\nReason: {request_obj.reason}"
+        try:
+            send_mail(
+                subject,
+                message,
+                settings.DEFAULT_FROM_EMAIL,
+                [settings.DEFAULT_FROM_EMAIL], # Using default as admin email
+                fail_silently=True,
+            )
+        except Exception as e:
+            logger.error(f"Error sending day off request email: {e}")
+
+        # Notify Admin Dashboard
+        try:
+            Notification.objects.create(
+                type='DAY_OFF_REQUEST',
+                title=subject,
+                message=message,
+                actor=self.request.user
+            )
+        except Exception as e:
+            logger.error(f"Error creating admin notification: {e}")
+
+class AdminDayOffRequestViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAdminUser]
+    serializer_class = DayOffRequestSerializer
+
+    def get_queryset(self):
+        return DayOffRequest.objects.all().order_by('-created_at')
+
+    def perform_update(self, serializer):
+        from django.core.mail import send_mail
+        from django.conf import settings
+
+        instance = self.get_object()
+        old_status = instance.status
+        updated_obj = serializer.save()
+
+        if old_status != updated_obj.status:
+            # Send Email to Staff
+            subject = f"Day Off Request {updated_obj.status.capitalize()}"
+            message = f"Your day off request for {updated_obj.date} has been {updated_obj.status.lower()}."
+            try:
+                send_mail(
+                    subject,
+                    message,
+                    settings.DEFAULT_FROM_EMAIL,
+                    [updated_obj.staff.user.email],
+                    fail_silently=True,
+                )
+            except Exception as e:
+                logger.error(f"Error sending day off approval email: {e}")
+
+            # Notify Staff Dashboard
+            try:
+                StaffNotification.objects.create(
+                    staff=updated_obj.staff,
+                    title=subject,
+                    message=message
+                )
+            except Exception as e:
+                logger.error(f"Error creating staff notification: {e}")

@@ -16,10 +16,22 @@ import {
   Calendar,
   Timer,
   TrendingUp,
+  ChevronDown,
+  Check,
 } from "lucide-react";
 
-function formatAMPM(timeStr) {
+function formatAMPM(timeStr, dateStr = null) {
   if (!timeStr) return "—";
+  
+  if (dateStr) {
+    let timeParts = timeStr.split(':');
+    if (timeParts.length === 2) timeParts.push('00');
+    const d = new Date(`${dateStr}T${timeParts.join(':')}Z`);
+    if (!isNaN(d)) {
+      return d.toLocaleTimeString("en-US", { hour: 'numeric', minute: '2-digit', hour12: true });
+    }
+  }
+
   const [h, m] = timeStr.split(":");
   let hours = parseInt(h, 10);
   const ampm = hours >= 12 ? "PM" : "AM";
@@ -52,11 +64,8 @@ export default function StaffAttendanceTab({
   active_stores = [],
   onSelectStore,
 }) {
-  const [historyFilter, setHistoryFilter] = useState("all");
-  const [storeFilter, setStoreFilter] = useState("all");
-
-  // Fetch full shift history (more than 7 days)
-  const { data: allShiftsRaw, isLoading: shiftsLoading } = useSWR(
+  // Fetch full shift history
+  const { data: allShiftsRaw } = useSWR(
     "/api/staff/me/dashboard/",
     (url) => api.get(url),
     { revalidateOnFocus: false }
@@ -68,26 +77,13 @@ export default function StaffAttendanceTab({
   const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`;
   const todayShift = allShifts.find((s) => s.date === todayStr);
 
-  // Filter logic
+  // Monthly stats
   const now = new Date();
-  const startOfWeek = new Date(now);
-  startOfWeek.setDate(now.getDate() - now.getDay());
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-  const uniqueStores = [...new Set(allShifts.map(s => s.store_name).filter(Boolean))].sort();
+  const monthlyShifts = allShifts.filter(shift => new Date(shift.date) >= startOfMonth);
 
-  const filteredShifts = allShifts.filter(shift => {
-    if (storeFilter !== 'all' && shift.store_name !== storeFilter) return false;
-
-    if (historyFilter === 'all') return true;
-    const shiftDate = new Date(shift.date);
-    if (historyFilter === 'month') return shiftDate >= startOfMonth;
-    if (historyFilter === 'week') return shiftDate >= startOfWeek;
-    return true;
-  });
-
-  // Calculate hours for filtered shifts
-  const periodHours = filteredShifts.reduce((acc, s) => {
+  const monthlyHours = monthlyShifts.reduce((acc, s) => {
     if (!s.start_time || !s.end_time || s.status === "DAY_OFF" || s.status === "ABSENT") return acc;
     const start = new Date(`2000-01-01T${s.start_time}`);
     const end   = new Date(`2000-01-01T${s.end_time}`);
@@ -100,37 +96,47 @@ export default function StaffAttendanceTab({
     return acc + Math.max(0, diff);
   }, 0);
 
+  const formatTotalTime = (hoursDecimal) => {
+    const totalMins = Math.round(hoursDecimal * 60);
+    const h = Math.floor(totalMins / 60);
+    const m = totalMins % 60;
+    if (h > 0 && m > 0) return `${h}h ${m}m`;
+    if (h > 0) return `${h}h`;
+    if (m > 0) return `${m}m`;
+    return "0m";
+  };
+
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-400">
+    <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-400">
 
       {/* ── Page header */}
-      <div className="flex items-center gap-4">
-        <div className="w-12 h-12 rounded-2xl bg-[#00694C] flex items-center justify-center shadow-md shrink-0">
-          <ClipboardCheck className="w-6 h-6 text-white" />
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-xl bg-[#00694C] flex items-center justify-center shadow-md shrink-0">
+          <ClipboardCheck className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h1 className="text-4xl font-serif text-[#004A3A] font-medium tracking-tight leading-none">
+          <h1 className="text-3xl font-serif text-[#004A3A] font-medium tracking-tight leading-none">
             Attendance
           </h1>
-          <p className="text-slate-500 text-sm mt-1">
+          <p className="text-slate-500 text-[11px] mt-1">
             Your attendance overview &amp; store access
           </p>
         </div>
       </div>
 
       {/* ── Today's status card */}
-      <div className="grid md:grid-cols-3 gap-4">
+      <div className="grid md:grid-cols-3 gap-3">
         {/* Today card */}
-        <div className={`rounded-2xl p-6 border ${currentActiveShift ? "bg-gradient-to-br from-[#E4EFDA] to-[#D9EFE5] border-[#BCE4D3]" : "bg-white border-slate-100 shadow-sm"}`}>
-          <div className="flex items-center gap-2 mb-4">
-            <Clock className={`w-4 h-4 ${currentActiveShift ? "text-[#00694C]" : "text-slate-400"}`} />
-            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Today</span>
+        <div className={`rounded-xl p-4 border ${currentActiveShift ? "bg-gradient-to-br from-[#E4EFDA] to-[#D9EFE5] border-[#BCE4D3]" : "bg-white border-slate-100 shadow-sm"}`}>
+          <div className="flex items-center gap-1.5 mb-3">
+            <Clock className={`w-3.5 h-3.5 ${currentActiveShift ? "text-[#00694C]" : "text-slate-400"}`} />
+            <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500">Today</span>
           </div>
           {currentActiveShift ? (
             <>
-              <div className="flex items-center gap-2 mb-3">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-sm font-bold text-[#004A3A]">Shift In Progress</span>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-xs font-bold text-[#004A3A]">Shift In Progress</span>
               </div>
               <div className="text-xs text-[#00694C]/70 font-medium space-y-1">
                 <div className="flex justify-between">
@@ -139,7 +145,7 @@ export default function StaffAttendanceTab({
                 </div>
                 <div className="flex justify-between">
                   <span>Started</span>
-                  <span className="font-bold text-[#004A3A]">{formatAMPM(currentActiveShift.start_time)}</span>
+                  <span className="font-bold text-[#004A3A]">{formatAMPM(currentActiveShift.start_time, currentActiveShift.date || todayStr)}</span>
                 </div>
               </div>
             </>
@@ -155,7 +161,7 @@ export default function StaffAttendanceTab({
                 <span className="text-sm font-bold text-slate-600">Shift Completed</span>
               </div>
               <p className="text-xs text-slate-400 font-medium">
-                {formatAMPM(todayShift.start_time)} – {formatAMPM(todayShift.end_time)}
+                {formatAMPM(todayShift.start_time, todayShift.date)} – {formatAMPM(todayShift.end_time, todayShift.date)}
               </p>
             </>
           ) : (
@@ -166,158 +172,47 @@ export default function StaffAttendanceTab({
           )}
         </div>
 
-        {/* Week hours card */}
-        <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
-          <div className="flex items-center gap-2 mb-4">
-            <TrendingUp className="w-4 h-4 text-slate-400" />
-            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{historyFilter === 'all' ? 'All Time' : historyFilter === 'month' ? 'This Month' : 'This Week'}</span>
+        {/* Monthly total time card */}
+        <div className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm">
+          <div className="flex items-center gap-1.5 mb-3">
+            <TrendingUp className="w-3.5 h-3.5 text-slate-400" />
+            <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500">This Month</span>
           </div>
-          <div className="text-4xl font-bold text-[#00694C] font-mono leading-none mb-1">
-            {periodHours.toFixed(1)}
+          <div className="text-3xl font-bold text-[#00694C] font-mono leading-none mb-1">
+            {formatTotalTime(monthlyHours)}
           </div>
-          <div className="text-xs text-slate-400 font-semibold uppercase tracking-wide">Hours Worked</div>
+          <div className="text-[10px] text-slate-400 font-semibold uppercase tracking-wide">Total Time</div>
         </div>
 
         {/* Shift count card */}
-        <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
-          <div className="flex items-center gap-2 mb-4">
-            <Calendar className="w-4 h-4 text-slate-400" />
-            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Shift History</span>
+        <div className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm">
+          <div className="flex items-center gap-1.5 mb-3">
+            <Calendar className="w-3.5 h-3.5 text-slate-400" />
+            <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500">This Month</span>
           </div>
-          <div className="text-4xl font-bold text-[#00694C] font-mono leading-none mb-1">
-            {filteredShifts.filter((s) => s.status === "COMPLETED" || s.status === "IN_PROGRESS").length}
+          <div className="text-3xl font-bold text-[#00694C] font-mono leading-none mb-1">
+            {monthlyShifts.filter((s) => s.status === "COMPLETED" || s.status === "IN_PROGRESS").length}
           </div>
-          <div className="text-xs text-slate-400 font-semibold uppercase tracking-wide">Total Shifts</div>
+          <div className="text-[10px] text-slate-400 font-semibold uppercase tracking-wide">Total Shifts</div>
         </div>
-      </div>
-
-      {/* ── Recent shift history */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <h2 className="text-sm font-bold text-[#004A3A] uppercase tracking-widest shrink-0">Working History</h2>
-          
-          <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-            {/* Store Filter */}
-            {uniqueStores.length > 0 && (
-              <div className="relative w-full sm:w-48 shrink-0">
-                <StoreIcon className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <select
-                  value={storeFilter}
-                  onChange={(e) => setStoreFilter(e.target.value)}
-                  className="w-full pl-9 pr-8 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg appearance-none focus:outline-none focus:border-[#00694C] cursor-pointer hover:bg-slate-50 transition-colors shadow-sm"
-                >
-                  <option value="all">All Stores</option>
-                  {uniqueStores.map(store => (
-                    <option key={store} value={store}>{store}</option>
-                  ))}
-                </select>
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                  <svg className="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                </div>
-              </div>
-            )}
-
-            {/* Time Filter */}
-            <div className="flex items-center bg-slate-100 p-1 rounded-lg w-full sm:w-auto overflow-x-auto shrink-0">
-              <button 
-                onClick={() => setHistoryFilter('all')}
-                className={`flex-1 sm:flex-none px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${historyFilter === 'all' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-              >All Time</button>
-              <button 
-                onClick={() => setHistoryFilter('month')}
-                className={`flex-1 sm:flex-none px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${historyFilter === 'month' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-              >This Month</button>
-              <button 
-                onClick={() => setHistoryFilter('week')}
-                className={`flex-1 sm:flex-none px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${historyFilter === 'week' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-              >This Week</button>
-            </div>
-          </div>
-        </div>
-
-        {shiftsLoading ? (
-          <div className="py-10 flex justify-center">
-            <Loader2 className="w-6 h-6 text-[#00694C] animate-spin" />
-          </div>
-        ) : allShifts.length === 0 ? (
-          <div className="py-10 text-center">
-            <Calendar className="w-10 h-10 text-slate-200 mx-auto mb-3" />
-            <p className="text-sm text-slate-400 font-medium">No shift records yet</p>
-          </div>
-        ) : (
-          <div className="flex flex-col">
-            {[...filteredShifts].sort((a, b) => new Date(b.date) - new Date(a.date)).map((s, index) => {
-              let hrs = "—";
-              if (s.start_time && s.end_time) {
-                const st = new Date(`2000-01-01T${s.start_time}`);
-                const en = new Date(`2000-01-01T${s.end_time}`);
-                let d = (en - st) / 3600000;
-                if (s.break_start && s.break_end) {
-                  const bs = new Date(`2000-01-01T${s.break_start}`);
-                  const be = new Date(`2000-01-01T${s.break_end}`);
-                  d -= (be - bs) / 3600000;
-                }
-                hrs = `${Math.max(0, d).toFixed(1)}h`;
-              }
-              const isToday = s.date === todayStr;
-              
-              return (
-                <div key={s.id} className={`p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors ${index !== 0 ? 'border-t border-slate-100' : ''} hover:bg-slate-50/50 ${isToday ? 'bg-[#F1F6EB]/30' : ''}`}>
-                  <div className="flex items-center gap-5">
-                    {/* Date Block */}
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-b from-[#00694C]/10 to-[#00694C]/5 text-[#00694C] flex flex-col items-center justify-center shrink-0 border border-[#00694C]/20 shadow-sm">
-                      <span className="text-[10px] font-bold uppercase leading-none mb-0.5">{new Date(s.date + "T00:00:00").toLocaleDateString("en-US", { month: "short" })}</span>
-                      <span className="text-base font-black leading-none">{new Date(s.date + "T00:00:00").toLocaleDateString("en-US", { day: "numeric" })}</span>
-                    </div>
-                    
-                    {/* Shift Info */}
-                    <div>
-                      <div className="flex items-center gap-2 mb-1.5">
-                        <h4 className="text-sm font-bold text-slate-800 tracking-tight">{s.store_name || "Unknown Store"}</h4>
-                        {isToday && <span className="text-[9px] font-bold bg-[#00694C] text-white px-1.5 py-0.5 rounded-full uppercase shadow-sm">Today</span>}
-                      </div>
-                      <div className="flex items-center gap-3 text-xs text-slate-500 font-medium bg-slate-100/50 px-2.5 py-1 rounded-md border border-slate-100 w-fit">
-                        <span className="flex items-center gap-1.5">
-                          <Clock className="w-3.5 h-3.5 text-slate-400" /> 
-                          {formatAMPM(s.start_time)} <ArrowRight className="w-3 h-3 text-slate-300" /> {formatAMPM(s.end_time)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Stats & Status */}
-                  <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto mt-3 sm:mt-0 pl-[68px] sm:pl-0">
-                    <div className="text-left sm:text-right flex flex-col sm:items-end">
-                      <span className="text-lg font-black text-[#00694C] leading-none mb-0.5">{hrs}</span>
-                      <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Total Hours</span>
-                    </div>
-                    <span className={`text-[10px] font-bold px-3 py-1 rounded-full border shadow-sm ${STATUS_STYLE[s.status] || "bg-slate-100 text-slate-500 border-slate-200"}`}>
-                      {(s.status || "").replace("_", " ")}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
       </div>
 
       {/* ── Store selection section */}
       <div>
-        <div className="flex items-center gap-3 mb-4">
-          <StoreIcon className="w-5 h-5 text-[#00694C]" />
-          <h2 className="text-sm font-bold text-[#004A3A] uppercase tracking-widest">
+        <div className="flex items-center gap-2 mb-3">
+          <StoreIcon className="w-4 h-4 text-[#00694C]" />
+          <h2 className="text-xs font-bold text-[#004A3A] uppercase tracking-widest">
             Select a Store to View
           </h2>
         </div>
 
         {active_stores.length === 0 ? (
-          <div className="bg-white rounded-2xl p-10 text-center shadow-sm border border-slate-100">
-            <StoreIcon className="w-10 h-10 text-slate-200 mx-auto mb-3" />
-            <p className="text-sm text-slate-400 font-medium">No active stores available</p>
+          <div className="bg-white rounded-xl p-6 text-center shadow-sm border border-slate-100">
+            <StoreIcon className="w-8 h-8 text-slate-200 mx-auto mb-2" />
+            <p className="text-[11px] text-slate-400 font-medium">No active stores available</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
             {active_stores.map((store) => {
               const isMyShiftStore =
                 String(currentActiveShift?.store) === String(store.id) ||
@@ -327,20 +222,20 @@ export default function StaffAttendanceTab({
                 <button
                   key={store.id}
                   onClick={() => onSelectStore(store)}
-                  className="group bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:border-[#00694C]/30 hover:shadow-md transition-all text-left cursor-pointer relative overflow-hidden"
+                  className="group bg-white rounded-xl p-4 shadow-sm border border-slate-100 hover:border-[#00694C]/30 hover:shadow-md transition-all text-left cursor-pointer relative overflow-hidden"
                 >
                   {isMyShiftStore && (
-                    <span className="absolute top-3 right-3 flex items-center gap-1 bg-emerald-50 border border-emerald-200 text-emerald-700 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase">
+                    <span className="absolute top-2 right-2 flex items-center gap-1 bg-emerald-50 border border-emerald-200 text-emerald-700 text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase">
                       <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
                       Active
                     </span>
                   )}
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-xl bg-[#F1F6EB] flex items-center justify-center group-hover:bg-[#E4EFDA] transition-colors overflow-hidden shrink-0">
+                  <div className="flex items-center gap-2.5 mb-2.5">
+                    <div className="w-9 h-9 rounded-lg bg-[#F1F6EB] flex items-center justify-center group-hover:bg-[#E4EFDA] transition-colors overflow-hidden shrink-0">
                       {store.image ? (
                         <img src={store.image} alt={store.name} className="w-full h-full object-cover" />
                       ) : (
-                        <StoreIcon className="w-5 h-5 text-[#00694C]" />
+                        <StoreIcon className="w-4 h-4 text-[#00694C]" />
                       )}
                     </div>
                     <div className="min-w-0 flex-1">

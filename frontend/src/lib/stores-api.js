@@ -50,7 +50,7 @@ export function sortStoresByDistance(storeList, userLat, userLng) {
 }
 
 export function isStoreOpen(store) {
-    if (!store ? .openTime || !store ? .closeTime) return false
+    if (!store?.openTime || !store?.closeTime) return false
     const now = new Date()
     const nowMins = now.getHours() * 60 + now.getMinutes()
     const toMins = (t) => { const [h, m] = t.split(':').map(Number); return h * 60 + m }

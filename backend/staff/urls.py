@@ -6,6 +6,7 @@ router = DefaultRouter()
 router.register(r'admin/employees', views.AdminStaffViewSet, basename='admin-staff')
 router.register(r'admin/shifts', views.AdminStaffShiftViewSet, basename='admin-shifts')
 router.register(r'admin/tasks', views.AdminStaffTaskViewSet, basename='admin-tasks')
+router.register(r'admin/day-off-requests', views.AdminDayOffRequestViewSet, basename='admin-day-off-requests')
 router.register(r'announcements', views.AnnouncementViewSet, basename='announcements')
 urlpatterns = [
     # Admin APIs

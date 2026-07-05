@@ -673,13 +673,35 @@ class OrderViewSet(viewsets.ModelViewSet):
         from accounts.notifications import send_order_status_notification
         
         # Capture the old status from the existing instance
-        old_status = serializer.instance.status
+        order = serializer.instance
+        old_status = order.status
+        old_store = order.fulfillment_store
         
         # Save the updated instance
         updated_instance = serializer.save()
         
+        new_status = updated_instance.status
+        new_store = updated_instance.fulfillment_store
+        
+        # Deduct stock if order is confirmed/delivered and wasn't before
+        if new_status in ['DELIVERED', 'CONFIRMED'] and old_status not in ['DELIVERED', 'CONFIRMED']:
+            if new_store:
+                for item in updated_instance.items.all():
+                    if item.product:
+                        from products.models import ProductStoreStock
+                        store_stock = ProductStoreStock.objects.filter(product=item.product, store=new_store).first()
+                        if store_stock and store_stock.stock > 0:
+                            store_stock.stock = max(0, store_stock.stock - item.quantity)
+                            store_stock.save(update_fields=['stock'])
+                    elif item.leftover_pack:
+                        # Leftover packs don't have store-specific stock currently, deduct global stock
+                        pack = item.leftover_pack
+                        if pack.stock is not None and pack.stock > 0:
+                            pack.stock = max(0, pack.stock - item.quantity)
+                            pack.save(update_fields=['stock'])
+
         # Send instant notification via SSE if order status changed
-        if updated_instance.status != old_status:
+        if new_status != old_status:
             send_order_status_notification(updated_instance)
 
     def create(self, request, *args, **kwargs):

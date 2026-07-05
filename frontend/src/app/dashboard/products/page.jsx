@@ -1,6 +1,7 @@
 
 
 
+// Force cache invalidation
 "use client";
 
 import { useState } from "react";
@@ -26,32 +27,10 @@ import ClassFilter from "@/app/dashboard/_components/ClassFilter";
 
 const PAGE_SIZE = 20;
 
-const columns = [
-  {
-    key: "thumbnail_url", label: "Photo", sortable: false, render: (v) => v ? (
-      <div className="w-10 h-10 min-w-[40px] shrink-0">
-        <img src={v} alt="" className="w-full h-full rounded-md object-cover border border-slate-200" />
-      </div>
-    ) : (
-      <div className="w-10 h-10 min-w-[40px] shrink-0 rounded-md bg-slate-100 border border-slate-200 flex items-center justify-center">
-        <ImageIcon className="w-4 h-4 text-slate-400" />
-      </div>
-    )
-  },
-  { key: "name", label: "Name", render: (v, row) => row.variant ? <span className="flex items-center gap-1.5">{v} <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-500 uppercase">{row.variant}</span></span> : v },
-  { key: "price", label: "Price", render: (v) => `€${Number(v).toLocaleString()}` },
-  { key: "discount_price", label: "Sale Price", render: (v) => v ? `€${Number(v).toLocaleString()}` : "—" },
-  { key: "stock", label: "Stock" },
-  { key: "stores", label: "Stores", render: (v) => Array.isArray(v) && v.length > 0 ? v.map(s => s.name).join(", ") : "—" },
-  { key: "category", label: "Category", render: (v) => v?.name || "—" },
-  { key: "sub_category", label: "Sub Category", render: (v) => v?.name || "—" },
-  { key: "is_active", label: "Status", render: (v) => v ? "active" : "inactive", type: "status" },
-];
-
 import ProductForm from "@/app/dashboard/_components/ProductForm";
 
 // ── Product View ───────────────────────────────────────────────
-function ProductView({ item }) {
+function ProductView({ item, stores }) {
   if (!item) return null;
 
   const InfoBlock = ({ label, value }) => (
@@ -154,7 +133,7 @@ function ProductView({ item }) {
               <InfoBlock label="Brand" value={item.brand?.name} />
               <InfoBlock label="Sub Category" value={item.sub_category?.name} />
               <InfoBlock label="Shop / Vendor" value={item.shop?.name} />
-              <InfoBlock label="Physical Stores" value={Array.isArray(item.stores) && item.stores.length > 0 ? item.stores.map(s => s.name).join(", ") : "None"} />
+              <InfoBlock label="Physical Stores" value={Array.isArray(item.stores) && item.stores.length > 0 ? (stores?.length > 0 && item.stores.length === stores.length ? "All" : item.stores.map(s => s.name).join(", ")) : "None"} />
             </div>
           </Section>
 
@@ -296,6 +275,28 @@ export default function ProductsPage() {
 
   const formProps = { categories, brands, colors, sizes, subcategories, stores, productClasses };
 
+  const columns = [
+    {
+      key: "thumbnail_url", label: "Photo", sortable: false, render: (v) => v ? (
+        <div className="w-10 h-10 min-w-[40px] shrink-0">
+          <img src={v} alt="" className="w-full h-full rounded-md object-cover border border-slate-200" />
+        </div>
+      ) : (
+        <div className="w-10 h-10 min-w-[40px] shrink-0 rounded-md bg-slate-100 border border-slate-200 flex items-center justify-center">
+          <ImageIcon className="w-4 h-4 text-slate-400" />
+        </div>
+      )
+    },
+    { key: "name", label: "Name", render: (v, row) => row.variant ? <span className="flex items-center gap-1.5">{v} <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-500 uppercase">{row.variant}</span></span> : v },
+    { key: "price", label: "Price", render: (v) => `€${Number(v).toLocaleString()}` },
+    { key: "discount_price", label: "Sale Price", render: (v) => v ? `€${Number(v).toLocaleString()}` : "—" },
+    { key: "stock", label: "Stock" },
+    { key: "stores", label: "Stores", render: (v) => Array.isArray(v) && v.length > 0 ? (stores.length > 0 && v.length === stores.length ? "All" : v.map(s => s.name).join(", ")) : "—" },
+    { key: "category", label: "Category", render: (v) => v?.name || "—" },
+    { key: "sub_category", label: "Sub Category", render: (v) => v?.name || "—" },
+    { key: "is_active", label: "Status", render: (v) => v ? "active" : "inactive", type: "status" },
+  ];
+
   return (
     <Container
       title="Products"
@@ -366,8 +367,8 @@ export default function ProductsPage() {
         {editItem && <ProductForm initialValues={editItem} onSubmit={handleEdit} submitLabel="Save Changes" {...formProps} />}
       </Modal>
 
-      <Modal open={!!viewItem} onClose={() => setViewItem(null)} title="Product Details" maxWidth="max-w-4xl">
-        <ProductView item={viewItem} />
+      <Modal open={!!viewItem} onClose={() => setViewItem(null)} title={`Product Details: ${viewItem?.name}`} maxWidth="max-w-4xl">
+        <ProductView item={viewItem} stores={stores} />
       </Modal>
 
       <ConfirmDialog

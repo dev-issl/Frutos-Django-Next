@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useStaffAuth } from "./_context/StaffAuthContext";
 import useSWR from "swr";
 import api from "@/app/dashboard/_lib/api";
-import { Bell, Calendar, Euro, FileText, LogOut, MessageSquare, Settings, Clock, Menu, ArrowRight, Search, HelpCircle, ChevronLeft, ChevronRight, Ban, ShoppingCart, Package, Megaphone, X as XIcon, Store as StoreIcon, ClipboardCheck, MapPin } from "lucide-react";
+import { Bell, Calendar, Euro, FileText, LogOut, MessageSquare, Settings, Clock, Menu, ArrowRight, Search, HelpCircle, ChevronLeft, ChevronRight, Ban, ShoppingCart, Package, Megaphone, X as XIcon, Store as StoreIcon, ClipboardCheck, MapPin, History } from "lucide-react";
 import StaffOrders from "./_components/StaffOrders";
 import StaffProducts from "./_components/StaffProducts";
 import StaffAnnouncements from "./_components/StaffAnnouncements";
@@ -14,6 +14,7 @@ import StaffStoreInfo from "./_components/StaffStoreInfo";
 import StaffProfileSettings from "./_components/StaffProfileSettings";
 import StaffAttendanceView from "./_components/StaffAttendanceView";
 import StaffAttendanceTab from "./_components/StaffAttendanceTab";
+import StaffHistoryTab from "./_components/StaffHistoryTab";
 import StaffStoreSession from "./_components/StaffStoreSession";
 
 export default function StaffDashboardPage() {
@@ -21,6 +22,7 @@ export default function StaffDashboardPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("SETTINGS");
   const [showAttendanceModal, setShowAttendanceModal] = useState(false);
+  const [hasDismissedAttendanceModal, setHasDismissedAttendanceModal] = useState(false);
   const [selectedStoreForCheckIn, setSelectedStoreForCheckIn] = useState("");
   const [isCheckingIn, setIsCheckingIn] = useState(false);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
@@ -55,16 +57,14 @@ export default function StaffDashboardPage() {
 
   useEffect(() => {
     if (dashboardData && !isLoading) {
-      if (!current_active_shift && !has_completed_shift_today) {
+      if (!current_active_shift && !has_completed_shift_today && !hasDismissedAttendanceModal) {
         const timer = setTimeout(() => {
           setShowAttendanceModal(true);
         }, 2000);
         return () => clearTimeout(timer);
-      } else {
-        setShowAttendanceModal(false);
       }
     }
-  }, [dashboardData, isLoading, current_active_shift, has_completed_shift_today]);
+  }, [dashboardData, isLoading, current_active_shift, has_completed_shift_today, hasDismissedAttendanceModal]);
 
   if (isLoading || !user) {
     return (
@@ -87,11 +87,12 @@ export default function StaffDashboardPage() {
   }
 
 
-  const handleCheckIn = async () => {
-    if (!selectedStoreForCheckIn) return;
+  const handleCheckIn = async (overrideStoreId) => {
+    const storeIdToUse = overrideStoreId || selectedStoreForCheckIn;
+    if (!storeIdToUse) return;
     setIsCheckingIn(true);
     try {
-      await api.post("/api/staff/me/check-in/", { store_id: selectedStoreForCheckIn });
+      await api.post("/api/staff/me/check-in/", { store_id: storeIdToUse });
       mutate();
       setShowAttendanceModal(false);
     } catch (err) {
@@ -130,8 +131,16 @@ export default function StaffDashboardPage() {
     });
   };
 
-  const formatAMPM = (timeStr) => {
+  const formatAMPM = (timeStr, dateStr = null) => {
     if (!timeStr) return '';
+    if (dateStr) {
+      let timeParts = timeStr.split(':');
+      if (timeParts.length === 2) timeParts.push('00');
+      const d = new Date(`${dateStr}T${timeParts.join(':')}Z`);
+      if (!isNaN(d)) {
+        return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+      }
+    }
     const [h, m] = timeStr.split(':');
     let hours = parseInt(h, 10);
     const ampm = hours >= 12 ? 'PM' : 'AM';
@@ -150,6 +159,7 @@ export default function StaffDashboardPage() {
     { id: "REQUEST_DAY_OFF",name: "REQUEST DAY OFF", icon: FileText,       badge: 0 },
     { id: "ANNOUNCEMENTS",  name: "ANNOUNCEMENTS",   icon: Megaphone,      badge: 0 },
     { id: "ATTENDANCE",     name: "ATTENDANCE",      icon: ClipboardCheck, badge: 0 },
+    { id: "HISTORY",        name: "WORK HISTORY",    icon: History,        badge: 0 },
     // Dynamic store tab — appears only when a store is selected
     ...(selectedViewStore ? [
       { id: "STORE_SESSION", name: selectedViewStore.name.toUpperCase(), icon: StoreIcon, badge: 0, isStore: true }
@@ -337,7 +347,7 @@ export default function StaffDashboardPage() {
           </div>
         </div>
 
-        <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto min-h-0 py-2 db-scroll">
+        <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto min-h-0 py-2 staff-sidebar-scroll">
           {sidebarMenuItems.map((item, i) => {
             const isActive = activeTab === item.id;
             return (
@@ -408,13 +418,15 @@ export default function StaffDashboardPage() {
             </div>
             <div className="flex items-center gap-4">
                {/* Attendance button */}
-               <button
-                 onClick={() => { setShowAttendanceModal(true); }}
-                 className="flex items-center gap-2 px-4 py-2 rounded-full text-[#00694C] bg-[#E4EFDA] hover:bg-[#D9EFE5] font-bold text-xs transition-all cursor-pointer border border-[#BCE4D3]"
-               >
-                 <ClipboardCheck className="w-3.5 h-3.5" />
-                 Attendance
-               </button>
+               {!current_active_shift && (
+                 <button
+                   onClick={() => { setShowAttendanceModal(true); }}
+                   className="flex items-center gap-2 px-4 py-2 rounded-full text-[#00694C] bg-[#E4EFDA] hover:bg-[#D9EFE5] font-bold text-xs transition-all cursor-pointer border border-[#BCE4D3]"
+                 >
+                   <ClipboardCheck className="w-3.5 h-3.5" />
+                   Attendance
+                 </button>
+               )}
 
                <button className="w-9 h-9 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-600 hover:bg-white transition-colors cursor-pointer">
                  <HelpCircle className="w-5 h-5" />
@@ -449,6 +461,8 @@ export default function StaffDashboardPage() {
                 setActiveTab("STORE_SESSION");
               }}
             />
+          ) : activeTab === "HISTORY" ? (
+            <StaffHistoryTab shifts={shifts} />
           ) : activeTab === "STORE_SESSION" && selectedViewStore ? (
             <StaffStoreSession
               store={selectedViewStore}
@@ -460,6 +474,8 @@ export default function StaffDashboardPage() {
                 setSessionStartTime(null);
                 setActiveTab("ATTENDANCE");
               }}
+              onCheckIn={handleCheckIn}
+              isCheckingIn={isCheckingIn}
             />
           ) : activeTab === "ORDERS" ? (
             <StaffOrders profile={profile} />
@@ -571,12 +587,12 @@ export default function StaffDashboardPage() {
                         </div>
                         <div className="text-[11px] text-[#00694C]/70 font-semibold leading-[1.3] mb-3">{profile?.store_name || 'Unassigned Store'}</div>
                         <div className="text-[13px] font-bold text-[#009b72] leading-tight mb-1">
-                          {formatAMPM(effectiveShift.start_time)} -<br/>{formatAMPM(effectiveShift.end_time)}
+                          {formatAMPM(effectiveShift.start_time, localDateStr)} -<br/>{formatAMPM(effectiveShift.end_time, localDateStr)}
                         </div>
                         
                         {effectiveShift.break_start && effectiveShift.break_end && (
                           <div className="mt-auto pt-3 border-t border-[#00694C]/10 text-[9px] font-bold text-[#00694C]/50 uppercase tracking-wide">
-                            Break: {formatAMPM(effectiveShift.break_start)} - {formatAMPM(effectiveShift.break_end)}
+                            Break: {formatAMPM(effectiveShift.break_start, localDateStr)} - {formatAMPM(effectiveShift.break_end, localDateStr)}
                           </div>
                         )}
                       </div>
@@ -797,22 +813,19 @@ export default function StaffDashboardPage() {
 
       {/* Attendance Modal */}
       {showAttendanceModal && (
-        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-700" onClick={() => { if (current_active_shift || has_completed_shift_today) setShowAttendanceModal(false); }}>
-          <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-700 ease-out" onClick={(e) => e.stopPropagation()}>
-            <div className="bg-[#00694C] p-5 text-white text-center relative">
-              {(current_active_shift || has_completed_shift_today) && (
-                <button onClick={() => setShowAttendanceModal(false)} className="absolute top-3 right-3 bg-white/10 rounded-full p-1.5 text-white flex items-center justify-center cursor-pointer">
-                  <XIcon className="w-4 h-4" strokeWidth={2.5} />
-                </button>
-              )}
-              <StoreIcon className="w-10 h-10 mx-auto mb-2 opacity-90" />
-              <h2 className="text-xl font-serif font-bold mb-1">Start Your Shift</h2>
-              <p className="text-[#BCE4D3] text-xs">Please select the store you are working at today.</p>
+        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-700" onClick={() => { setShowAttendanceModal(false); setHasDismissedAttendanceModal(true); }}>
+          <div className="bg-white rounded-2xl w-[90%] max-w-xs md:max-w-sm shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-700 ease-out" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-[#00694C] pt-5 pb-4 px-4 text-white text-center relative">
+              <div className="h-12 w-32 md:h-14 md:w-36 mx-auto mb-2.5 flex items-center justify-center">
+                <img src="/el-erbol-logo.png" alt="El Árbol Logo" className="w-full h-full object-contain brightness-0 invert" style={{ filter: 'brightness(0) invert(1)' }} />
+              </div>
+              <h2 className="text-base md:text-lg font-serif font-bold mb-0.5">Start Your Shift</h2>
+              <p className="text-[#BCE4D3] text-[11px] md:text-xs">Please select your store for today.</p>
             </div>
-            <div className="p-5">
-              <div className="mb-4">
-                <label className="block text-sm font-semibold text-[#004A3A] mb-2">Select Store</label>
-                <div className="max-h-48 overflow-y-auto pr-2 space-y-2 db-scroll">
+            <div className="p-3.5">
+              <div className="mb-2">
+                <label className="block text-[11px] font-bold text-[#004A3A] mb-1.5 uppercase tracking-wide">Select Store</label>
+                <div className="max-h-[35vh] md:max-h-48 overflow-y-auto pr-1.5 space-y-1.5 db-scroll">
                   {active_stores?.length === 0 ? (
                     <div className="text-center py-4 text-slate-500 text-sm border-2 border-dashed border-slate-200 rounded-xl">No active stores available.</div>
                   ) : (
@@ -841,32 +854,32 @@ export default function StaffDashboardPage() {
                       };
                       const isOpen = isStoreCurrentlyOpen(store.openTime, store.closeTime);
                       return (
-                        <div 
+                        <div
                           key={store.id} 
                           onClick={() => setSelectedStoreForCheckIn(store.id)}
-                          className={`flex items-center justify-between p-2.5 rounded-xl border-2 cursor-pointer transition-all ${selectedStoreForCheckIn === store.id ? 'border-[#00694C] bg-emerald-50' : 'border-slate-100 bg-white hover:border-[#00694C]/30 hover:bg-slate-50'}`}
+                          className={`flex items-center justify-between p-2 rounded-xl border-2 cursor-pointer transition-all ${selectedStoreForCheckIn === store.id ? 'border-[#00694C] bg-emerald-50' : 'border-slate-100 bg-white hover:border-[#00694C]/30 hover:bg-slate-50'}`}
                         >
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-2.5">
                             <div className="w-10 h-10 rounded-lg bg-white shadow-sm border border-slate-100 flex items-center justify-center overflow-hidden shrink-0">
                               {store.image ? (
-                                <img src={store.image} alt={store.name} className="w-full h-full object-cover" />
+                                <img src={store.image} alt={store.name} className="w-full h-full object-cover rounded-lg" />
                               ) : (
                                 <StoreIcon className="w-5 h-5 text-[#00694C]" />
                               )}
                             </div>
-                            <div>
-                              <div className={`font-bold text-sm transition-colors ${selectedStoreForCheckIn === store.id ? 'text-[#00694C]' : 'text-slate-700'}`}>{store.name}</div>
-                              {store.address && <div className="text-[10px] text-slate-400 truncate max-w-[150px]">{store.address}</div>}
-                              {store.openTime && store.closeTime && (
-                                <div className="text-[9px] font-bold text-slate-500 mt-0.5 tracking-wide">
-                                  {formatTime12h(store.openTime)} — {formatTime12h(store.closeTime)}
-                                </div>
-                              )}
+                            <div className="flex flex-col flex-1 min-w-0">
+                              <span className="text-xs md:text-sm font-bold text-slate-800 leading-tight truncate">{store.name}</span>
+                              <span className="text-[9px] md:text-[10px] text-slate-500 truncate max-w-[100px] md:max-w-[130px]">{store.address}</span>
+                              <div className="text-[9px] md:text-[10px] text-slate-400 font-medium">
+                                {formatTime12h(store.openTime)} — {formatTime12h(store.closeTime)}
+                              </div>
                             </div>
                           </div>
-                          <span className={`${isOpen ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'} text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wide shrink-0`}>
-                            {isOpen ? 'Open' : 'Closed'}
-                          </span>
+                          {isOpen ? (
+                            <span className="bg-emerald-100 text-emerald-700 text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider shrink-0">Open</span>
+                          ) : (
+                            <span className="bg-slate-100 text-slate-500 text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider shrink-0">Closed</span>
+                          )}
                         </div>
                       );
                     })
@@ -876,10 +889,9 @@ export default function StaffDashboardPage() {
               <button 
                 onClick={handleCheckIn}
                 disabled={!selectedStoreForCheckIn || isCheckingIn}
-                className="w-full bg-[#00694C] hover:bg-[#005940] disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl shadow-md transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full mt-3 bg-[#00694C] hover:bg-[#005940] disabled:bg-slate-200 text-white font-bold py-2.5 text-sm rounded-xl transition-colors flex items-center justify-center gap-2 cursor-pointer"
               >
                 {isCheckingIn ? "Starting..." : "Start Shift Now"}
-                {!isCheckingIn && <ArrowRight className="w-4 h-4" />}
               </button>
             </div>
           </div>
@@ -888,27 +900,27 @@ export default function StaffDashboardPage() {
 
       {/* Check Out Confirmation Modal */}
       {showCheckOutModal && (
-        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm" onClick={() => setShowCheckOutModal(false)}>
+          <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
             <div className="p-6 text-center pt-8">
-              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <LogOut className="w-8 h-8 text-red-600" />
+              <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-5 border border-red-100 shadow-sm">
+                <LogOut className="w-7 h-7 text-red-500" />
               </div>
-              <h2 className="text-xl font-serif font-bold text-[#004A3A] mb-2">End Shift?</h2>
-              <p className="text-sm text-slate-500 mb-6 font-medium">Are you sure you want to end your shift for today? This action will record your checkout time.</p>
+              <h2 className="text-xl font-serif font-bold text-[#004A3A] mb-2">End Your Shift?</h2>
+              <p className="text-sm text-slate-500 mb-8 font-medium">Are you sure you want to clock out for today? This will record your final checkout time.</p>
               
-              <div className="flex gap-3">
+              <div className="flex items-center gap-3">
                 <button 
                   onClick={() => setShowCheckOutModal(false)}
                   disabled={isCheckingOut}
-                  className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl transition-colors disabled:opacity-50 cursor-pointer"
+                  className="flex-1 bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300 text-slate-700 font-bold py-2.5 rounded-xl transition-all disabled:opacity-50 cursor-pointer shadow-sm text-sm"
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   onClick={confirmCheckOut}
                   disabled={isCheckingOut}
-                  className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl shadow-md transition-colors disabled:opacity-50 flex items-center justify-center cursor-pointer"
+                  className="flex-1 py-2.5 rounded-xl bg-[#00694C] text-white font-bold text-sm hover:bg-[#00523b] transition-all shadow-sm disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {isCheckingOut ? "Ending..." : "End Shift"}
                 </button>

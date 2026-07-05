@@ -5,7 +5,7 @@ import useSWR from "swr";
 import api from "@/app/dashboard/_lib/api";
 import {
   Package, ShoppingCart, MapPin, Search, Loader2, ArrowLeft,
-  RefreshCw, ReceiptText, StoreIcon, Store as StoreIcon2,
+  RefreshCw, ReceiptText, StoreIcon, Store as StoreIcon2, ClipboardCheck,
 } from "lucide-react";
 import AdminCreateOrder from "@/app/dashboard/orders/_components/AdminCreateOrder";
 import { Store as LucideStore } from "lucide-react";
@@ -21,6 +21,15 @@ function formatDuration(ms) {
   if (m > 0) return `${m}m ${sec}s`;
   return `${sec}s`;
 }
+function formatAMPM(timeStr) {
+  if (!timeStr) return "—";
+  const [h, m] = timeStr.split(":");
+  let hours = parseInt(h, 10);
+  const ampm = hours >= 12 ? "PM" : "AM";
+  hours = hours % 12 || 12;
+  return `${hours.toString().padStart(2, "0")}:${m} ${ampm}`;
+}
+
 function formatDate(str) {
   if (!str) return "—";
   return new Date(str).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" });
@@ -40,6 +49,75 @@ function OrderStatusBadge({ status }) {
     <span className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-full capitalize ${ORDER_STATUS_STYLES[s] || "bg-slate-100 text-slate-600"}`}>
       {s.toLowerCase().replace(/_/g, " ")}
     </span>
+  );
+}
+
+// ─── Store Details Tab ─────────────────────────────────────────────────────────
+function StoreDetailsTab({ store, currentActiveShift, onCheckIn, isCheckingIn }) {
+  const isCheckedIntoThisStore = String(currentActiveShift?.store) === String(store?.id) || currentActiveShift?.store_name === store?.name;
+
+  return (
+    <div className="space-y-6">
+      <div className="grid md:grid-cols-2 gap-6">
+        {/* Store Info */}
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <StoreIcon2 className="w-5 h-5 text-[#00694C]" />
+            <h3 className="font-bold text-[#004A3A]">Store Information</h3>
+          </div>
+          <div className="space-y-4 text-sm">
+            <div className="flex justify-between border-b border-slate-50 pb-3">
+              <span className="text-slate-500">Name</span>
+              <span className="font-bold text-slate-800">{store?.name}</span>
+            </div>
+            <div className="flex justify-between border-b border-slate-50 pb-3">
+              <span className="text-slate-500">Location</span>
+              <span className="font-semibold text-slate-700 text-right max-w-[200px]">{store?.address || "—"}</span>
+            </div>
+            <div className="flex justify-between border-b border-slate-50 pb-3">
+              <span className="text-slate-500">Opening Hours</span>
+              <span className="font-semibold text-slate-700">
+                {store?.openTime && store?.closeTime ? `${formatAMPM(store.openTime)} - ${formatAMPM(store.closeTime)}` : "—"}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Attendance Action */}
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 flex flex-col justify-center items-center text-center">
+          <div className="w-16 h-16 rounded-full bg-[#E4EFDA] flex items-center justify-center mb-4">
+            <ClipboardCheck className="w-8 h-8 text-[#00694C]" />
+          </div>
+          <h3 className="font-bold text-xl text-[#004A3A] mb-2">Ready to work?</h3>
+          <p className="text-slate-500 text-sm mb-6 max-w-[250px]">
+            {isCheckedIntoThisStore 
+              ? "You are currently checked into this store. Your shift is active!"
+              : currentActiveShift 
+                ? "You are checked into a different store. Leave your active shift first."
+                : "Check in to start your shift and record your attendance for this store."}
+          </p>
+          
+          <button
+            onClick={() => onCheckIn(store.id)}
+            disabled={isCheckingIn || currentActiveShift}
+            className={`w-full max-w-[250px] py-3 px-6 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${
+              isCheckedIntoThisStore
+                ? "bg-emerald-100 text-emerald-700 cursor-default"
+                : currentActiveShift
+                  ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                  : "bg-[#00694C] hover:bg-[#005940] text-white cursor-pointer shadow-md hover:shadow-lg"
+            }`}
+          >
+            {isCheckingIn && <Loader2 className="w-4 h-4 animate-spin" />}
+            {isCheckedIntoThisStore 
+              ? "Shift Active" 
+              : isCheckingIn 
+                ? "Starting Shift..." 
+                : "Start Shift Here"}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -245,12 +323,27 @@ function SessionTimer({ sessionStartTime }) {
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
-export default function StaffStoreSession({ store, profile, sessionStartTime, currentActiveShift, onBack }) {
-  const [activeTab, setActiveTab] = useState("products");
+export default function StaffStoreSession({ store, profile, sessionStartTime, currentActiveShift, onBack, onCheckIn, isCheckingIn }) {
+  const [activeTab, setActiveTab] = useState("details");
   const tabs = [
+    { id: "details",  label: "Store Details", icon: StoreIcon },
     { id: "products", label: "Products", icon: Package },
     { id: "orders",   label: "My Orders", icon: ShoppingCart },
   ];
+
+  const { data: rawProducts } = useSWR(
+    store?.id ? `/api/products/products/?store=${store.id}&page_size=200` : null,
+    (url) => api.get(url),
+    { revalidateOnFocus: false }
+  );
+  const totalProducts = rawProducts?.count || rawProducts?.results?.length || (Array.isArray(rawProducts) ? rawProducts.length : 0);
+
+  const { data: staffData } = useSWR(
+    store?.id ? `/api/staff/store/${store.id}/staff/` : null,
+    (url) => api.get(url),
+    { revalidateOnFocus: false }
+  );
+  const totalStaff = staffData?.length || 0;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -281,14 +374,36 @@ export default function StaffStoreSession({ store, profile, sessionStartTime, cu
               </div>
             )}
           </div>
-          {sessionStartTime && (
-            <div className="shrink-0 bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-center">
-              <div className="text-white/60 text-[10px] font-bold uppercase tracking-widest mb-0.5">Session</div>
-              <SessionTimer sessionStartTime={sessionStartTime} />
+          
+          {/* Stats on the right */}
+          <div className="hidden sm:flex items-center gap-8 shrink-0 border-l border-white/10 pl-8">
+            <div className="text-center">
+               <div className="text-white/60 text-[9px] font-bold uppercase tracking-widest mb-1">Active Staff</div>
+               <div className="text-white font-serif font-bold text-2xl leading-none tabular-nums">{totalStaff}</div>
             </div>
-          )}
+            <div className="text-center">
+               <div className="text-white/60 text-[9px] font-bold uppercase tracking-widest mb-1">Products</div>
+               <div className="text-white font-serif font-bold text-2xl leading-none tabular-nums">{totalProducts}</div>
+            </div>
+          </div>
         </div>
       </div>
+      
+      {/* Tab Navigation */}
+      <div className="flex gap-2 overflow-x-auto pb-2 db-scroll">
+        {tabs.map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold whitespace-nowrap transition-all cursor-pointer ${activeTab === tab.id ? 'bg-[#00694C] text-white shadow-md' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200 hover:border-[#00694C]/30'}`}
+          >
+            <tab.icon className={`w-4 h-4 ${activeTab === tab.id ? 'text-white' : 'text-slate-400'}`} />
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === "details" && <StoreDetailsTab store={store} currentActiveShift={currentActiveShift} onCheckIn={onCheckIn} isCheckingIn={isCheckingIn} />}
       {activeTab === "products" && <StoreProductsTab storeId={store?.id} storeName={store?.name} />}
       {activeTab === "orders" && <StoreOrderHistoryTab profile={profile} />}
     </div>

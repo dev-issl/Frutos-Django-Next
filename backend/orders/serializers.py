@@ -259,9 +259,6 @@ class OrderCreateSerializer(serializers.Serializer):
 
                 if item.get('item_type') == 'product':
                     product = item['product']
-                    if product.stock is not None and product.stock > 0:
-                        product.stock = max(0, product.stock - item['quantity'])
-                        product.save(update_fields=['stock'])
 
                     OrderItem.objects.create(
                         order      = order,
@@ -273,9 +270,6 @@ class OrderCreateSerializer(serializers.Serializer):
                     )
                 else:
                     pack = item['leftover_pack']
-                    if pack.stock is not None and pack.stock > 0:
-                        pack.stock = max(0, pack.stock - item['quantity'])
-                        pack.save(update_fields=['stock'])
 
                     OrderItem.objects.create(
                         order         = order,
@@ -439,6 +433,10 @@ class OrderReadSerializer(serializers.ModelSerializer):
     status         = serializers.CharField(required=False)
     payment_status = serializers.CharField(required=False)
     tracking_number = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    fulfillment_store = serializers.PrimaryKeyRelatedField(
+        queryset=__import__('stores.models', fromlist=['Store']).Store.objects.all(),
+        required=False, allow_null=True
+    )
 
     class Meta:
         model  = Order
@@ -448,7 +446,7 @@ class OrderReadSerializer(serializers.ModelSerializer):
             'customer_name', 'customer_email', 'customer_phone',
             'street_address', 'city', 'postcode',
             'payment_method', 'delivery_date', 'delivery_slot_label',
-            'tracking_number', 'is_wholesale_order',
+            'tracking_number', 'is_wholesale_order', 'fulfillment_store',
             'ordered_at', 'items', 'payment', 'updates',
         ]
 
@@ -738,7 +736,7 @@ class OrderSerializer(serializers.ModelSerializer):
         model  = Order
         fields = [
             'id', 'order_number', 'total_amount', 'status', 'payment_status',
-            'shipping_address', 'shipping_method', 'tracking_number',
+            'shipping_address', 'shipping_method', 'tracking_number', 'fulfillment_store',
             'ordered_at', 'items', 'updates', 'payment', 'is_wholesale_order'
         ]
 

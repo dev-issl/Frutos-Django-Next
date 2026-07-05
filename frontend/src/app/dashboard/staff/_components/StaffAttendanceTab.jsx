@@ -4,6 +4,7 @@ import { useState, useMemo, useRef } from "react";
 import useSWR from "swr";
 import api from "@/app/dashboard/_lib/api";
 import { Loader2, Users, Store, Clock, Calendar, ChevronRight, ChevronLeft, X, AlertCircle, CalendarClock, CalendarOff, CheckCircle2, Printer } from "lucide-react";
+import DatePickerModal from "@/app/dashboard/_components/DatePickerModal";
 
 // Helper for photo URL
 const getPhotoUrl = (url) => {
@@ -28,7 +29,7 @@ export default function StaffAttendanceTab({ stores }) {
   const [selectedStaff, setSelectedStaff] = useState(null);
   const [historyFilter, setHistoryFilter] = useState("all"); // 'all', 'month', 'week', 'today', 'date'
   const [selectedDate, setSelectedDate] = useState("");
-  const dateInputRef = useRef(null);
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
   const { data, isLoading } = useSWR(
     "/api/staff/admin/shift-stats/",
@@ -194,24 +195,22 @@ export default function StaffAttendanceTab({ stores }) {
             
             <div className="flex items-center relative w-full sm:w-auto shrink-0">
               <div 
-                onClick={() => {
-                  try { dateInputRef.current?.showPicker(); } catch (e) { console.error(e) }
-                }}
+                onClick={() => setIsDatePickerOpen(true)}
                 className={`flex items-center justify-between w-full sm:w-[140px] px-3 py-1.5 h-[32px] rounded-lg text-xs font-bold transition-all border cursor-pointer shadow-sm ${historyFilter === 'date' ? 'bg-[#00694C] text-white border-[#00694C]' : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'}`}
               >
                 <span>{selectedDate ? new Date(selectedDate).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) : "Choose Date"}</span>
                 <Calendar className="w-3.5 h-3.5" />
               </div>
-              <input
-                ref={dateInputRef}
-                type="date"
-                value={selectedDate}
-                onChange={(e) => {
-                  setSelectedDate(e.target.value);
-                  if (e.target.value) setHistoryFilter('date');
+              
+              <DatePickerModal 
+                isOpen={isDatePickerOpen} 
+                onClose={() => setIsDatePickerOpen(false)} 
+                selectedDate={selectedDate} 
+                onSelectDate={(date) => {
+                  setSelectedDate(date);
+                  if (date) setHistoryFilter('date');
                   else setHistoryFilter('all');
-                }}
-                className="absolute opacity-0 pointer-events-none w-0 h-0"
+                }} 
               />
             </div>
           </div>

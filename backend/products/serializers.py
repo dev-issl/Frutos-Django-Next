@@ -11,6 +11,12 @@ class ProductStoreSerializer(serializers.ModelSerializer):
         model = Store
         fields = ['id', 'name', 'slug']
 
+class ProductStoreStockSerializer(serializers.ModelSerializer):
+    store_name = serializers.CharField(source='store.name', read_only=True)
+    class Meta:
+        model = ProductStoreStock
+        fields = ['id', 'store', 'store_name', 'stock']
+
 class BrandSerializer(serializers.ModelSerializer):
     logo_url = serializers.SerializerMethodField()
     
@@ -164,6 +170,7 @@ class ProductSerializer(serializers.ModelSerializer):
     reviews = ReviewSerializer(many=True, read_only=True)
     colors = ColorSerializer(many=True, read_only=True)
     sizes = SizeSerializer(many=True, read_only=True)
+    store_stocks = ProductStoreStockSerializer(many=True, read_only=True)
     thumbnail_url = serializers.SerializerMethodField()
     rating = serializers.SerializerMethodField()
     review_count = serializers.SerializerMethodField()
@@ -183,6 +190,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'thumbnail_url', 'specifications', 'additional_images',
             'origin', 'unit', 'wholesale_unit', 'badge', 'badge_color', 'variant',
             'colors', 'sizes', 'reviews', 'rating', 'review_count', 'user_can_review',
+            'store_stocks',
             'created_at', 'updated_at', 'created_by_name', 'updated_by_name',
             'created_by_role', 'updated_by_role'
         ]

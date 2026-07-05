@@ -34,7 +34,7 @@ export default function ProductForm({
     colors: [], sizes: [],
     ...initialValues,
     shop:              initialValues?.shop?.id               || initialValues?.shop               || "",
-    stores:            initialValues?.stores?.map(s => s.id || s) || [],
+    stores:            initialValues?.stores?.map(s => s.id || s) || stores?.map(s => s.id)       || [],
     brand:             initialValues?.brand?.id              || initialValues?.brand              || "",
     category:          initialValues?.category?.id           || initialValues?.category           || "",
     sub_category:      initialValues?.sub_category?.id       || initialValues?.sub_category       || "",

@@ -405,6 +405,7 @@ class Notification(models.Model):
         ('VENDOR_REGISTERED', 'Vendor Registered'),
         ('TICKET_CREATED', 'Ticket Created'),
         ('ORDER_PLACED', 'Order Placed'),
+        ('DAY_OFF_REQUEST', 'Day Off Request'),
     ]
 
     type = models.CharField(max_length=25, choices=NOTIFICATION_TYPES, db_index=True)

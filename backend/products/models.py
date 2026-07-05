@@ -427,3 +427,17 @@ class OfferItem(models.Model):
 
     def __str__(self):
         return f"{self.product.name} in {self.offer.title}"
+
+class ProductStoreStock(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='store_stocks')
+    store = models.ForeignKey('stores.Store', on_delete=models.CASCADE, related_name='product_stocks')
+    stock = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('product', 'store')
+
+    def __str__(self):
+        return f"{self.product.name} at {self.store.name}: {self.stock}"
+

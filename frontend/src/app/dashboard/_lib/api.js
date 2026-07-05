@@ -90,7 +90,7 @@ export function decodeToken(token) {
 
 export function isTokenExpired(token) {
     const payload = decodeToken(token);
-    if (!payload ? .exp) return true;
+    if (!payload?.exp) return true;
     return Date.now() / 1000 > payload.exp - 30; // 30s buffer
 }
 

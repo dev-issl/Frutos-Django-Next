@@ -561,11 +561,21 @@ class VendorTicketAdminSerializer(serializers.ModelSerializer):
 
 class NotificationSerializer(serializers.ModelSerializer):
     actor_name = serializers.SerializerMethodField()
+    icon = serializers.SerializerMethodField()
 
     class Meta:
         model = Notification
-        fields = ['id', 'type', 'title', 'message', 'actor_name', 'is_read', 'created_at']
-        read_only_fields = ['id', 'type', 'title', 'message', 'actor_name', 'created_at']
+        fields = ['id', 'type', 'title', 'message', 'actor_name', 'icon', 'is_read', 'created_at']
+        read_only_fields = ['id', 'type', 'title', 'message', 'actor_name', 'icon', 'created_at']
 
     def get_actor_name(self, obj):
         return obj.actor.name if obj.actor else None
+
+    def get_icon(self, obj):
+        if obj.type == 'DAY_OFF_REQUEST':
+            return 'calendar_month'
+        elif obj.type == 'TICKET_CREATED':
+            return 'support_agent'
+        elif obj.type == 'ORDER_PLACED':
+            return 'shopping_cart'
+        return 'notifications'

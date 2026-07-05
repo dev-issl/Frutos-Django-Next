@@ -326,7 +326,7 @@ export function getStoreBySlug(slug) {
 
 /** Check if a store is currently open based on its openTime / closeTime */
 export function isStoreOpen(store) {
-    if (!store ? .openTime || !store ? .closeTime) return false
+    if (!store?.openTime || !store?.closeTime) return false
     const now = new Date()
     const [openH, openM] = store.openTime.split(':').map(Number)
     const [closeH, closeM] = store.closeTime.split(':').map(Number)

@@ -657,6 +657,10 @@ class Order(models.Model):
     wholesale_user = models.ForeignKey(
         'wholesale.WholesaleUser', on_delete=models.SET_NULL, null=True, blank=True, related_name='wholesale_orders'
     )
+    fulfillment_store = models.ForeignKey(
+        'stores.Store', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='fulfilled_orders', help_text="Store from which this order is fulfilled"
+    )
     
     # Make shipping fields nullable for safe migration of existing data
     shipping_address = models.ForeignKey(Address, on_delete=models.PROTECT, null=True, blank=True, help_text="Shipping address", db_index=True)
