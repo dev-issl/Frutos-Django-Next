@@ -322,14 +322,14 @@ export default function LiveChatWidget() {
   return (
     <>
       {/* Floating Button */}
-      <div className="fixed bottom-6 right-6 z-[9999]">
+      <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[9999]">
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="relative flex items-center justify-center w-[54px] h-[54px] bg-[#25D366] text-white rounded-full shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer"
+          className="relative flex items-center justify-center w-[50px] h-[50px] sm:w-[54px] sm:h-[54px] bg-[#25D366] text-white rounded-full shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer"
         >
-          {isOpen ? <X size={26} /> : <WhatsappIcon size={32} />}
+          {isOpen ? <X size={24} /> : <WhatsappIcon size={30} />}
           {!isOpen && totalUnread > 0 && (
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full border-2 border-white animate-bounce">
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] sm:text-xs font-bold w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center rounded-full border-2 border-white animate-bounce">
               {totalUnread}
             </span>
           )}
@@ -338,13 +338,13 @@ export default function LiveChatWidget() {
 
       {/* Chat Modal */}
       <div
-        className={`fixed bottom-20 right-6 w-64 sm:w-[320px] h-[26rem] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col z-[9999] border border-gray-100 transition-all duration-300 transform origin-bottom-right ${isOpen ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto' : 'opacity-0 scale-95 translate-y-10 pointer-events-none'
+        className={`fixed inset-0 sm:inset-auto sm:bottom-24 sm:right-6 w-full sm:w-[360px] h-full sm:h-[560px] sm:max-h-[calc(100vh-120px)] bg-white sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col z-[9999] sm:border border-gray-100 transition-all duration-300 transform sm:origin-bottom-right ${isOpen ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto' : 'opacity-0 scale-95 translate-y-10 pointer-events-none'
           }`}
       >
         {!activeChat ? (
           // --- CONTACTS LIST VIEW ---
           <>
-            <div className="bg-gradient-to-r from-emerald-600 to-green-500 py-3 px-4 text-white">
+            <div className="bg-gradient-to-r from-emerald-600 to-green-500 pt-6 sm:pt-3 pb-3 px-4 text-white">
               <div className="flex justify-between items-start">
                 <div>
                   <h3 className="font-bold text-lg flex items-center gap-2">
@@ -354,6 +354,9 @@ export default function LiveChatWidget() {
                     {user.user_type === 'ADMIN' ? 'Manage Staff' : 'Live Support'}
                   </p>
                 </div>
+                <button onClick={() => setIsOpen(false)} className="sm:hidden text-white hover:bg-white/20 p-1.5 rounded-full transition-colors cursor-pointer">
+                  <X size={20} />
+                </button>
               </div>
             </div>
 
@@ -480,8 +483,8 @@ export default function LiveChatWidget() {
         ) : (
           // --- ACTIVE CHAT VIEW ---
           <>
-            <div className="bg-white/95 backdrop-blur-sm border-b border-gray-100 py-2.5 px-3 flex items-center justify-between sticky top-0 z-10 shadow-sm">
-              <div className="flex items-center gap-2">
+            <div className="bg-white/95 backdrop-blur-sm border-b border-gray-100 pt-6 sm:pt-2.5 pb-2.5 px-3 flex items-center justify-between sticky top-0 z-10 shadow-sm">
+              <div className="flex items-center gap-1 sm:gap-2">
                 <button
                   onClick={() => { setActiveChat(null); fetchContacts(); }}
                   className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-600 transition-colors cursor-pointer flex-shrink-0"
@@ -512,19 +515,13 @@ export default function LiveChatWidget() {
                 </div>
               </div>
               <div className="flex items-center gap-1 text-emerald-600">
-                <button className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-emerald-50 transition-colors cursor-pointer">
-                  <Video size={18} />
-                </button>
-                <button className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-emerald-50 transition-colors cursor-pointer">
-                  <Phone size={18} />
-                </button>
                 <button className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-emerald-50 transition-colors cursor-pointer ml-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100">
                   <Info size={18} />
                 </button>
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]" style={{ backgroundColor: '#efeae2', backgroundImage: 'url("https://web.whatsapp.com/img/bg-chat-tile-dark_a4be512e7195b6b733d9110b408f075d.png")', backgroundSize: '400px' }}>
+            <div className="flex-1 overflow-y-auto p-3 space-y-1.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]" style={{ backgroundColor: '#efeae2', backgroundImage: 'url("https://web.whatsapp.com/img/bg-chat-tile-dark_a4be512e7195b6b733d9110b408f075d.png")', backgroundSize: '400px' }}>
               {messages.map((msg, idx) => {
                 const isMe = String(msg.sender_id) === String(user?.id);
                 return (
@@ -540,9 +537,9 @@ export default function LiveChatWidget() {
                         )}
                       </div>
                     )}
-                    <div className={`max-w-[75%] px-4 py-2 rounded-2xl shadow-sm text-sm ${isMe ? 'bg-emerald-600 text-white rounded-br-none' : 'bg-white text-gray-800 rounded-bl-none border border-gray-100'}`}>
-                      <p style={{ wordBreak: 'break-word' }}>{msg.text}</p>
-                      <p className={`text-[10px] mt-1 text-right ${isMe ? 'text-emerald-200' : 'text-gray-400'}`}>
+                    <div className={`max-w-[75%] px-3 py-1.5 rounded-2xl shadow-sm text-sm ${isMe ? 'bg-emerald-600 text-white rounded-br-none' : 'bg-white text-gray-800 rounded-bl-none border border-gray-100'}`}>
+                      <p style={{ wordBreak: 'break-word', lineHeight: '1.4' }}>{msg.text}</p>
+                      <p className={`text-[9px] mt-0.5 text-right ${isMe ? 'text-emerald-200' : 'text-gray-400'}`}>
                         {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>
@@ -564,21 +561,22 @@ export default function LiveChatWidget() {
             </div>
 
             <div className="p-3 bg-white border-t border-gray-100">
-              <form onSubmit={handleSendMessage} className="flex items-center gap-2">
+              <form onSubmit={handleSendMessage} className="relative flex items-center w-full">
                 <input
                   type="text"
                   placeholder="Type a message..."
                   value={inputValue}
                   onChange={handleTyping}
-                  className="flex-1 bg-gray-100 border-none rounded-full px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="flex-1 bg-gray-100 border-none rounded-full pl-4 pr-11 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
-                <button
-                  type="submit"
-                  disabled={!inputValue.trim()}
-                  className="w-10 h-10 bg-emerald-600 text-white rounded-full flex items-center justify-center shadow-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-emerald-700 transition-colors cursor-pointer"
-                >
-                  <Send size={18} className="ml-1" />
-                </button>
+                {inputValue.trim().length > 0 && (
+                  <button
+                    type="submit"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 bg-emerald-600 text-white rounded-full flex items-center justify-center shadow-sm hover:bg-emerald-700 transition-colors cursor-pointer"
+                  >
+                    <Send size={16} />
+                  </button>
+                )}
               </form>
             </div>
           </>

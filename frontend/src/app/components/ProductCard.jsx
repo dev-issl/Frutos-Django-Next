@@ -4,7 +4,6 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useSession } from 'next-auth/react'
 import AddToCartButton from '@/app/components/AddToCartButton'
 import { slugify } from '@/app/lib/slugify'
 import { useWishlist } from '@/app/context/WishlistContext'
@@ -95,10 +94,9 @@ function WishlistButton({ product }) {
 export default function ProductCard({ product, notified, onNotify }) {
   const [isNavigating, setIsNavigating] = useState(false)
   const [showMinQtyToast, setShowMinQtyToast] = useState(false)
-  const { data: session } = useSession()
-
-  const sessionUser = session?.user ?? null
-  const isApprovedWholesale = sessionUser?.isApproved === true
+  const { user } = useAuth()
+  
+  const isApprovedWholesale = user?.user_type === 'WHOLESALE' && (user?.isApproved === true || user?.is_approved_wholesale === true)
 
   const slug = product.slug || slugify(product.name)
   const { name, badge, badgeColor = '', origin, unit, price, oldPrice,

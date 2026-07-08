@@ -39,61 +39,67 @@ function StaffCard({ staff, rank }) {
 
   return (
     <div className="bg-white border border-slate-200/80 rounded-xl overflow-hidden hover:shadow-lg hover:shadow-slate-200/50 hover:border-[#00694C]/30 transition-all duration-300">
-      <div className="p-5 flex items-center gap-4">
-        {/* Avatar */}
-        <div className="relative shrink-0">
-          <div className="w-12 h-12 rounded-full overflow-hidden bg-slate-50 border border-slate-100 shadow-sm">
-            {staff.photo
-              ? <img 
-                  src={staff.photo.startsWith('http') ? staff.photo : `${process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://127.0.0.1:8000'}${staff.photo.startsWith('/') ? '' : '/'}${staff.photo}`} 
-                  alt={staff.name} 
-                  className="w-full h-full object-cover" 
-                />
-              : <div className="w-full h-full flex items-center justify-center text-sm font-bold text-[#00694C] bg-gradient-to-br from-[#00694C]/10 to-[#00694C]/5">
-                {staff.name?.charAt(0)?.toUpperCase() || 'S'}
-              </div>}
+      <div className="p-4 md:p-5 flex flex-col sm:flex-row sm:items-center gap-3 md:gap-4 relative">
+        <div className="flex items-center gap-3 md:gap-4 flex-1 min-w-0">
+          {/* Avatar */}
+          <div className="relative shrink-0">
+            <div className="w-10 h-10 md:w-12 md:h-12 rounded-full overflow-hidden bg-slate-50 border border-slate-100 shadow-sm">
+              {staff.photo
+                ? <img 
+                    src={staff.photo.startsWith('http') ? staff.photo : `${process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://127.0.0.1:8000'}${staff.photo.startsWith('/') ? '' : '/'}${staff.photo}`} 
+                    alt={staff.name} 
+                    className="w-full h-full object-cover" 
+                  />
+                : <div className="w-full h-full flex items-center justify-center text-sm md:text-base font-bold text-[#00694C] bg-gradient-to-br from-[#00694C]/10 to-[#00694C]/5">
+                  {staff.name?.charAt(0)?.toUpperCase() || 'S'}
+                </div>}
+            </div>
+            {/* Rank Badge */}
+            <div className={`absolute -top-1.5 -right-1.5 w-5 h-5 md:w-[22px] md:h-[22px] rounded-full flex items-center justify-center text-[9px] md:text-[10px] font-bold shadow-sm border-2 border-white ${
+              rank === 1 ? 'bg-[#00694C] text-white' : 
+              rank === 2 ? 'bg-slate-700 text-white' : 
+              rank === 3 ? 'bg-slate-400 text-white' : 
+              'bg-slate-200 text-slate-600'
+            }`}>
+              {rank}
+            </div>
           </div>
-          {/* Rank Badge */}
-          <div className={`absolute -top-1.5 -right-1.5 w-[22px] h-[22px] rounded-full flex items-center justify-center text-[10px] font-bold shadow-sm border-2 border-white ${
-            rank === 1 ? 'bg-[#00694C] text-white' : 
-            rank === 2 ? 'bg-slate-700 text-white' : 
-            rank === 3 ? 'bg-slate-400 text-white' : 
-            'bg-slate-200 text-slate-600'
-          }`}>
-            {rank}
+
+          {/* Info */}
+          <div className="flex flex-col min-w-0 flex-1 justify-center">
+            <div className="font-bold text-slate-800 truncate text-[14px] md:text-[15px] leading-tight mb-1" title={staff.name}>{staff.name}</div>
+            <div className="text-[11px] text-slate-500 flex items-center gap-1.5 font-medium min-w-0">
+              <span className="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded uppercase tracking-wider font-bold shrink-0 text-[9px] md:text-[10px]">
+                {staff.staff_code ? `ID: ${staff.staff_code}` : "No ID"}
+              </span>
+              {staff.role && (
+                <>
+                  <span className="text-slate-300 shrink-0">•</span>
+                  <span className="truncate text-slate-500 leading-tight" title={staff.role}>{staff.role}</span>
+                </>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Info */}
-        <div className="flex-1 min-w-0">
-          <div className="font-bold text-slate-800 truncate text-[15px] leading-none mb-1.5">{staff.name}</div>
-          <div className="text-xs text-slate-500 flex flex-wrap items-center gap-1.5 font-medium">
-            <span className="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded uppercase tracking-wider text-[10px]">
-              {staff.staff_code ? `ID: ${staff.staff_code}` : "No ID"}
-            </span>
-            {staff.role && (
-              <>
-                <span className="text-slate-300">•</span>
-                <span>{staff.role}</span>
-              </>
-            )}
+        <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0 border-t sm:border-t-0 border-slate-100 pt-3 sm:pt-0 mt-1 sm:mt-0">
+          {/* Stats */}
+          <div className="text-left sm:text-right flex flex-col justify-center">
+            <div className="text-base md:text-lg font-bold text-slate-800 leading-none mb-1">
+              <FormattedHours hours={staff.total_hours} large />
+            </div>
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">{staff.total_shifts} shift{staff.total_shifts !== 1 ? "s" : ""}</div>
           </div>
-        </div>
 
-        {/* Stats */}
-        <div className="text-right shrink-0 flex flex-col items-end">
-          <div className="text-xl font-bold text-slate-800 leading-none mb-1">
-            <FormattedHours hours={staff.total_hours} large />
-          </div>
-          <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">{staff.total_shifts} shift{staff.total_shifts !== 1 ? "s" : ""}</div>
+          {/* Expand Store Breakdown */}
+          {storeEntries.length > 1 ? (
+            <button onClick={() => setOpen(!open)} className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer shrink-0 ml-1 ${open ? 'bg-[#00694C]/10 text-[#00694C]' : 'hover:bg-slate-100 text-slate-400'}`}>
+              {open ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
+          ) : (
+             <div className="w-8 shrink-0 ml-1"></div>
+          )}
         </div>
-
-        {/* Expand Store Breakdown */}
-        {storeEntries.length > 1 && (
-          <button onClick={() => setOpen(!open)} className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer shrink-0 ml-1 ${open ? 'bg-[#00694C]/10 text-[#00694C]' : 'hover:bg-slate-100 text-slate-400'}`}>
-            {open ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-          </button>
-        )}
       </div>
 
       {/* Expanded Details: Store Breakdown */}

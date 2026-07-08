@@ -181,9 +181,9 @@ export default function StaffDashboardPage() {
   ];
 
   const staffActions = [
-    { title: "Request Shift Change", desc: "Swap with a colleague or adjust hours", icon: Calendar },
-    { title: "Apply for Extra Day Off", desc: "Submit personal or vacation requests", icon: FileText },
-    { title: "View Digital Price List", desc: "Check current SKU pricing & offers", icon: Euro },
+    { title: "Request Shift Change", desc: "Swap with a colleague or adjust hours", icon: Calendar, tab: "REQUEST_DAY_OFF" },
+    { title: "Apply for Extra Day Off", desc: "Submit personal or vacation requests", icon: FileText, tab: "REQUEST_DAY_OFF" },
+    { title: "View Digital Price List", desc: "Check current SKU pricing & offers", icon: Euro, tab: "PRODUCTS" },
   ];
 
   const weekDatesLocal = getWeekDates().map(d => {
@@ -701,10 +701,10 @@ export default function StaffDashboardPage() {
                 <div>
                   <div className="flex justify-between items-center mb-6">
                     <h2 className="text-xl font-serif text-[#004A3A] font-medium tracking-tight">Recent Notifications</h2>
-                    <button className="text-[10px] font-bold text-[#00694C] uppercase tracking-widest hover:text-[#004A3A] transition-colors">View All</button>
+                    <button onClick={() => setActiveTab('NOTIFICATIONS')} className="text-[10px] font-bold text-[#00694C] uppercase tracking-widest hover:text-[#004A3A] transition-colors cursor-pointer">View All</button>
                   </div>
                   <div className="space-y-3">
-                    {notifications?.length > 0 ? notifications.map((n, i) => (
+                    {notifications?.length > 0 ? notifications.slice(0, 5).map((n, i) => (
                       <div key={n.id || i} className="bg-white rounded-xl p-5 shadow-sm flex gap-4 hover:shadow-md transition-shadow relative group">
                          <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${!n.is_read ? 'bg-[#009b72]' : 'bg-transparent'}`}></div>
                          <div className="flex-1">
@@ -746,7 +746,7 @@ export default function StaffDashboardPage() {
                   </div>
                   <div className="space-y-3">
                     {staffActions.map((action, i) => (
-                      <button key={i} className="w-full bg-white rounded-xl p-4 shadow-sm flex items-center gap-4 text-left hover:shadow-md transition-all group border border-transparent hover:border-[#00694C]/10">
+                      <button key={i} onClick={() => { if(action.tab) setActiveTab(action.tab); }} className="w-full bg-white rounded-xl p-4 shadow-sm flex items-center gap-4 text-left hover:shadow-md transition-all group border border-transparent hover:border-[#00694C]/10 cursor-pointer">
                          <div className="w-11 h-11 rounded-full bg-[#F1F6EB] flex items-center justify-center shrink-0 group-hover:bg-[#E4EFDA] transition-colors">
                             <action.icon className="w-5 h-5 text-[#00694C]" />
                          </div>

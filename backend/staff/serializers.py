@@ -25,8 +25,12 @@ class StaffProfileSerializer(serializers.ModelSerializer):
                   'can_create_orders', 'can_update_orders', 'can_delete_orders', 'can_create_products', 'can_update_products', 'can_delete_products', 'secret_key', 'photo', 'store_slug', 'store_name', 'active_store_name', 'is_working']
 
     def get_photo(self, obj):
+        request = self.context.get('request')
+        if obj.photo:
+            if request:
+                return request.build_absolute_uri(obj.photo.url)
+            return obj.photo.url
         if obj.user and getattr(obj.user, 'profile_image', None):
-            request = self.context.get('request')
             if request:
                 return request.build_absolute_uri(obj.user.profile_image.url)
             return obj.user.profile_image.url
@@ -67,11 +71,15 @@ class DayOffRequestSerializer(serializers.ModelSerializer):
     staff_photo = serializers.SerializerMethodField()
 
     def get_staff_photo(self, obj):
+        request = self.context.get('request')
         if obj.staff.photo:
-            request = self.context.get('request')
             if request:
                 return request.build_absolute_uri(obj.staff.photo.url)
             return obj.staff.photo.url
+        if obj.staff.user and getattr(obj.staff.user, 'profile_image', None):
+            if request:
+                return request.build_absolute_uri(obj.staff.user.profile_image.url)
+            return obj.staff.user.profile_image.url
         return None
 
     class Meta:
@@ -154,7 +162,15 @@ class StoreStaffTreeSerializer(serializers.ModelSerializer):
     def get_staff_list(self, obj):
         staff = obj.staff.all()
         def get_photo(s):
+            if s.photo:
+                request = self.context.get('request')
+                if request:
+                    return request.build_absolute_uri(s.photo.url)
+                return s.photo.url
             if s.user and getattr(s.user, 'profile_image', None):
+                request = self.context.get('request')
+                if request:
+                    return request.build_absolute_uri(s.user.profile_image.url)
                 return s.user.profile_image.url
             return None
         return [{'id': s.id, 'name': s.user.name, 'role': s.role, 'photo': get_photo(s)} for s in staff]
