@@ -20,9 +20,22 @@ class Migration(migrations.Migration):
             model_name='order',
             name='processed_by',
         ),
-        migrations.AlterField(
+        # Cannot ALTER bigint FK → UUID FK directly in PostgreSQL.
+        # Drop the old column (pointing to auth.User / bigint PK) and
+        # recreate it pointing to wholesale.WholesaleUser (UUID PK).
+        migrations.RemoveField(
             model_name='order',
             name='wholesale_user',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='wholesale_orders', to='wholesale.wholesaleuser'),
+        ),
+        migrations.AddField(
+            model_name='order',
+            name='wholesale_user',
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name='wholesale_orders',
+                to='wholesale.wholesaleuser',
+            ),
         ),
     ]
