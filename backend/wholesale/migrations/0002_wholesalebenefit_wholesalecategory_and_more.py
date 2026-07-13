@@ -131,11 +131,7 @@ class Migration(migrations.Migration):
             name='trade_license_number',
             field=models.CharField(blank=True, max_length=100, null=True),
         ),
-        migrations.AlterField(
-            model_name='wholesaleuser',
-            name='id',
-            field=models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID'),
-        ),
+        
         migrations.CreateModel(
             name='WholesaleGuaranteeCheck',
             fields=[
