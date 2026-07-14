@@ -66,46 +66,46 @@ class ImageOptimizer:
             
         try:
             # Open the image
-            img = Image.open(image_field)
-            
-            # Convert RGBA to RGB if saving as JPEG
-            if format == 'JPEG' and img.mode in ('RGBA', 'LA', 'P'):
-                # Create a white background
-                background = Image.new('RGB', img.size, (255, 255, 255))
-                if img.mode == 'P':
-                    img = img.convert('RGBA')
-                background.paste(img, mask=img.split()[-1] if img.mode == 'RGBA' else None)
-                img = background
-            elif img.mode not in ('RGB', 'RGBA'):
-                img = img.convert('RGB')
-            
-            # Get original dimensions
-            original_width, original_height = img.size
-            
-            # Calculate new dimensions maintaining aspect ratio
-            ratio = min(max_width / original_width, max_height / original_height)
-            
-            # Only resize if image is larger than max dimensions
-            if ratio < 1:
-                new_width = int(original_width * ratio)
-                new_height = int(original_height * ratio)
-                img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
-            
-            # Save to BytesIO
-            output = BytesIO()
-            
-            # Set optimization parameters
-            save_kwargs = {
-                'format': format,
-                'quality': quality,
-                'optimize': True,
-            }
-            
-            # Add progressive for JPEG
-            if format == 'JPEG':
-                save_kwargs['progressive'] = True
-            
-            img.save(output, **save_kwargs)
+            with Image.open(image_field) as img:
+                
+                # Convert RGBA to RGB if saving as JPEG
+                if format == 'JPEG' and img.mode in ('RGBA', 'LA', 'P'):
+                    # Create a white background
+                    background = Image.new('RGB', img.size, (255, 255, 255))
+                    if img.mode == 'P':
+                        img = img.convert('RGBA')
+                    background.paste(img, mask=img.split()[-1] if img.mode == 'RGBA' else None)
+                    img = background
+                elif img.mode not in ('RGB', 'RGBA'):
+                    img = img.convert('RGB')
+                
+                # Get original dimensions
+                original_width, original_height = img.size
+                
+                # Calculate new dimensions maintaining aspect ratio
+                ratio = min(max_width / original_width, max_height / original_height)
+                
+                # Only resize if image is larger than max dimensions
+                if ratio < 1:
+                    new_width = int(original_width * ratio)
+                    new_height = int(original_height * ratio)
+                    img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+                
+                # Save to BytesIO
+                output = BytesIO()
+                
+                # Set optimization parameters
+                save_kwargs = {
+                    'format': format,
+                    'quality': quality,
+                    'optimize': True,
+                }
+                
+                # Add progressive for JPEG
+                if format == 'JPEG':
+                    save_kwargs['progressive'] = True
+                
+                img.save(output, **save_kwargs)
             output.seek(0)
             
             # Get the original filename and change extension if needed
@@ -177,8 +177,8 @@ class ImageOptimizer:
         """Optimize logo images - keep PNG for transparency"""
         # First check if image has transparency
         try:
-            img = Image.open(image_field)
-            has_transparency = img.mode in ('RGBA', 'LA') or (img.mode == 'P' and 'transparency' in img.info)
+            with Image.open(image_field) as img:
+                has_transparency = img.mode in ('RGBA', 'LA') or (img.mode == 'P' and 'transparency' in img.info)
             image_field.seek(0)  # Reset file pointer
             
             if has_transparency:
@@ -214,8 +214,8 @@ class ImageOptimizer:
             return None, None
         
         try:
-            img = Image.open(image_field)
-            width, height = img.size
+            with Image.open(image_field) as img:
+                width, height = img.size
             image_field.seek(0)  # Reset file pointer
             return width, height
         except Exception as e:
@@ -248,9 +248,9 @@ class ImageOptimizer:
                 return False, f"Image size exceeds {max_size_mb}MB limit"
             
             # Check format
-            img = Image.open(image_field)
-            if img.format not in allowed_formats:
-                return False, f"Invalid format. Allowed: {', '.join(allowed_formats)}"
+            with Image.open(image_field) as img:
+                if img.format not in allowed_formats:
+                    return False, f"Invalid format. Allowed: {', '.join(allowed_formats)}"
             
             image_field.seek(0)  # Reset file pointer
             return True, None
