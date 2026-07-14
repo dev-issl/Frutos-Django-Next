@@ -18,7 +18,8 @@ RUN apk add --no-cache \
     cargo \
     bash \
     mysql-dev \
-    mariadb-connector-c-dev
+    mariadb-connector-c-dev \
+    su-exec
 
 # Stage 2: Builder — install packages
 FROM base AS builder
@@ -52,7 +53,6 @@ COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh && \
     chown django:django /entrypoint.sh
 
-USER django
 EXPOSE 8000
 
 ENTRYPOINT ["/entrypoint.sh"]
@@ -81,7 +81,6 @@ COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh && \
     chown django:django /entrypoint.sh
 
-USER django
 EXPOSE 8000
 
 ENTRYPOINT ["/entrypoint.sh"]
