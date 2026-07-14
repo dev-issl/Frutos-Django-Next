@@ -1,3 +1,5 @@
+
+
 from pathlib import Path
 import os
 
@@ -18,23 +20,6 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-ix-#dj)eo1vu6l%c**t&c
 DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
-
-cors_origins_env = os.environ.get('CORS_ALLOWED_ORIGINS')
-if cors_origins_env:
-    CORS_ALLOWED_ORIGINS = [origin.strip() for origin in cors_origins_env.split(',') if origin.strip()]
-else:
-    CORS_ALLOWED_ORIGINS = [
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://localhost:3001",
-        "http://127.0.0.1:3001",
-        "http://192.168.1.6:3000",
-        "http://10.17.90.71:3000",
-        "https://icommerce-beta.vercel.app",
-        "https://icommerce.passmcq.com",
-        "https://icommerce.com.bd",
-        "https://www.icommerce.com.bd"
-    ]
 
 
 AUTH_USER_MODEL = 'users.User'
@@ -126,9 +111,9 @@ else:
             "BACKEND": "channels.layers.InMemoryChannelLayer"
         },
     }
+
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
 
 if os.environ.get('DB_ENGINE') == 'django.db.backends.postgresql':
     DATABASES = {
@@ -172,117 +157,74 @@ CACHES = {
 # JAZZMIN SETTINGS - Admin Dashboard Configuration
 # ============================================================================
 
-# ============================================================================
-# JAZZMIN ADMIN THEME CONFIGURATION
-# ============================================================================
-# Enterprise-grade, priority-driven admin dashboard for multivendor ecommerce
-# Architecture: Business priority first, technical models hidden/deprioritized
-# UX: Dark sidebar, compact spacing, high-density tables for scale
-
 JAZZMIN_SETTINGS = {
-    # ========================================================================
-    # BRANDING & IDENTITY
-    # ========================================================================
-    "site_title": "ICommerce Admin",
-    "site_header": "ICommerce",  # Shorter, cleaner header
-    "site_brand": "ICommerce",
+    "site_title": "Frutos admin",
+    "site_header": "Frutos",
+    "site_brand": "Frutos",
     "welcome_sign": "Welcome to ICommerce Admin",
-    "copyright": "ICommerce Â© 2026",
-    
-    # Logo Configuration
+    "copyright": "ICommerce © 2026",
+
     "site_logo": None,
     "site_logo_classes": "img-circle",
     "site_icon": None,
-    
-    # User avatar field
+
     "user_avatar": None,
-    
-    # ========================================================================
-    # TOP NAVBAR - Quick Actions
-    # ========================================================================
+
     "topmenu_links": [
         {"name": "Dashboard", "url": "admin:index", "permissions": ["auth.view_user"]},
         {"name": "Orders", "url": "admin:orders_order_changelist", "permissions": ["orders.view_order"]},
         {"name": "Products", "url": "admin:products_product_changelist", "permissions": ["products.view_product"]},
         {"name": "View Site", "url": "/", "new_window": True},
     ],
-    
-    # ========================================================================
-    # SIDEBAR NAVIGATION - PRIORITY-BASED BUSINESS ARCHITECTURE
-    # ========================================================================
-    # Critical: Order reflects business priority, NOT alphabetical/app order
-    # High Priority: Orders â†’ Products â†’ Vendors â†’ Customers
-    # Medium Priority: Payments, Discounts, Content
-    # Low Priority: Configuration, Technical Models
-    
+
     "show_sidebar": True,
-    "navigation_expanded": False,  # Collapsed by default for cleaner UX
-    
-    # Hide technical/system apps from sidebar clutter
-    "hide_apps": ["django_otp"],  # OTP is admin-only technical feature
-    
-    # Hide low-value technical models
+    "navigation_expanded": False,
+
+    "hide_apps": ["django_otp"],
+
     "hide_models": [
-        "auth.Group",  # Most admins don't need groups
+        "auth.Group",
         "authtoken.Token",
         "authtoken.TokenProxy",
         "contenttypes.ContentType",
         "sessions.Session",
-        "admin.LogEntry",  # Audit logs - accessible via reports if needed
+        "admin.LogEntry",
     ],
-    
-    # CRITICAL: Custom ordering - Business Priority Architecture
-    # This is the heart of the UX improvement
+
     "order_with_respect_to": [
-        # â–¼ TIER 1: HIGHEST PRIORITY - Daily Operations
-        "orders",          # Orders & transactions (most critical)
-        "products",        # Inventory management
-        "shops",           # Vendor management
-        "users",           # Customer & user management
-        
-        # â–¼ TIER 2: MEDIUM PRIORITY - Business Operations
-        "website",         # Content & CMS
-        "sections",        # Homepage sections
-        
-        # â–¼ TIER 3: LOWEST PRIORITY - System & Configuration
-        "auth",            # Django auth (permissions, etc)
+        "orders",
+        "products",
+        "shops",
+        "users",
+        "website",
+        "sections",
+        "auth",
     ],
-    
-    # Custom app labels (human-friendly names without renaming models)
+
     "custom_links": {
         "orders": [{
-            "name": "Order Statistics", 
+            "name": "Order Statistics",
             "url": "admin:orders_order_changelist",
             "icon": "fas fa-chart-line",
             "permissions": ["orders.view_order"]
         }],
     },
-    
-    # ========================================================================
-    # ICONS - Consistent, Meaningful, Professional
-    # ========================================================================
-    # FontAwesome icons - business-relevant per model
+
     "icons": {
-        # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        # ORDERS & TRANSACTIONS (Cart, Money, Delivery Icons)
-        # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         "orders": "fas fa-shopping-cart",
-        "orders.Order": "fas fa-receipt",  # Receipt icon for orders
+        "orders.Order": "fas fa-receipt",
         "orders.OrderItem": "fas fa-box-open",
         "orders.OrderUpdate": "fas fa-history",
         "orders.OrderPayment": "fas fa-credit-card",
         "orders.ShippingMethod": "fas fa-truck-fast",
         "products.ShippingCategory": "fas fa-boxes",
         "orders.ShippingTier": "fas fa-layer-group",
-        "orders.Coupon": "fas fa-tags",  # Tags for coupons
+        "orders.Coupon": "fas fa-tags",
         "orders.FreeShippingRule": "fas fa-gift",
-        
-        # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        # PRODUCTS & INVENTORY (Box, Tag, Category Icons)
-        # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
         "products": "fas fa-boxes",
-        "products.Product": "fas fa-cube",  # Single product cube
-        "products.Brand": "fas fa-certificate",  # Brand badge
+        "products.Product": "fas fa-cube",
+        "products.Brand": "fas fa-certificate",
         "products.Category": "fas fa-folder",
         "products.SubCategory": "fas fa-folder-open",
         "products.Color": "fas fa-palette",
@@ -290,25 +232,16 @@ JAZZMIN_SETTINGS = {
         "products.ProductSpecification": "fas fa-list-ul",
         "products.ProductAdditionalImage": "fas fa-images",
         "products.CategoryMinimumOrderQuantity": "fas fa-boxes-stacked",
-        
-        # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        # VENDORS / SHOPS (Store, Business Icons)
-        # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
         "shops": "fas fa-store",
         "shops.Shop": "fas fa-store-alt",
-        
-        # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        # USERS & CUSTOMERS (People, Address Icons)
-        # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
         "users": "fas fa-users",
         "users.User": "fas fa-user",
         "users.Address": "fas fa-map-marker-alt",
         "users.WholesalerProfile": "fas fa-warehouse",
         "users.AffiliateProfile": "fas fa-handshake",
-        
-        # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        # CONTENT & WEBSITE (CMS, Banner, Blog Icons)
-        # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
         "website": "fas fa-globe",
         "website.NavbarSettings": "fas fa-bars",
         "website.OfferCategory": "fas fa-percent",
@@ -320,113 +253,68 @@ JAZZMIN_SETTINGS = {
         "website.FooterLink": "fas fa-link",
         "website.SocialMediaLink": "fas fa-share-nodes",
         "website.SiteSettings": "fas fa-sliders",
-        
-        # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        # SECTIONS (Homepage Management)
-        # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
         "sections": "fas fa-th-large",
         "sections.Section": "fas fa-puzzle-piece",
         "sections.SectionItem": "fas fa-cube",
         "sections.PageSection": "fas fa-pager",
-        
-        # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        # AUTH & PERMISSIONS (System, Low Priority)
-        # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
         "auth": "fas fa-shield-halved",
         "auth.User": "fas fa-user-shield",
         "auth.Group": "fas fa-users-cog",
     },
-    
-    # Default icons for nested items
+
     "default_icon_parents": "fas fa-chevron-right",
     "default_icon_children": "fas fa-circle",
-    
-    # ========================================================================
-    # SEARCH BAR - Quick Model Lookup
-    # ========================================================================
-    # Most-searched models for admins
+
     "search_model": [
-        "orders.Order", 
-        "products.Product", 
+        "orders.Order",
+        "products.Product",
         "users.User",
         "shops.Shop"
     ],
-    
-    # ========================================================================
-    # UI BEHAVIOR
-    # ========================================================================
-    "related_modal_active": False,  # Simpler UX without modals
+
+    "related_modal_active": False,
     "custom_css": None,
     "custom_js": None,
     "use_google_fonts_cdn": True,
-    "show_ui_builder": False,  # Disable UI builder for production
-    
-    # ========================================================================
-    # FORM LAYOUTS - Optimized per Model Type
-    # ========================================================================
-    "changeform_format": "horizontal_tabs",  # Clean tabbed layout
+    "show_ui_builder": False,
+
+    "changeform_format": "horizontal_tabs",
     "changeform_format_overrides": {
-        "users.User": "collapsible",  # User form is complex, collapsible better
-        "orders.Order": "horizontal_tabs",  # Order details spread across tabs
-        "products.Product": "horizontal_tabs",  # Product details tabbed
+        "users.User": "collapsible",
+        "orders.Order": "horizontal_tabs",
+        "products.Product": "horizontal_tabs",
     },
 }
 
-# ============================================================================
-# JAZZMIN UI TWEAKS - Visual Design & UX Optimization
-# ============================================================================
-# Enterprise Design System:
-# - Dark gray sidebar (gray-900 equivalent)
-# - Compact spacing for high-density data
-# - Smaller fonts for more content per screen
-# - Professional, calm aesthetic for daily use
-
 JAZZMIN_UI_TWEAKS = {
-    # ========================================================================
-    # TYPOGRAPHY - Compact, Professional
-    # ========================================================================
-    "navbar_small_text": True,      # Smaller navbar text = more space
-    "footer_small_text": True,      # Smaller footer
-    "body_small_text": True,        # Smaller body text = higher density tables
-    "brand_small_text": False,      # Keep brand text readable
-    
-    # ========================================================================
-    # COLOR SCHEME - Dark Sidebar, Professional
-    # ========================================================================
-    # Dark gray sidebar (equivalent to Tailwind gray-900: #111827)
+    "navbar_small_text": True,
+    "footer_small_text": True,
+    "body_small_text": True,
+    "brand_small_text": False,
+
     "navbar": "navbar-dark navbar-gray-dark",
-    "sidebar": "sidebar-dark-gray",  # Dark gray sidebar - enterprise look
+    "sidebar": "sidebar-dark-gray",
     "brand_colour": "navbar-gray-dark",
     "accent": "accent-primary",
-    
-    # ========================================================================
-    # LAYOUT - Fixed Sidebar, Spacious Content
-    # ========================================================================
-    "navbar_fixed": True,           # Navbar stays visible on scroll
-    "footer_fixed": False,          # Footer scrolls naturally
-    "sidebar_fixed": True,          # Sidebar always visible (key for navigation)
-    "layout_boxed": False,          # Full-width layout for more data
-    "no_navbar_border": True,       # Cleaner look without border
-    
-    # ========================================================================
-    # SIDEBAR NAVIGATION - Compact, Flat, Modern
-    # ========================================================================
-    "sidebar_nav_small_text": True,         # Smaller text = more menu items visible
-    "sidebar_disable_expand": False,        # Allow expanding submenus
-    "sidebar_nav_child_indent": True,       # Indent child items for hierarchy
-    "sidebar_nav_compact_style": True,      # Compact spacing between items
-    "sidebar_nav_legacy_style": False,      # Modern style, not legacy
-    "sidebar_nav_flat_style": True,         # Flat design (no excessive borders)
-    
-    # ========================================================================
-    # THEME & DARK MODE
-    # ========================================================================
+
+    "navbar_fixed": True,
+    "footer_fixed": False,
+    "sidebar_fixed": True,
+    "layout_boxed": False,
+    "no_navbar_border": True,
+
+    "sidebar_nav_small_text": True,
+    "sidebar_disable_expand": False,
+    "sidebar_nav_child_indent": True,
+    "sidebar_nav_compact_style": True,
+    "sidebar_nav_legacy_style": False,
+    "sidebar_nav_flat_style": True,
+
     "theme": "default",
-    "dark_mode_theme": None,  # Could enable later for true dark mode
-    
-    # ========================================================================
-    # BUTTONS - Consistent Bootstrap Colors
-    # ========================================================================
+    "dark_mode_theme": None,
+
     "button_classes": {
         "primary": "btn-primary",
         "secondary": "btn-secondary",
@@ -435,58 +323,11 @@ JAZZMIN_UI_TWEAKS = {
         "danger": "btn-danger",
         "success": "btn-success"
     },
-    
-    # ========================================================================
-    # TABLE ACTIONS - Sticky for Large Datasets
-    # ========================================================================
-    "actions_sticky_top": True,  # Action bar stays visible when scrolling tables
+
+    "actions_sticky_top": True,
 }
 
-
-# ============================================================================
-# CUSTOM CSS FOR ADDITIONAL UX REFINEMENTS
-# ============================================================================
-# Inject custom CSS for fine-tuned control beyond Jazzmin's built-in tweaks
-
-# Option to add custom CSS file later:
-JAZZMIN_SETTINGS["custom_css"] = "admin/css/custom_admin.css"  # Enables custom rotation + sidebar refinements
-
-# Custom CSS can include:
-# - More aggressive sidebar background: background-color: #111827 !important;
-# - Reduced padding in list views for higher density
-# - Custom hover states for better affordance
-# - Improved table cell spacing
-# 
-# Example custom CSS (to be created if needed):
-# 
-# /* Sidebar - True Dark Gray (Tailwind gray-900) */
-# .sidebar-dark-gray {
-#     background-color: #111827 !important;
-# }
-# .sidebar-dark-gray .nav-link {
-#     color: #e5e7eb !important;  /* gray-200 */
-# }
-# .sidebar-dark-gray .nav-link:hover {
-#     background-color: #1f2937 !important;  /* gray-800 */
-#     color: #ffffff !important;
-# }
-# 
-# /* Higher Density Tables */
-# .table-responsive table {
-#     font-size: 0.875rem;
-# }
-# .table-responsive td, .table-responsive th {
-#     padding: 0.4rem 0.75rem;
-# }
-# 
-# /* Compact List Filters */
-# #changelist-filter {
-#     width: 200px;
-# }
-# #changelist-filter li {
-#     padding: 3px 10px;
-# }
-
+JAZZMIN_SETTINGS["custom_css"] = "admin/css/custom_admin.css"
 
 
 # ============================================================================
@@ -494,18 +335,10 @@ JAZZMIN_SETTINGS["custom_css"] = "admin/css/custom_admin.css"  # Enables custom 
 # ============================================================================
 
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
 
@@ -513,30 +346,57 @@ AUTH_PASSWORD_VALIDATORS = [
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'Asia/Dhaka'
-
 USE_I18N = True
-
 USE_TZ = True
-
-
 
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-
-# Additional locations for static files
 STATICFILES_DIRS = []
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'mediafiles')
 
-
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-CORS_ALLOW_ALL_ORIGINS = True
+
+# ============================================================================
+# CORS & CSRF CONFIGURATION (Fully Dynamic via .env)
+# ============================================================================
+
+def parse_origins_from_env(env_key, default_list=None):
+    """
+    .env থেকে comma-separated origin list parse করে।
+    Trailing slash, whitespace বাদ দেয় এবং empty entries filter করে।
+    """
+    raw = os.environ.get(env_key, '')
+    origins = [
+        origin.strip().rstrip('/')
+        for origin in raw.split(',')
+        if origin.strip()
+    ]
+    return origins if origins else (default_list or [])
+
+
+# Local/dev fallback — .env এ কিছু না থাকলে এইগুলা ব্যবহার হবে
+DEFAULT_CORS_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:3001",
+    "http://127.0.0.1:3001",
+]
+
+DEFAULT_CSRF_ORIGINS = [
+    "https://icommerce.onrender.com",
+]
+
+CORS_ALLOWED_ORIGINS = parse_origins_from_env('CORS_ALLOWED_ORIGINS', DEFAULT_CORS_ORIGINS)
+CSRF_TRUSTED_ORIGINS = parse_origins_from_env('CSRF_TRUSTED_ORIGINS', DEFAULT_CSRF_ORIGINS)
+
+# Danger zone: সব origin allow করবে কিনা — emergency debug ছাড়া সবসময় False রাখবে
+CORS_ALLOW_ALL_ORIGINS = os.environ.get('CORS_ALLOW_ALL_ORIGINS', 'False').lower() == 'true'
+
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_HEADERS = [
     'accept',
@@ -550,14 +410,14 @@ CORS_ALLOWED_HEADERS = [
     'x-requested-with',
 ]
 
-CSRF_TRUSTED_ORIGINS = [
-    'https://icommerce.onrender.com',
 
-]
 
-CSRF_COOKIE_SECURE = True  # Ensures the CSRF cookie is only sent over HTTPS
-CSRF_COOKIE_HTTPONLY = True  # Prevents JavaScript access to CSRF cookie
-
+_default_secure = not DEBUG
+SESSION_COOKIE_SECURE = os.environ.get(
+    'FORCE_SECURE_COOKIES', str(_default_secure)
+).lower() == 'true'
+CSRF_COOKIE_SECURE = SESSION_COOKIE_SECURE
+CSRF_COOKIE_HTTPONLY = True
 
 
 REST_FRAMEWORK = {
@@ -575,7 +435,7 @@ REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
-    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',  # API Documentation
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 # DRF Spectacular Settings for API Documentation
@@ -602,7 +462,7 @@ SPECTACULAR_SETTINGS = {
 from datetime import timedelta
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),  # Extended to reduce spurious logouts
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
@@ -631,9 +491,6 @@ SIMPLE_JWT = {
     'SLIDING_TOKEN_REFRESH_EXP_CLAIM': 'refresh_exp',
     'SLIDING_TOKEN_LIFETIME': timedelta(minutes=15),
     'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
-    
-    # Additional security settings
-    'BLACKLIST_AFTER_ROTATION': True,
 }
 
 # Authentication backends
@@ -642,7 +499,28 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
 ]
 
-# Logging configuration
+
+# ============================================================================
+# LOGGING (file logging optional — read-only filesystem হলে বন্ধ রাখো)
+# ============================================================================
+ENABLE_FILE_LOGGING = os.environ.get('ENABLE_FILE_LOGGING', 'False').lower() == 'true'
+
+_handlers = {
+    'console': {
+        'class': 'logging.StreamHandler',
+        'formatter': 'verbose',
+    },
+}
+_active_handlers = ['console']
+
+if ENABLE_FILE_LOGGING:
+    _handlers['file'] = {
+        'class': 'logging.FileHandler',
+        'filename': 'debug.log',
+        'formatter': 'verbose',
+    }
+    _active_handlers.append('file')
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -656,39 +534,29 @@ LOGGING = {
             'style': '{',
         },
     },
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
-            'formatter': 'verbose',
-        },
-        'file': {
-            'class': 'logging.FileHandler',
-            'filename': 'debug.log',
-            'formatter': 'verbose',
-        },
-    },
+    'handlers': _handlers,
     'root': {
-        'handlers': ['console', 'file'],
+        'handlers': _active_handlers,
         'level': 'INFO',
     },
     'loggers': {
         'django': {
-            'handlers': ['console', 'file'],
+            'handlers': _active_handlers,
             'level': 'INFO',
             'propagate': False,
         },
         'django.request': {
-            'handlers': ['console', 'file'],
-            'level': 'ERROR',  # Only log errors, not 404s
+            'handlers': _active_handlers,
+            'level': 'ERROR',
             'propagate': False,
         },
         'products': {
-            'handlers': ['console', 'file'],
+            'handlers': _active_handlers,
             'level': 'DEBUG',
             'propagate': False,
         },
         'sections': {
-            'handlers': ['console', 'file'],
+            'handlers': _active_handlers,
             'level': 'DEBUG',
             'propagate': False,
         },
@@ -696,42 +564,11 @@ LOGGING = {
 }
 
 
-
-
-
-
-
-
-
-
-# # Cross-site Scripting (XSS)
-# SECURE_BROWSER_XSS_FILTER = True
-# SECURE_CONTENT_TYPE_NOSNIFF = True
-
-
-# # SSL redirect
-# SECURE_SSL_REDIRECT = True
-
-
-# # HTTP Strict Transport Security (HSTS)
-# SECURE_HSTS_SECONDS = 86400
-# SECURE_HSTS_PRELOAD = True
-# SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-
-
-
-# Cross-site request forgery (CSRF) protection
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
-
 # Login and Authentication
-LOGIN_URL = 'admin:login'  # Redirect to admin login if not authenticated
-LOGIN_REDIRECT_URL = '/dashboard/'  # Redirect to dashboard after login
+LOGIN_URL = 'admin:login'
+LOGIN_REDIRECT_URL = '/dashboard/'
 
 
-# ============================================================================
-# CKEDITOR 5 CONFIGURATION
-# ============================================================================
 customColorPalette = [
     {'color': 'hsl(4, 90%, 58%)', 'label': 'Red'},
     {'color': 'hsl(340, 82%, 52%)', 'label': 'Pink'},
@@ -801,21 +638,25 @@ CKEDITOR_5_CONFIGS = {
 CKEDITOR_5_UPLOAD_PATH = "uploads/"
 CKEDITOR_5_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
 
-# Email Configuration
+
+# ============================================================================
+# EMAIL CONFIGURATION
+# ============================================================================
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True').lower() == 'true'
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
-DEFAULT_FROM_EMAIL = f"El Arbol Support <{os.environ.get('EMAIL_HOST_USER')}>"
+DEFAULT_FROM_EMAIL = f"El Arbol Support <{EMAIL_HOST_USER}>"
 
 
-# Celery Configuration
+# ============================================================================
+# CELERY CONFIGURATION
+# ============================================================================
 CELERY_BROKER_URL = os.environ.get('REDIS_URL', 'redis://127.0.0.1:6379/0')
 CELERY_RESULT_BACKEND = os.environ.get('REDIS_URL', 'redis://127.0.0.1:6379/0')
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
-

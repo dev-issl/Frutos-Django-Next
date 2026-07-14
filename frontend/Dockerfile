@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY package.json package-lock.json ./
 
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 
 # Stage 2: Build
 FROM node:24-alpine AS builder
@@ -14,8 +14,8 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-ARG NEXT_PUBLIC_API_URL
-ENV NEXT_PUBLIC_SERVER_URL=$NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_SERVER_URL
+ENV NEXT_PUBLIC_SERVER_URL=$NEXT_PUBLIC_SERVER_URL
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 

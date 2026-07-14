@@ -18,7 +18,7 @@ RUN apk add --no-cache \
     cargo \
     bash \
     mysql-dev \
-    postgresql-dev
+    mariadb-connector-c-dev
 
 # Stage 2: Builder — install packages
 FROM base AS builder
@@ -92,3 +92,7 @@ CMD ["gunicorn", \
      "--access-logfile", "-", \
      "--error-logfile", "-", \
      "backend.wsgi:application"]
+
+
+
+     
