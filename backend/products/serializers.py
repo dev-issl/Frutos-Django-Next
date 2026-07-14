@@ -53,10 +53,32 @@ class SubCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = SubCategory
         fields = ['id','name','slug','image','image_url','category', 'category_name', 'total_products']
+        validators = []
         extra_kwargs = {
             'slug': {'required': False, 'allow_blank': True, 'validators': []},
             'image': {'required': False, 'allow_null': True},
         }
+
+    def validate(self, attrs):
+        name = attrs.get('name', getattr(self.instance, 'name', None))
+        category = attrs.get('category', getattr(self.instance, 'category', None))
+        slug = attrs.get('slug', getattr(self.instance, 'slug', None))
+        
+        if name and category:
+            qs = SubCategory.objects.filter(name__iexact=name, category=category)
+            if self.instance:
+                qs = qs.exclude(pk=self.instance.pk)
+            if qs.exists():
+                raise serializers.ValidationError({"name": "this name is already exist"})
+                
+        if slug:
+            qs = SubCategory.objects.filter(slug__iexact=slug)
+            if self.instance:
+                qs = qs.exclude(pk=self.instance.pk)
+            if qs.exists():
+                raise serializers.ValidationError({"name": "this name is already exist"})
+                
+        return super().validate(attrs)
 
     def get_total_products(self, obj):
         return getattr(obj, 'total_products', obj.products.count())
@@ -82,9 +104,30 @@ class CategorySerializer(serializers.ModelSerializer):
             'subcategories', 'total_products', 'sub_category_count'
         ]
         extra_kwargs = {
+            'name': {'validators': []},
             'slug': {'required': False, 'allow_blank': True, 'validators': []},
             'image': {'required': False, 'allow_null': True},
         }
+
+    def validate(self, attrs):
+        name = attrs.get('name', getattr(self.instance, 'name', None))
+        slug = attrs.get('slug', getattr(self.instance, 'slug', None))
+
+        if name:
+            qs = Category.objects.filter(name__iexact=name)
+            if self.instance:
+                qs = qs.exclude(pk=self.instance.pk)
+            if qs.exists():
+                raise serializers.ValidationError({"name": "this name is already exist"})
+
+        if slug:
+            qs = Category.objects.filter(slug__iexact=slug)
+            if self.instance:
+                qs = qs.exclude(pk=self.instance.pk)
+            if qs.exists():
+                raise serializers.ValidationError({"name": "this name is already exist"})
+
+        return super().validate(attrs)
 
     def get_image_url(self, obj):
         request = self.context.get('request')
