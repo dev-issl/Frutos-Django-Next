@@ -116,14 +116,6 @@ export default function UsersPage() {
   );
 
   const columns = [
-    { key: "id", label: "ID", render: (v, row) => (
-      <span 
-        className="font-bold text-[#00694C] cursor-pointer hover:underline"
-        onClick={(e) => { e.stopPropagation(); setViewItem(row); }}
-      >
-        {String(v).startsWith('ws_') ? `WS-${v.replace('ws_','')}` : v}
-      </span>
-    )},
     { key: "photo", label: "Photo", render: (v, row) => {
       let imgUrl = row.profile_image || row.photo || v;
       if (imgUrl && imgUrl.startsWith('/')) {
