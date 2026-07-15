@@ -166,37 +166,37 @@ export default function StaffAttendanceTab({ stores }) {
       {selectedStaff && currentStaffDetails && (
         <div id="print-area" className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col h-[700px] print:h-auto print:overflow-visible print:border-none print:shadow-none print:block animate-in fade-in zoom-in-95 duration-200 mb-6">
           {/* Header */}
-          <div className="p-6 border-b border-slate-100 flex items-start justify-between bg-slate-50/50">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-full overflow-hidden bg-white border-2 border-white shadow-md shrink-0">
+          <div className="p-4 sm:p-6 border-b border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-slate-50/50">
+            <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden bg-white border-2 border-white shadow-md shrink-0">
                 {currentStaffDetails.photo
                   ? <img src={getPhotoUrl(currentStaffDetails.photo)} alt={currentStaffDetails.name} className="w-full h-full object-cover" />
                   : <div className="w-full h-full flex items-center justify-center text-xl font-bold text-[#00694C] bg-gradient-to-br from-[#00694C]/10 to-[#00694C]/5">
                       {currentStaffDetails.name?.charAt(0)?.toUpperCase() || 'S'}
                     </div>}
               </div>
-              <div>
-                <h2 className="text-xl font-bold text-slate-800">{currentStaffDetails.name}</h2>
-                <div className="text-sm text-slate-500 mt-1 flex items-center gap-2">
-                  <span className="bg-white border border-slate-200 text-slate-600 px-2 py-0.5 rounded shadow-sm uppercase tracking-wider text-[11px] font-semibold">ID: {currentStaffDetails.staff_code}</span>
-                  <span className="text-slate-300">•</span>
-                  <span>{currentStaffDetails.role}</span>
+              <div className="min-w-0 flex-1">
+                <h2 className="text-lg sm:text-xl font-bold text-slate-800 truncate">{currentStaffDetails.name}</h2>
+                <div className="text-xs sm:text-sm text-slate-500 mt-1 flex flex-wrap items-center gap-1.5 sm:gap-2">
+                  <span className="bg-white border border-slate-200 text-slate-600 px-1.5 sm:px-2 py-0.5 rounded shadow-sm uppercase tracking-wider text-[10px] sm:text-[11px] font-semibold whitespace-nowrap">ID: {currentStaffDetails.staff_code}</span>
+                  <span className="text-slate-300 hidden sm:inline">•</span>
+                  <span className="truncate">{currentStaffDetails.role}</span>
                 </div>
               </div>
             </div>
             
-            <div className="flex items-center gap-2 print:hidden">
-              <button 
-                onClick={() => window.print()}
-                className="px-4 py-2 rounded-lg bg-[#00694C] text-white hover:bg-[#005940] flex items-center gap-2 font-semibold text-sm transition-colors shadow-sm cursor-pointer"
-              >
-                <Printer className="w-4 h-4" /> Print Report
-              </button>
+            <div className="flex items-center gap-2 print:hidden w-full sm:w-auto">
               <button 
                 onClick={() => setSelectedStaff(null)}
-                className="px-4 py-2 rounded-lg bg-white border border-slate-200 text-slate-600 hover:text-slate-800 hover:bg-slate-50 flex items-center gap-2 font-semibold text-sm transition-colors shadow-sm cursor-pointer"
+                className="flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-lg bg-white border border-slate-200 text-slate-600 hover:text-slate-800 hover:bg-slate-50 flex items-center justify-center gap-1.5 sm:gap-2 font-semibold text-xs sm:text-sm transition-colors shadow-sm cursor-pointer whitespace-nowrap"
               >
                 <ChevronLeft className="w-4 h-4" /> Back to Staff
+              </button>
+              <button 
+                onClick={() => window.print()}
+                className="flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-lg bg-[#00694C] text-white hover:bg-[#005940] flex items-center justify-center gap-1.5 sm:gap-2 font-semibold text-xs sm:text-sm transition-colors shadow-sm cursor-pointer whitespace-nowrap"
+              >
+                <Printer className="w-4 h-4" /> Print Report
               </button>
             </div>
           </div>
@@ -355,7 +355,7 @@ export default function StaffAttendanceTab({ stores }) {
         </div>
         <div className="flex flex-wrap gap-1.5 p-1 bg-slate-50 rounded-lg w-full sm:w-auto">
           <button onClick={() => setStoreFilter("")}
-            className={`px-4 py-2 rounded-md text-sm font-semibold transition-all cursor-pointer flex items-center gap-2 ${!storeFilter ? "bg-[#00694C] text-white shadow-md shadow-[#00694C]/20" : "text-slate-500 hover:text-slate-700 hover:bg-slate-100"}`}>
+            className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm font-semibold transition-all cursor-pointer flex items-center gap-1.5 sm:gap-2 whitespace-nowrap ${!storeFilter ? "bg-[#00694C] text-white shadow-md shadow-[#00694C]/20" : "text-slate-500 hover:text-slate-700 hover:bg-slate-100"}`}>
             All Stores
             <span className={`px-1.5 py-0.5 rounded-md text-[10px] ${!storeFilter ? "bg-white/20 text-white" : "bg-slate-200 text-slate-500"}`}>
               {allStaff.length}
@@ -366,7 +366,7 @@ export default function StaffAttendanceTab({ stores }) {
             const isActive = String(store.id) === storeFilter;
             return (
               <button key={store.id} onClick={() => setStoreFilter(isActive ? "" : String(store.id))}
-                className={`px-4 py-2 rounded-md text-sm font-semibold transition-all cursor-pointer flex flex-col sm:flex-row items-center gap-1 sm:gap-2 ${isActive ? "bg-[#00694C] text-white shadow-md shadow-[#00694C]/20" : "text-slate-500 hover:text-slate-700 hover:bg-slate-100"}`}>
+                className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm font-semibold transition-all cursor-pointer flex items-center gap-1.5 sm:gap-2 whitespace-nowrap ${isActive ? "bg-[#00694C] text-white shadow-md shadow-[#00694C]/20" : "text-slate-500 hover:text-slate-700 hover:bg-slate-100"}`}>
                 {store.name}
                 <span className={`px-1.5 py-0.5 rounded-md text-[10px] ${isActive ? "bg-white/20 text-white" : "bg-slate-200 text-slate-500"}`}>
                   {count}

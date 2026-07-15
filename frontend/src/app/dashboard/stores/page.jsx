@@ -776,7 +776,7 @@ function StoreRow({ store, onEdit, onDelete, onToggle, onView }) {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{ borderBottom:'1px solid #f8fafc', background: hovered ? '#f8fafc' : '#ffffff', transition:'background 0.1s', cursor: 'pointer' }}>
-      <td style={{ padding:'14px 16px' }}>
+      <td style={{ padding:'14px 16px', whiteSpace:'nowrap' }}>
         <div style={{ display:'flex', alignItems:'center', gap:'12px' }}>
           {store.image ? (
             <img src={store.image} alt={store.name} style={{ width:'42px', height:'42px', borderRadius:'10px', objectFit:'cover', flexShrink:0, border:'1px solid #f1f5f9' }} />
@@ -786,10 +786,10 @@ function StoreRow({ store, onEdit, onDelete, onToggle, onView }) {
             </div>
           )}
           <div>
-            <div style={{ display:'flex', alignItems:'center', gap:'6px' }}>
-              <p style={{ fontSize:'13px', fontWeight:'700', color:'#1e293b', margin:0 }}>{store.name}</p>
+            <div style={{ display:'flex', alignItems:'center', gap:'6px', flexWrap:'wrap' }}>
+              <p style={{ fontSize:'13px', fontWeight:'700', color:'#1e293b', margin:0, wordBreak: 'break-word' }}>{store.name}</p>
               {(store.storeCode || store.store_code) && (
-                <span style={{ padding:'2px 6px', background:'#f1f5f9', borderRadius:'4px', fontSize:'10px', color:'#64748b', fontWeight:'700', border:'1px solid #e2e8f0' }}>
+                <span style={{ padding:'2px 6px', background:'#f1f5f9', borderRadius:'4px', fontSize:'10px', color:'#64748b', fontWeight:'700', border:'1px solid #e2e8f0', whiteSpace:'nowrap' }}>
                   {store.storeCode || store.store_code}
                 </span>
               )}
@@ -798,19 +798,19 @@ function StoreRow({ store, onEdit, onDelete, onToggle, onView }) {
           </div>
         </div>
       </td>
-      <td style={{ padding:'14px 16px' }}>
+      <td style={{ padding:'14px 16px', whiteSpace:'nowrap' }}>
         <div style={{ display:'flex', alignItems:'center', gap:'5px', fontSize:'12px', color:'#64748b', fontWeight:'500' }}>
           <MapPin size={11} style={{ color:'#94a3b8' }} />
           {store.city}
         </div>
       </td>
-      <td style={{ padding:'14px 16px' }}>
+      <td style={{ padding:'14px 16px', whiteSpace:'nowrap' }}>
         <div style={{ display:'flex', alignItems:'center', gap:'5px', fontSize:'12px', color:'#64748b', fontWeight:'500' }}>
           <Clock size={11} style={{ color:'#94a3b8' }} />
           {store.hours || `${store.openTime || store.open_time} — ${store.closeTime || store.close_time}`}
         </div>
       </td>
-      <td style={{ padding:'14px 16px' }}>
+      <td style={{ padding:'14px 16px', whiteSpace:'nowrap' }}>
         <div style={{ display:'flex', flexWrap:'wrap', gap:'4px' }}>
           {(store.features || []).slice(0, 3).map(f => (
             <span key={f} style={{ padding:'2px 8px', background:'#f1f5f9', border:'1px solid #e2e8f0', borderRadius:'6px', fontSize:'10px', color:'#64748b', fontWeight:'600', textTransform:'capitalize' }}>
@@ -824,10 +824,10 @@ function StoreRow({ store, onEdit, onDelete, onToggle, onView }) {
           )}
         </div>
       </td>
-      <td style={{ padding:'14px 16px' }}>
+      <td style={{ padding:'14px 16px', whiteSpace:'nowrap' }}>
         <Badge active={store.is_active} />
       </td>
-      <td style={{ padding:'14px 16px' }}>
+      <td style={{ padding:'14px 16px', whiteSpace:'nowrap' }}>
         <div style={{ display:'flex', alignItems:'center', gap:'4px', opacity: hovered ? 1 : 0, transition:'opacity 0.15s' }}>
           <button onClick={(e) => { e.stopPropagation(); onToggle(store); }} className="db-icon-btn" title={store.is_active ? 'Deactivate' : 'Activate'}>
             {store.is_active ? <EyeOff size={13} /> : <Eye size={13} />}
@@ -916,24 +916,24 @@ export default function StoresPage() {
   const inactiveCount = stores.filter(s => !s.is_active).length
 
   return (
-    <div style={{ minHeight:'100vh', background:'#f8fafc', padding:'24px' }}>
+    <div className="p-4 sm:p-6 min-h-screen bg-slate-50">
 
       {/* Page Header */}
-      <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:'28px' }}>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         <div>
           <h1 style={{ fontSize:'26px', fontWeight:'900', color:'#0f172a', margin:0, letterSpacing:'-0.02em' }}>Stores</h1>
           <p style={{ fontSize:'13px', color:'#94a3b8', marginTop:'4px', fontWeight:'500' }}>Manage physical store locations, hours and features</p>
         </div>
         <button
           onClick={handleAdd}
-          className="db-btn-primary"
+          className="db-btn-primary w-full sm:w-auto justify-center"
         >
           <Plus size={15} /> Add Store
         </button>
       </div>
 
       {/* Stats */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:'14px', marginBottom:'20px' }}>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
         {[
           { label: 'Total Stores', value: stores.length,  color: '#1e293b',  bg: '#ffffff',  border: '#f1f5f9' },
           { label: 'Active',       value: activeCount,    color: '#16a34a',  bg: '#f0fdf4',  border: '#dcfce7' },
@@ -947,8 +947,8 @@ export default function StoresPage() {
       </div>
 
       {/* Filters */}
-      <div style={{ display:'flex', alignItems:'center', gap:'12px', marginBottom:'16px' }}>
-        <div style={{ position:'relative', flex:1, maxWidth:'300px' }}>
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-4">
+        <div className="relative flex-1 w-full sm:max-w-[300px]">
           <Search size={14} style={{ position:'absolute', left:'12px', top:'50%', transform:'translateY(-50%)', color:'#94a3b8' }} />
           <input
             value={search}
@@ -964,7 +964,7 @@ export default function StoresPage() {
             onBlur={() => setSearchFocused(false)}
           />
         </div>
-        <div style={{ display:'flex', gap:'4px', background:'#ffffff', border:'1.5px solid #e2e8f0', borderRadius:'12px', padding:'4px' }}>
+        <div className="flex gap-1 overflow-x-auto p-1 bg-white border border-slate-200 rounded-xl">
           {['all', 'active', 'inactive'].map(f => (
             <button key={f} onClick={() => setFilterActive(f)}
               style={{
@@ -1014,20 +1014,22 @@ export default function StoresPage() {
             )}
           </div>
         ) : (
-          <table style={{ width:'100%', borderCollapse:'collapse' }}>
-            <thead>
-              <tr style={{ borderBottom:'1px solid #f1f5f9', background:'#f8fafc' }}>
-                {['Store', 'City', 'Hours', 'Features', 'Status', ''].map(h => (
-                  <th key={h} style={{ padding:'12px 16px', textAlign:'left', fontSize:'11px', fontWeight:'800', color:'#64748b', textTransform:'uppercase', letterSpacing:'0.06em', whiteSpace:'nowrap' }}>{h}</th>
+          <div className="overflow-x-auto">
+            <table style={{ width:'100%', borderCollapse:'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom:'1px solid #f1f5f9', background:'#f8fafc' }}>
+                  {['Store', 'City', 'Hours', 'Features', 'Status', ''].map(h => (
+                    <th key={h} style={{ padding:'12px 16px', textAlign:'left', fontSize:'11px', fontWeight:'800', color:'#64748b', textTransform:'uppercase', letterSpacing:'0.06em', whiteSpace:'nowrap' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map(store => (
+                  <StoreRow key={store.id} store={store} onEdit={handleEdit} onDelete={setDeleteStore} onToggle={handleToggle} onView={setViewStore} />
                 ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map(store => (
-                <StoreRow key={store.id} store={store} onEdit={handleEdit} onDelete={setDeleteStore} onToggle={handleToggle} onView={setViewStore} />
-              ))}
-            </tbody>
-          </table>
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 

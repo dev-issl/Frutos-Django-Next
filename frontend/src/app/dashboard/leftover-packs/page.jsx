@@ -485,63 +485,63 @@ export default function LeftoverPacksPage() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left">
-              <thead className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider">
+              <thead className="bg-slate-50 text-slate-500 text-[10px] sm:text-xs uppercase tracking-wider">
                 <tr>
-                  <th className="px-6 py-4 font-medium">Pack</th>
-                  <th className="px-6 py-4 font-medium">Type & Qty</th>
-                  <th className="px-6 py-4 font-medium">Price</th>
-                  <th className="px-6 py-4 font-medium">Stock</th>
-                  <th className="px-6 py-4 font-medium">Status</th>
-                  <th className="px-6 py-4 font-medium text-right">Actions</th>
+                  <th className="px-4 py-3 sm:px-6 sm:py-4 font-medium whitespace-nowrap">Pack</th>
+                  <th className="px-4 py-3 sm:px-6 sm:py-4 font-medium whitespace-nowrap">Type & Qty</th>
+                  <th className="px-4 py-3 sm:px-6 sm:py-4 font-medium whitespace-nowrap">Price</th>
+                  <th className="px-4 py-3 sm:px-6 sm:py-4 font-medium whitespace-nowrap">Stock</th>
+                  <th className="px-4 py-3 sm:px-6 sm:py-4 font-medium whitespace-nowrap">Status</th>
+                  <th className="px-4 py-3 sm:px-6 sm:py-4 font-medium text-right whitespace-nowrap">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {filteredPacks.map(pack => (
                   <tr key={pack.id} onClick={() => setViewPack(pack)} className="hover:bg-slate-50 transition-colors cursor-pointer">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
+                    <td className="px-4 py-3 sm:px-6 sm:py-4">
+                      <div className="flex items-center gap-2 sm:gap-3 min-w-[200px]">
                         {pack.image ? (
-                          <img src={pack.image} alt={pack.name} className="w-10 h-10 rounded-lg object-cover border border-slate-200" />
+                          <img src={pack.image} alt={pack.name} className="w-10 h-10 rounded-lg object-cover border border-slate-200 shrink-0" />
                         ) : (
-                          <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center">
+                          <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
                             <Package size={16} className="text-slate-400" />
                           </div>
                         )}
                         <div>
-                          <div className="font-semibold text-slate-800 flex items-center gap-2">
-                              {pack.name}
+                          <div className="font-semibold text-slate-800 flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                              <span className="whitespace-nowrap">{pack.name}</span>
                               {pack.discount_percentage > 0 && (
-                                  <span className="text-[9px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-bold">-{pack.discount_percentage}%</span>
+                                  <span className="text-[9px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-bold whitespace-nowrap">-{pack.discount_percentage}%</span>
                               )}
                           </div>
-                          <div className="text-xs text-slate-500 truncate max-w-[200px]">{pack.description}</div>
+                          <div className="text-[10px] sm:text-xs text-slate-500 truncate max-w-[150px] sm:max-w-[200px]">{pack.description}</div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                        <div className="text-slate-800">{pack.package_type}</div>
-                        {pack.weight_quantity && <div className="text-xs text-slate-500">{pack.weight_quantity}</div>}
+                    <td className="px-4 py-3 sm:px-6 sm:py-4 whitespace-nowrap">
+                        <div className="text-slate-800 text-sm">{pack.package_type}</div>
+                        {pack.weight_quantity && <div className="text-[10px] sm:text-xs text-slate-500">{pack.weight_quantity}</div>}
                     </td>
-                    <td className="px-6 py-4">
-                        <div className="font-medium text-slate-800">€{pack.price}</div>
+                    <td className="px-4 py-3 sm:px-6 sm:py-4 whitespace-nowrap">
+                        <div className="font-medium text-slate-800 text-sm">€{pack.price}</div>
                         {pack.original_price && pack.original_price > pack.price && (
-                            <div className="text-xs text-slate-400 line-through">€{pack.original_price}</div>
+                            <div className="text-[10px] sm:text-xs text-slate-400 line-through">€{pack.original_price}</div>
                         )}
                     </td>
-                    <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                    <td className="px-4 py-3 sm:px-6 sm:py-4 whitespace-nowrap">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] sm:text-xs font-medium ${
                             pack.stock > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                         }`}>
                             {pack.stock > 0 ? `${pack.stock} available` : 'Sold Out'}
                         </span>
                     </td>
-                    <td className="px-6 py-4">
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${pack.is_active ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}`}>
+                    <td className="px-4 py-3 sm:px-6 sm:py-4 whitespace-nowrap">
+                      <span className={`px-2 py-1 text-[10px] sm:text-xs font-medium rounded-full ${pack.is_active ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}`}>
                         {pack.is_active ? 'Active' : 'Hidden'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
+                    <td className="px-4 py-3 sm:px-6 sm:py-4 text-right whitespace-nowrap">
+                      <div className="flex items-center justify-end gap-1 sm:gap-2">
                         <button style={{cursor: 'pointer'}} onClick={(e) => { e.stopPropagation(); setViewPack(pack); }} className="p-1.5 text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 rounded-md transition-colors">
                           <Eye size={16} />
                         </button>

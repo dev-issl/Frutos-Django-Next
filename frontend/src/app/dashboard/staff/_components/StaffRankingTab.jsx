@@ -231,9 +231,9 @@ export default function StaffRankingTab({ stores }) {
           <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2">
             Filter Ranking By Store
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5 sm:gap-2">
             <button onClick={() => setStoreFilter("")}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all cursor-pointer flex items-center gap-2 ${!storeFilter ? "bg-[#00694C] text-white shadow-md shadow-[#00694C]/20" : "bg-slate-50 text-slate-600 hover:text-slate-800 hover:bg-slate-100 border border-slate-200/60"}`}>
+              className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all cursor-pointer flex items-center gap-1.5 sm:gap-2 whitespace-nowrap ${!storeFilter ? "bg-[#00694C] text-white shadow-md shadow-[#00694C]/20" : "bg-slate-50 text-slate-600 hover:text-slate-800 hover:bg-slate-100 border border-slate-200/60"}`}>
               All Stores
               <span className={`px-1.5 py-0.5 rounded-md text-[10px] ${!storeFilter ? "bg-white/20 text-white" : "bg-slate-200 text-slate-500"}`}>
                 {allStaff.length}
@@ -244,7 +244,7 @@ export default function StaffRankingTab({ stores }) {
               const isActive = String(store.id) === storeFilter;
               return (
                 <button key={store.id} onClick={() => setStoreFilter(isActive ? "" : String(store.id))}
-                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all cursor-pointer flex flex-col sm:flex-row items-center gap-1 sm:gap-2 ${isActive ? "bg-[#00694C] text-white shadow-md shadow-[#00694C]/20" : "bg-slate-50 text-slate-600 hover:text-slate-800 hover:bg-slate-100 border border-slate-200/60"}`}>
+                  className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all cursor-pointer flex items-center gap-1.5 sm:gap-2 whitespace-nowrap ${isActive ? "bg-[#00694C] text-white shadow-md shadow-[#00694C]/20" : "bg-slate-50 text-slate-600 hover:text-slate-800 hover:bg-slate-100 border border-slate-200/60"}`}>
                   {store.name}
                   <span className={`px-1.5 py-0.5 rounded-md text-[10px] ${isActive ? "bg-white/20 text-white" : "bg-slate-200 text-slate-500"}`}>
                     {count}

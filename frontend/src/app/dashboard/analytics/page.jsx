@@ -700,7 +700,7 @@ export default function AnalyticsPage() {
 
       {/* Date Filter Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-        <div className="flex items-center gap-2 p-1 bg-slate-50 rounded-lg border border-slate-100">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 p-1 bg-slate-50 rounded-lg border border-slate-100 w-full md:w-auto">
           {[
             { id: 'ALL_TIME', label: 'All Time' }, 
             { id: 'THIS_MONTH', label: 'Monthly' }, 
@@ -710,7 +710,7 @@ export default function AnalyticsPage() {
             <button 
               key={type.id}
               onClick={() => setFilterType(type.id)}
-              className={`px-4 py-2 text-xs font-bold rounded-md transition-all cursor-pointer ${filterType === type.id ? 'bg-white text-emerald-600 shadow-sm border border-slate-200/60' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100/50'}`}
+              className={`flex-1 sm:flex-none px-2 sm:px-4 py-2 text-[10px] sm:text-xs font-bold rounded-md transition-all cursor-pointer whitespace-nowrap text-center ${filterType === type.id ? 'bg-white text-emerald-600 shadow-sm border border-slate-200/60' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100/50'}`}
             >
               {type.label}
             </button>
@@ -718,24 +718,28 @@ export default function AnalyticsPage() {
         </div>
         
         {filterType === 'CUSTOM' && (
-          <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-4 duration-300">
-            <div className="flex items-center gap-2">
-              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Start</label>
-              <CustomDatePicker 
-                value={customRange.start} 
-                onChange={val => setCustomRange(prev => ({...prev, start: val}))}
-                placeholder="Start Date"
-              />
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 animate-in fade-in slide-in-from-right-4 duration-300 w-full md:w-auto">
+            <div className="flex items-center gap-2 flex-1">
+              <label className="text-[10px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider shrink-0 w-10 sm:w-auto">Start</label>
+              <div className="flex-1">
+                <CustomDatePicker 
+                  value={customRange.start} 
+                  onChange={val => setCustomRange(prev => ({...prev, start: val}))}
+                  placeholder="Start Date"
+                />
+              </div>
             </div>
-            <span className="text-slate-300 font-medium">-</span>
-            <div className="flex items-center gap-2">
-              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">End</label>
-              <CustomDatePicker 
-                value={customRange.end} 
-                onChange={val => setCustomRange(prev => ({...prev, end: val}))}
-                placeholder="End Date"
-                align="right"
-              />
+            <span className="text-slate-300 font-medium hidden sm:block">-</span>
+            <div className="flex items-center gap-2 flex-1">
+              <label className="text-[10px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider shrink-0 w-10 sm:w-auto">End</label>
+              <div className="flex-1">
+                <CustomDatePicker 
+                  value={customRange.end} 
+                  onChange={val => setCustomRange(prev => ({...prev, end: val}))}
+                  placeholder="End Date"
+                  align="right"
+                />
+              </div>
             </div>
           </div>
         )}

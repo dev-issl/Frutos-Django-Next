@@ -302,13 +302,13 @@ export default function CategoriesPage() {
 
   return (
     <Container title="Categories" description="Manage product categories and sub-categories">
-      <div className="flex items-center justify-between">
-        <div className="flex gap-2 bg-slate-100 p-1 rounded-xl">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 mb-2 sm:mb-4">
+        <div className="flex gap-1.5 sm:gap-2 bg-slate-100 p-1 rounded-xl">
           {TABS.map(t => (
-            <button key={t.id} style={{cursor: 'pointer'}} onClick={() => setTab(t.id)} className={`px-4 py-2 text-sm rounded-lg transition-all font-semibold ${tab === t.id ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"}`}>{t.label}</button>
+            <button key={t.id} style={{cursor: 'pointer'}} onClick={() => setTab(t.id)} className={`flex-1 sm:flex-none px-2 sm:px-4 py-2 text-[11px] sm:text-sm rounded-lg transition-all font-semibold whitespace-nowrap text-center ${tab === t.id ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"}`}>{t.label}</button>
           ))}
         </div>
-        <button style={{cursor: 'pointer'}} onClick={() => setModal({ open: true, mode: "create", item: null })} className="flex items-center gap-2 px-4 py-2 text-sm font-bold bg-[#00694C] text-white rounded-xl hover:bg-[#085041] shadow-sm transition-colors">
+        <button style={{cursor: 'pointer'}} onClick={() => setModal({ open: true, mode: "create", item: null })} className="flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 text-sm font-bold bg-[#00694C] text-white rounded-xl hover:bg-[#085041] shadow-sm transition-colors whitespace-nowrap w-full sm:w-auto">
           <Plus className="w-4 h-4" /> Add {tab === "categories" ? "Category" : "SubCategory"}
         </button>
       </div>

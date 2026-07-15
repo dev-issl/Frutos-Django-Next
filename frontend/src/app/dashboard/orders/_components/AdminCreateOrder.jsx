@@ -275,7 +275,7 @@ export default function AdminCreateOrder({ onBack, storeId, onSuccess }) {
     <div className="flex flex-col bg-white border border-slate-200 rounded-xl overflow-hidden min-h-[70vh]">
 
       {/* Header */}
-      <div className="flex items-center justify-between p-5 border-b border-slate-100 bg-slate-50">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 sm:p-5 border-b border-slate-100 bg-slate-50">
         <div>
           <h2 className="text-lg font-bold text-slate-800">
             {step === 1 ? "Step 1: Select Products" : "Step 2: Checkout Details"}
@@ -284,18 +284,18 @@ export default function AdminCreateOrder({ onBack, storeId, onSuccess }) {
             {step === 1 ? "Choose products, quantities, and sizes." : "Enter delivery and payment information."}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           {step === 2 && (
             <button
               onClick={() => setStep(1)}
-              className="px-4 py-2 bg-white border border-slate-200 text-slate-600 font-semibold rounded-md text-sm hover:bg-slate-50 shadow-sm flex items-center gap-2"
+              className="w-full sm:w-auto justify-center px-4 py-2 bg-white border border-slate-200 text-slate-600 font-semibold rounded-md text-sm hover:bg-slate-50 shadow-sm flex items-center gap-2"
             >
               <ArrowLeft className="w-4 h-4" /> Back to Products
             </button>
           )}
           <button
             onClick={onBack}
-            className="cursor-pointer px-4 py-2 bg-white border border-slate-200 text-slate-600 font-semibold rounded-md text-sm hover:bg-red-50 hover:text-red-600 hover:border-red-200 shadow-sm transition-colors"
+            className="w-full sm:w-auto justify-center cursor-pointer px-4 py-2 bg-white border border-slate-200 text-slate-600 font-semibold rounded-md text-sm hover:bg-red-50 hover:text-red-600 hover:border-red-200 shadow-sm transition-colors"
           >
             Cancel Order
           </button>
@@ -359,7 +359,7 @@ export default function AdminCreateOrder({ onBack, storeId, onSuccess }) {
                   <table className="w-full text-left text-sm text-slate-600">
                     <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-200">
                       <tr>
-                        <th className="px-3 py-2 w-12 text-center">
+                        <th className="px-3 py-2 w-12 text-center whitespace-nowrap">
                           <input
                             type="checkbox"
                             className="w-4 h-4 accent-[#00694C] rounded cursor-pointer"
@@ -367,12 +367,12 @@ export default function AdminCreateOrder({ onBack, storeId, onSuccess }) {
                             onChange={toggleSelectAll}
                           />
                         </th>
-                        <th className="px-3 py-2 w-16">Photo</th>
-                        <th className="px-3 py-2">Product Name</th>
-                        <th className="px-3 py-2">Category</th>
-                        <th className="px-3 py-2">Price</th>
-                        <th className="px-3 py-2 text-center">Quantity</th>
-                        <th className="px-3 py-2 text-center">Size Unit</th>
+                        <th className="px-3 py-2 w-16 whitespace-nowrap">Photo</th>
+                        <th className="px-3 py-2 whitespace-nowrap">Product Name</th>
+                        <th className="px-3 py-2 whitespace-nowrap hidden sm:table-cell">Category</th>
+                        <th className="px-3 py-2 whitespace-nowrap">Price</th>
+                        <th className="px-3 py-2 text-center whitespace-nowrap">Quantity</th>
+                        <th className="px-3 py-2 text-center whitespace-nowrap">Size Unit</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
@@ -381,7 +381,7 @@ export default function AdminCreateOrder({ onBack, storeId, onSuccess }) {
                       ) : (
                         paginatedProducts.map(product => (
                           <tr key={product.id} className="hover:bg-slate-50/50 transition-colors">
-                            <td className="px-3 py-1.5 text-center">
+                            <td className="px-3 py-1.5 text-center whitespace-nowrap">
                               <input
                                 type="checkbox"
                                 className="w-4 h-4 accent-[#00694C] rounded cursor-pointer"
@@ -389,34 +389,36 @@ export default function AdminCreateOrder({ onBack, storeId, onSuccess }) {
                                 onChange={(e) => handleUpdateItem(product.id, "selected", e.target.checked)}
                               />
                             </td>
-                            <td className="px-3 py-1.5">
+                            <td className="px-3 py-1.5 whitespace-nowrap">
                               {product.thumbnail_url || product.image ? (
-                                <img src={product.thumbnail_url || product.image} alt="" className="w-8 h-8 rounded-md object-cover border border-slate-100" />
+                                <img src={product.thumbnail_url || product.image} alt="" className="w-8 h-8 rounded-md object-cover border border-slate-100 shrink-0" />
                               ) : (
-                                <div className="w-8 h-8 rounded-md bg-slate-100 flex items-center justify-center border border-slate-100">
+                                <div className="w-8 h-8 rounded-md bg-slate-100 flex items-center justify-center border border-slate-100 shrink-0">
                                   <Package className="w-4 h-4 text-slate-400" />
                                 </div>
                               )}
                             </td>
-                            <td className="px-3 py-1.5 font-semibold text-slate-800">{product.name}</td>
-                            <td className="px-3 py-1.5">{product.category?.name || "—"}</td>
-                            <td className="px-3 py-1.5 font-medium">€{Number(product.price).toLocaleString()}</td>
-                            <td className="px-3 py-1.5">
+                            <td className="px-3 py-1.5 font-semibold text-slate-800 whitespace-nowrap">
+                              <div className="truncate max-w-[150px] sm:max-w-[250px]">{product.name}</div>
+                            </td>
+                            <td className="px-3 py-1.5 whitespace-nowrap hidden sm:table-cell">{product.category?.name || "—"}</td>
+                            <td className="px-3 py-1.5 font-medium whitespace-nowrap">€{Number(product.price).toLocaleString()}</td>
+                            <td className="px-3 py-1.5 whitespace-nowrap">
                               <div className="flex justify-center">
                                 <input
                                   type="number" min="0" placeholder="0"
                                   value={orderItems[product.id]?.qty || ""}
                                   onChange={(e) => handleUpdateItem(product.id, "qty", parseInt(e.target.value) || 0)}
-                                  className="w-20 px-2 py-1.5 text-sm text-center border border-slate-200 rounded focus:outline-none focus:border-[#00694C]"
+                                  className="w-16 sm:w-20 px-2 py-1.5 text-sm text-center border border-slate-200 rounded focus:outline-none focus:border-[#00694C]"
                                 />
                               </div>
                             </td>
-                            <td className="px-3 py-1.5">
+                            <td className="px-3 py-1.5 whitespace-nowrap">
                               <div className="flex justify-center">
                                 <select
                                   value={orderItems[product.id]?.size || "kg"}
                                   onChange={(e) => handleUpdateItem(product.id, "size", e.target.value)}
-                                  className="w-24 px-2 py-1.5 text-sm border border-slate-200 rounded focus:outline-none focus:border-[#00694C] bg-white cursor-pointer"
+                                  className="w-20 sm:w-24 px-2 py-1.5 text-sm border border-slate-200 rounded focus:outline-none focus:border-[#00694C] bg-white cursor-pointer"
                                 >
                                   <option value="kg">kg</option>
                                   <option value="g">g</option>
@@ -490,23 +492,25 @@ export default function AdminCreateOrder({ onBack, storeId, onSuccess }) {
           </div>
 
           {/* Sticky Bottom Bar */}
-          <div className="bg-white border-t border-slate-200 p-5 flex items-center justify-between shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-10">
-            <div className="flex gap-8">
+          <div className="bg-white border-t border-slate-200 p-4 sm:p-5 flex flex-wrap items-center justify-between shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-10 gap-4">
+            <div className="flex gap-4 sm:gap-8">
               <div>
-                <p className="text-xs text-slate-500 uppercase tracking-wider font-bold mb-1">Selected Items</p>
-                <p className="text-xl font-black text-slate-800">{calculateTotalItems()}</p>
+                <p className="text-[10px] sm:text-xs text-slate-500 uppercase tracking-wider font-bold mb-0.5 sm:mb-1">Selected</p>
+                <p className="text-lg sm:text-xl font-black text-slate-800">{calculateTotalItems()}</p>
               </div>
               <div>
-                <p className="text-xs text-slate-500 uppercase tracking-wider font-bold mb-1">Subtotal</p>
-                <p className="text-xl font-black text-[#00694C]">€{calculateSubtotal().toFixed(2)}</p>
+                <p className="text-[10px] sm:text-xs text-slate-500 uppercase tracking-wider font-bold mb-0.5 sm:mb-1">Subtotal</p>
+                <p className="text-lg sm:text-xl font-black text-[#00694C]">€{calculateSubtotal().toFixed(2)}</p>
               </div>
             </div>
             <button
               onClick={proceedToCheckout}
               disabled={calculateTotalItems() === 0}
-              className="flex items-center gap-2 bg-[#00694C] hover:bg-[#005940] text-white px-6 py-3 rounded-lg font-bold shadow-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="flex items-center justify-center flex-1 sm:flex-none gap-2 bg-[#00694C] hover:bg-[#005940] text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-bold text-sm sm:text-base shadow-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
-              Proceed to Checkout <ArrowRight className="w-5 h-5" />
+              <span className="hidden sm:inline">Proceed to Checkout</span>
+              <span className="sm:hidden">Checkout</span>
+              <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
           </div>
         </div>
