@@ -62,7 +62,7 @@ class WholesaleUser(AbstractBaseUser, PermissionsMixin):
         related_query_name='wholesale_user',
         verbose_name='user permissions',
     )
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    # id uses Django default AutoField (INTEGER) to match existing DB schema
     # serial_number = models.IntegerField( null=True, blank=True)  
     email = models.EmailField(unique=True, db_index=True)
 

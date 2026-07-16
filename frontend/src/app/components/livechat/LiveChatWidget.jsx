@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 import { MessageCircle, MessageSquare, X, SendHorizontal, Search, Users, Phone, Video, Store, Loader2, Info, ChevronDown, Check, ArrowLeft } from 'lucide-react';
+import { toast } from '@/app/dashboard/_components/Toaster';
 import { API_BASE_URL } from '@/app/dashboard/_lib/api';
 
 const API_BASE = `${API_BASE_URL}/api`;
@@ -69,6 +70,10 @@ export default function LiveChatWidget() {
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const modalRef = useRef(null);
+  const reconnectTimerRef = useRef(null);
+  const pendingMessagesRef = useRef([]);
+  const connectWSRef = useRef(null);
+  const isMountedRef = useRef(true);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -82,11 +87,32 @@ export default function LiveChatWidget() {
     };
   }, [isOpen]);
 
-  // Initialize Audio safely
   const playSound = useCallback(() => {
     try {
-      const audio = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAD//w==');
-      audio.play().catch(e => console.log('Audio play prevented', e));
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      
+      const playNote = (freq, startTime) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(freq, startTime);
+        
+        // Percussive envelope for an organic "tap/chime" sound
+        gain.gain.setValueAtTime(0, startTime);
+        gain.gain.linearRampToValueAtTime(0.5, startTime + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.25);
+        
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        osc.start(startTime);
+        osc.stop(startTime + 0.3);
+      };
+
+      // Play a pleasant double-chime (like a modern smartphone chat notification)
+      playNote(1046.50, audioCtx.currentTime);       // C6
+      playNote(1318.51, audioCtx.currentTime + 0.12); // E6
     } catch (e) {
       console.log('Audio error', e);
     }
@@ -129,6 +155,11 @@ export default function LiveChatWidget() {
   }, [getAccess, fetchContacts]);
 
   useEffect(() => {
+    isMountedRef.current = true;
+    return () => { isMountedRef.current = false; };
+  }, []);
+
+  useEffect(() => {
     // Only ADMIN or STAFF can use this
     if (!user || (user.user_type !== 'ADMIN' && user.user_type !== 'STAFF' && !user.is_staff)) {
       return;
@@ -136,9 +167,8 @@ export default function LiveChatWidget() {
 
     fetchContacts();
 
-    let reconnectTimer;
-
     const connectWebSocket = () => {
+      if (!isMountedRef.current) return;
       const access = getAccess();
       if (!access) return;
 
@@ -146,13 +176,20 @@ export default function LiveChatWidget() {
         return;
       }
 
-      wsRef.current = new WebSocket(`${WS_BASE}/ws/livechat/?token=${access}`);
+      const wsUrl = `${WS_BASE}/ws/livechat/?token=${access}`;
+      wsRef.current = new WebSocket(wsUrl);
 
       wsRef.current.onopen = () => {
-        console.log('LiveChat WebSocket Connected');
-        if (reconnectTimer) {
-          clearTimeout(reconnectTimer);
-          reconnectTimer = null;
+        if (reconnectTimerRef.current) {
+          clearTimeout(reconnectTimerRef.current);
+          reconnectTimerRef.current = null;
+        }
+        // Flush any pending messages
+        while (pendingMessagesRef.current.length > 0) {
+          const payload = pendingMessagesRef.current.shift();
+          if (wsRef.current.readyState === WebSocket.OPEN) {
+            wsRef.current.send(JSON.stringify(payload));
+          }
         }
       };
 
@@ -200,27 +237,26 @@ export default function LiveChatWidget() {
       };
 
       wsRef.current.onclose = () => {
-        console.log('LiveChat WebSocket Disconnected. Reconnecting in 3 seconds...');
-        if (!reconnectTimer) {
-          reconnectTimer = setTimeout(() => {
-            reconnectTimer = null;
+        if (!isMountedRef.current) return;
+        if (!reconnectTimerRef.current) {
+          reconnectTimerRef.current = setTimeout(() => {
+            reconnectTimerRef.current = null;
             connectWebSocket();
           }, 3000);
         }
       };
 
       wsRef.current.onerror = () => {
-        // Suppress noisy error logs (especially during React Strict Mode unmounts)
-        if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-          wsRef.current.close();
-        }
+        // Handled by onclose — do NOT use console.error (triggers Next.js overlay)
       };
     };
 
+    // Store connect function in ref so handleSendMessage can call it
+    connectWSRef.current = connectWebSocket;
     connectWebSocket();
 
     return () => {
-      if (reconnectTimer) clearTimeout(reconnectTimer);
+      if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
       if (wsRef.current) {
         wsRef.current.onclose = null; // prevent reconnect on unmount
         wsRef.current.close();
@@ -243,12 +279,13 @@ export default function LiveChatWidget() {
     if (!inputValue.trim() || !activeChat) return;
 
     const text = inputValue.trim();
+    const receiverId = activeChat.id;
 
-    // Optimistic update
+    // Optimistic update — show immediately in UI
     const tempMsg = {
       id: Date.now(),
       sender_id: user.id,
-      receiver_id: activeChat.id,
+      receiver_id: receiverId,
       text: text,
       created_at: new Date().toISOString(),
       is_read: false
@@ -256,18 +293,23 @@ export default function LiveChatWidget() {
     setMessages(prev => [...prev, tempMsg]);
     setInputValue('');
 
-    wsRef.current.send(JSON.stringify({
-      action: 'send_message',
-      receiver_id: activeChat.id,
-      text: text
-    }));
+    const payload = { action: 'send_message', receiver_id: receiverId, text: text };
+    const typingPayload = { action: 'typing', receiver_id: receiverId, is_typing: false };
 
-    // Stop typing
-    wsRef.current.send(JSON.stringify({
-      action: 'typing',
-      receiver_id: activeChat.id,
-      is_typing: false
-    }));
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      // Connected — send immediately
+      wsRef.current.send(JSON.stringify(payload));
+      wsRef.current.send(JSON.stringify(typingPayload));
+    } else {
+      // Not connected — queue message and reconnect immediately
+      pendingMessagesRef.current.push(payload);
+      // Trigger immediate reconnect (bypass the 3s delay)
+      if (reconnectTimerRef.current) {
+        clearTimeout(reconnectTimerRef.current);
+        reconnectTimerRef.current = null;
+      }
+      if (connectWSRef.current) connectWSRef.current();
+    }
   };
 
   const handleTyping = (e) => {

@@ -883,6 +883,19 @@ export default function TicketsPage() {
   useEffect(() => { fetchTickets(); }, [fetchTickets]);
   useEffect(() => { fetchCounts(); }, [fetchCounts]);
 
+  // Real-time: auto-refresh when admin receives a ticket_created notification
+  useEffect(() => {
+    const handleNewTicket = (event) => {
+      const data = event.detail;
+      if (data?.type === 'ticket_created' || data?.notification_type === 'ticket_created') {
+        fetchTickets();
+        fetchCounts();
+      }
+    };
+    window.addEventListener('admin_notification_received', handleNewTicket);
+    return () => window.removeEventListener('admin_notification_received', handleNewTicket);
+  }, [fetchTickets, fetchCounts]);
+
   // Debounce search
   useEffect(() => {
     const t = setTimeout(() => { setPage(1); fetchTickets(); }, 400);

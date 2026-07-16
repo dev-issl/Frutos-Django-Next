@@ -208,14 +208,51 @@ export default function ProfileClient({
     // SSE connection for instant badge updates
     let es = null
     let retryTimeout = null
+    function playNotifSound() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)()
+        // First tone
+        const osc1 = ctx.createOscillator()
+        const gain1 = ctx.createGain()
+        osc1.type = 'sine'
+        osc1.frequency.setValueAtTime(880, ctx.currentTime)  // A5
+        gain1.gain.setValueAtTime(0.4, ctx.currentTime)
+        gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3)
+        osc1.connect(gain1)
+        gain1.connect(ctx.destination)
+        osc1.start(ctx.currentTime)
+        osc1.stop(ctx.currentTime + 0.3)
+        // Second tone (slightly lower, delayed)
+        const osc2 = ctx.createOscillator()
+        const gain2 = ctx.createGain()
+        osc2.type = 'sine'
+        osc2.frequency.setValueAtTime(660, ctx.currentTime + 0.15)  // E5
+        gain2.gain.setValueAtTime(0.3, ctx.currentTime + 0.15)
+        gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5)
+        osc2.connect(gain2)
+        gain2.connect(ctx.destination)
+        osc2.start(ctx.currentTime + 0.15)
+        osc2.stop(ctx.currentTime + 0.5)
+      } catch { /* browser may block audio before user gesture */ }
+    }
     function connectSSE() {
       const token = localStorage.getItem('access_token')
       if (!token) return
       const url = `${API_BASE}/auth/notifications/stream/?token=${encodeURIComponent(token)}`
       es = new EventSource(url)
-      es.onmessage = () => {
-        // Any new notification → increment badge immediately
-        setUnreadCount(prev => prev + 1)
+      es.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data)
+          // Ignore heartbeats
+          if (!data || !data.id) return
+          // Play sound
+          playNotifSound()
+          // Increment badge
+          setUnreadCount(prev => prev + 1)
+        } catch {
+          // Fallback: still increment badge even if parse fails
+          setUnreadCount(prev => prev + 1)
+        }
       }
       es.onerror = () => {
         es.close()

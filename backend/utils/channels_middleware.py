@@ -35,7 +35,10 @@ class TokenAuthMiddleware:
                 # Decode the token payload
                 decoded_data = jwt_decode(token, settings.SECRET_KEY, algorithms=["HS256"])
                 scope['user'] = await get_user(decoded_data)
-            except (InvalidToken, TokenError, Exception) as e:
+            except Exception as e:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"WebSocket token auth failed: {e}")
                 scope['user'] = AnonymousUser()
         else:
             scope['user'] = AnonymousUser()

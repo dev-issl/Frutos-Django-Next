@@ -316,12 +316,6 @@ export async function getProductBySlug(slug, options = {}) {
     }
     try {
         const data = await apiFetch(`${PRODUCT_ENDPOINT}/${slug}/`, fetchOptions)
-        console.log(`[getProductBySlug] Fetched data for ${slug}:`, {
-            hasWholesalePrice: !!data.wholesale_price,
-            wholesalePriceVal: data.wholesale_price,
-            isApprovedWholesaler: data._user_context?.is_approved_wholesaler,
-            tokenPassed: !!options.token
-        })
         return {
             ...normalizeProduct(data),
             related: toArray(data.related).map(normalizeProduct),

@@ -458,6 +458,21 @@ export default function NotificationsTab({ authFetch, initialNotifications = nul
       es.onmessage = (event) => {
         try {
           const notif = JSON.parse(event.data)
+          // Play a pleasant two-tone notification sound
+          try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)()
+            const osc1 = ctx.createOscillator(); const g1 = ctx.createGain()
+            osc1.type = 'sine'; osc1.frequency.setValueAtTime(880, ctx.currentTime)
+            g1.gain.setValueAtTime(0.4, ctx.currentTime); g1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3)
+            osc1.connect(g1); g1.connect(ctx.destination)
+            osc1.start(ctx.currentTime); osc1.stop(ctx.currentTime + 0.3)
+            const osc2 = ctx.createOscillator(); const g2 = ctx.createGain()
+            osc2.type = 'sine'; osc2.frequency.setValueAtTime(660, ctx.currentTime + 0.15)
+            g2.gain.setValueAtTime(0.3, ctx.currentTime + 0.15); g2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5)
+            osc2.connect(g2); g2.connect(ctx.destination)
+            osc2.start(ctx.currentTime + 0.15); osc2.stop(ctx.currentTime + 0.5)
+          } catch { /* browser may block before user gesture */ }
+
           setNotifs(prev => {
             // avoid exact duplicates
             if (prev.some(n => n.id === notif.id)) return prev

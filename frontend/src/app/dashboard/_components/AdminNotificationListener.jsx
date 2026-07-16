@@ -20,29 +20,23 @@ export default function AdminNotificationListener() {
     const token = getCookie("access_token");
     if (!token) return;
 
-    // Use Web Audio API to generate a beep sound
+    // Pleasant two-tone "ding" sound — same as user notification
     const playNotificationSound = () => {
       try {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = audioCtx.createOscillator();
-        const gainNode = audioCtx.createGain();
-        
-        oscillator.type = "sine";
-        // Slightly different pitch from announcement to distinguish
-        oscillator.frequency.setValueAtTime(660, audioCtx.currentTime); // E5 note
-        oscillator.frequency.exponentialRampToValueAtTime(330, audioCtx.currentTime + 0.5);
-        
-        gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
-        
-        oscillator.start();
-        oscillator.stop(audioCtx.currentTime + 0.5);
-      } catch (err) {
-        console.error("Failed to play notification sound", err);
-      }
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        // First tone: A5
+        const osc1 = ctx.createOscillator(); const g1 = ctx.createGain();
+        osc1.type = 'sine'; osc1.frequency.setValueAtTime(880, ctx.currentTime);
+        g1.gain.setValueAtTime(0.4, ctx.currentTime); g1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+        osc1.connect(g1); g1.connect(ctx.destination);
+        osc1.start(ctx.currentTime); osc1.stop(ctx.currentTime + 0.3);
+        // Second tone: E5 (slightly delayed)
+        const osc2 = ctx.createOscillator(); const g2 = ctx.createGain();
+        osc2.type = 'sine'; osc2.frequency.setValueAtTime(660, ctx.currentTime + 0.15);
+        g2.gain.setValueAtTime(0.3, ctx.currentTime + 0.15); g2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+        osc2.connect(g2); g2.connect(ctx.destination);
+        osc2.start(ctx.currentTime + 0.15); osc2.stop(ctx.currentTime + 0.5);
+      } catch { /* browser may block audio before user gesture */ }
     };
 
     let es = null;
@@ -58,8 +52,8 @@ export default function AdminNotificationListener() {
       };
 
       es.onmessage = (event) => {
-        // Ignored heartbeats
-        if (event.data === "heartbeat" || !event.data) return;
+        // Ignore SSE comment-style heartbeats and empty events
+        if (!event.data || event.data.trim() === '' || event.data.includes('heartbeat')) return;
 
         try {
           const data = JSON.parse(event.data);
@@ -88,8 +82,8 @@ export default function AdminNotificationListener() {
         }
       };
 
-      es.onerror = (err) => {
-        console.error("SSE error, attempting reconnect", err);
+      es.onerror = () => {
+        // Do not use console.error — triggers Next.js dev error overlay
         es.close();
         reconnectTimer = setTimeout(connect, 5000);
       };
