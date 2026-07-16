@@ -366,6 +366,16 @@ class SupportTicketSerializer(serializers.ModelSerializer):
             images = request.FILES.getlist('images')
             for image in images:
                 SupportTicketImage.objects.create(ticket=ticket, image=image)
+
+        # Send admin notification for the new ticket
+        from accounts.notifications import send_admin_notification
+        sender_name = request.user.get_full_name() if hasattr(request.user, 'get_full_name') and request.user.get_full_name().strip() else request.user.email
+        send_admin_notification(
+            notification_type='ticket_created',
+            title='New Support Ticket',
+            message=f'User {sender_name} submitted a new support ticket: "{ticket.subject}".',
+            metadata={'ticket_id': ticket.id, 'icon': 'support_agent'}
+        )
                 
         return ticket
 

@@ -134,11 +134,21 @@ export default function Header({ onMenuClick }) {
   }, [showNotifications]);
 
   // Get unread notification count
-  const { data: unreadData } = useSWR(
+  const { data: unreadData, mutate: mutateUnread } = useSWR(
     "header-unread-notifications-admin",
     () => api.get("/api/auth/notifications/unread-count/?context=dashboard"),
     { revalidateOnFocus: true, refreshInterval: 10000, dedupingInterval: 5000 }
   );
+
+  useEffect(() => {
+    const handleNewNotif = () => {
+      mutateUnread();
+      // Also mutate the dropdown notifications list if it's open or cached
+      import('swr').then(({ mutate }) => mutate("header-notifications-admin"));
+    };
+    window.addEventListener('admin_notification_received', handleNewNotif);
+    return () => window.removeEventListener('admin_notification_received', handleNewNotif);
+  }, [mutateUnread]);
   const unreadCount = unreadData?.unreadCount || unreadData?.unread_count || 0;
 
   return (

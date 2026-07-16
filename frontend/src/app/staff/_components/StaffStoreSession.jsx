@@ -252,23 +252,23 @@ function StoreOrderHistoryTab({ profile, storeId }) {
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-5 gap-3">
+      <div className="flex flex-wrap gap-2.5">
         {statCards.map(card => (
           <button key={card.label} onClick={() => setStatusFilter(card.key)}
-            className={`${card.bg} border ${card.border} rounded-xl p-3 text-center cursor-pointer transition-all hover:shadow-sm ${statusFilter === card.key ? "ring-2 ring-[#00694C]/30 shadow-sm" : ""}`}>
-            <div className={`text-xl font-bold ${card.color}`}>{card.value}</div>
-            <div className="text-[10px] font-semibold text-slate-500 mt-0.5">{card.label}</div>
+            className={`flex-1 min-w-[100px] sm:min-w-[120px] ${card.bg} border ${card.border} rounded-xl p-2.5 sm:p-3 text-center cursor-pointer transition-all hover:shadow-sm ${statusFilter === card.key ? "ring-2 ring-[#00694C]/30 shadow-sm" : ""}`}>
+            <div className={`text-lg sm:text-xl font-bold ${card.color}`}>{card.value}</div>
+            <div className="text-[10px] font-semibold text-slate-500 mt-1">{card.label}</div>
           </button>
         ))}
       </div>
 
-      <div className="flex justify-between items-center">
-        <p className="text-sm text-slate-500">Orders created by you{statusFilter ? ` · ${statusFilter.toLowerCase()}` : ""}</p>
-        <div className="flex items-center gap-2">
-          <button onClick={() => mutate()} className="p-2 rounded-xl hover:bg-slate-100 text-slate-500 transition-colors cursor-pointer"><RefreshCw className="w-4 h-4" /></button>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0">
+        <p className="text-xs sm:text-sm text-slate-500">Orders created by you{statusFilter ? ` · ${statusFilter.toLowerCase()}` : ""}</p>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <button onClick={() => mutate()} className="p-2 rounded-xl hover:bg-slate-100 text-slate-500 transition-colors cursor-pointer shrink-0"><RefreshCw className="w-4 h-4" /></button>
           {profile?.can_create_orders && (
             <button onClick={() => setShowCreate(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-[#00694C] hover:bg-[#00593E] text-white text-sm font-semibold rounded-xl transition-all cursor-pointer shadow-sm">
+              className="flex-1 sm:flex-none justify-center flex items-center gap-2 px-4 py-2 bg-[#00694C] hover:bg-[#00593E] text-white text-sm font-semibold rounded-xl transition-all cursor-pointer shadow-sm">
               <ShoppingCart className="w-4 h-4" /> Create Order
             </button>
           )}
@@ -285,8 +285,9 @@ function StoreOrderHistoryTab({ profile, storeId }) {
         </div>
       ) : (
         <div className={`bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden transition-opacity duration-300 ${isValidating ? 'opacity-50 pointer-events-none' : ''}`}>
-          <table className="w-full text-sm">
-            <thead>
+          <div className="overflow-x-auto w-full db-scroll">
+            <table className="w-full text-sm min-w-[700px]">
+              <thead>
               <tr className="bg-slate-50 border-b border-slate-100">
                 {["Order #","Customer","Products","Total","Status","Payment","Date"].map(h => (
                   <th key={h} className="text-left px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wide">{h}</th>
@@ -317,7 +318,8 @@ function StoreOrderHistoryTab({ profile, storeId }) {
                 </tr>
               ))}
             </tbody>
-          </table>
+            </table>
+          </div>
           <div className="px-4 py-3 border-t border-slate-100 text-xs text-slate-400">
             {orders.length} order{orders.length !== 1 ? "s" : ""}
           </div>
@@ -329,9 +331,11 @@ function StoreOrderHistoryTab({ profile, storeId }) {
           <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto db-scroll shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="p-6 border-b border-slate-100 flex justify-between items-center">
               <h2 className="text-lg font-bold text-slate-800">Create Manual Order</h2>
-              <button onClick={() => setShowCreate(false)} className="text-2xl text-slate-400 hover:text-slate-600 cursor-pointer leading-none">×</button>
+              <button onClick={() => setShowCreate(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 transition-colors cursor-pointer border border-slate-200/50 shadow-sm leading-none text-xl font-medium pb-0.5">
+                ×
+              </button>
             </div>
-            <div className="p-6"><AdminCreateOrder storeId={storeId} onSuccess={() => { setShowCreate(false); mutate(); }} /></div>
+            <div className="p-6"><AdminCreateOrder storeId={storeId} onBack={() => setShowCreate(false)} onSuccess={() => { setShowCreate(false); mutate(); }} /></div>
           </div>
         </div>
       )}
@@ -423,9 +427,9 @@ export default function StaffStoreSession({ store, profile, sessionStartTime, cu
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold whitespace-nowrap transition-all cursor-pointer ${activeTab === tab.id ? 'bg-[#00694C] text-white shadow-md' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200 hover:border-[#00694C]/30'}`}
+            className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold whitespace-nowrap transition-all cursor-pointer shrink-0 ${activeTab === tab.id ? 'bg-[#00694C] text-white shadow-md' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200 hover:border-[#00694C]/30'}`}
           >
-            <tab.icon className={`w-4 h-4 ${activeTab === tab.id ? 'text-white' : 'text-slate-400'}`} />
+            <tab.icon className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${activeTab === tab.id ? 'text-white' : 'text-slate-400'}`} />
             {tab.label}
           </button>
         ))}

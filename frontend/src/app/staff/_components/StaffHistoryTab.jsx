@@ -209,18 +209,18 @@ export default function StaffHistoryTab() {
       </div>
 
       {/* Summary Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-gradient-to-br from-[#00694C] to-[#00896A] rounded-2xl p-5 text-white shadow-md">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+        <div className="col-span-2 sm:col-span-1 bg-gradient-to-br from-[#00694C] to-[#00896A] rounded-2xl p-5 text-white shadow-md">
           <div className="text-3xl font-bold mb-1">{formatHours(totalHours)}</div>
           <div className="text-white/70 text-xs font-semibold uppercase tracking-widest">Total Time</div>
         </div>
-        <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm">
-          <div className="text-3xl font-bold text-[#004A3A] mb-1">{totalShifts}</div>
-          <div className="text-slate-500 text-xs font-semibold uppercase tracking-widest">Total Shifts</div>
+        <div className="bg-white border border-slate-100 rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col justify-center">
+          <div className="text-2xl sm:text-3xl font-bold text-[#004A3A] mb-0.5 sm:mb-1">{totalShifts}</div>
+          <div className="text-slate-500 text-[10px] sm:text-xs font-semibold uppercase tracking-widest">Total Shifts</div>
         </div>
-        <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm">
-          <div className="text-3xl font-bold text-[#004A3A] mb-1">{storeList.length}</div>
-          <div className="text-slate-500 text-xs font-semibold uppercase tracking-widest">Stores Worked</div>
+        <div className="bg-white border border-slate-100 rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col justify-center">
+          <div className="text-2xl sm:text-3xl font-bold text-[#004A3A] mb-0.5 sm:mb-1">{storeList.length}</div>
+          <div className="text-slate-500 text-[10px] sm:text-xs font-semibold uppercase tracking-widest">Stores Worked</div>
         </div>
       </div>
 

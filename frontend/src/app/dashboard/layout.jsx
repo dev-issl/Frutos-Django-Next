@@ -7,6 +7,8 @@ import { ToastProvider } from "@/app/dashboard/_components/Toaster";
 import Sidebar from "@/app/dashboard/_components/Sidebar";
 import Header from "@/app/dashboard/_components/Header";
 import AnnouncementListener from "@/app/dashboard/_components/AnnouncementListener";
+import AdminNotificationListener from "@/app/dashboard/_components/AdminNotificationListener";
+import { Toaster } from "react-hot-toast";
 import "@/app/dashboard/dashboard.css";
 
 function DashboardShell({ children }) {
@@ -49,7 +51,9 @@ function DashboardShell({ children }) {
         )}
         <main className="flex-1 overflow-y-auto" style={{ scrollbarGutter: "stable" }}>{children}</main>
       </div>
+      <Toaster position="top-right" />
       <AnnouncementListener />
+      <AdminNotificationListener />
     </div>
   );
 }
