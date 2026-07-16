@@ -242,80 +242,80 @@ export default function DashboardHomePage() {
       </div>
 
       {/* Top 7 stat cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-4 mb-8">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-7 gap-3 sm:gap-4 mb-8">
         {statsLoading
           ? Array.from({ length: 7 }).map((_, i) => (
-            <div key={i} className="bg-white border border-slate-100 rounded-xl p-5 h-28 animate-pulse shadow-sm" />
+            <div key={i} className="bg-white border border-slate-100 rounded-xl p-4 sm:p-5 h-28 animate-pulse shadow-sm" />
           ))
           : <>
-            <Link href="/dashboard/users" className="bg-white rounded-xl p-5 shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md hover:-translate-y-1 transition-all">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-                  <Users className="w-5 h-5" />
+            <Link href="/dashboard/users" className="bg-white rounded-xl p-3 sm:p-4 shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md hover:-translate-y-1 transition-all min-w-0">
+              <div className="flex items-start sm:items-center gap-2 sm:gap-3 mb-2">
+                <div className="p-1.5 sm:p-2 bg-blue-50 text-blue-600 rounded-lg shrink-0">
+                  <Users className="w-4 h-4 sm:w-5 sm:h-5" />
                 </div>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Users</p>
+                <p className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider leading-tight line-clamp-2">Total Users</p>
               </div>
-              <p className="text-2xl font-black text-slate-800">{Number(stats?.total_users || 0).toLocaleString()}</p>
+              <p className="text-xl sm:text-2xl font-black text-slate-800 truncate">{Number(stats?.total_users || 0).toLocaleString()}</p>
             </Link>
 
-            <Link href="/dashboard/products" className="bg-white rounded-xl p-5 shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md hover:-translate-y-1 transition-all">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
-                  <Package className="w-5 h-5" />
+            <Link href="/dashboard/products" className="bg-white rounded-xl p-3 sm:p-4 shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md hover:-translate-y-1 transition-all min-w-0">
+              <div className="flex items-start sm:items-center gap-2 sm:gap-3 mb-2">
+                <div className="p-1.5 sm:p-2 bg-indigo-50 text-indigo-600 rounded-lg shrink-0">
+                  <Package className="w-4 h-4 sm:w-5 sm:h-5" />
                 </div>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Products</p>
+                <p className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider leading-tight line-clamp-2">Total Products</p>
               </div>
-              <p className="text-2xl font-black text-slate-800">{Number(stats?.total_products || 0).toLocaleString()}</p>
+              <p className="text-xl sm:text-2xl font-black text-slate-800 truncate">{Number(stats?.total_products || 0).toLocaleString()}</p>
             </Link>
 
-            <Link href="/dashboard/offers" className="bg-white rounded-xl p-5 shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md hover:-translate-y-1 transition-all">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 bg-fuchsia-50 text-fuchsia-600 rounded-lg">
-                  <Tag className="w-5 h-5" />
+            <Link href="/dashboard/offers" className="bg-white rounded-xl p-3 sm:p-4 shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md hover:-translate-y-1 transition-all min-w-0">
+              <div className="flex items-start sm:items-center gap-2 sm:gap-3 mb-2">
+                <div className="p-1.5 sm:p-2 bg-fuchsia-50 text-fuchsia-600 rounded-lg shrink-0">
+                  <Tag className="w-4 h-4 sm:w-5 sm:h-5" />
                 </div>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Active Offers</p>
+                <p className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider leading-tight line-clamp-2">Active Offers</p>
               </div>
-              <p className="text-2xl font-black text-slate-800">{activeOffers.length.toLocaleString()}</p>
+              <p className="text-xl sm:text-2xl font-black text-slate-800 truncate">{activeOffers.length.toLocaleString()}</p>
             </Link>
 
-            <Link href="/dashboard/leftover-packs" className="bg-white rounded-xl p-5 shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md hover:-translate-y-1 transition-all">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
-                  <Archive className="w-5 h-5" />
+            <Link href="/dashboard/leftover-packs" className="bg-white rounded-xl p-3 sm:p-4 shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md hover:-translate-y-1 transition-all min-w-0">
+              <div className="flex items-start sm:items-center gap-2 sm:gap-3 mb-2">
+                <div className="p-1.5 sm:p-2 bg-emerald-50 text-emerald-600 rounded-lg shrink-0">
+                  <Archive className="w-4 h-4 sm:w-5 sm:h-5" />
                 </div>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Leftover Packs</p>
+                <p className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider leading-tight line-clamp-2">Leftover Packs</p>
               </div>
-              <p className="text-2xl font-black text-slate-800">{leftoverPacks.length.toLocaleString()}</p>
+              <p className="text-xl sm:text-2xl font-black text-slate-800 truncate">{leftoverPacks.length.toLocaleString()}</p>
             </Link>
 
-            <Link href="/dashboard/orders" className="bg-white rounded-xl p-5 shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md hover:-translate-y-1 transition-all">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 bg-amber-50 text-amber-600 rounded-lg">
-                  <ShoppingCart className="w-5 h-5" />
+            <Link href="/dashboard/orders" className="bg-white rounded-xl p-3 sm:p-4 shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md hover:-translate-y-1 transition-all min-w-0">
+              <div className="flex items-start sm:items-center gap-2 sm:gap-3 mb-2">
+                <div className="p-1.5 sm:p-2 bg-amber-50 text-amber-600 rounded-lg shrink-0">
+                  <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5" />
                 </div>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Orders</p>
+                <p className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider leading-tight line-clamp-2">Total Orders</p>
               </div>
-              <p className="text-2xl font-black text-slate-800">{Number(stats?.total_orders || 0).toLocaleString()}</p>
+              <p className="text-xl sm:text-2xl font-black text-slate-800 truncate">{Number(stats?.total_orders || 0).toLocaleString()}</p>
             </Link>
 
-            <Link href="/dashboard/analytics" className="bg-white rounded-xl p-5 shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md hover:-translate-y-1 transition-all">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 bg-green-50 text-green-600 rounded-lg">
-                  <Euro className="w-5 h-5" />
+            <Link href="/dashboard/analytics" className="bg-white rounded-xl p-3 sm:p-4 shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md hover:-translate-y-1 transition-all min-w-0">
+              <div className="flex items-start sm:items-center gap-2 sm:gap-3 mb-2">
+                <div className="p-1.5 sm:p-2 bg-green-50 text-green-600 rounded-lg shrink-0">
+                  <Euro className="w-4 h-4 sm:w-5 sm:h-5" />
                 </div>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Revenue</p>
+                <p className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider leading-tight line-clamp-2">Revenue</p>
               </div>
-              <p className="text-2xl font-black text-green-600">€{Number(stats?.total_revenue || 0).toLocaleString()}</p>
+              <p className="text-xl sm:text-2xl font-black text-green-600 truncate">€{Number(stats?.total_revenue || 0).toLocaleString()}</p>
             </Link>
 
-            <Link href="/dashboard/analytics" className="bg-white rounded-xl p-5 shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md hover:-translate-y-1 transition-all">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 bg-amber-50 text-amber-600 rounded-lg">
-                  <Euro className="w-5 h-5" />
+            <Link href="/dashboard/analytics" className="bg-white rounded-xl p-3 sm:p-4 shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md hover:-translate-y-1 transition-all min-w-0">
+              <div className="flex items-start sm:items-center gap-2 sm:gap-3 mb-2">
+                <div className="p-1.5 sm:p-2 bg-amber-50 text-amber-600 rounded-lg shrink-0">
+                  <Euro className="w-4 h-4 sm:w-5 sm:h-5" />
                 </div>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Pending Amt</p>
+                <p className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider leading-tight line-clamp-2">Pending Amt</p>
               </div>
-              <p className="text-2xl font-black text-amber-600">€{Number(stats?.total_pending_amount || 0).toLocaleString()}</p>
+              <p className="text-xl sm:text-2xl font-black text-amber-600 truncate">€{Number(stats?.total_pending_amount || 0).toLocaleString()}</p>
             </Link>
           </>
         }
