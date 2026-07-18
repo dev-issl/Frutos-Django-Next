@@ -1,2 +1,6 @@
 backend/debug.log
 *.log
+
+# Production env files — never commit these!
+backend/.env.production
+frontend/.env.production

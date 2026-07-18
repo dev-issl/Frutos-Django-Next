@@ -11,12 +11,11 @@ if [ -d "/app/staticfiles" ]; then
     chown -R django:django /app/staticfiles || true
 fi
 
-# Run migrations and collectstatic as django user
+# Run migrations
 su-exec django python manage.py migrate --noinput
 
-if [ "$DJANGO_SETTINGS_MODULE" = "backend.settings" ]; then
-    su-exec django python manage.py collectstatic --noinput
-fi
+# Always collect static files in production container
+su-exec django python manage.py collectstatic --noinput --clear
 
 # Run the main command as django user
 exec su-exec django "$@"

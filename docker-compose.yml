@@ -34,14 +34,16 @@ services:
       context: ./backend
       target: production
     restart: always
-    command: gunicorn --bind 0.0.0.0:8000 --workers 3 --timeout 120 --access-logfile - --error-logfile - backend.wsgi:application
+    # daphne for ASGI/WebSocket support (replaces gunicorn)
+    command: daphne -b 0.0.0.0 -p 8000 backend.asgi:application
     env_file:
-      - ./backend/.env
+      - ./backend/.env.production
     environment:
       - DB_ENGINE=django.db.backends.postgresql
       - DB_HOST=db
       - DB_PORT=5432
       - REDIS_URL=redis://redis:6379/0
+      - DJANGO_SETTINGS_MODULE=backend.settings
     volumes:
       - static_volume:/app/staticfiles
       - media_volume:/app/mediafiles
@@ -60,7 +62,7 @@ services:
     restart: always
     command: celery -A backend worker -l info
     env_file:
-      - ./backend/.env
+      - ./backend/.env.production
     environment:
       - DB_ENGINE=django.db.backends.postgresql
       - DB_HOST=db
@@ -85,7 +87,7 @@ services:
     restart: always
     command: celery -A backend beat -l info
     env_file:
-      - ./backend/.env
+      - ./backend/.env.production
     environment:
       - DB_ENGINE=django.db.backends.postgresql
       - DB_HOST=db
@@ -106,12 +108,15 @@ services:
       context: ./frontend
       target: runner
       args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://elarbol.icommerce.com.bd/api}
+        # Build-time: public API URL must be the browser-accessible URL
+        NEXT_PUBLIC_SERVER_URL: https://elarbol.icommerce.com.bd
     restart: always
     env_file:
-      - ./frontend/.env.local
+      - ./frontend/.env.production
     environment:
-      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-https://elarbol.icommerce.com.bd/api}
+      # Runtime server-side API: use internal Docker network for SSR calls
+      - NEXT_PUBLIC_API_URL=http://backend:8000/api
+      - NODE_ENV=production
     networks:
       - app_network
 
@@ -120,6 +125,7 @@ services:
     restart: always
     ports:
       - "80:80"
+      - "443:443"
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
       - static_volume:/app/backend/staticfiles:ro
