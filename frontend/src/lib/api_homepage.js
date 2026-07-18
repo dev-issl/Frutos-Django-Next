@@ -8,7 +8,7 @@
  *   src/app/config/homepageIcons.jsx
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'
+const API_BASE = process.env.NEXT_PUBLIC_API_URL
 
 const DEFAULT_MOBILE_IMAGE = 'https://images.unsplash.com/photo-1546094096-0df4bcaaa337?w=800&auto=format&fit=crop'
 const DEFAULT_DESKTOP_IMAGE = '/homepage/hero_image.png'

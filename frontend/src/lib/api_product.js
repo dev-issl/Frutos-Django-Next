@@ -115,7 +115,7 @@
  */
 
 const PLACEHOLDER = 'https://placehold.co/400x400/ECF7E4/00694C?text=No+Image'
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'
+const API_BASE = process.env.NEXT_PUBLIC_API_URL
 const MEDIA_BASE = API_BASE.replace('/api', '')
 
 const BASE_ROUTE = '/products'

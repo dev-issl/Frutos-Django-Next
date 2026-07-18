@@ -21,8 +21,8 @@ export default async function HomePage() {
 
   // Fetch all data in parallel
   const [products, categories, homepageData, offers] = await Promise.all([
-    getProducts({ token }).catch((err) => { console.error('getProducts failed:', err); return [] }),
-    getCategories().catch((err) => { console.error('getCategories failed:', err); return [] }),
+    getProducts({ token }),
+    getCategories(),
     getHomepageData(),
     getOffers().catch(() => []), // fallback in case API isn't ready
   ])

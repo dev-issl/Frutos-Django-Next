@@ -21,8 +21,8 @@ export default async function MarketPage() {
   const catalogUrl = `${API_URL}/api/website/site-settings/?group=catalog`
 
   const [products, categoryObjects, catalogRes] = await Promise.all([
-    getProducts({ token }).catch((err) => { console.error('getProducts failed:', err); return [] }),
-    getCategoryObjects().catch((err) => { console.error('getCategoryObjects failed:', err); return [] }),
+    getProducts({ token }),
+    getCategoryObjects(),
     fetch(catalogUrl, { cache: 'no-store' }).catch(() => null)
   ])
 
