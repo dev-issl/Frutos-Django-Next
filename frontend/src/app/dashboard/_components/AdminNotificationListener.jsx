@@ -20,23 +20,36 @@ export default function AdminNotificationListener() {
     const token = getCookie("access_token");
     if (!token) return;
 
-    // Pleasant two-tone "ding" sound — same as user notification
+    // Real notification sound — WAV file preloaded from /public/
+    const notifAudio = new Audio('/notification.wav');
+    notifAudio.preload = 'auto';
+    notifAudio.volume = 0.8;
+
     const playNotificationSound = () => {
       try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        // First tone: A5
-        const osc1 = ctx.createOscillator(); const g1 = ctx.createGain();
-        osc1.type = 'sine'; osc1.frequency.setValueAtTime(880, ctx.currentTime);
-        g1.gain.setValueAtTime(0.4, ctx.currentTime); g1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
-        osc1.connect(g1); g1.connect(ctx.destination);
-        osc1.start(ctx.currentTime); osc1.stop(ctx.currentTime + 0.3);
-        // Second tone: E5 (slightly delayed)
-        const osc2 = ctx.createOscillator(); const g2 = ctx.createGain();
-        osc2.type = 'sine'; osc2.frequency.setValueAtTime(660, ctx.currentTime + 0.15);
-        g2.gain.setValueAtTime(0.3, ctx.currentTime + 0.15); g2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
-        osc2.connect(g2); g2.connect(ctx.destination);
-        osc2.start(ctx.currentTime + 0.15); osc2.stop(ctx.currentTime + 0.5);
-      } catch { /* browser may block audio before user gesture */ }
+        notifAudio.currentTime = 0;
+        notifAudio.play().catch(() => {
+          // Fallback: AudioContext synth
+          try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const resume = ctx.state === 'suspended' ? ctx.resume() : Promise.resolve();
+            resume.then(() => {
+              const t = ctx.currentTime;
+              const addTone = (freq, start, amp, decay) => {
+                const osc = ctx.createOscillator(); const g = ctx.createGain();
+                osc.type = 'sine'; osc.frequency.setValueAtTime(freq, start);
+                g.gain.setValueAtTime(0.001, start);
+                g.gain.linearRampToValueAtTime(amp, start + 0.004);
+                g.gain.exponentialRampToValueAtTime(0.001, start + decay);
+                osc.connect(g); g.connect(ctx.destination);
+                osc.start(start); osc.stop(start + decay + 0.05);
+              };
+              addTone(880,    t,        0.6, 0.22);
+              addTone(1108.7, t + 0.13, 0.5, 0.28);
+            });
+          } catch { /* silent */ }
+        });
+      } catch { /* silent */ }
     };
 
     let es = null;

@@ -87,35 +87,42 @@ export default function LiveChatWidget() {
     };
   }, [isOpen]);
 
+  // Preload real notification sound once (WAV file in /public/)
+  const notifAudioRef = useRef(null);
+  useEffect(() => {
+    notifAudioRef.current = new Audio('/notification.wav');
+    notifAudioRef.current.preload = 'auto';
+    notifAudioRef.current.volume = 0.8;
+    return () => { notifAudioRef.current = null; };
+  }, []);
+
   const playSound = useCallback(() => {
     try {
-      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      
-      const playNote = (freq, startTime) => {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        
-        osc.type = "sine";
-        osc.frequency.setValueAtTime(freq, startTime);
-        
-        // Percussive envelope for an organic "tap/chime" sound
-        gain.gain.setValueAtTime(0, startTime);
-        gain.gain.linearRampToValueAtTime(0.5, startTime + 0.01);
-        gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.25);
-        
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        
-        osc.start(startTime);
-        osc.stop(startTime + 0.3);
-      };
-
-      // Play a pleasant double-chime (like a modern smartphone chat notification)
-      playNote(1046.50, audioCtx.currentTime);       // C6
-      playNote(1318.51, audioCtx.currentTime + 0.12); // E6
-    } catch (e) {
-      console.log('Audio error', e);
-    }
+      if (notifAudioRef.current) {
+        notifAudioRef.current.currentTime = 0;
+        notifAudioRef.current.play().catch(() => {
+          // Fallback: AudioContext synth (if Audio element blocked)
+          try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const resume = ctx.state === 'suspended' ? ctx.resume() : Promise.resolve();
+            resume.then(() => {
+              const t = ctx.currentTime;
+              const addTone = (freq, start, amp, decay) => {
+                const osc = ctx.createOscillator(); const g = ctx.createGain();
+                osc.type = 'sine'; osc.frequency.setValueAtTime(freq, start);
+                g.gain.setValueAtTime(0.001, start);
+                g.gain.linearRampToValueAtTime(amp, start + 0.004);
+                g.gain.exponentialRampToValueAtTime(0.001, start + decay);
+                osc.connect(g); g.connect(ctx.destination);
+                osc.start(start); osc.stop(start + decay + 0.05);
+              };
+              addTone(880,    t,        0.6, 0.22);
+              addTone(1108.7, t + 0.13, 0.5, 0.28);
+            });
+          } catch { /* silent */ }
+        });
+      }
+    } catch { /* silent */ }
   }, []);
 
   const fetchContacts = useCallback(async () => {
@@ -204,24 +211,28 @@ export default function LiveChatWidget() {
             return;
           }
 
-          setActiveChat(prevActive => {
-            if (prevActive && String(prevActive.id) === String(msg.sender_id)) {
-              setMessages(prev => {
-                if (prev.some(m => m.id === msg.id)) return prev;
-                return [...prev, msg];
-              });
-              if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-                wsRef.current.send(JSON.stringify({
-                  action: 'mark_read',
-                  sender_id: msg.sender_id
-                }));
+          setIsOpen(prevIsOpen => {
+            setActiveChat(prevActive => {
+              // Only suppress sound when widget IS open AND this exact chat is active
+              const chatIsVisible = prevIsOpen && prevActive && String(prevActive.id) === String(msg.sender_id);
+              if (chatIsVisible) {
+                setMessages(prev => {
+                  if (prev.some(m => m.id === msg.id)) return prev;
+                  return [...prev, msg];
+                });
+                if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+                  wsRef.current.send(JSON.stringify({
+                    action: 'mark_read',
+                    sender_id: msg.sender_id
+                  }));
+                }
+              } else {
+                playSound();
+                fetchContacts();
               }
               return prevActive;
-            } else {
-              playSound();
-              fetchContacts();
-              return prevActive;
-            }
+            });
+            return prevIsOpen;
           });
 
         } else if (data.action === 'typing') {
