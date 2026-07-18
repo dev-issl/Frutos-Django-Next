@@ -2,7 +2,6 @@
 
 import django.db.models.deletion
 import django.utils.timezone
-import uuid
 from django.db import migrations, models
 
 
@@ -21,7 +20,7 @@ class Migration(migrations.Migration):
                 ('password', models.CharField(max_length=128, verbose_name='password')),
                 ('last_login', models.DateTimeField(blank=True, null=True, verbose_name='last login')),
                 ('is_superuser', models.BooleanField(default=False, help_text='Designates that this user has all permissions without explicitly assigning them.', verbose_name='superuser status')),
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('email', models.EmailField(db_index=True, max_length=254, unique=True)),
                 ('business_name', models.CharField(max_length=200)),
                 ('contact_name', models.CharField(max_length=200)),
