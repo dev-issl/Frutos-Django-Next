@@ -3,6 +3,18 @@
 from django.db import migrations
 
 
+def drop_serial_number_if_exists(apps, schema_editor):
+    with schema_editor.connection.cursor() as cursor:
+        try:
+            if schema_editor.connection.vendor == 'postgresql':
+                cursor.execute('ALTER TABLE "wholesale_wholesaleuser" DROP COLUMN IF EXISTS "serial_number" CASCADE;')
+            elif schema_editor.connection.vendor == 'sqlite':
+                # SQLite doesn't support DROP COLUMN IF EXISTS. Let's just try to drop it.
+                cursor.execute('ALTER TABLE "wholesale_wholesaleuser" DROP COLUMN "serial_number";')
+        except Exception:
+            # Ignore if column doesn't exist
+            pass
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -10,8 +22,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunSQL(
-            'ALTER TABLE "wholesale_wholesaleuser" DROP COLUMN IF EXISTS "serial_number" CASCADE;',
-            reverse_sql=migrations.RunSQL.noop
-        )
+        migrations.RunPython(drop_serial_number_if_exists, reverse_code=migrations.RunPython.noop),
     ]
