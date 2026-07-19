@@ -916,10 +916,29 @@ class AdminUserDetailView(generics.RetrieveUpdateDestroyAPIView):
         pk = str(self.kwargs.get('pk'))
         if pk.startswith('ws_'):
             from wholesale.models import WholesaleUser
-            from rest_framework.generics import get_object_or_404
-            real_id = pk.replace('ws_', '')
-            return get_object_or_404(WholesaleUser, pk=real_id)
-        
+            real_id = pk.replace('ws_', '', 1)
+            import uuid as uuid_lib
+
+            # Try UUID lookup first (handles UUID primary key columns)
+            try:
+                uuid_val = uuid_lib.UUID(real_id)
+                obj = WholesaleUser.objects.filter(id=uuid_val).first()
+                if obj:
+                    return obj
+            except (ValueError, AttributeError):
+                pass
+
+            # Fallback: direct pk lookup (integer / bigint columns)
+            try:
+                obj = WholesaleUser.objects.filter(pk=real_id).first()
+                if obj:
+                    return obj
+            except Exception:
+                pass
+
+            from django.http import Http404
+            raise Http404(f"WholesaleUser '{real_id}' not found.")
+
         from rest_framework.generics import get_object_or_404
         return get_object_or_404(User, pk=pk)
 
