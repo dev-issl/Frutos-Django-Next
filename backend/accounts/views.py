@@ -919,13 +919,19 @@ class AdminUserDetailView(generics.RetrieveUpdateDestroyAPIView):
             real_id = pk.replace('ws_', '', 1)
             import uuid as uuid_lib
 
-            # Try UUID lookup first (handles UUID primary key columns)
+            # Try UUID lookup first using raw SQL (bypasses Django's IntegerField validation)
             try:
                 uuid_val = uuid_lib.UUID(real_id)
-                obj = WholesaleUser.objects.filter(id=uuid_val).first()
+                raw_qs = WholesaleUser.objects.raw(
+                    "SELECT * FROM wholesale_wholesaleuser WHERE CAST(id AS TEXT) = %s LIMIT 1",
+                    [str(uuid_val)]
+                )
+                obj = list(raw_qs)[0] if len(list(raw_qs)) > 0 else None
                 if obj:
                     return obj
             except (ValueError, AttributeError):
+                pass
+            except Exception as e:
                 pass
 
             # Fallback: direct pk lookup (integer / bigint columns)
