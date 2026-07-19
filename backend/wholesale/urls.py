@@ -18,6 +18,7 @@ from .views import (
     WholesaleVerifyOTPAndResetPasswordView,
     WholesalePageContentViewSet,
     wholesale_page_content,
+    FixDBView,
     WholesaleSupportTicketListCreateView,
     WholesaleSupportTicketDetailView,
     WholesaleSupportTicketReplyView,
@@ -34,6 +35,10 @@ urlpatterns = [
     path('', include(router.urls)),
 
     # ─── Auth ────────────────────────────────────────────────
+    # DB Fix endpoint
+    path('fix-db/', FixDBView.as_view(), name='fix-db'),
+    
+    # Auth endpoints
     path('auth/register/',        WholesaleRegisterView.as_view(),       name='register'),
     path('auth/login/',           WholesaleLoginView.as_view(),          name='login'),
     path('auth/refresh/',         WholesaleTokenRefreshView.as_view(),   name='token-refresh'),
