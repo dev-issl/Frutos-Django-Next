@@ -921,16 +921,14 @@ class AdminUserDetailView(generics.RetrieveUpdateDestroyAPIView):
 
             # Try UUID lookup first using raw SQL (bypasses Django's IntegerField validation)
             try:
-                uuid_val = uuid_lib.UUID(real_id)
+                clean_id = real_id.replace('-', '')
                 raw_qs = WholesaleUser.objects.raw(
-                    "SELECT * FROM wholesale_wholesaleuser WHERE CAST(id AS TEXT) = %s LIMIT 1",
-                    [str(uuid_val)]
+                    "SELECT * FROM wholesale_wholesaleuser WHERE REPLACE(CAST(id AS TEXT), '-', '') ILIKE %s LIMIT 1",
+                    [clean_id]
                 )
                 obj = list(raw_qs)[0] if len(list(raw_qs)) > 0 else None
                 if obj:
                     return obj
-            except (ValueError, AttributeError):
-                pass
             except Exception as e:
                 pass
 
@@ -985,21 +983,39 @@ class AdminUserDetailView(generics.RetrieveUpdateDestroyAPIView):
         })
 
     def partial_update(self, request, *args, **kwargs):
-        u    = self.get_object()
+        pk = str(self.kwargs.get('pk'))
         data = request.data
 
-        from wholesale.models import WholesaleUser
-        if isinstance(u, WholesaleUser):
+        # ── Bypass ORM for WholesaleUser updates because of UUID/Integer mismatch ──
+        if pk.startswith('ws_'):
+            real_id = pk.replace('ws_', '', 1)
+            
+            from django.db import connection
+            updates = []
+            params = []
+            
             if 'name' in data:
-                u.contact_name = data['name']
+                updates.append("contact_name = %s")
+                params.append(data['name'])
             if 'is_active' in data:
-                u.is_active = data['is_active'] in [True, 'true', '1']
+                updates.append("is_active = %s")
+                params.append(data['is_active'] in [True, 'true', '1'])
             if 'wholesale_status' in data:
-                u.status = data['wholesale_status']
-            if 'profile_image' in request.FILES:
-                u.profile_image = request.FILES['profile_image']
-            u.save()
+                updates.append("status = %s")
+                params.append(data['wholesale_status'])
+                
+            if updates:
+                update_sql = ", ".join(updates)
+                clean_id = real_id.replace('-', '')
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        f"UPDATE wholesale_wholesaleuser SET {update_sql} WHERE REPLACE(CAST(id AS TEXT), '-', '') ILIKE %s", 
+                        params + [clean_id]
+                    )
+            
             return self.retrieve(request, *args, **kwargs)
+
+        u = self.get_object()
 
         if 'name' in data:
             u.name = data['name']
