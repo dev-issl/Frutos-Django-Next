@@ -151,7 +151,8 @@ class ChangePasswordView(APIView):
         serializer = ChangePasswordSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             request.user.set_password(serializer.validated_data['new_password'])
-            request.user.save(update_fields=['password'])
+            # Bypass user.save() to avoid UUID/Integer DB mismatch on ID
+            WholesaleUser.objects.filter(email=request.user.email).update(password=request.user.password)
             return Response({'message': 'Password changed successfully.'})
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -300,7 +301,8 @@ class WholesaleVerifyOTPAndResetPasswordView(APIView):
         try:
             user = WholesaleUser.objects.get(email__iexact=email)
             user.set_password(password)
-            user.save()
+            # Bypass user.save() to avoid UUID/Integer DB mismatch on ID
+            WholesaleUser.objects.filter(email__iexact=email).update(password=user.password)
             record.is_used = True
             record.save()
             return Response({'detail': 'Password reset successful.'})
