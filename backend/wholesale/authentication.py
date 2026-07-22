@@ -46,7 +46,7 @@ class WholesaleJWTAuthentication(BaseAuthentication):
 
         except (InvalidToken, TokenError):
             raise AuthenticationFailed('Token expired. Please log in again.')
-        except (WholesaleUser.DoesNotExist, ValueError):
+        except (WholesaleUser.DoesNotExist, ValueError, AttributeError, TypeError):
             raise AuthenticationFailed('User not found or invalid token format.')
 
     def authenticate_header(self, request):
