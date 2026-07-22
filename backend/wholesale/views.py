@@ -22,9 +22,7 @@ from .permissions import IsWholesaleUser
 
 
 def get_tokens_for_user(user):
-    import uuid
-    # Ensure user_id is an integer string even if user.id is a UUID object
-    user_id_str = str(user.id.int) if isinstance(user.id, uuid.UUID) else str(user.id)
+    user_id_str = str(user.id)
 
     refresh = RefreshToken()
     refresh['token_type'] = 'refresh'
