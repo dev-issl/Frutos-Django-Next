@@ -206,7 +206,7 @@ export async function wholesaleRegister(payload) {
         if (!data || typeof data !== 'object') {
             throw { detail: String(data) || `HTTP ${res.status}` }
         }
-        if (!data.detail && !data.error) {
+        if (!data.detail && !data.error && Object.keys(data).length === 0) {
             data.detail = `HTTP ${res.status}: ${res.statusText}`
         }
         throw data

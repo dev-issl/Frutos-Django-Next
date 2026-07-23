@@ -62,7 +62,6 @@ class WholesaleUser(AbstractBaseUser, PermissionsMixin):
         related_query_name='wholesale_user',
         verbose_name='user permissions',
     )
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(unique=True, db_index=True)
 
     # Business info

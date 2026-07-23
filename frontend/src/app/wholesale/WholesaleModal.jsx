@@ -407,7 +407,7 @@ export default function WholesaleModal({ isOpen, onClose }) {
 
       if (Object.keys(backendErrors).length) {
         setErrors(prev => ({ ...prev, ...backendErrors }))
-        setServerError(message || 'Please fix the highlighted fields and submit again.')
+        setServerError(message || '')
       } else {
         const msg = message || err?.non_field_errors?.[0] || err?.detail || err?.message || 'Something went wrong. Please try again.'
         setServerError(msg)
