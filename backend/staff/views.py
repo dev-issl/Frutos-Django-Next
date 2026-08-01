@@ -374,6 +374,13 @@ class MyStaffTaskUpdateView(generics.UpdateAPIView):
             except Exception as e:
                 logger.error(f"Error creating admin notification for task completion: {e}")
 
+class MyStaffNotificationListView(generics.ListAPIView):
+    permission_classes = [IsStaffUser]
+    serializer_class = StaffNotificationSerializer
+    
+    def get_queryset(self):
+        return StaffNotification.objects.filter(staff__user=self.request.user).order_by('-created_at')
+
 class MyStaffNotificationDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsStaffUser]
     serializer_class = StaffNotificationSerializer

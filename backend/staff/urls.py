@@ -22,6 +22,7 @@ urlpatterns = [
     path('me/colleagues/', views.MyStaffColleaguesView.as_view(), name='staff-colleagues-list'),
     path('me/tasks/', views.MyStaffTasksView.as_view(), name='staff-tasks-list'),
     path('me/tasks/<int:pk>/', views.MyStaffTaskUpdateView.as_view(), name='staff-task-update'),
+    path('me/notifications/', views.MyStaffNotificationListView.as_view(), name='staff-notification-list'),
     path('me/notifications/<int:pk>/', views.MyStaffNotificationDetailView.as_view(), name='staff-notification-detail'),
     path('me/shift-history/', views.MyStaffShiftHistoryView.as_view(), name='staff-shift-history'),
     path('me/orders/', views.MyStaffOrderHistoryView.as_view(), name='staff-order-history'),
