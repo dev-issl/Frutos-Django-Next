@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Printer, Download, ArrowLeft, Loader2, FileText, Receipt } from "lucide-react";
+import { Printer, Download, ArrowLeft, Loader2, FileText, Receipt, ChevronDown, Table, Code, FileSpreadsheet } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import useSWR from "swr";
@@ -46,7 +46,7 @@ function POSInvoice({ order, items, subtotal, total, shipping, storeName, logoUr
           {items.map((item, i) => (
             <div key={i} className="mb-1.5">
               <div className="flex justify-between text-slate-800">
-                <span className="flex-1 truncate pr-2">{item.product_name || `#${item.product}`}</span>
+                <span className="flex-1 pr-2 break-words whitespace-normal">{item.product_name || `#${item.product}`}</span>
               </div>
               <div className="flex justify-between text-slate-500 text-[10px]">
                 <span>
@@ -322,27 +322,27 @@ function WholesaleInvoice({ order, items, storeName, allProducts = [] }) {
                         }).map(p => {
                           const ordered = orderedItemsMap[p.id];
                           return (
-                            <div key={p.id} className={`flex border-r border-b border-slate-300 text-[10px] h-[36px] overflow-hidden ${ordered ? 'bg-slate-50 print:bg-slate-50' : 'bg-white'}`}>
+                            <div key={p.id} className={`flex border-r border-b border-slate-300 text-[11px] min-h-[44px] ${ordered ? 'bg-slate-50 print:bg-slate-50' : 'bg-white'}`}>
                               {/* Name (Left side) */}
-                              <div className="flex-1 px-1.5 py-0.5 flex flex-col justify-center min-w-0 border-r border-slate-300 border-dashed leading-tight">
-                                <span className={`uppercase truncate ${ordered ? "font-bold text-slate-900 text-[10px]" : "text-slate-700 text-[9px]"}`} title={p.name}>
+                              <div className="flex-1 px-1.5 py-1 flex flex-col justify-center min-w-0 border-r border-slate-300 border-dashed leading-normal">
+                                <span className={`uppercase ${ordered ? "font-bold text-slate-900 text-[11px]" : "text-slate-700 text-[11px]"}`} title={p.name}>
                                   {p.name}
                                 </span>
                                 {ordered && (
-                                  <div className="flex items-center gap-1 mt-[2px] whitespace-nowrap overflow-hidden">
+                                  <div className="flex items-center gap-1 mt-[2px] flex-wrap">
                                     {p.variant && (
-                                      <span className="bg-slate-800 text-white px-1 py-[1px] rounded-[2px] text-[7px] font-bold tracking-wide print:border print:border-slate-400 print:bg-white print:text-black shrink-0 truncate max-w-[50px]">
+                                      <span className="inline-block bg-slate-800 text-white px-1.5 py-[2px] rounded-[3px] text-[9px] font-bold tracking-wide shrink-0">
                                         {p.variant}
                                       </span>
                                     )}
-                                    <span className="text-slate-900 font-bold text-[8px] truncate">
+                                    <span className="text-slate-900 font-bold text-[10px]">
                                       €{Number(ordered.unit_price || p.wholesale_price || p.price).toLocaleString()}
                                     </span>
                                   </div>
                                 )}
                               </div>
                               {/* Quantity Box (Right side partition) */}
-                              <div className={`w-14 shrink-0 flex items-center justify-center font-black text-[11px] text-center px-1 ${ordered ? 'text-slate-900 bg-slate-200/50 print:bg-slate-200/50' : 'text-slate-300'}`}>
+                              <div className={`w-14 shrink-0 flex items-center justify-center font-black text-xs text-center px-1 ${ordered ? 'text-slate-900 bg-slate-200/50 print:bg-slate-200/50' : 'text-slate-300'}`}>
                                 {ordered ? `${ordered.quantity} ${(p.wholesale_unit || p.unit || 'pcs').replace(/^per\s+/i, '')}` : ""}
                               </div>
                             </div>
@@ -368,6 +368,18 @@ export default function InvoicePage() {
   // Read ?type=pos from URL after mount (avoids useSearchParams/Suspense requirement)
   const [invoiceType, setInvoiceType] = useState("a4");
   const [downloading, setDownloading] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!e.target.closest('#download-dropdown-container')) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const { data: settingsRaw } = useSWR(
     "site-settings-invoice",
@@ -402,27 +414,190 @@ export default function InvoicePage() {
   );
   const allProducts = productsRaw?.results || [];
 
-  const handleDownload = async () => {
+  const handleDownloadPDF = async () => {
     setDownloading(true);
+    setDropdownOpen(false);
     try {
-      // Hit the backend invoice endpoint which returns HTML
-      const res = await api.download(`/api/orders/invoice/${id}/?download=1`);
-      if (!res.ok) {
-        // Fallback to print
-        window.print();
-        return;
+      const element = document.getElementById("invoice-print-area");
+      if (!element) throw new Error("Invoice area not found");
+      
+      // Inject CSS to fix Tailwind V4 html2canvas lab color issue
+      const style = document.createElement('style');
+      style.innerHTML = `
+        #invoice-print-area .text-slate-900 { color: #0f172a !important; }
+        #invoice-print-area .text-slate-800 { color: #1e293b !important; }
+        #invoice-print-area .text-slate-700 { color: #334155 !important; }
+        #invoice-print-area .text-slate-600 { color: #475569 !important; }
+        #invoice-print-area .text-slate-500 { color: #64748b !important; }
+        #invoice-print-area .text-slate-400 { color: #94a3b8 !important; }
+        #invoice-print-area .text-slate-300 { color: #cbd5e1 !important; }
+        #invoice-print-area .text-black { color: #000000 !important; }
+        #invoice-print-area .text-white { color: #ffffff !important; }
+        #invoice-print-area .bg-slate-800 { background-color: #1e293b !important; }
+        #invoice-print-area .bg-slate-200 { background-color: #e2e8f0 !important; }
+        #invoice-print-area .bg-slate-100 { background-color: #f1f5f9 !important; }
+        #invoice-print-area .bg-slate-50 { background-color: #f8fafc !important; }
+        #invoice-print-area .bg-white { background-color: #ffffff !important; }
+        #invoice-print-area .bg-slate-200\\/50 { background-color: rgba(226, 232, 240, 0.5) !important; }
+        #invoice-print-area .border-slate-800 { border-color: #1e293b !important; }
+        #invoice-print-area .border-slate-400 { border-color: #94a3b8 !important; }
+        #invoice-print-area .border-slate-300 { border-color: #cbd5e1 !important; }
+        #invoice-print-area .border-slate-200 { border-color: #e2e8f0 !important; }
+        #invoice-print-area .border-slate-100 { border-color: #f1f5f9 !important; }
+        #invoice-print-area .border-gray-300 { border-color: #d1d5db !important; }
+        #invoice-print-area .border-black { border-color: #000000 !important; }
+      `;
+      document.head.appendChild(style);
+
+      const html2pdf = (await import("html2pdf.js")).default;
+      const opt = {
+        margin:       10,
+        filename:     `invoice-${id}.pdf`,
+        image:        { type: 'jpeg', quality: 1 },
+        html2canvas:  { scale: 3, useCORS: true, logging: false },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+
+      if (invoiceType === "pos" && !order.is_wholesale_order) {
+         opt.jsPDF = { unit: 'mm', format: [80, 297], orientation: 'portrait' };
+         opt.margin = 2;
       }
+
+      await html2pdf().set(opt).from(element).save();
+      document.head.removeChild(style);
+
+    } catch (err) {
+      console.error("PDF generation failed:", err);
+      // Fallback to browser print which handles Tailwind V4 properly
+      window.print();
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const generateExportData = () => {
+    let exportData = [];
+    
+    if (order?.is_wholesale_order) {
+        const orderedItemsMap = items.reduce((acc, item) => {
+          acc[item.product] = item;
+          return acc;
+        }, {});
+        
+        const sortedProducts = [...allProducts].sort((a, b) => {
+           const getPriority = (name) => {
+             if (name.includes('fruit')) return 1;
+             if (name.includes('groc')) return 2;
+             return 3;
+           };
+           const catA = String(a.category_name || a.category || "Uncategorized").toLowerCase();
+           const catB = String(b.category_name || b.category || "Uncategorized").toLowerCase();
+           
+           const prioA = getPriority(catA);
+           const prioB = getPriority(catB);
+           if (prioA !== prioB) return prioA - prioB;
+           if (catA !== catB) return catA.localeCompare(catB);
+           
+           const subA = String(a.subcategory_name || a.subcategory || "Other").toLowerCase();
+           const subB = String(b.subcategory_name || b.subcategory || "Other").toLowerCase();
+           if (subA !== subB) return subA.localeCompare(subB);
+           
+           return String(a.name || "").localeCompare(String(b.name || ""));
+        });
+
+        exportData = sortedProducts.map((p, index) => {
+            const ordered = orderedItemsMap[p.id];
+            return {
+                "#": index + 1,
+                "Category": p.category_name || p.category || "Uncategorized",
+                "Product Name": p.name || 'Unknown Product',
+                "Variant": p.variant || "—",
+                "Price": Number(ordered?.unit_price || p.wholesale_price || p.price).toFixed(2),
+                "Order Qty": ordered ? ordered.quantity : "",
+                "Unit": ordered ? (p.wholesale_unit || p.unit || 'pcs').replace(/^per\s+/i, '') : "",
+                "Amount": ordered ? (ordered.quantity * Number(ordered.unit_price || p.wholesale_price || p.price)).toFixed(2) : ""
+            };
+        });
+        
+        exportData.push({});
+        exportData.push({ "Product Name": "Subtotal", "Amount": Number(subtotal).toFixed(2) });
+        if (shipping > 0) {
+            exportData.push({ "Product Name": "Shipping", "Amount": Number(shipping).toFixed(2) });
+        }
+        exportData.push({ "Product Name": "Total", "Amount": Number(total).toFixed(2) });
+        
+    } else {
+        exportData = items.map((item, index) => ({
+            "#": index + 1,
+            "Product Name": item.product_name || item.product || 'Unknown Product',
+            "Size/Variant": item.size_name || item.size || "—",
+            "Quantity": item.quantity,
+            "Unit Price": Number(item.unit_price).toFixed(2),
+            "Amount": (item.quantity * Number(item.unit_price)).toFixed(2)
+        }));
+
+        exportData.push({});
+        exportData.push({ "Product Name": "Subtotal", "Amount": Number(subtotal).toFixed(2) });
+        if (shipping > 0) {
+            exportData.push({ "Product Name": "Shipping", "Amount": Number(shipping).toFixed(2) });
+        }
+        exportData.push({ "Product Name": "Total", "Amount": Number(total).toFixed(2) });
+    }
+    
+    return exportData;
+  };
+
+  const handleDownloadExcel = async () => {
+    setDownloading(true);
+    setDropdownOpen(false);
+    try {
+      const XLSX = await import('xlsx');
+      const excelData = generateExportData();
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Invoice");
+      XLSX.writeFile(workbook, `invoice-${id}.xlsx`);
+    } catch (err) {
+      console.error("Excel generation failed:", err);
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const handleDownloadCSV = async () => {
+    setDownloading(true);
+    setDropdownOpen(false);
+    try {
+      const XLSX = await import('xlsx');
+      const excelData = generateExportData();
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Invoice");
+      XLSX.writeFile(workbook, `invoice-${id}.csv`);
+    } catch (err) {
+      console.error("CSV generation failed:", err);
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const handleDownloadHTML = async () => {
+    setDownloading(true);
+    setDropdownOpen(false);
+    try {
+      const res = await api.download(`/api/orders/invoice/${id}/?download=1`);
+      if (!res.ok) throw new Error("Failed");
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `invoice-${id}.html`;  // HTML content, correct extension
+      a.download = `invoice-${id}.html`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-    } catch {
-      // Fallback to browser print
+    } catch (err) {
+      console.error("HTML download failed:", err);
       window.print();
     } finally {
       setDownloading(false);
@@ -485,17 +660,43 @@ export default function InvoicePage() {
           )}
           <button
             onClick={() => window.print()}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-slate-200 rounded-md text-slate-700 hover:bg-slate-50 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-slate-200 rounded-md text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
           >
             <Printer className="w-4 h-4" /> Print
           </button>
-          <button
-            onClick={handleDownload}
-            disabled={downloading}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-gray-900 text-white rounded-md hover:bg-gray-800 transition-colors disabled:opacity-50"
-          >
-            {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />} Download
-          </button>
+          <div id="download-dropdown-container" className="relative">
+            <button
+              onClick={() => setDropdownOpen(!dropdownOpen)}
+              disabled={downloading}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-gray-900 text-white rounded-md hover:bg-gray-800 transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+            >
+              {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />} Download
+              <ChevronDown className="w-3.5 h-3.5 ml-0.5 opacity-70" />
+            </button>
+            
+            {dropdownOpen && (
+              <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-md shadow-lg py-1 z-50">
+                <button
+                  onClick={handleDownloadPDF}
+                  className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer"
+                >
+                  <FileText className="w-4 h-4 text-red-500" /> PDF
+                </button>
+                <button
+                  onClick={handleDownloadExcel}
+                  className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer"
+                >
+                  <Table className="w-4 h-4 text-green-600" /> Excel
+                </button>
+                <button
+                  onClick={handleDownloadCSV}
+                  className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer"
+                >
+                  <FileSpreadsheet className="w-4 h-4 text-orange-500" /> CSV
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
