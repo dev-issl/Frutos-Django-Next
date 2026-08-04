@@ -52,15 +52,15 @@ export default function InvoiceModal({ order, onClose }) {
   }
 
   // Fallbacks for data
-  const dateStr = order.ordered_at
-    ? new Date(order.ordered_at).toLocaleDateString('en-GB')
+  const dateStr = order.ordered_at 
+    ? new Date(order.ordered_at).toLocaleDateString('en-GB') 
     : 'N/A'
   const shopName = order.customer_name || 'TEST 2'
   const contact = order.customer_phone || ''
   const address = order.street_address || ''
   const [mounted, setMounted] = useState(false)
   const [siteConfig, setSiteConfig] = useState(null)
-
+  
   useEffect(() => {
     setMounted(true)
     getSiteConfig().then(config => setSiteConfig(config))
@@ -69,7 +69,7 @@ export default function InvoiceModal({ order, onClose }) {
   const statusLabel = order.status ? order.status.toUpperCase() : 'ORDER'
 
   const calculatedSubtotal = (order.items || []).reduce((sum, item) => sum + (Number(item.line_total) || (Number(item.unit_price) * Number(item.quantity))), 0)
-
+  
   const calculatedTax = (order.items || []).reduce((sum, item) => {
     const itemTaxRate = item.tax_rate ? parseFloat(item.tax_rate) / 100 : 0.05
     const itemLineTotal = Number(item.line_total) || (Number(item.unit_price) * Number(item.quantity))
@@ -81,38 +81,38 @@ export default function InvoiceModal({ order, onClose }) {
   const displayTotal = displaySubtotal + displayTax
   const modalContent = (
     <>
-      <div
+      <div 
         className="fixed inset-0 bg-black/50 z-[999] flex items-center justify-center p-4 backdrop-blur-sm overflow-y-auto"
         onClick={onClose}
       >
-        <div
+        <div 
           className="bg-[#f8fafc] w-full max-w-[900px] rounded shadow-xl flex flex-col my-auto relative"
           onClick={e => e.stopPropagation()}
         >
           {/* Top action bar */}
           <div className="flex items-center justify-center gap-2 p-3 bg-white border-b border-gray-200 rounded-t">
             <button className="bg-[#fbbf24] hover:bg-[#f59e0b] text-white font-medium px-4 py-1.5 rounded text-sm flex items-center gap-2 transition-colors">
-              <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" /></svg>
+              <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
               Download
             </button>
-            <button
+            <button 
               onClick={handlePrint}
               className="bg-gray-500 hover:bg-gray-600 text-white font-medium px-4 py-1.5 rounded text-sm flex items-center gap-2 transition-colors"
             >
-              <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z" /></svg>
+              <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg>
               Print
             </button>
-            <button
+            <button 
               onClick={onClose}
               className="absolute right-4 top-4 text-gray-400 hover:text-gray-700"
             >
-              <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+              <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
           </div>
 
           {/* Printable Area */}
           <div className="p-8 sm:p-12 bg-white min-h-[700px] relative font-sans text-gray-800" ref={printRef}>
-
+            
             {/* Top Header */}
             <div className="flex justify-between items-start relative z-10" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '40px' }}>
               <div>

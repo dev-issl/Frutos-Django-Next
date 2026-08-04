@@ -46,7 +46,7 @@ function POSInvoice({ order, items, subtotal, total, shipping, storeName, logoUr
           {items.map((item, i) => (
             <div key={i} className="mb-1.5">
               <div className="flex justify-between text-slate-800">
-                <span className="flex-1 pr-2 break-words whitespace-normal">{item.product_name || `#${item.product}`}</span>
+                <span className="flex-1 truncate pr-2">{item.product_name || `#${item.product}`}</span>
               </div>
               <div className="flex justify-between text-slate-500 text-[10px]">
                 <span>
