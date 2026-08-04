@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import StaffProfile, StaffShift, StaffTask, StaffNotification, Announcement, DayOffRequest
+from .models import StaffProfile, StaffShift, StaffTask, StaffNotification, Announcement, DayOffRequest, StaffAdminChat
 from stores.models import Store
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
@@ -218,3 +218,13 @@ class MyStaffProfileUpdateSerializer(serializers.ModelSerializer):
             instance.user.save()
             
         return super().update(instance, validated_data)
+
+class StaffAdminChatSerializer(serializers.ModelSerializer):
+    admin_name = serializers.CharField(source='admin_user.name', read_only=True)
+    staff_name = serializers.CharField(source='staff.user.name', read_only=True)
+
+    class Meta:
+        model = StaffAdminChat
+        fields = ['id', 'staff', 'admin_user', 'sender', 'message', 'is_read', 'created_at', 'admin_name', 'staff_name']
+        read_only_fields = ['staff', 'admin_user', 'sender', 'is_read']
+

@@ -152,3 +152,22 @@ class DayOffRequest(models.Model):
 
     def __str__(self):
         return f"{self.staff.user.name} - {self.date} ({self.status})"
+
+class StaffAdminChat(models.Model):
+    SENDER_CHOICES = [
+        ('STAFF', 'Staff'),
+        ('ADMIN', 'Admin')
+    ]
+    staff = models.ForeignKey(StaffProfile, on_delete=models.CASCADE, related_name='admin_chats')
+    admin_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='staff_chats')
+    sender = models.CharField(max_length=10, choices=SENDER_CHOICES)
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"{self.sender} to {'Admin' if self.sender == 'STAFF' else self.staff.user.name}: {self.message[:20]}"
+

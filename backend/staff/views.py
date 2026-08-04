@@ -5,12 +5,12 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.decorators import action
 from django.shortcuts import get_object_or_404
 from django.db import models
-from .models import StaffProfile, StaffShift, StaffTask, StaffNotification, Announcement, DayOffRequest
+from .models import StaffProfile, StaffShift, StaffTask, StaffNotification, Announcement, DayOffRequest, StaffAdminChat
 from .serializers import (
     StaffProfileSerializer, CreateStaffSerializer, StaffShiftSerializer, 
     StaffTaskSerializer, StaffNotificationSerializer, DayOffRequestSerializer,
     AnnouncementSerializer, AnnouncementCreateSerializer, StoreStaffTreeSerializer,
-    MyStaffProfileUpdateSerializer
+    MyStaffProfileUpdateSerializer, StaffAdminChatSerializer
 )
 from stores.models import Store
 from channels.layers import get_channel_layer
@@ -749,3 +749,43 @@ class AdminDayOffRequestViewSet(viewsets.ModelViewSet):
                 )
             except Exception as e:
                 logger.error(f"Error creating staff notification: {e}")
+
+# ==========================================
+# STAFF-ADMIN CHAT APIs
+# ==========================================
+
+class MyStaffAdminChatViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsStaffUser]
+    serializer_class = StaffAdminChatSerializer
+
+    def get_queryset(self):
+        staff_profile = get_object_or_404(StaffProfile, user=self.request.user)
+        # Mark all messages from ADMIN as read when staff fetches them
+        StaffAdminChat.objects.filter(staff=staff_profile, sender='ADMIN', is_read=False).update(is_read=True)
+        return StaffAdminChat.objects.filter(staff=staff_profile).order_by('created_at')
+
+    def perform_create(self, serializer):
+        staff_profile = get_object_or_404(StaffProfile, user=self.request.user)
+        serializer.save(staff=staff_profile, sender='STAFF')
+
+class AdminStaffAdminChatViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAdminUser]
+    serializer_class = StaffAdminChatSerializer
+
+    def get_queryset(self):
+        staff_id = self.request.query_params.get('staff_id')
+        if not staff_id:
+            return StaffAdminChat.objects.none()
+        
+        # Mark all messages from STAFF as read
+        StaffAdminChat.objects.filter(staff_id=staff_id, sender='STAFF', is_read=False).update(is_read=True)
+        return StaffAdminChat.objects.filter(staff_id=staff_id).order_by('created_at')
+
+    def perform_create(self, serializer):
+        staff_id = self.request.data.get('staff_id')
+        if not staff_id:
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError({'staff_id': 'staff_id is required'})
+        staff_profile = get_object_or_404(StaffProfile, id=staff_id)
+        serializer.save(staff=staff_profile, admin_user=self.request.user, sender='ADMIN')
+
