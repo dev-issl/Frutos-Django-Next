@@ -455,13 +455,6 @@ class OrderReadSerializer(serializers.ModelSerializer):
             return True
         if obj.user_id and getattr(obj.user, 'user_type', None) == 'WHOLESALER':
             return True
-        if obj.customer_email:
-            try:
-                from wholesale.models import WholesaleUser
-                if WholesaleUser.objects.filter(email__iexact=obj.customer_email).exists():
-                    return True
-            except Exception:
-                pass
         return False
 
 
@@ -745,11 +738,4 @@ class OrderSerializer(serializers.ModelSerializer):
             return True
         if obj.user_id and getattr(obj.user, 'user_type', None) == 'WHOLESALER':
             return True
-        if obj.customer_email:
-            try:
-                from wholesale.models import WholesaleUser
-                if WholesaleUser.objects.filter(email__iexact=obj.customer_email).exists():
-                    return True
-            except Exception:
-                pass
         return False
