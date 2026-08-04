@@ -1,0 +1,52 @@
+﻿name: Deploy to VPS
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  deploy:
+    name: Deploy to Production VPS
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.VPS_SSH_KEY }}
+
+      - name: Add VPS to known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to VPS
+        run: |
+          ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'ENDSSH'
+            set -e
+            echo "Moving to project directory..."
+            cd ${{ secrets.VPS_PROJECT_PATH }}
+
+            echo "Pulling latest code from GitHub..."
+            git pull origin $(git rev-parse --abbrev-ref HEAD)
+
+            echo "Building and restarting Docker containers..."
+            docker compose down --remove-orphans
+            docker compose up --build -d
+
+            echo "Waiting for containers to be healthy..."
+            sleep 15
+
+            echo "Container status:"
+            docker compose ps
+
+            echo "Backend logs (last 20 lines):"
+            docker compose logs backend --tail=20
+
+            echo "Deployment complete!"
+          ENDSSH
