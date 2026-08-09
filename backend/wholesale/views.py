@@ -199,13 +199,26 @@ class ChangePasswordView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class WholesaleNotificationListView(generics.ListAPIView):
+class WholesaleNotificationListView(APIView):
     authentication_classes = [WholesaleJWTAuthentication]
     permission_classes = [IsWholesaleUser]
-    serializer_class = WholesaleNotificationSerializer
 
-    def get_queryset(self):
-        return WholesaleNotification.objects.filter(user=self.request.user)
+    def get(self, request):
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT id FROM wholesale_wholesaleuser WHERE email = %s", [request.user.email])
+            row = cursor.fetchone()
+            db_user_id = row[0] if row else None
+            
+        if not db_user_id:
+            return Response([])
+            
+        reports = WholesaleNotification.objects.raw(
+            "SELECT * FROM wholesale_wholesalenotification WHERE user_id = %s ORDER BY created_at DESC",
+            [db_user_id]
+        )
+        serializer = WholesaleNotificationSerializer(reports, many=True)
+        return Response(serializer.data)
 
 
 class WholesaleNotificationUnreadCountView(APIView):
@@ -213,9 +226,22 @@ class WholesaleNotificationUnreadCountView(APIView):
     permission_classes = [IsWholesaleUser]
 
     def get(self, request):
-        count = WholesaleNotification.objects.filter(
-            user=request.user, is_read=False
-        ).count()
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT id FROM wholesale_wholesaleuser WHERE email = %s", [request.user.email])
+            row = cursor.fetchone()
+            db_user_id = row[0] if row else None
+            
+        if not db_user_id:
+            return Response({'unread_count': 0})
+            
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT COUNT(*) FROM wholesale_wholesalenotification WHERE user_id = %s AND is_read = false",
+                [db_user_id]
+            )
+            count = cursor.fetchone()[0]
+            
         return Response({'unread_count': count})
 
 
@@ -225,12 +251,27 @@ class WholesaleMarkNotificationsReadView(APIView):
 
     def post(self, request):
         ids = request.data.get('ids', [])
-        qs = WholesaleNotification.objects.filter(user=request.user)
-        if ids:
-            qs = qs.filter(id__in=ids)
-        else:
-            qs = qs.filter(is_read=False)
-        qs.update(is_read=True)
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT id FROM wholesale_wholesaleuser WHERE email = %s", [request.user.email])
+            row = cursor.fetchone()
+            db_user_id = row[0] if row else None
+            
+        if not db_user_id:
+            return Response({'error': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
+            
+        with connection.cursor() as cursor:
+            if ids:
+                id_placeholders = ", ".join(["%s"] * len(ids))
+                cursor.execute(
+                    f"UPDATE wholesale_wholesalenotification SET is_read = true WHERE user_id = %s AND id IN ({id_placeholders})",
+                    [db_user_id] + list(ids)
+                )
+            else:
+                cursor.execute(
+                    "UPDATE wholesale_wholesalenotification SET is_read = true WHERE user_id = %s AND is_read = false",
+                    [db_user_id]
+                )
         return Response({'message': 'Notifications marked as read.'})
 
 
@@ -241,12 +282,26 @@ class WholesaleNotificationDeleteView(APIView):
     permission_classes = [IsWholesaleUser]
 
     def delete(self, request, pk):
-        try:
-            notif = WholesaleNotification.objects.get(pk=pk, user=request.user)
-            notif.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        except WholesaleNotification.DoesNotExist:
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT id FROM wholesale_wholesaleuser WHERE email = %s", [request.user.email])
+            row = cursor.fetchone()
+            db_user_id = row[0] if row else None
+            
+        if not db_user_id:
+            return Response({'error': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
+            
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "DELETE FROM wholesale_wholesalenotification WHERE id = %s AND user_id = %s",
+                [pk, db_user_id]
+            )
+            affected = cursor.rowcount
+            
+        if affected == 0:
             return Response({'error': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+            
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class WholesaleDailyReportListCreateView(APIView):
