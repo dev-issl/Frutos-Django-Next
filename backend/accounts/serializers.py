@@ -370,19 +370,48 @@ class SupportTicketSerializer(serializers.ModelSerializer):
             if hasattr(request.user, 'business_name') or request.user.__class__.__name__ == 'WholesaleUser':
                 is_wholesale_user = True
 
+        subject = validated_data.get('subject', '')
+        description = validated_data.get('description', '')
+        category = validated_data.get('category', 'GENERAL')
+        priority = validated_data.get('priority', 'MEDIUM')
+        status = 'OPEN'
+        created_at = timezone.now()
+        updated_at = timezone.now()
+
+        from django.db import connection
         if is_wholesale_user:
-            from django.db import connection
             with connection.cursor() as cursor:
                 cursor.execute("SELECT id FROM wholesale_wholesaleuser WHERE email = %s", [request.user.email])
                 row = cursor.fetchone()
                 db_user_id = row[0] if row else None
-            validated_data['wholesale_user_id'] = db_user_id
+            
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    INSERT INTO accounts_supportticket 
+                    (subject, description, category, priority, status, wholesale_user_id, created_at, updated_at) 
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s) 
+                    RETURNING id
+                    """,
+                    [subject, description, category, priority, status, db_user_id, created_at, updated_at]
+                )
+                ticket_id = cursor.fetchone()[0]
         else:
-            validated_data['user'] = request.user
-        ticket = super().create(validated_data)
+            user_id = request.user.id
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    INSERT INTO accounts_supportticket 
+                    (subject, description, category, priority, status, user_id, created_at, updated_at) 
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s) 
+                    RETURNING id
+                    """,
+                    [subject, description, category, priority, status, user_id, created_at, updated_at]
+                )
+                ticket_id = cursor.fetchone()[0]
+
+        ticket = SupportTicket.objects.raw("SELECT * FROM accounts_supportticket WHERE id = %s", [ticket_id])[0]
         
-        # Handle multiple images
-        request = self.context.get('request')
         if request and request.FILES:
             images = request.FILES.getlist('images')
             for image in images:
@@ -391,12 +420,15 @@ class SupportTicketSerializer(serializers.ModelSerializer):
         # Send admin notification for the new ticket
         from accounts.notifications import send_admin_notification
         sender_name = request.user.get_full_name() if hasattr(request.user, 'get_full_name') and request.user.get_full_name().strip() else request.user.email
-        send_admin_notification(
-            notification_type='ticket_created',
-            title='New Support Ticket',
-            message=f'User {sender_name} submitted a new support ticket: "{ticket.subject}".',
-            metadata={'ticket_id': ticket.id, 'icon': 'support_agent'}
-        )
+        try:
+            send_admin_notification(
+                notification_type='ticket_created',
+                title='New Support Ticket',
+                message=f'User {sender_name} submitted a new support ticket: "{ticket.subject}".',
+                metadata={'ticket_id': ticket.id, 'icon': 'support_agent'}
+            )
+        except Exception:
+            pass
                 
         return ticket
 
