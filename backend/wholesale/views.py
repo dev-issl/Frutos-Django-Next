@@ -116,7 +116,33 @@ class WholesaleProfileView(APIView):
             request.user, data=request.data, partial=True
         )
         if serializer.is_valid():
-            serializer.save()
+            # Bypass serializer.save() (which triggers user.save()) to avoid UUID/Integer DB mismatch on ID
+            from django.db import connection
+            updates = []
+            params = []
+            
+            # Map serializer field name to database column name
+            field_mappings = {
+                'contact_name': 'contact_name',
+                'phone': 'phone',
+                'postcode': 'postcode',
+                'monthly_volume': 'monthly_volume'
+            }
+            
+            for field, col in field_mappings.items():
+                if field in serializer.validated_data:
+                    val = serializer.validated_data[field]
+                    updates.append(f"{col} = %s")
+                    params.append(val)
+                    setattr(request.user, field, val)
+                    
+            if updates:
+                update_sql = ", ".join(updates)
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        f"UPDATE wholesale_wholesaleuser SET {update_sql} WHERE email = %s",
+                        params + [request.user.email]
+                    )
             return Response(WholesaleUserPublicSerializer(request.user, context={'request': request}).data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
