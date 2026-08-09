@@ -335,13 +335,23 @@ class SupportTicketSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'status', 'admin_response', 'created_at', 'updated_at']
 
     def get_userName(self, obj):
-        if obj.wholesale_user:
-            return obj.wholesale_user.contact_name or obj.wholesale_user.business_name
+        if obj.wholesale_user_id:
+            from django.db import connection
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT contact_name, business_name FROM wholesale_wholesaleuser WHERE id = %s", [obj.wholesale_user_id])
+                row = cursor.fetchone()
+                if row:
+                    return row[0] or row[1]
         return obj.user.name if obj.user else 'Unknown'
 
     def get_userEmail(self, obj):
-        if obj.wholesale_user:
-            return obj.wholesale_user.email
+        if obj.wholesale_user_id:
+            from django.db import connection
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT email FROM wholesale_wholesaleuser WHERE id = %s", [obj.wholesale_user_id])
+                row = cursor.fetchone()
+                if row:
+                    return row[0]
         return obj.user.email if obj.user else 'Unknown'
 
     def get_is_user_typing(self, obj):
