@@ -249,16 +249,65 @@ class WholesaleNotificationDeleteView(APIView):
             return Response({'error': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
 
 
-class WholesaleDailyReportListCreateView(generics.ListCreateAPIView):
+class WholesaleDailyReportListCreateView(APIView):
     authentication_classes = [WholesaleJWTAuthentication]
     permission_classes = [IsWholesaleUser]
-    serializer_class = WholesaleDailyReportSerializer
 
-    def get_queryset(self):
-        return self.request.user.daily_reports.all()
+    def get(self, request):
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT id FROM wholesale_wholesaleuser WHERE email = %s", [request.user.email])
+            row = cursor.fetchone()
+            db_user_id = row[0] if row else None
+            
+        if not db_user_id:
+            return Response([])
+            
+        from .models import WholesaleDailyReport
+        reports = WholesaleDailyReport.objects.filter(user_id=db_user_id)
+        serializer = WholesaleDailyReportSerializer(reports, many=True)
+        return Response(serializer.data)
 
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+    def post(self, request):
+        serializer = WholesaleDailyReportSerializer(data=request.data)
+        if serializer.is_valid():
+            from django.db import connection
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT id FROM wholesale_wholesaleuser WHERE email = %s", [request.user.email])
+                row = cursor.fetchone()
+                db_user_id = row[0] if row else None
+                
+            if not db_user_id:
+                return Response({'error': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
+                
+            import datetime
+            data = serializer.validated_data
+            expenses = data.get('expenses', 0)
+            store = data.get('store', 0)
+            purchase = data.get('purchase', 0)
+            purchase_note = data.get('purchase_note', '')
+            cash = data.get('cash', 0)
+            bank = data.get('bank', 0)
+            date = data.get('date')
+            created_at = datetime.datetime.now()
+            
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    INSERT INTO wholesale_wholesaledailyreport 
+                    (user_id, cash, bank, expenses, store, purchase, purchase_note, date, created_at)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    RETURNING id
+                    """,
+                    [db_user_id, cash, bank, expenses, store, purchase, purchase_note, date, created_at]
+                )
+                new_id = cursor.fetchone()[0]
+                
+            from .models import WholesaleDailyReport
+            new_report = WholesaleDailyReport.objects.get(id=new_id)
+            return Response(WholesaleDailyReportSerializer(new_report).data, status=status.HTTP_201_CREATED)
+            
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class WholesaleStatusView(APIView):
