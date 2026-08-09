@@ -1051,6 +1051,31 @@ class AdminUserDetailView(generics.RetrieveUpdateDestroyAPIView):
             like_op = 'ILIKE' if connection.vendor == 'postgresql' else 'LIKE'
             
             with connection.cursor() as cursor:
+                # 1. Update orders referencing this wholesale user to NULL
+                try:
+                    cursor.execute(f"UPDATE orders_order SET wholesale_user_id = NULL WHERE wholesale_user_id IN (SELECT id FROM wholesale_wholesaleuser WHERE REPLACE(CAST(id AS TEXT), '-', '') {like_op} %s)", [clean_id])
+                except Exception: pass
+
+                # 2. Delete support ticket attachments
+                try:
+                    cursor.execute(f"DELETE FROM accounts_supportticketmessageattachment WHERE message_id IN (SELECT id FROM accounts_supportticketmessage WHERE wholesale_sender_id IN (SELECT id FROM wholesale_wholesaleuser WHERE REPLACE(CAST(id AS TEXT), '-', '') {like_op} %s) OR ticket_id IN (SELECT id FROM accounts_supportticket WHERE wholesale_user_id IN (SELECT id FROM wholesale_wholesaleuser WHERE REPLACE(CAST(id AS TEXT), '-', '') {like_op} %s)))", [clean_id, clean_id])
+                except Exception: pass
+
+                # 3. Delete support ticket messages
+                try:
+                    cursor.execute(f"DELETE FROM accounts_supportticketmessage WHERE wholesale_sender_id IN (SELECT id FROM wholesale_wholesaleuser WHERE REPLACE(CAST(id AS TEXT), '-', '') {like_op} %s) OR ticket_id IN (SELECT id FROM accounts_supportticket WHERE wholesale_user_id IN (SELECT id FROM wholesale_wholesaleuser WHERE REPLACE(CAST(id AS TEXT), '-', '') {like_op} %s))", [clean_id, clean_id])
+                except Exception: pass
+
+                # 4. Delete support ticket images
+                try:
+                    cursor.execute(f"DELETE FROM accounts_supportticketimage WHERE ticket_id IN (SELECT id FROM accounts_supportticket WHERE wholesale_user_id IN (SELECT id FROM wholesale_wholesaleuser WHERE REPLACE(CAST(id AS TEXT), '-', '') {like_op} %s))", [clean_id])
+                except Exception: pass
+
+                # 5. Delete support tickets themselves
+                try:
+                    cursor.execute(f"DELETE FROM accounts_supportticket WHERE wholesale_user_id IN (SELECT id FROM wholesale_wholesaleuser WHERE REPLACE(CAST(id AS TEXT), '-', '') {like_op} %s)", [clean_id])
+                except Exception: pass
+
                 # Safely attempt to delete related objects (ignore errors if tables don't exist)
                 try:
                     cursor.execute(f"DELETE FROM wholesale_wholesaledocument WHERE user_id IN (SELECT id FROM wholesale_wholesaleuser WHERE REPLACE(CAST(id AS TEXT), '-', '') {like_op} %s)", [clean_id])
