@@ -568,7 +568,22 @@ class WholesaleSupportTicketListCreateView(generics.ListCreateAPIView):
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_queryset(self):
-        return SupportTicket.objects.filter(wholesale_user=self.request.user)
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT id FROM wholesale_wholesaleuser WHERE email = %s", [self.request.user.email])
+            row = cursor.fetchone()
+            db_user_id = row[0] if row else None
+        if not db_user_id:
+            return SupportTicket.objects.none()
+        return SupportTicket.objects.filter(wholesale_user_id=db_user_id)
+
+    def perform_create(self, serializer):
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT id FROM wholesale_wholesaleuser WHERE email = %s", [self.request.user.email])
+            row = cursor.fetchone()
+            db_user_id = row[0] if row else None
+        serializer.save(wholesale_user_id=db_user_id)
 
 class WholesaleSupportTicketDetailView(generics.RetrieveDestroyAPIView):
     authentication_classes = [WholesaleJWTAuthentication]
@@ -576,8 +591,14 @@ class WholesaleSupportTicketDetailView(generics.RetrieveDestroyAPIView):
     serializer_class = SupportTicketSerializer
 
     def get_queryset(self):
-        return SupportTicket.objects.filter(wholesale_user=self.request.user)
-
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT id FROM wholesale_wholesaleuser WHERE email = %s", [self.request.user.email])
+            row = cursor.fetchone()
+            db_user_id = row[0] if row else None
+        if not db_user_id:
+            return SupportTicket.objects.none()
+        return SupportTicket.objects.filter(wholesale_user_id=db_user_id)
 
 
 class WholesaleSupportTicketReplyView(APIView):
@@ -586,7 +607,16 @@ class WholesaleSupportTicketReplyView(APIView):
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def post(self, request, ticket_id):
-        ticket = get_object_or_404(SupportTicket, id=ticket_id, wholesale_user=request.user)
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT id FROM wholesale_wholesaleuser WHERE email = %s", [request.user.email])
+            row = cursor.fetchone()
+            db_user_id = row[0] if row else None
+
+        if not db_user_id:
+            return Response({'error': 'User not found.'}, status=404)
+
+        ticket = get_object_or_404(SupportTicket, id=ticket_id, wholesale_user_id=db_user_id)
         message_text = request.data.get('message', '')
         images = request.FILES.getlist('images')
 
@@ -595,7 +625,7 @@ class WholesaleSupportTicketReplyView(APIView):
 
         msg = SupportTicketMessage.objects.create(
             ticket=ticket,
-            wholesale_sender=request.user,
+            wholesale_sender_id=db_user_id,
             message=message_text,
         )
         
@@ -616,7 +646,16 @@ class WholesaleSupportTicketMessageDetailView(APIView):
     permission_classes = [IsWholesaleUser]
 
     def patch(self, request, ticket_id, msg_id):
-        msg = get_object_or_404(SupportTicketMessage, id=msg_id, ticket_id=ticket_id, wholesale_sender=request.user)
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT id FROM wholesale_wholesaleuser WHERE email = %s", [request.user.email])
+            row = cursor.fetchone()
+            db_user_id = row[0] if row else None
+
+        if not db_user_id:
+            return Response({'error': 'User not found.'}, status=404)
+
+        msg = get_object_or_404(SupportTicketMessage, id=msg_id, ticket_id=ticket_id, wholesale_sender_id=db_user_id)
         message_text = request.data.get('message')
         if not message_text:
             return Response({'detail': 'Message text is required.'}, status=400)
@@ -634,7 +673,16 @@ class WholesaleSupportTicketMessageDetailView(APIView):
         return Response(SupportTicketMessageSerializer(msg).data)
 
     def delete(self, request, ticket_id, msg_id):
-        msg = get_object_or_404(SupportTicketMessage, id=msg_id, ticket_id=ticket_id, wholesale_sender=request.user)
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT id FROM wholesale_wholesaleuser WHERE email = %s", [request.user.email])
+            row = cursor.fetchone()
+            db_user_id = row[0] if row else None
+
+        if not db_user_id:
+            return Response({'error': 'User not found.'}, status=404)
+
+        msg = get_object_or_404(SupportTicketMessage, id=msg_id, ticket_id=ticket_id, wholesale_sender_id=db_user_id)
         msg.is_deleted = True
         msg.save(update_fields=['is_deleted'])
 
@@ -652,7 +700,16 @@ class WholesaleSupportTicketTypingView(APIView):
     permission_classes = [IsWholesaleUser]
 
     def post(self, request, ticket_id):
-        ticket = get_object_or_404(SupportTicket, id=ticket_id, wholesale_user=request.user)
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT id FROM wholesale_wholesaleuser WHERE email = %s", [request.user.email])
+            row = cursor.fetchone()
+            db_user_id = row[0] if row else None
+
+        if not db_user_id:
+            return Response({'error': 'User not found.'}, status=404)
+
+        ticket = get_object_or_404(SupportTicket, id=ticket_id, wholesale_user_id=db_user_id)
         ticket.user_typing_at = timezone.now()
         ticket.save(update_fields=['user_typing_at'])
         return Response({'status': 'typing...'})

@@ -354,8 +354,19 @@ class SupportTicketSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         request = self.context.get('request')
-        if hasattr(request.user, 'business_name'):
-            validated_data['wholesale_user'] = request.user
+        is_wholesale_user = False
+        
+        if request and request.user:
+            if hasattr(request.user, 'business_name') or request.user.__class__.__name__ == 'WholesaleUser':
+                is_wholesale_user = True
+
+        if is_wholesale_user:
+            from django.db import connection
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT id FROM wholesale_wholesaleuser WHERE email = %s", [request.user.email])
+                row = cursor.fetchone()
+                db_user_id = row[0] if row else None
+            validated_data['wholesale_user_id'] = db_user_id
         else:
             validated_data['user'] = request.user
         ticket = super().create(validated_data)

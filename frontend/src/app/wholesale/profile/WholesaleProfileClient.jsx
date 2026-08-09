@@ -157,7 +157,7 @@ export default function WholesaleProfileClient({ initialProfile, initialNotifica
       />
 
       <div className="flex-1 overflow-y-auto">
-        <div className="p-2 md:p-3 h-full">
+        <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full h-full">
           {activeTab === 'overview' && (
             <OverviewTab profile={profile} orders={orders} setActiveTab={setActiveTab} />
           )}
