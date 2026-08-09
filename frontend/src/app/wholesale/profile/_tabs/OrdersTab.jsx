@@ -1,8 +1,9 @@
 import { useState, useMemo, useEffect } from 'react'
-import { getWholesaleDailyReports } from '@/lib/api'
+import { getWholesaleDailyReports, bulkDeleteWholesaleDailyReports } from '@/lib/api'
 import InvoiceModal from './InvoiceModal'
 import DailyReportModal from './DailyReportModal'
 import AggregatedReportModal from './AggregatedReportModal'
+import { toast } from 'react-hot-toast'
 
 export default function OrdersTab({ orders, onDeleteOrder, setProfileActiveTab, accessToken, profile }) {
   const [mainTab, setMainTab] = useState('PREVIOUS ORDER') // 'TRACK YOUR ORDER', 'PREVIOUS ORDER', 'DAILY REPORTS'
@@ -11,6 +12,9 @@ export default function OrdersTab({ orders, onDeleteOrder, setProfileActiveTab, 
   const [viewOrder, setViewOrder] = useState(null)
   
   const [dailyReports, setDailyReports] = useState([])
+  const [selectedReportIds, setSelectedReportIds] = useState(new Set())
+  const [showDeleteReportsModal, setShowDeleteReportsModal] = useState(false)
+  const [isDeletingReports, setIsDeletingReports] = useState(false)
   const [loadingReports, setLoadingReports] = useState(false)
   const [showReportModal, setShowReportModal] = useState(false)
   const [reportViewType, setReportViewType] = useState(null) // 'weekly' or 'monthly'
@@ -89,12 +93,51 @@ export default function OrdersTab({ orders, onDeleteOrder, setProfileActiveTab, 
   useEffect(() => {
     if (mainTab === 'DAILY REPORTS' && accessToken) {
       setLoadingReports(true)
+      setSelectedReportIds(new Set())
       getWholesaleDailyReports(accessToken)
         .then(data => setDailyReports(Array.isArray(data) ? data : (data?.results || [])))
         .catch(err => console.error(err))
         .finally(() => setLoadingReports(false))
     }
   }, [mainTab, accessToken])
+
+  const handleSelectReport = (id) => {
+    setSelectedReportIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
+      return next
+    })
+  }
+
+  const handleSelectAllReports = () => {
+    if (selectedReportIds.size === dailyReports.length && dailyReports.length > 0) {
+      setSelectedReportIds(new Set())
+    } else {
+      setSelectedReportIds(new Set(dailyReports.map(r => r.id)))
+    }
+  }
+
+  const handleBulkDeleteReports = async () => {
+    if (selectedReportIds.size === 0) return
+    
+    setIsDeletingReports(true)
+    try {
+      await bulkDeleteWholesaleDailyReports(accessToken, Array.from(selectedReportIds))
+      toast.success('Selected daily reports deleted successfully!')
+      setDailyReports(prev => prev.filter(r => !selectedReportIds.has(r.id)))
+      setSelectedReportIds(new Set())
+      setShowDeleteReportsModal(false)
+    } catch (err) {
+      toast.error('Failed to delete selected reports')
+      console.error(err)
+    } finally {
+      setIsDeletingReports(false)
+    }
+  }
 
   const getStatusBadge = (status) => {
     const s = (status || '').toLowerCase()
@@ -149,6 +192,15 @@ export default function OrdersTab({ orders, onDeleteOrder, setProfileActiveTab, 
               Your last order [Submitted reports]
             </h2>
             <div className="flex gap-2 flex-wrap justify-end">
+              {selectedReportIds.size > 0 && (
+                <button 
+                  onClick={() => setShowDeleteReportsModal(true)}
+                  disabled={isDeletingReports}
+                  className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded text-sm font-semibold hover:-translate-y-0.5 hover:shadow-md transition-all duration-200 cursor-pointer disabled:opacity-50 mr-2"
+                >
+                  {isDeletingReports ? 'Deleting...' : `Delete Selected (${selectedReportIds.size})`}
+                </button>
+              )}
               <button 
                 onClick={() => setReportViewType('weekly')}
                 className="bg-indigo-50 border border-indigo-200 text-indigo-700 px-4 py-2 rounded text-sm font-semibold hover:bg-indigo-100 hover:-translate-y-0.5 hover:shadow-sm transition-all duration-200 cursor-pointer"
@@ -174,7 +226,15 @@ export default function OrdersTab({ orders, onDeleteOrder, setProfileActiveTab, 
             <table className="w-full text-sm text-left">
               <thead className="bg-white text-gray-800 border-b border-gray-200 font-bold">
                 <tr>
-                  <th className="px-4 py-3 border-r border-gray-100">S/N</th>
+                  <th className="px-4 py-3 border-r border-gray-100 w-12 text-center">
+                    <input 
+                      type="checkbox" 
+                      checked={dailyReports.length > 0 && selectedReportIds.size === dailyReports.length} 
+                      onChange={handleSelectAllReports}
+                      className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                    />
+                  </th>
+                  <th className="px-4 py-3 border-r border-gray-100 w-12">S/N</th>
                   <th className="px-4 py-3 border-r border-gray-100">Shop</th>
                   <th className="px-4 py-3 border-r border-gray-100">Cash</th>
                   <th className="px-4 py-3 border-r border-gray-100">Bank</th>
@@ -187,10 +247,18 @@ export default function OrdersTab({ orders, onDeleteOrder, setProfileActiveTab, 
               </thead>
               <tbody>
                 {loadingReports ? (
-                  <tr><td colSpan="9" className="px-4 py-8 text-center text-gray-500">Loading reports...</td></tr>
+                  <tr><td colSpan="10" className="px-4 py-8 text-center text-gray-500">Loading reports...</td></tr>
                 ) : dailyReports.length > 0 ? (
                   dailyReports.map((report, index) => (
-                    <tr key={report.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                    <tr key={report.id} className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${selectedReportIds.has(report.id) ? 'bg-emerald-50/30' : ''}`}>
+                      <td className="px-4 py-3 border-r border-gray-100 text-center">
+                        <input 
+                          type="checkbox" 
+                          checked={selectedReportIds.has(report.id)} 
+                          onChange={() => handleSelectReport(report.id)}
+                          className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                        />
+                      </td>
                       <td className="px-4 py-3 border-r border-gray-100 text-gray-500">{index + 1}</td>
                       <td className="px-4 py-3 border-r border-gray-100">{report.shop || 'Shop'}</td>
                       <td className="px-4 py-3 border-r border-gray-100">{report.cash}</td>
@@ -203,7 +271,7 @@ export default function OrdersTab({ orders, onDeleteOrder, setProfileActiveTab, 
                     </tr>
                   ))
                 ) : (
-                  <tr><td colSpan="9" className="px-4 py-8 text-center text-gray-500">No reports found.</td></tr>
+                  <tr><td colSpan="10" className="px-4 py-8 text-center text-gray-500">No reports found.</td></tr>
                 )}
               </tbody>
             </table>
@@ -523,6 +591,36 @@ export default function OrdersTab({ orders, onDeleteOrder, setProfileActiveTab, 
                   className="px-4 py-2 rounded-lg font-semibold bg-red-600 text-white hover:bg-red-700 shadow-sm hover:shadow-md transition-all cursor-pointer text-sm"
                 >
                   Remove
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal for Daily Reports */}
+      {showDeleteReportsModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden transform transition-all animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-6">
+              <h3 className="text-xl font-bold text-gray-900 mb-2 text-red-600">Delete Reports</h3>
+              <p className="text-gray-600 mb-6 text-sm leading-relaxed">
+                Are you sure you want to delete <span className="font-bold text-red-600">{selectedReportIds.size}</span> selected daily report(s)? This action cannot be undone.
+              </p>
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setShowDeleteReportsModal(false)}
+                  disabled={isDeletingReports}
+                  className="px-4 py-2 rounded-lg font-semibold text-gray-600 border border-gray-200 hover:bg-gray-100 transition-colors cursor-pointer text-sm disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleBulkDeleteReports}
+                  disabled={isDeletingReports}
+                  className="px-4 py-2 rounded-lg font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors cursor-pointer text-sm disabled:opacity-50"
+                >
+                  {isDeletingReports ? 'Deleting...' : 'Delete'}
                 </button>
               </div>
             </div>

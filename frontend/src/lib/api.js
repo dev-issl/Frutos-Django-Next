@@ -423,3 +423,18 @@ export async function createWholesaleDailyReport(token, data) {
   if (!res.ok) throw resData
   return resData
 }
+
+export async function bulkDeleteWholesaleDailyReports(token, ids) {
+  if (!token) throw new Error('No token provided')
+  const res = await fetch(`${API_BASE}/wholesale/daily-reports/bulk-delete/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({ ids })
+  })
+  const resData = await res.json()
+  if (!res.ok) throw resData
+  return resData
+}

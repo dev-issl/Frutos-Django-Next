@@ -264,7 +264,10 @@ class WholesaleDailyReportListCreateView(APIView):
             return Response([])
             
         from .models import WholesaleDailyReport
-        reports = WholesaleDailyReport.objects.filter(user_id=db_user_id)
+        reports = WholesaleDailyReport.objects.raw(
+            "SELECT * FROM wholesale_wholesaledailyreport WHERE user_id = %s ORDER BY date DESC, created_at DESC",
+            [db_user_id]
+        )
         serializer = WholesaleDailyReportSerializer(reports, many=True)
         return Response(serializer.data)
 
@@ -308,6 +311,35 @@ class WholesaleDailyReportListCreateView(APIView):
             return Response(WholesaleDailyReportSerializer(new_report).data, status=status.HTTP_201_CREATED)
             
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class WholesaleDailyReportBulkDeleteView(APIView):
+    authentication_classes = [WholesaleJWTAuthentication]
+    permission_classes = [IsWholesaleUser]
+
+    def post(self, request):
+        ids = request.data.get('ids', [])
+        if not ids:
+            return Response({'error': 'No report IDs provided.'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT id FROM wholesale_wholesaleuser WHERE email = %s", [request.user.email])
+            row = cursor.fetchone()
+            db_user_id = row[0] if row else None
+            
+        if not db_user_id:
+            return Response({'error': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
+            
+        # Securely delete selected reports that belong to the user
+        id_placeholders = ", ".join(["%s"] * len(ids))
+        with connection.cursor() as cursor:
+            cursor.execute(
+                f"DELETE FROM wholesale_wholesaledailyreport WHERE user_id = %s AND id IN ({id_placeholders})",
+                [db_user_id] + list(ids)
+            )
+            
+        return Response({'success': True, 'message': 'Selected daily reports deleted successfully.'})
 
 
 class WholesaleStatusView(APIView):

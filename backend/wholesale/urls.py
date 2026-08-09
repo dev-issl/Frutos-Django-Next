@@ -13,6 +13,7 @@ from .views import (
     WholesaleMarkNotificationsReadView,
     WholesaleNotificationDeleteView,  
     WholesaleDailyReportListCreateView,
+    WholesaleDailyReportBulkDeleteView,
     WholesaleStatusView,
     WholesaleSendPasswordResetOTPView,
     WholesaleVerifyOTPAndResetPasswordView,
@@ -56,6 +57,7 @@ urlpatterns = [
 
     # ─── Daily Reports ────────────────────────────────────────
     path('daily-reports/', WholesaleDailyReportListCreateView.as_view(), name='daily-reports'),
+    path('daily-reports/bulk-delete/', WholesaleDailyReportBulkDeleteView.as_view(), name='daily-reports-bulk-delete'),
 
     # ─── Misc ─────────────────────────────────────────────────
     path('status/', WholesaleStatusView.as_view(), name='status'),

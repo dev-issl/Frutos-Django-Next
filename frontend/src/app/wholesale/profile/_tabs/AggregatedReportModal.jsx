@@ -49,20 +49,63 @@ export default function AggregatedReportModal({ reports, reportType, profile, on
 
   // Calculate date range
   const daysToInclude = reportType === 'weekly' ? 7 : 30
+  
   const endDate = new Date()
+  endDate.setHours(23, 59, 59, 999)
+  
   const startDate = new Date()
   startDate.setDate(endDate.getDate() - daysToInclude + 1)
-  
+  startDate.setHours(0, 0, 0, 0)
+
   // Format dates for display
   const formatDate = (d) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
   const dateRangeStr = `${formatDate(startDate)} - ${formatDate(endDate)}`
-
+  
   // Filter reports
+  console.log("AggregatedReportModal Input Reports:", reports, "StartDate:", startDate, "EndDate:", endDate)
   const filteredReports = (reports || []).filter(r => {
     if (!r.date) return false
-    const reportDate = new Date(r.date)
+    
+    let year, month, day
+    const dateStr = String(r.date).trim()
+    if (dateStr.includes('-')) {
+      const parts = dateStr.split('-').map(Number)
+      if (parts[0] > 1000) {
+        [year, month, day] = parts
+      } else {
+        [day, month, year] = parts
+      }
+    } else if (dateStr.includes('/')) {
+      const parts = dateStr.split('/').map(Number)
+      if (parts[0] > 1000) {
+        [year, month, day] = parts
+      } else {
+        [day, month, year] = parts
+      }
+    } else {
+      const parsed = new Date(dateStr)
+      if (isNaN(parsed.getTime())) return false
+      return parsed >= startDate && parsed <= endDate
+    }
+    
+    if (!year || !month || !day) return false
+    const reportDate = new Date(year, month - 1, day)
     return reportDate >= startDate && reportDate <= endDate
-  }).sort((a, b) => new Date(a.date) - new Date(b.date))
+  }).sort((a, b) => {
+    const parseReportDate = (dStr) => {
+      const s = String(dStr).trim()
+      if (s.includes('-')) {
+        const parts = s.split('-').map(Number)
+        return parts[0] > 1000 ? new Date(parts[0], parts[1] - 1, parts[2]) : new Date(parts[2], parts[1] - 1, parts[0])
+      } else if (s.includes('/')) {
+        const parts = s.split('/').map(Number)
+        return parts[0] > 1000 ? new Date(parts[0], parts[1] - 1, parts[2]) : new Date(parts[2], parts[1] - 1, parts[0])
+      }
+      return new Date(s)
+    }
+    return parseReportDate(a.date) - parseReportDate(b.date)
+  })
+  console.log("AggregatedReportModal Filtered Reports:", filteredReports)
 
   // Calculate totals
   const totals = filteredReports.reduce((acc, curr) => {
@@ -113,23 +156,28 @@ export default function AggregatedReportModal({ reports, reportType, profile, on
           <div className="p-8 sm:p-12 bg-white min-h-[700px] relative font-sans text-gray-800" ref={printRef}>
             
             {/* Top Header */}
-            <div className="flex justify-between items-start relative z-10" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '40px' }}>
+            <div className="flex justify-between items-start relative z-10" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px', borderBottom: '2px solid #f1f5f9', paddingBottom: '24px' }}>
               <div>
-                <h1 className="text-4xl font-light tracking-wide text-gray-800" style={{ fontSize: '36px', fontWeight: '300', margin: '0 0 8px 0', textTransform: 'uppercase', letterSpacing: '2px' }}>REPORT</h1>
-                <h2 className="text-2xl font-bold text-gray-900 tracking-wider" style={{ fontSize: '24px', fontWeight: 'bold', margin: '0 0 12px 0' }}>{title}</h2>
-                <div style={{ display: 'inline-flex', alignItems: 'center', padding: '6px 16px', borderRadius: '9999px', backgroundColor: '#e0e7ff', color: '#3730a3', border: '1px solid #c7d2fe' }}>
-                  <span style={{ fontSize: '14px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                <span style={{ fontSize: '11px', fontWeight: '800', color: '#059669', textTransform: 'uppercase', letterSpacing: '0.15em', display: 'block', marginBottom: '4px' }}>Wholesale Operations</span>
+                <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight" style={{ fontSize: '28px', fontWeight: '900', color: '#0f172a', margin: '0 0 10px 0', textTransform: 'uppercase', letterSpacing: '-0.5px' }}>{title}</h1>
+                <div style={{ display: 'inline-flex', alignItems: 'center', padding: '5px 12px', borderRadius: '8px', backgroundColor: '#ecfdf5', color: '#065f46', border: '1px solid #a7f3d0' }}>
+                  <span style={{ fontSize: '12px', fontWeight: '700', letterSpacing: '0.05em' }}>
                     {dateRangeStr}
                   </span>
                 </div>
               </div>
-              <div className="text-right flex items-center gap-4 justify-end" style={{ display: 'flex', alignItems: 'center', gap: '16px', justifyContent: 'flex-end' }}>
+              <div className="text-right flex items-center gap-3 justify-end" style={{ display: 'flex', alignItems: 'center', gap: '12px', justifyContent: 'flex-end' }}>
                 {profile?.profile_image_url && (
-                  <img src={profile.profile_image_url} alt="Logo" style={{ height: '48px', objectFit: 'contain', borderRadius: '4px' }} />
+                  <img src={profile.profile_image_url} alt="Logo" style={{ height: '44px', width: '44px', objectFit: 'cover', borderRadius: '50%', border: '2px solid #e2e8f0' }} />
                 )}
-                <h1 className="text-3xl font-bold text-gray-600 tracking-widest" style={{ fontSize: '28px', fontWeight: 'bold', color: '#4b5563', margin: '0' }}>
-                  {(profile?.business_name || profile?.contact_name || 'Wholesale Shop').toUpperCase()}
-                </h1>
+                <div style={{ textAlign: 'right' }}>
+                  <h1 className="text-xl font-bold text-slate-800 tracking-tight" style={{ fontSize: '18px', fontWeight: '800', color: '#1e293b', margin: '0', textTransform: 'uppercase' }}>
+                    {profile?.business_name || 'Wholesale Shop'}
+                  </h1>
+                  <span style={{ fontSize: '11px', color: '#64748b', display: 'block', textTransform: 'capitalize', marginTop: '2px' }}>
+                    {profile?.contact_name || 'Partner Account'}
+                  </span>
+                </div>
               </div>
             </div>
 
