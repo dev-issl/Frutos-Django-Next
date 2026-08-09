@@ -139,7 +139,7 @@ export default function LiveChatWidget() {
         setTotalUnread(unread);
       }
     } catch (err) {
-      console.error('Failed to fetch contacts', err);
+      console.debug('Failed to fetch contacts (API offline/loading):', err);
     }
   }, [getAccess]);
 
@@ -157,7 +157,7 @@ export default function LiveChatWidget() {
         fetchContacts();
       }
     } catch (err) {
-      console.error('Failed to fetch history', err);
+      console.debug('Failed to fetch history (API offline/loading):', err);
     }
   }, [getAccess, fetchContacts]);
 

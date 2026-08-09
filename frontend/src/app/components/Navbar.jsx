@@ -333,6 +333,7 @@ useEffect(() => {
                   height={50}
                   priority
                   className="object-contain w-[35px] md:w-[45px] h-auto"
+                  style={{ height: 'auto' }}
               />
               <span className="text-[18px] md:text-[22px]" style={{
                   fontFamily: '"Playfair Display", Georgia, serif',

@@ -143,8 +143,18 @@ class WholesaleProfileImageView(APIView):
                 user.profile_image.delete(save=False)
             except Exception:
                 pass
-        user.profile_image = image
-        user.save(update_fields=['profile_image'])
+                
+        # Save file first without saving model
+        user.profile_image.save(image.name, image, save=False)
+        
+        # Bypass user.save() to avoid UUID/Integer DB mismatch on ID
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "UPDATE wholesale_wholesaleuser SET profile_image = %s WHERE email = %s",
+                [user.profile_image.name, user.email]
+            )
+            
         url = request.build_absolute_uri(user.profile_image.url) if user.profile_image else None
         return Response({'profile_image_url': url})
 

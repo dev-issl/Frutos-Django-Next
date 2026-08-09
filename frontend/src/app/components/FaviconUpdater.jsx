@@ -43,7 +43,7 @@ export default function FaviconUpdater() {
           }
         }
       } catch (err) {
-        console.error("Failed to update favicon:", err);
+        console.debug("Favicon update skipped (API offline or loading):", err);
       }
     };
 

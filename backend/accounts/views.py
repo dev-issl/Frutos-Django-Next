@@ -1003,6 +1003,26 @@ class AdminUserDetailView(generics.RetrieveUpdateDestroyAPIView):
             if 'wholesale_status' in data:
                 updates.append("status = %s")
                 params.append(data['wholesale_status'])
+
+            if 'profile_image' in request.FILES:
+                from wholesale.models import WholesaleUser
+                clean_id = real_id.replace('-', '')
+                like_op = 'ILIKE' if connection.vendor == 'postgresql' else 'LIKE'
+                wu = WholesaleUser.objects.raw(
+                    f"SELECT * FROM wholesale_wholesaleuser WHERE REPLACE(CAST(id AS TEXT), '-', '') {like_op} %s", 
+                    [clean_id]
+                )
+                if list(wu):
+                    user = list(wu)[0]
+                    image = request.FILES['profile_image']
+                    if user.profile_image:
+                        try:
+                            user.profile_image.delete(save=False)
+                        except Exception:
+                            pass
+                    user.profile_image.save(image.name, image, save=False)
+                    updates.append("profile_image = %s")
+                    params.append(user.profile_image.name)
                 
             if updates:
                 update_sql = ", ".join(updates)
