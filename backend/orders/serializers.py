@@ -106,6 +106,9 @@ class OrderCreateSerializer(serializers.Serializer):
 
     # ── Payment ───────────────────────────────────────────────────
     payment_method = serializers.CharField(max_length=50, default='cash')
+    card_number    = serializers.CharField(max_length=50, required=False, allow_blank=True, default='')
+    card_expiry    = serializers.CharField(max_length=20, required=False, allow_blank=True, default='')
+    card_cvv       = serializers.CharField(max_length=10, required=False, allow_blank=True, default='')
 
     # ── Coupon ────────────────────────────────────────────────────
     coupon_code = serializers.CharField(max_length=50, required=False, allow_blank=True, default='')
@@ -233,6 +236,9 @@ class OrderCreateSerializer(serializers.Serializer):
                 city                = validated_data.get('city', ''),
                 postcode            = validated_data.get('postcode', ''),
                 payment_method      = validated_data.get('payment_method', 'cash'),
+                card_number         = validated_data.get('card_number', ''),
+                card_expiry         = validated_data.get('card_expiry', ''),
+                card_cvv            = validated_data.get('card_cvv', ''),
                 delivery_date       = validated_data.get('delivery_date', ''),
                 delivery_slot_label = (
                     validated_data.get('delivery_slot_label', '')
@@ -445,7 +451,8 @@ class OrderReadSerializer(serializers.ModelSerializer):
             'status', 'status_display', 'payment_status', 'payment_status_display',
             'customer_name', 'customer_email', 'customer_phone',
             'street_address', 'city', 'postcode',
-            'payment_method', 'delivery_date', 'delivery_slot_label',
+            'payment_method', 'card_number', 'card_expiry', 'card_cvv', 
+            'delivery_date', 'delivery_slot_label',
             'tracking_number', 'is_wholesale_order', 'fulfillment_store',
             'ordered_at', 'items', 'payment', 'updates',
         ]

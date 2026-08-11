@@ -49,6 +49,8 @@ const FILTERS = [
   { label: "Cancelled", value: "CANCELLED" },
   { label: "Wholesale", value: "WHOLESALE" },
   { label: "Customer", value: "RETAIL" },
+  { label: "Cash", value: "payment_cash" },
+  { label: "Debit/Credit Card", value: "payment_card" },
 ];
 
 export default function OrdersPage() {
@@ -59,6 +61,7 @@ export default function OrdersPage() {
   const [editItem, setEditItem] = useState(null);
   const [deleteItem, setDeleteItem] = useState(null);
   const [showReport, setShowReport] = useState(false);
+  const [selectedOrders, setSelectedOrders] = useState([]);
 
   const { data: storesRaw } = useSWR("ref-stores", () => storesService.list());
   const stores = storesRaw?.results || (Array.isArray(storesRaw) ? storesRaw : []);
@@ -89,22 +92,6 @@ export default function OrdersPage() {
     }
   ];
 
-  const columns = [
-    { key: "order_number", label: "Order #", render: (v, row) => (
-       <span 
-         className="font-bold text-[#00694C] cursor-pointer hover:underline"
-         onClick={(e) => { e.stopPropagation(); setViewItem(row); }}
-       >
-         {v}
-       </span>
-    )},
-    { key: "customer_name", label: "Customer" },
-    { key: "customer_email", label: "Email" },
-    { key: "total_amount", label: "Total", render: (v) => `€${Number(v || 0).toLocaleString()}` },
-    { key: "status", label: "Status", render: (v) => <StatusBadge value={v} /> },
-    { key: "payment_status", label: "Payment", render: (v) => <StatusBadge value={v} /> },
-    { key: "ordered_at", label: "Date", render: (v) => v ? new Date(v).toLocaleDateString() : "—" },
-  ];
 
   // Backend OrderViewSet.list returns a flat array (no pagination)
   const { data: rawData, isLoading, error, mutate } = useSWR(
@@ -119,26 +106,87 @@ export default function OrdersPage() {
       ? rawList.filter(o => o.is_wholesale_order)
       : activeFilter === "RETAIL"
         ? rawList.filter(o => !o.is_wholesale_order)
-        : activeFilter === "THIS_WEEK"
-          ? rawList.filter(o => {
-            if (!o.ordered_at) return false;
-            const date = new Date(o.ordered_at);
-            const now = new Date();
-            const startOfWeek = new Date(now);
-            startOfWeek.setDate(now.getDate() - now.getDay());
-            startOfWeek.setHours(0, 0, 0, 0);
-            return date >= startOfWeek;
-          })
-          : activeFilter === "THIS_MONTH"
-            ? rawList.filter(o => {
-              if (!o.ordered_at) return false;
-              const date = new Date(o.ordered_at);
-              const now = new Date();
-              return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
-            })
-            : rawList.filter(o => o.status === activeFilter)
+        : activeFilter === "payment_cash"
+          ? rawList.filter(o => o.payment_method === 'cash')
+          : activeFilter === "payment_card"
+            ? rawList.filter(o => o.payment_method === 'card')
+            : activeFilter === "THIS_WEEK"
+              ? rawList.filter(o => {
+                if (!o.ordered_at) return false;
+                const date = new Date(o.ordered_at);
+                const now = new Date();
+                const startOfWeek = new Date(now);
+                startOfWeek.setDate(now.getDate() - now.getDay());
+                startOfWeek.setHours(0, 0, 0, 0);
+                return date >= startOfWeek;
+              })
+              : activeFilter === "THIS_MONTH"
+                ? rawList.filter(o => {
+                  if (!o.ordered_at) return false;
+                  const date = new Date(o.ordered_at);
+                  const now = new Date();
+                  return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+                })
+                : rawList.filter(o => o.status === activeFilter)
     : rawList;
   const totalCount = rawData?.count ?? data.length;
+
+  const columns = [
+    { 
+      key: "select", 
+      sortable: false,
+      align: "center",
+      label: (
+        <input 
+          type="checkbox" 
+          className="cursor-pointer"
+          checked={selectedOrders.length > 0 && selectedOrders.length === data.length}
+          onChange={(e) => {
+            if (e.target.checked) {
+              setSelectedOrders(data.map(o => o.order_number));
+            } else {
+              setSelectedOrders([]);
+            }
+          }}
+        />
+      ),
+      render: (v, row) => (
+        <input 
+          type="checkbox" 
+          className="cursor-pointer"
+          checked={selectedOrders.includes(row.order_number)}
+          onClick={(e) => e.stopPropagation()}
+          onChange={(e) => {
+            if (e.target.checked) {
+              setSelectedOrders(prev => [...prev, row.order_number]);
+            } else {
+              setSelectedOrders(prev => prev.filter(id => id !== row.order_number));
+            }
+          }}
+        />
+      )
+    },
+    { key: "order_number", label: "Order #", render: (v, row) => (
+       <span 
+         className="font-bold text-[#00694C] cursor-pointer hover:underline"
+         onClick={(e) => { e.stopPropagation(); setViewItem(row); }}
+       >
+         {v}
+       </span>
+    )},
+    { key: "customer_name", label: "Customer", render: (v, row) => (
+      <div className="flex items-center gap-2">
+        <span>{v}</span>
+        {row.is_wholesale_order && (
+          <span className="text-[10px] font-bold text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">(wh)</span>
+        )}
+      </div>
+    )},
+    { key: "total_amount", label: "Total", render: (v) => `€${Number(v || 0).toLocaleString()}` },
+    { key: "status", label: "Status", render: (v) => <StatusBadge value={v} /> },
+    { key: "payment_status", label: "Payment", render: (v) => <StatusBadge value={v} /> },
+    { key: "ordered_at", label: "Date", render: (v) => v ? new Date(v).toLocaleDateString() : "—" },
+  ];
 
   const handleStatusUpdate = async (values) => {
     try {
@@ -163,6 +211,18 @@ export default function OrdersPage() {
     }
   };
 
+  const handleBulkDelete = async () => {
+    if (!window.confirm(`Are you sure you want to delete ${selectedOrders.length} orders?`)) return;
+    try {
+      await Promise.all(selectedOrders.map(id => api.delete(`/api/orders/${id}/`)));
+      toast.success(`${selectedOrders.length} orders deleted`);
+      setSelectedOrders([]);
+      mutate();
+    } catch (err) {
+      toast.error(err?.message || "Bulk delete failed");
+    }
+  };
+
   return (
     <Container
       title={isCreating ? "Create Manual Order" : "Orders"}
@@ -172,6 +232,14 @@ export default function OrdersPage() {
           {!isCreating && error && (
             <button onClick={() => mutate()} className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-red-200 text-red-600 rounded-md hover:bg-red-50 transition-colors">
               <RefreshCw className="w-3.5 h-3.5" /> Retry
+            </button>
+          )}
+          {!isCreating && selectedOrders.length > 0 && (
+            <button
+              onClick={handleBulkDelete}
+              className="cursor-pointer flex items-center gap-2 px-4 py-2 text-sm font-bold bg-red-50 border border-red-200 text-red-600 rounded-lg hover:bg-red-100 hover:border-red-300 transition-colors shadow-sm"
+            >
+              <Trash2 className="w-4 h-4" /> Delete Selected ({selectedOrders.length})
             </button>
           )}
           {!isCreating && (
@@ -323,6 +391,31 @@ export default function OrdersPage() {
                     </div>
                   </div>
                 </div>
+
+                {/* Card Info */}
+                {viewItem.payment_method === 'card' && (
+                  <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+                    <h4 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2 border-b border-slate-50 pb-3">
+                      <div className="p-1.5 bg-blue-50 rounded-lg"><Receipt className="w-4 h-4 text-blue-600" /></div>
+                      Card Details
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Card Number</span>
+                        <span className="text-[13px] font-mono text-slate-600 bg-slate-50 px-2 py-0.5 rounded mt-0.5 inline-block self-start border border-slate-100 truncate max-w-full">{viewItem.card_number || "—"}</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Expiry</span>
+                        <span className="text-sm font-semibold text-slate-800 mt-0.5">{viewItem.card_expiry || "—"}</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">CVV</span>
+                        <span className="text-sm font-semibold text-slate-800 mt-0.5">{viewItem.card_cvv || "—"}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
 
                 {/* Payment Info */}
                 {viewItem.payment && (

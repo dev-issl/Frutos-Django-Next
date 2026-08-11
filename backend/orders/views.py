@@ -481,7 +481,12 @@ class OrderViewSet(viewsets.ModelViewSet):
         )
         user_param = self.request.query_params.get('user')
         order_number_param = self.request.query_params.get('order_number')
+        payment_method_param = self.request.query_params.get('payment_method')
         user = self.request.user
+
+        if payment_method_param:
+            queryset = queryset.filter(payment_method=payment_method_param)
+
 
         # Check for wholesale token
         is_wholesale_token = False

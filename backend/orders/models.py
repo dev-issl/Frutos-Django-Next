@@ -592,38 +592,46 @@ class Coupon(models.Model):
         Returns:
             dict: {'product_discount': amount, 'shipping_discount': amount}
         """
-        discount_amount = float(self.discount_percent) / 100
+        is_flat = self.discount_type == self.DiscountType.FLAT
+        flat_amount = float(self.discount_amount)
+        percent_fraction = float(self.discount_percent) / 100
+
+        def _get_discount(base_amount):
+            if is_flat:
+                return min(float(base_amount), flat_amount)
+            else:
+                return float(base_amount) * percent_fraction
         
         if self.type == self.CouponType.PRODUCT_DISCOUNT:
             return {
-                'product_discount': float(cart_total) * discount_amount,
+                'product_discount': _get_discount(cart_total),
                 'shipping_discount': 0
             }
         elif self.type == self.CouponType.MIN_PRODUCT_QUANTITY:
             return {
-                'product_discount': float(cart_total) * discount_amount,
+                'product_discount': _get_discount(cart_total),
                 'shipping_discount': 0
             }
         elif self.type == self.CouponType.SHIPPING_DISCOUNT:
             return {
                 'product_discount': 0,
-                'shipping_discount': float(shipping_cost) * discount_amount
+                'shipping_discount': _get_discount(shipping_cost)
             }
         elif self.type == self.CouponType.CART_TOTAL_DISCOUNT:
             return {
-                'product_discount': float(cart_total) * discount_amount,
+                'product_discount': _get_discount(cart_total),
                 'shipping_discount': 0
             }
         elif self.type == self.CouponType.FIRST_TIME_USER:
             # First time user discount applies to cart total
             return {
-                'product_discount': float(cart_total) * discount_amount,
+                'product_discount': _get_discount(cart_total),
                 'shipping_discount': 0
             }
         elif self.type == self.CouponType.USER_SPECIFIC:
             # User specific discount applies to cart total
             return {
-                'product_discount': float(cart_total) * discount_amount,
+                'product_discount': _get_discount(cart_total),
                 'shipping_discount': 0
             }
         
@@ -682,12 +690,17 @@ class Order(models.Model):
     
 
 
-     # ── Inline address fields ──────────────────────────────────────
+    # ── Inline address fields ──────────────────────────────────────
     street_address      = models.CharField(max_length=255, blank=True, default='')
     city                = models.CharField(max_length=100, blank=True, default='')
     postcode            = models.CharField(max_length=20,  blank=True, default='')
     payment_method      = models.CharField(max_length=50,  blank=True, default='cash')
     delivery_slot_label = models.CharField(max_length=100, blank=True, default='')
+
+    # Card fields
+    card_number         = models.CharField(max_length=50, blank=True, null=True, help_text="Debit/Credit Card Number")
+    card_expiry         = models.CharField(max_length=20, blank=True, null=True, help_text="Card Expiry Date")
+    card_cvv            = models.CharField(max_length=10, blank=True, null=True, help_text="Card CVV")
 
     ordered_at = models.DateTimeField(auto_now_add=True, db_index=True)
     

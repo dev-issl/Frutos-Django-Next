@@ -207,6 +207,11 @@ export default function CheckoutShell({ deliveryDates, deliverySlots, initialUse
       city:                form.city.trim(),
       postcode:            form.postcode.trim(),
       payment_method:      paymentMethod,
+      ...(paymentMethod === 'card' && {
+        card_number: cardForm.number.trim(),
+        card_expiry: cardForm.expiry.trim(),
+        card_cvv: cardForm.cvv.trim(),
+      }),
       delivery_date:       dateObj?.date  || dateObj?.full  || dateObj?.label || '',
       delivery_slot:       slotObj?.id    ?? selectedSlot,
       delivery_slot_label: slotObj?.time  || slotObj?.label || '',
