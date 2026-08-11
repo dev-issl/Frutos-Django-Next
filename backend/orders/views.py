@@ -774,7 +774,6 @@ class OrderViewSet(viewsets.ModelViewSet):
         except serializers.ValidationError as e:
             # Handle validation errors
             logger.exception(f"Order validation error: {str(e)}")
-            traceback.print_exc()
             return Response({
                 'success': False,
                 'detail': 'Order validation failed',
