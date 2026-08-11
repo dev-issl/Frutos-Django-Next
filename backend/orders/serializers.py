@@ -226,6 +226,10 @@ class OrderCreateSerializer(serializers.Serializer):
                 else:
                     final_user = user
 
+            import random
+            from django.utils import timezone
+            tracking_num = f"TRK-{timezone.now().strftime('%Y%m%d')}-{random.randint(10000, 99999)}"
+
             order = Order.objects.create(
                 user                = final_user,
                 wholesale_user      = final_wholesale_user,
@@ -247,6 +251,7 @@ class OrderCreateSerializer(serializers.Serializer):
                 promo_discount      = product_discount,
                 cart_subtotal       = cart_subtotal,
                 total_amount        = total_amount,
+                tracking_number     = tracking_num,
             )
 
             # ── Create OrderItems ─────────────────────────────────
