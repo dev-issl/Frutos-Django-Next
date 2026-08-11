@@ -10,7 +10,7 @@ from .views import (
     StoreListView, StoreDetailView,
     AdminStoreListCreateView, AdminStoreDetailView,
     AdminStoreFeaturesView, AdminStoreAvailabilityView,
-    DashboardLeftoverPackViewSet
+    DashboardLeftoverPackViewSet, EligibleStoresView
 )
 
 router = DefaultRouter()
@@ -21,6 +21,7 @@ urlpatterns = [
     
     # Public
     path('stores/',                        StoreListView.as_view(),              name='store-list'),
+    path('stores/eligible/',               EligibleStoresView.as_view(),         name='store-eligible'),
     path('stores/slug/<slug:slug>/',       StoreDetailView.as_view(),            name='store-detail'),
 
     # Admin CRUD

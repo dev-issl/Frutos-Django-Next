@@ -971,3 +971,47 @@ def product_export_csv(request):
         ])
     
     return response
+
+
+@login_required
+@user_passes_test(staff_required)
+@require_http_methods(["POST"])
+def order_item_update(request, pk):
+    """Update order item quantity inline"""
+    item = get_object_or_404(OrderItem, pk=pk)
+    order = item.order
+        
+    try:
+        new_quantity = int(request.POST.get('quantity', item.quantity))
+        if new_quantity < 1:
+            return JsonResponse({'error': 'Quantity must be at least 1'}, status=400)
+    except ValueError:
+        return JsonResponse({'error': 'Invalid quantity'}, status=400)
+        
+    if new_quantity != item.quantity:
+        diff = item.quantity - new_quantity
+        amount_change = diff * item.unit_price
+        
+        item.quantity = new_quantity
+        item.save()
+        
+        # update order totals
+        order.cart_subtotal -= amount_change
+        order.total_amount -= amount_change
+        order.save()
+        
+        messages.success(request, f'Quantity for {item.product.name if item.product else "item"} updated successfully.')
+    
+    # Render and return the updated order detail modal or full page
+    order_items = order.items.select_related('product', 'color', 'size')
+    
+    context = {
+        'order': order,
+        'order_items': order_items,
+    }
+    
+    if request.POST.get('from_full_page'):
+        return render(request, 'dashboard/orders/detail.html', context)
+        
+    return render(request, 'dashboard/orders/partials/order_detail_modal.html', context)
+

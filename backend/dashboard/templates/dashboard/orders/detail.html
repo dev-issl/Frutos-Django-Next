@@ -107,7 +107,19 @@
                                         <td>{{ item.product.name }}</td>
                                         <td>{{ item.color.name|default:"—" }}</td>
                                         <td>{{ item.size.name|default:"—" }}</td>
-                                        <td>{{ item.quantity }}</td>
+                                        <td>
+                                            <form hx-post="{% url 'dashboard:order_item_update' item.pk %}" 
+                                                  hx-target="body"
+                                                  class="d-flex align-items-center mb-0">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="from_full_page" value="1">
+                                                <input type="number" name="quantity" value="{{ item.quantity }}" min="1" 
+                                                       class="form-control form-control-sm me-1 text-center" style="width: 60px;">
+                                                <button type="submit" class="btn btn-sm btn-outline-primary p-1 lh-1" title="Save Quantity">
+                                                    <i class="material-symbols-outlined" style="font-size: 16px;">save</i>
+                                                </button>
+                                            </form>
+                                        </td>
                                         <td>{{ item.unit_price }} BDT</td>
                                         <td class="text-end fw-semibold">{{ item.quantity|mul:item.unit_price }} BDT</td>
                                     </tr>

@@ -650,6 +650,119 @@ class OrderViewSet(viewsets.ModelViewSet):
                 'detail': 'There was an error retrieving the order details. Please try again.'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+    @action(detail=True, methods=['post'], url_path='decrease-item-quantity')
+    def decrease_item_quantity(self, request, order_number=None):
+        """
+        Allows an admin to decrease the quantity of an order item.
+        Expects payload: { "item_id": 123 }
+        """
+        user = request.user
+        
+        # Check permissions: user must be staff/admin
+        if not user.is_authenticated or not (user.is_staff or getattr(user.profile, 'role', '') == 'admin'):
+            return Response({'error': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN)
+            
+        order = self.get_object()
+        item_id = request.data.get('item_id')
+        
+        if not item_id:
+            return Response({'error': 'item_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        try:
+            item = order.items.get(id=item_id)
+        except OrderItem.DoesNotExist:
+            return Response({'error': 'Order item not found'}, status=status.HTTP_404_NOT_FOUND)
+            
+        if item.quantity <= 1:
+            return Response({'error': 'Quantity cannot be decreased further.'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        # Decrease quantity
+        item.quantity -= 1
+        item.save()
+        
+        from decimal import Decimal
+        
+        # Ensure values are Decimals to prevent TypeError between float and Decimal
+        unit_price = Decimal(str(item.unit_price or 0))
+        cart_subtotal = Decimal(str(order.cart_subtotal or 0))
+        total_amount = Decimal(str(order.total_amount or 0))
+        refunded_amount = Decimal(str(order.refunded_amount or 0))
+        
+        # Recalculate totals
+        order.cart_subtotal = cart_subtotal - unit_price
+        order.total_amount = total_amount - unit_price
+        order.refunded_amount = refunded_amount + unit_price
+        order.save()
+        
+        # Send an email notification to the customer
+        from django.core.mail import send_mail
+        from django.conf import settings
+        
+        customer_email = order.customer_email or (order.user.email if order.user else None)
+        if customer_email:
+            item_name = item.product.name if item.product else "a product"
+            subject = f"Important Update Regarding Your Order {order.order_number}"
+            
+            # Plain text fallback
+            message = (
+                f"Dear Customer,\n\n"
+                f"We are sorry to inform you that 1 quantity of '{item_name}' from your order {order.order_number} "
+                f"was unable to be fulfilled and has been removed from your order.\n\n"
+                f"Amount Deducted: €{unit_price}\n"
+                f"Updated Total Amount: €{order.total_amount}\n\n"
+                f"We have adjusted your bill accordingly and any excess payment will be refunded.\n\n"
+                f"We sincerely apologize for any inconvenience this may cause.\n\n"
+                f"Best regards,\n"
+                f"The Frutos Team"
+            )
+            
+            # Professional HTML formatting
+            html_message = f"""
+            <html>
+            <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 8px;">
+                <h2 style="color: #2c3e50; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px;">Order Update: {order.order_number}</h2>
+                <p>Dear Customer,</p>
+                <p>We are reaching out to sincerely apologize as we are unable to fulfill <strong>1 quantity</strong> of the following item from your recent order:</p>
+                <p style="background-color: #f9f9f9; padding: 12px; border-left: 4px solid #e74c3c; font-weight: bold; margin: 15px 0;">
+                    Item: {item_name}
+                </p>
+                <p>This item has been removed from your order, and your bill has been adjusted accordingly.</p>
+                
+                <table style="width: 100%; border-collapse: collapse; margin: 20px 0; background-color: #fcfcfc;">
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #eee;"><strong>Amount Deducted</strong></td>
+                        <td style="padding: 10px; border: 1px solid #eee; color: #e74c3c; font-weight: bold;">- €{unit_price}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #eee;"><strong>New Order Total</strong></td>
+                        <td style="padding: 10px; border: 1px solid #eee; color: #27ae60; font-weight: bold; font-size: 1.1em;">€{order.total_amount}</td>
+                    </tr>
+                </table>
+                
+                <p>If you have already paid for this order, the deducted amount will be refunded to your original payment method.</p>
+                <p>We deeply regret any inconvenience this may have caused and appreciate your understanding.</p>
+                <br>
+                <p>Warm regards,<br><strong>The Frutos Team</strong></p>
+            </body>
+            </html>
+            """
+            
+            try:
+                send_mail(
+                    subject=subject,
+                    message=message,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[customer_email],
+                    fail_silently=True,
+                    html_message=html_message
+                )
+            except Exception:
+                pass
+        
+        # Return updated order data
+        serializer = self.get_serializer(order)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
     @action(detail=False, methods=['post'], url_path='hide-orders')
     def hide_orders(self, request):
         """
@@ -743,26 +856,8 @@ class OrderViewSet(viewsets.ModelViewSet):
                 
                 logger.info(f"Order created successfully: {order.order_number}")
 
-                
-                from accounts.notifications import send_admin_notification
-                
-                # 1. Notify Admins about the new order
-                send_admin_notification(
-                    notification_type='admin_alert',
-                    title='New Order Placed 🛍️',
-                    message=f'Order #{order.order_number} has been placed. Total: ৳{order.total_amount}',
-                    metadata={'orderNumber': order.order_number, 'icon': 'shopping_bag'}
-                )
-                
-                # 2. Check if any product went out of stock
-                for item in order.items.all():
-                    if item.product and item.product.stock <= 0:
-                        send_admin_notification(
-                            notification_type='out_of_stock',
-                            title='Product Out of Stock ⚠️',
-                            message=f'Product "{item.product.name}" is now out of stock after order #{order.order_number}.',
-                            metadata={'productId': str(item.product.id), 'productName': item.product.name, 'icon': 'warning'}
-                        )
+                # 1. Notify Admins about the new order (Handled by serializer)
+                # 2. Check if any product went out of stock (Handled by serializer)
                 
                 # Return success response with order details
                 return Response({
@@ -821,25 +916,7 @@ class OrderViewSet(viewsets.ModelViewSet):
                 logger.info(f"Order created: {order.order_number}")
 
                 # ── Notify admins about new order ────────────────────────
-                try:
-                    from accounts.notifications import send_admin_notification
-                    send_admin_notification(
-                        notification_type='admin_alert',
-                        title='New Order Placed 🛍️',
-                        message=f'Order #{order.order_number} has been placed. Total: ৳{order.total_amount}',
-                        metadata={'orderNumber': order.order_number, 'icon': 'shopping_bag'}
-                    )
-                    # Out-of-stock check
-                    for item in order.items.all():
-                        if item.product and item.product.stock <= 0:
-                            send_admin_notification(
-                                notification_type='out_of_stock',
-                                title='Product Out of Stock ⚠️',
-                                message=f'Product "{item.product.name}" is now out of stock after order #{order.order_number}.',
-                                metadata={'productId': str(item.product.id), 'productName': item.product.name, 'icon': 'warning'}
-                            )
-                except Exception:
-                    pass  # never block order creation due to notification failure
+                # (Handled by OrderCreateSerializer.create)
 
                 return Response({
                     'success':      True,

@@ -654,6 +654,7 @@ class Order(models.Model):
     order_number = models.CharField(max_length=50, unique=True, blank=True, db_index=True)
     total_amount = models.DecimalField(max_digits=12, decimal_places=2)
     cart_subtotal = models.DecimalField(max_digits=12, decimal_places=2, default=0, help_text="Subtotal before shipping and discounts")
+    refunded_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0, help_text="Amount refunded for reduced items")
     status = models.CharField(max_length=20, choices=OrderStatus.choices, default=OrderStatus.PENDING, db_index=True)
     payment_status = models.CharField(max_length=20, choices=PaymentStatus.choices, default=PaymentStatus.PENDING, db_index=True)
     # Frutos-specific fields

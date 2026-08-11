@@ -99,6 +99,9 @@ class OrderCreateSerializer(serializers.Serializer):
     city           = serializers.CharField(max_length=100)
     postcode       = serializers.CharField(max_length=20)
 
+    # ── Store Selection ───────────────────────────────────────────
+    fulfillment_store_id = serializers.IntegerField(required=False, allow_null=True)
+
     # ── Delivery ──────────────────────────────────────────────────
     delivery_date       = serializers.CharField(max_length=50,  required=False, allow_blank=True, default='')
     delivery_slot       = serializers.CharField(max_length=100, required=False, allow_blank=True, default='')
@@ -248,6 +251,7 @@ class OrderCreateSerializer(serializers.Serializer):
                     validated_data.get('delivery_slot_label', '')
                     or validated_data.get('delivery_slot', '')
                 ),
+                fulfillment_store_id = validated_data.get('fulfillment_store_id'),
                 promo_discount      = product_discount,
                 cart_subtotal       = cart_subtotal,
                 total_amount        = total_amount,
@@ -747,7 +751,7 @@ class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model  = Order
         fields = [
-            'id', 'order_number', 'total_amount', 'status', 'payment_status',
+            'id', 'order_number', 'total_amount', 'cart_subtotal', 'refunded_amount', 'status', 'payment_status',
             'shipping_address', 'shipping_method', 'tracking_number', 'fulfillment_store',
             'ordered_at', 'items', 'updates', 'payment', 'is_wholesale_order'
         ]

@@ -100,8 +100,20 @@
                                                 {% endif %}
                                             </div>
                                         </td>
-                                        <td class="text-end">{{ item.quantity }}</td>
-                                        <td class="text-end">{{ item.price|floatformat:2 }} BDT</td>
+                                        <td class="text-end">
+                                            <form hx-post="{% url 'dashboard:order_item_update' item.pk %}" 
+                                                  hx-target="#modal-container"
+                                                  hx-swap="innerHTML"
+                                                  class="d-flex justify-content-end align-items-center mb-0">
+                                                {% csrf_token %}
+                                                <input type="number" name="quantity" value="{{ item.quantity }}" min="1" 
+                                                       class="form-control form-control-sm me-1 text-center" style="width: 60px;">
+                                                <button type="submit" class="btn btn-sm btn-outline-primary p-1 lh-1" title="Save Quantity">
+                                                    <i class="material-symbols-outlined" style="font-size: 16px;">save</i>
+                                                </button>
+                                            </form>
+                                        </td>
+                                        <td class="text-end">{{ item.unit_price|floatformat:2 }} BDT</td>
                                         <td class="text-end fw-semibold">{{ item.get_total|floatformat:2 }} BDT</td>
                                     </tr>
                                 {% empty %}

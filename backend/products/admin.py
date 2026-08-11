@@ -107,7 +107,7 @@ class ProductResource(resources.ModelResource):
             'id', 'name', 'slug', 'shop_name', 'brand_name', 
             'category_name', 'subcategory_name',
             'price', 'discount_price', 'wholesale_price', 'minimum_purchase',
-            'affiliate_commission_rate', 'stock', 'is_active',
+            'stock', 'is_active',
             'weight', 'length', 'width', 'height',
             'colors_list', 'sizes_list', 'created_at', 'updated_at'
         )
@@ -341,7 +341,6 @@ class ProductAdmin(ImportExportModelAdmin):
             'fields': (
                 ('price', 'discount_price'),
                 ('wholesale_price', 'minimum_purchase'),
-                'affiliate_commission_rate',
                 'stock',
                 'is_active'
             ),

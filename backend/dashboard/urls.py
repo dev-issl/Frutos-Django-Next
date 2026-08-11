@@ -5,6 +5,7 @@ from django.urls import path
 from . import crud_views
 from . import analytics_views
 from . import api_views
+from . import views
 from .views_dashboard_home import (
     dashboard_home_view, 
     total_revenue_partial, 
@@ -108,13 +109,14 @@ urlpatterns = [
     # Legacy aliases for commonly-used dashboard routes (backwards compatible)
     # ------------------------------------------------------------------------
     # Orders
-    path('orders/', crud_views.model_list, {'app_label': 'orders', 'model_name': 'Order'}, name='order_list'),
-    path('orders/create/', crud_views.model_create, {'app_label': 'orders', 'model_name': 'Order'}, name='order_create'),
-    path('orders/<int:pk>/edit/', crud_views.model_update, {'app_label': 'orders', 'model_name': 'Order'}, name='order_edit'),
-    path('orders/<int:pk>/delete/', crud_views.model_delete, {'app_label': 'orders', 'model_name': 'Order'}, name='order_delete'),
-    path('orders/<int:pk>/', crud_views.model_detail, {'app_label': 'orders', 'model_name': 'Order'}, name='order_detail'),
+    path('orders/', views.order_list, name='order_list'),
+    path('orders/create/', views.order_create, name='order_create'),
+    path('orders/<int:pk>/edit/', views.order_edit, name='order_edit'),
+    path('orders/<int:pk>/delete/', views.order_delete, name='order_delete'),
+    path('orders/<int:pk>/', views.order_detail, name='order_detail'),
     path('orders/<int:pk>/print/', crud_views.model_print, {'app_label': 'orders', 'model_name': 'Order'}, name='order_print'),
-    path('orders/<int:pk>/update-status/', crud_views.order_update_status, name='order_update_status'),
+    path('orders/<int:pk>/update-status/', views.order_update_status, name='order_update_status'),
+    path('orders/item/<int:pk>/update/', views.order_item_update, name='order_item_update'),
     path('orders/export/csv/', crud_views.model_export_csv, {'app_label': 'orders', 'model_name': 'Order'}, name='order_export_csv'),
 
     # Products (Product uses UUID PK)

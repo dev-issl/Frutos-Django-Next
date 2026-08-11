@@ -5,7 +5,7 @@
 ## ════════════════════════════════════════════════════════════════════════════
 
 from django import forms
-from products.models import Product, Brand, SubCategory, Color, Size, ShippingCategory
+from products.models import Product, Brand, SubCategory, Color, Size
 from orders.models import Order
 from shops.models import Shop
 from users.models import Address
@@ -51,7 +51,7 @@ class ProductForm(forms.ModelForm):
         fields = [
             'shop', 'brand', 'name', 'sub_category', 'shipping_category',
             'description', 'price', 'discount_price', 'wholesale_price',
-            'minimum_purchase', 'affiliate_commission_rate', 'stock',
+            'minimum_purchase', 'stock',
             'unit', 'origin',                  # ✅ NEW FIELDS
             'weight', 'length', 'width', 'height',
             'thumbnail', 'colors', 'sizes', 'is_active'
@@ -66,7 +66,6 @@ class ProductForm(forms.ModelForm):
             'discount_price':           forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'placeholder': '0.00'}),
             'wholesale_price':          forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'placeholder': '0.00'}),
             'minimum_purchase':         forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '1'}),
-            'affiliate_commission_rate':forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'placeholder': '0.00'}),
             'stock':                    forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '0'}),
             'unit':                     forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. kg, piece, bunch'}),   # ✅
             'origin':                   forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. Spain, Local Farm'}),   # ✅
@@ -86,7 +85,6 @@ class ProductForm(forms.ModelForm):
         self.fields['shipping_category'].required         = False
         self.fields['discount_price'].required            = False
         self.fields['wholesale_price'].required           = False
-        self.fields['affiliate_commission_rate'].required = False
         self.fields['weight'].required                    = False
         self.fields['length'].required                    = False
         self.fields['width'].required                     = False

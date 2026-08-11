@@ -74,6 +74,40 @@ class StoreDetailView(APIView):
         return Response(StoreDetailSerializer(store, context={'request': request}).data)
 
 
+class EligibleStoresView(APIView):
+    """POST /api/fulfillment/stores/eligible/  — public"""
+    permission_classes = [permissions.AllowAny]
+    
+    def post(self, request):
+        items = request.data.get('items', [])
+        
+        # Start with all active stores
+        stores = Store.objects.filter(is_active=True).prefetch_related('features', 'availability', 'leftover_packs')
+        
+        from products.models import Product
+
+        for item in items:
+            product_id = item.get('product_id')
+            quantity = item.get('quantity', 1)
+            
+            if product_id:
+                try:
+                    product = Product.objects.get(id=product_id)
+                except Product.DoesNotExist:
+                    continue
+                
+                # Check global stock
+                if product.stock < quantity:
+                    return Response([]) # Not enough global stock, no store can fulfill
+                
+                # If product has restricted stores, intersect them
+                if product.stores.exists():
+                    stores = stores.filter(id__in=product.stores.all())
+                
+        return Response(StoreListSerializer(stores.distinct(), many=True, context={'request': request}).data)
+
+
+
 # ── Admin Views ───────────────────────────────────────────────────────────────
 
 class AdminStoreListCreateView(APIView):
