@@ -126,8 +126,9 @@ function StoreProductsTab({ storeId, storeName }) {
   const [search, setSearch] = useState("");
   const [selectedCat, setSelectedCat] = useState("");
 
+  // Fetch ALL products, not just for the specific store
   const { data: rawData, isLoading, mutate } = useSWR(
-    storeId ? `/api/products/products/?store=${storeId}&page_size=200` : null,
+    "/api/products/products/?page_size=500",
     (url) => api.get(url),
     { revalidateOnFocus: false }
   );
@@ -147,7 +148,15 @@ function StoreProductsTab({ storeId, storeName }) {
   );
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
+      {/* Header section to clarify they are viewing the full catalog */}
+      <div className="bg-gradient-to-r from-[#00694C]/5 to-transparent p-4 rounded-2xl border border-[#00694C]/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h3 className="text-[#004A3A] font-serif text-lg font-bold">Global Product Catalog</h3>
+          <p className="text-slate-500 text-xs mt-0.5">Showing all available products across the entire network.</p>
+        </div>
+      </div>
+      
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
         <div className="relative flex-1">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />

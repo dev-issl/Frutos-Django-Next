@@ -14,6 +14,7 @@ export default function SearchableSelect({
   name,
   className = "",
   isMulti = false,
+  allowCustom = false,
 }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -24,18 +25,32 @@ export default function SearchableSelect({
   const getSelectedOptions = () => {
     if (isMulti) {
       const vals = Array.isArray(value) ? value : [];
-      return options.filter(o => vals.some(v => String(v) === String(o.value)));
+      return vals.map(val => {
+        const match = options.find(o => String(o.value) === String(val));
+        if (match) return match;
+        return allowCustom && val ? { label: val, value: val } : null;
+      }).filter(Boolean);
     } else {
-      return options.filter(o => String(o.value) === String(value));
+      const match = options.find(o => String(o.value) === String(value));
+      if (match) return [match];
+      if (allowCustom && value) return [{ label: value, value: value }];
+      return [];
     }
   };
 
   const selectedOptions = getSelectedOptions();
   const selected = isMulti ? null : selectedOptions[0];
 
-  const filtered = search
+  let filtered = search
     ? options.filter(o => o.label?.toLowerCase().includes(search.toLowerCase()))
-    : options;
+    : [...options];
+
+  if (allowCustom && search) {
+    const exactMatch = options.some(o => String(o.value).toLowerCase() === search.toLowerCase() || String(o.label).toLowerCase() === search.toLowerCase());
+    if (!exactMatch) {
+      filtered.push({ label: `Create "${search}"`, value: search, isCustom: true });
+    }
+  }
 
   useEffect(() => {
     if (!open) return;
@@ -70,6 +85,7 @@ export default function SearchableSelect({
         onChange?.(currentVals.filter(v => String(v) !== String(optValue)));
       } else {
         onChange?.([...currentVals, optValue]);
+        if (allowCustom) setSearch("");
       }
     } else {
       onChange?.(optValue);

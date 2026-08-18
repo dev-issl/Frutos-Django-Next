@@ -191,9 +191,9 @@ export default function StaffAttendanceView({ store, currentActiveShift, onSwitc
     { revalidateOnFocus: false }
   );
 
-  // Products at this store
+  // Products at this store (Now fetching ALL global products)
   const { data: productsRaw, isLoading: productsLoading, mutate: mutateProducts } = useSWR(
-    store?.id ? `/api/products/products/?store=${store.id}&page_size=200` : null,
+    "/api/products/products/?page_size=500",
     (url) => api.get(url),
     { revalidateOnFocus: false }
   );

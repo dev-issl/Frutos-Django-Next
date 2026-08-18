@@ -7,10 +7,8 @@ import { colorsService, sizesService } from "@/app/dashboard/_lib/services";
 
 const TABS = [
   { id: "basic",       label: "Basic Info" },
-  { id: "description", label: "Description" },
-  { id: "nutritional", label: "Nutritional" },
+  { id: "description", label: "Description & Nutrition" },
   { id: "pricing",     label: "Pricing & Stock" },
-  { id: "wholesale",   label: "Wholesale" },
   { id: "media",       label: "Media" },
   { id: "specs",       label: "Specifications" },
 ];
@@ -239,15 +237,6 @@ export default function ProductForm({
                 onChange={e => handleChange("origin", e.target.value)} placeholder="e.g., Spain" />
             </div>
             <div>
-              <label className={labelCls}>Display Unit</label>
-              <SearchableSelect
-                value={form.unit || ""}
-                onChange={v => handleChange("unit", v)}
-                options={UNIT_OPTIONS}
-                placeholder="Select a unit..."
-              />
-            </div>
-            <div>
               <label className={labelCls}>Variant / Quality</label>
               <SearchableSelect
                 value={form.variant || ""}
@@ -301,20 +290,16 @@ export default function ProductForm({
         </div>
       )}
 
-      {/* ── Tab: Description ── */}
+      {/* ── Tab: Description & Nutrition ── */}
       {activeTab === "description" && (
-        <div>
-          <label className={labelCls}>Product Description</label>
-          <textarea value={form.description} onChange={e => handleChange("description", e.target.value)}
-            rows={12} className={`${inputCls} resize-y`} placeholder="Full product description... HTML supported." />
-          <p className="text-xs text-slate-400 mt-1">Basic HTML tags are supported (bold, italic, lists etc.).</p>
-        </div>
-      )}
-
-      {/* ── Tab: Nutritional Info ── */}
-      {activeTab === "nutritional" && (
-        <div className="space-y-4">
+        <div className="space-y-6">
           <div>
+            <label className={labelCls}>Product Description</label>
+            <textarea value={form.description} onChange={e => handleChange("description", e.target.value)}
+              rows={12} className={`${inputCls} resize-y`} placeholder="Full product description... HTML supported." />
+            <p className="text-xs text-slate-400 mt-1">Basic HTML tags are supported (bold, italic, lists etc.).</p>
+          </div>
+          <div className="pt-4 border-t border-slate-100">
             <label className={labelCls}>Nutritional Information</label>
             <textarea value={form.nutritional_info || ""}
               onChange={e => handleChange("nutritional_info", e.target.value)}
@@ -327,39 +312,84 @@ export default function ProductForm({
 
       {/* ── Tab: Pricing & Stock ── */}
       {activeTab === "pricing" && (
-        <div className="space-y-3">
-          <div className="grid grid-cols-3 gap-3">
-            <div>
-              <label className={labelCls}>Price (€) <span className="text-red-500">*</span></label>
-              <input required type="number" step="0.01" min="0" className={inputCls}
-                value={form.price} onChange={e => handleChange("price", e.target.value)} placeholder="0.00" />
+        <div className="space-y-6">
+          {/* Retail Configuration */}
+          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+            <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest mb-4 flex items-center gap-2">
+              <span className="w-2 h-2 bg-teal-500 rounded-full"></span> Normal User (Retail)
+            </h4>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div>
+                <label className={labelCls}>Price (€) <span className="text-red-500">*</span></label>
+                <input required type="number" step="0.01" min="0" className={inputCls}
+                  value={form.price} onChange={e => handleChange("price", e.target.value)} placeholder="0.00" />
+              </div>
+              <div>
+                <label className={labelCls}>Sale Price (€)</label>
+                <input type="number" step="0.01" min="0" className={inputCls}
+                  value={form.discount_price || ""} onChange={e => handleChange("discount_price", e.target.value)} placeholder="0.00" />
+              </div>
+              <div>
+                <label className={labelCls}>Display Unit</label>
+                <SearchableSelect
+                  value={form.unit || ""}
+                  onChange={v => handleChange("unit", v)}
+                  options={UNIT_OPTIONS}
+                  placeholder="Select or type..."
+                  allowCustom={true}
+                />
+              </div>
+              <div>
+                <label className={labelCls}>Stock <span className="text-red-500">*</span></label>
+                <input required type="number" min="0" className={inputCls}
+                  value={form.stock} onChange={e => handleChange("stock", e.target.value)} placeholder="0" />
+              </div>
+              <div>
+                <label className={labelCls}>Tax Rate (%)</label>
+                <input type="number" step="0.01" min="0" max="100" className={inputCls}
+                  value={form.tax_rate || ""} onChange={e => handleChange("tax_rate", e.target.value)} placeholder="5.00" />
+              </div>
             </div>
-            <div>
-              <label className={labelCls}>Sale Price (€)</label>
-              <input type="number" step="0.01" min="0" className={inputCls}
-                value={form.discount_price || ""} onChange={e => handleChange("discount_price", e.target.value)} placeholder="0.00" />
-            </div>
-            <div>
-              <label className={labelCls}>Tax Rate (%)</label>
-              <input type="number" step="0.01" min="0" max="100" className={inputCls}
-                value={form.tax_rate || ""} onChange={e => handleChange("tax_rate", e.target.value)} placeholder="5.00" />
-            </div>
-            <div>
-              <label className={labelCls}>Stock <span className="text-red-500">*</span></label>
-              <input required type="number" min="0" className={inputCls}
-                value={form.stock} onChange={e => handleChange("stock", e.target.value)} placeholder="0" />
+          </div>
+
+          {/* Wholesale Configuration */}
+          <div className="bg-amber-50/50 border border-amber-200/60 rounded-xl p-5 shadow-sm">
+            <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest mb-4 flex items-center gap-2">
+              <span className="w-2 h-2 bg-amber-500 rounded-full"></span> Wholesale (B2B)
+            </h4>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div>
+                <label className={labelCls}>Wholesale Price (€)</label>
+                <input type="number" step="0.01" min="0" className={inputCls}
+                  value={form.wholesale_price || ""} onChange={e => handleChange("wholesale_price", e.target.value)} placeholder="0.00" />
+              </div>
+              <div>
+                <label className={labelCls}>Wholesale Unit</label>
+                <SearchableSelect
+                  value={form.wholesale_unit || ""}
+                  onChange={v => handleChange("wholesale_unit", v)}
+                  options={UNIT_OPTIONS}
+                  placeholder="Select or type..."
+                  allowCustom={true}
+                />
+              </div>
+              <div>
+                <label className={labelCls}>Min Purchase Qty</label>
+                <input type="number" min="1" className={inputCls} value={form.minimum_purchase || ""}
+                  onChange={e => handleChange("minimum_purchase", e.target.value)} placeholder="e.g., 5" />
+              </div>
             </div>
           </div>
 
           {/* Physical dimensions */}
-          <div className="pt-2 border-t border-slate-100">
+          <div className="pt-4 border-t border-slate-100">
             <button style={{cursor: 'pointer'}} type="button" onClick={() => setShowPhysical(p => !p)}
               className="flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-700 mb-2">
               {showPhysical ? <ChevronUp className="w-3 h-3"/> : <ChevronDown className="w-3 h-3"/>}
               Physical dimensions (for shipping calculation)
             </button>
             {showPhysical && (
-              <div className="grid grid-cols-4 gap-3">
+              <div className="grid grid-cols-4 gap-3 mt-3">
                 {[["weight","Weight (kg)"],["length","Length (cm)"],["width","Width (cm)"],["height","Height (cm)"]].map(([k, l]) => (
                   <div key={k}>
                     <label className={labelCls}>{l}</label>
@@ -369,37 +399,6 @@ export default function ProductForm({
                 ))}
               </div>
             )}
-          </div>
-        </div>
-      )}
-
-      {/* ── Tab: Wholesale ── */}
-      {activeTab === "wholesale" && (
-        <div className="space-y-4">
-          <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-4">
-            <h4 className="text-sm font-semibold text-indigo-900 mb-1">Wholesale Settings</h4>
-            <p className="text-xs text-indigo-700">Configure special pricing and rules for your approved wholesale customers.</p>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className={labelCls}>Wholesale Price (€)</label>
-              <input type="number" step="0.01" min="0" className={inputCls}
-                value={form.wholesale_price || ""} onChange={e => handleChange("wholesale_price", e.target.value)} placeholder="0.00" />
-            </div>
-            <div>
-              <label className={labelCls}>Wholesale Unit</label>
-              <SearchableSelect
-                value={form.wholesale_unit || ""}
-                onChange={v => handleChange("wholesale_unit", v)}
-                options={UNIT_OPTIONS}
-                placeholder="Select a unit..."
-              />
-            </div>
-            <div>
-              <label className={labelCls}>Min Purchase Qty</label>
-              <input type="number" min="1" className={inputCls} value={form.minimum_purchase || ""}
-                onChange={e => handleChange("minimum_purchase", e.target.value)} placeholder="e.g., 5" />
-            </div>
           </div>
         </div>
       )}

@@ -55,11 +55,12 @@ const FILTERS = [
 
 export default function OrdersPage() {
   const toast = useToastContext();
-  const [activeFilter, setFilter] = useState("");
+  const [activeFilters, setActiveFilters] = useState([]);
   const [isCreating, setIsCreating] = useState(false);
   const [viewItem, setViewItem] = useState(null);
   const [editItem, setEditItem] = useState(null);
   const [deleteItem, setDeleteItem] = useState(null);
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [selectedOrders, setSelectedOrders] = useState([]);
 
@@ -101,34 +102,39 @@ export default function OrdersPage() {
   );
 
   const rawList = rawData?.results || (Array.isArray(rawData) ? rawData : []);
-  const data = activeFilter
-    ? activeFilter === "WHOLESALE"
-      ? rawList.filter(o => o.is_wholesale_order)
-      : activeFilter === "RETAIL"
-        ? rawList.filter(o => !o.is_wholesale_order)
-        : activeFilter === "payment_cash"
-          ? rawList.filter(o => o.payment_method === 'cash')
-          : activeFilter === "payment_card"
-            ? rawList.filter(o => o.payment_method === 'card')
-            : activeFilter === "THIS_WEEK"
-              ? rawList.filter(o => {
-                if (!o.ordered_at) return false;
-                const date = new Date(o.ordered_at);
-                const now = new Date();
-                const startOfWeek = new Date(now);
-                startOfWeek.setDate(now.getDate() - now.getDay());
-                startOfWeek.setHours(0, 0, 0, 0);
-                return date >= startOfWeek;
-              })
-              : activeFilter === "THIS_MONTH"
-                ? rawList.filter(o => {
-                  if (!o.ordered_at) return false;
-                  const date = new Date(o.ordered_at);
-                  const now = new Date();
-                  return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
-                })
-                : rawList.filter(o => o.status === activeFilter)
-    : rawList;
+  const data = rawList.filter(o => {
+    // Check segment
+    if (activeFilters.includes("WHOLESALE") && !o.is_wholesale_order) return false;
+    if (activeFilters.includes("RETAIL") && o.is_wholesale_order) return false;
+
+    // Check status
+    const statusFilters = ["PENDING", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"];
+    const hasStatusFilter = activeFilters.some(f => statusFilters.includes(f));
+    if (hasStatusFilter && !activeFilters.includes(o.status)) return false;
+
+    // Check payment
+    if (activeFilters.includes("payment_cash") && o.payment_method !== "cash") return false;
+    if (activeFilters.includes("payment_card") && o.payment_method !== "card") return false;
+
+    // Check time
+    if (activeFilters.includes("THIS_WEEK")) {
+      if (!o.ordered_at) return false;
+      const date = new Date(o.ordered_at);
+      const now = new Date();
+      const startOfWeek = new Date(now);
+      startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+      startOfWeek.setHours(0, 0, 0, 0);
+      if (date < startOfWeek) return false;
+    }
+    if (activeFilters.includes("THIS_MONTH")) {
+      if (!o.ordered_at) return false;
+      const date = new Date(o.ordered_at);
+      const now = new Date();
+      if (date.getMonth() !== now.getMonth() || date.getFullYear() !== now.getFullYear()) return false;
+    }
+
+    return true;
+  });
   const totalCount = rawData?.count ?? data.length;
 
   const columns = [
@@ -212,7 +218,7 @@ export default function OrdersPage() {
   };
 
   const handleBulkDelete = async () => {
-    if (!window.confirm(`Are you sure you want to delete ${selectedOrders.length} orders?`)) return;
+    setShowBulkDeleteConfirm(false);
     try {
       await Promise.all(selectedOrders.map(id => api.delete(`/api/orders/${id}/`)));
       toast.success(`${selectedOrders.length} orders deleted`);
@@ -236,7 +242,7 @@ export default function OrdersPage() {
           )}
           {!isCreating && selectedOrders.length > 0 && (
             <button
-              onClick={handleBulkDelete}
+              onClick={() => setShowBulkDeleteConfirm(true)}
               className="cursor-pointer flex items-center gap-2 px-4 py-2 text-sm font-bold bg-red-50 border border-red-200 text-red-600 rounded-lg hover:bg-red-100 hover:border-red-300 transition-colors shadow-sm"
             >
               <Trash2 className="w-4 h-4" /> Delete Selected ({selectedOrders.length})
@@ -274,8 +280,27 @@ export default function OrdersPage() {
             {FILTERS.map(f => (
               <button
                 key={f.value}
-                onClick={() => setFilter(f.value)}
-                className={`cursor-pointer db-filter-pill${activeFilter === f.value ? " active" : ""}`}
+                onClick={() => {
+                  if (f.value === "") {
+                    setActiveFilters([]);
+                    return;
+                  }
+                  setActiveFilters(prev => {
+                    let next = [...prev];
+                    if (["WHOLESALE", "RETAIL"].includes(f.value)) {
+                      next = next.filter(val => !["WHOLESALE", "RETAIL"].includes(val));
+                    } else if (["THIS_WEEK", "THIS_MONTH"].includes(f.value)) {
+                      next = next.filter(val => !["THIS_WEEK", "THIS_MONTH"].includes(val));
+                    } else if (["PENDING", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"].includes(f.value)) {
+                      next = next.filter(val => !["PENDING", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"].includes(val));
+                    } else if (["payment_cash", "payment_card"].includes(f.value)) {
+                      next = next.filter(val => !["payment_cash", "payment_card"].includes(val));
+                    }
+                    if (!prev.includes(f.value)) next.push(f.value);
+                    return next;
+                  });
+                }}
+                className={`cursor-pointer db-filter-pill${(f.value === "" && activeFilters.length === 0) || activeFilters.includes(f.value) ? " active" : ""}`}
               >
                 {f.label}
               </button>
@@ -532,11 +557,35 @@ export default function OrdersPage() {
             confirmLabel="Delete"
           />
 
-          <OrdersReportModal
-            open={showReport}
-            onClose={() => setShowReport(false)}
-            orders={rawList}
+          <ConfirmDialog
+            open={showBulkDeleteConfirm}
+            onClose={() => setShowBulkDeleteConfirm(false)}
+            onConfirm={handleBulkDelete}
+            title="Delete Selected Orders"
+            message={`Are you sure you want to permanently delete ${selectedOrders.length} selected orders? This action cannot be undone.`}
+            confirmLabel={`Delete ${selectedOrders.length} Orders`}
           />
+
+          {/* Derive initial props for the report based on active page filters */}
+          {(() => {
+            let initialCustomerType = "all";
+            if (activeFilters.includes("WHOLESALE")) initialCustomerType = "wholesale";
+            if (activeFilters.includes("RETAIL")) initialCustomerType = "retail";
+            
+            let initialTab = "monthly";
+            if (activeFilters.includes("THIS_WEEK")) initialTab = "weekly";
+            if (activeFilters.includes("THIS_MONTH")) initialTab = "monthly";
+
+            return (
+              <OrdersReportModal
+                open={showReport}
+                onClose={() => setShowReport(false)}
+                orders={rawList}
+                initialCustomerType={initialCustomerType}
+                initialTab={initialTab}
+              />
+            );
+          })()}
         </>
       )}
     </Container>
