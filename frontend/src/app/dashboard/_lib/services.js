@@ -654,7 +654,8 @@ export const storesService = {
 
 export const announcementsService = {
     list: () => api.get("/api/staff/announcements/"),
+    get: (id) => api.get(`/api/staff/announcements/${id}/`),
     targets: () => api.get("/api/staff/announcements/targets/"),
-    create: (data) => api.post("/api/staff/announcements/", data),
+    create: (formData) => api.post("/api/staff/announcements/", formData),
     delete: (id) => api.delete(`/api/staff/announcements/${id}/`),
 };

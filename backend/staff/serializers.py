@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import StaffProfile, StaffShift, StaffTask, StaffNotification, Announcement, DayOffRequest, StaffAdminChat
+from .models import StaffProfile, StaffShift, StaffTask, StaffNotification, Announcement, AnnouncementImage, AnnouncementFile, DayOffRequest, StaffAdminChat
 from stores.models import Store
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
@@ -18,11 +18,12 @@ class StaffProfileSerializer(serializers.ModelSerializer):
     active_store_name = serializers.SerializerMethodField()
     is_working = serializers.SerializerMethodField()
     photo = serializers.SerializerMethodField()
+    restricted_stores = serializers.PrimaryKeyRelatedField(many=True, queryset=Store.objects.all(), required=False)
     
     class Meta:
         model = StaffProfile
         fields = ['id', 'user', 'staff_id', 'role', 'phone', 'hire_date', 'created_at',
-                  'can_create_orders', 'can_update_orders', 'can_delete_orders', 'can_create_products', 'can_update_products', 'can_delete_products', 'secret_key', 'photo', 'store_slug', 'store_name', 'active_store_name', 'is_working']
+                  'can_create_orders', 'can_update_orders', 'can_delete_orders', 'can_create_products', 'can_update_products', 'can_delete_products', 'secret_key', 'photo', 'store_slug', 'store_name', 'active_store_name', 'is_working', 'restricted_stores']
 
     def get_photo(self, obj):
         request = self.context.get('request')
@@ -95,6 +96,7 @@ class CreateStaffSerializer(serializers.Serializer):
     staff_id = serializers.CharField(max_length=50, required=False, allow_blank=True, allow_null=True)
     phone = serializers.CharField(max_length=20, required=False, allow_blank=True)
     photo = serializers.ImageField(required=False, allow_null=True)
+    restricted_stores = serializers.PrimaryKeyRelatedField(many=True, queryset=Store.objects.all(), required=False)
 
     def validate_email(self, value):
         if User.objects.filter(email=value).exists():
@@ -108,6 +110,8 @@ class CreateStaffSerializer(serializers.Serializer):
 
     def create(self, validated_data):
         password = validated_data.get('password', '')
+        restricted_stores = validated_data.pop('restricted_stores', [])
+        
         user = User(
             email=validated_data['email'],
             name=validated_data['name'],
@@ -130,16 +134,58 @@ class CreateStaffSerializer(serializers.Serializer):
             secret_key=password,
             photo=validated_data.get('photo')
         )
+        
+        if restricted_stores:
+            staff_profile.restricted_stores.set(restricted_stores)
+            
         return staff_profile
+
+class AnnouncementImageSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = AnnouncementImage
+        fields = ['id', 'image_url', 'uploaded_at']
+
+    def get_image_url(self, obj):
+        request = self.context.get('request')
+        if obj.image and request:
+            return request.build_absolute_uri(obj.image.url)
+        return obj.image.url if obj.image else None
+
+class AnnouncementFileSerializer(serializers.ModelSerializer):
+    file_url = serializers.SerializerMethodField()
+    file_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = AnnouncementFile
+        fields = ['id', 'file_url', 'file_name', 'uploaded_at']
+
+    def get_file_url(self, obj):
+        request = self.context.get('request')
+        if obj.file and request:
+            return request.build_absolute_uri(obj.file.url)
+        return obj.file.url if obj.file else None
+
+    def get_file_name(self, obj):
+        if obj.file:
+            import os
+            return os.path.basename(obj.file.name)
+        return None
 
 class AnnouncementSerializer(serializers.ModelSerializer):
     created_by_name = serializers.CharField(source='created_by.name', read_only=True)
     target_stores_names = serializers.SerializerMethodField()
     target_staff_names = serializers.SerializerMethodField()
+    images = AnnouncementImageSerializer(many=True, read_only=True)
+    files = AnnouncementFileSerializer(many=True, read_only=True)
 
     class Meta:
         model = Announcement
-        fields = ['id', 'title', 'message', 'created_by', 'created_by_name', 'target_all_stores', 'target_stores', 'target_staff', 'created_at', 'target_stores_names', 'target_staff_names']
+        fields = ['id', 'title', 'message', 'created_by', 'created_by_name',
+                  'target_all_stores', 'target_stores', 'target_staff', 'created_at',
+                  'target_stores_names', 'target_staff_names',
+                  'images', 'files']
 
     def get_target_stores_names(self, obj):
         return [s.name for s in obj.target_stores.all()]

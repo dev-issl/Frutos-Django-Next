@@ -25,6 +25,8 @@ export default function StaffDashboardPage() {
   const [showAttendanceModal, setShowAttendanceModal] = useState(false);
   const [hasDismissedAttendanceModal, setHasDismissedAttendanceModal] = useState(false);
   const [selectedStoreForCheckIn, setSelectedStoreForCheckIn] = useState("");
+  const [storeCodeInput, setStoreCodeInput] = useState("");
+  const [checkInError, setCheckInError] = useState("");
   const [isCheckingIn, setIsCheckingIn] = useState(false);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [showCheckOutModal, setShowCheckOutModal] = useState(false);
@@ -95,14 +97,26 @@ export default function StaffDashboardPage() {
     const storeIdToUse = passedId || selectedStoreForCheckIn;
 
     if (!storeIdToUse) return;
+    
+    // If we're using the Attendance Modal (not switching stores), require the PIN
+    const isSwitching = !!overrideStoreId && typeof overrideStoreId !== 'object';
+    if (!isSwitching && !storeCodeInput) {
+      setCheckInError("Please enter the Store PIN");
+      return;
+    }
+
+    setCheckInError("");
     setIsCheckingIn(true);
     try {
-      await api.post("/api/staff/me/check-in/", { store_id: storeIdToUse });
+      await api.post("/api/staff/me/check-in/", { 
+        store_id: storeIdToUse,
+        store_code: isSwitching ? undefined : storeCodeInput 
+      });
       mutate();
       setShowAttendanceModal(false);
+      setStoreCodeInput("");
     } catch (err) {
-      console.error("Check-in failed", err);
-      alert(err.message || "Failed to start shift");
+      setCheckInError(err.message || "Failed to start shift");
     } finally {
       setIsCheckingIn(false);
     }
@@ -946,7 +960,10 @@ export default function StaffDashboardPage() {
                       return (
                         <div
                           key={store.id}
-                          onClick={() => setSelectedStoreForCheckIn(store.id)}
+                          onClick={() => {
+                            setSelectedStoreForCheckIn(store.id);
+                            setCheckInError("");
+                          }}
                           className={`flex items-center justify-between p-2 rounded-xl border-2 cursor-pointer transition-all ${selectedStoreForCheckIn === store.id ? 'border-[#00694C] bg-emerald-50' : 'border-slate-100 bg-white hover:border-[#00694C]/30 hover:bg-slate-50'}`}
                         >
                           <div className="flex items-center gap-2.5">
@@ -976,10 +993,34 @@ export default function StaffDashboardPage() {
                   )}
                 </div>
               </div>
+              
+              {/* Store PIN Input */}
+              {selectedStoreForCheckIn && (
+                <div className="mt-4 px-1">
+                  <label className="block text-[11px] font-bold text-[#004A3A] mb-1.5 uppercase tracking-wide">Store PIN</label>
+                  <input
+                    type="password"
+                    placeholder="Enter Store PIN"
+                    value={storeCodeInput}
+                    onChange={(e) => {
+                      setStoreCodeInput(e.target.value);
+                      setCheckInError("");
+                    }}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#00694C]/20 focus:border-[#00694C] transition-all text-center tracking-widest font-mono"
+                  />
+                  
+                  {checkInError && (
+                    <div className="mt-2 text-xs font-semibold text-rose-600 bg-rose-50 px-3 py-2 rounded-lg border border-rose-100 flex items-center justify-center text-center">
+                      {checkInError}
+                    </div>
+                  )}
+                </div>
+              )}
+
               <button
                 onClick={handleCheckIn}
-                disabled={!selectedStoreForCheckIn || isCheckingIn}
-                className="w-full mt-3 bg-[#00694C] hover:bg-[#005940] disabled:bg-slate-200 text-white font-bold py-2.5 text-sm rounded-xl transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                disabled={!selectedStoreForCheckIn || !storeCodeInput || isCheckingIn}
+                className="w-full mt-4 bg-[#00694C] hover:bg-[#005940] disabled:bg-slate-200 text-white font-bold py-2.5 text-sm rounded-xl transition-colors flex items-center justify-center gap-2 cursor-pointer"
               >
                 {isCheckingIn ? "Starting..." : "Start Shift Now"}
               </button>

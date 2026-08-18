@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useStaffAuth } from "@/app/staff/_context/StaffAuthContext";
 import { toast } from "@/app/dashboard/_components/Toaster";
 import { ShoppingBag, AlertTriangle } from "lucide-react";
+import { hasValidSession } from "@/app/dashboard/_lib/auth";
 
 /**
  * Listens to the SSE notification stream for STAFF users.
@@ -98,7 +99,12 @@ export default function StaffOrderNotificationListener() {
 
       es.onerror = () => {
         es.close();
-        reconnectTimer = setTimeout(connect, 5000);
+        if (hasValidSession()) {
+          reconnectTimer = setTimeout(connect, 5000);
+        } else {
+          // Fire event so app can log user out
+          window.dispatchEvent(new CustomEvent("admin:session-expired"));
+        }
       };
     };
 

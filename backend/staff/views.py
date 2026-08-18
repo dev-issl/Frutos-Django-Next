@@ -5,7 +5,7 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.decorators import action
 from django.shortcuts import get_object_or_404
 from django.db import models
-from .models import StaffProfile, StaffShift, StaffTask, StaffNotification, Announcement, DayOffRequest, StaffAdminChat
+from .models import StaffProfile, StaffShift, StaffTask, StaffNotification, Announcement, AnnouncementImage, DayOffRequest, StaffAdminChat
 from .serializers import (
     StaffProfileSerializer, CreateStaffSerializer, StaffShiftSerializer, 
     StaffTaskSerializer, StaffNotificationSerializer, DayOffRequestSerializer,
@@ -194,7 +194,7 @@ class MyStaffDashboardView(APIView):
         # Get active stores for attendance modal
         from stores.models import Store
         from stores.serializers import StoreListSerializer
-        active_stores = Store.objects.filter(is_active=True).order_by('order', 'name')
+        active_stores = Store.objects.filter(is_active=True).exclude(restricted_staff=staff_profile).order_by('order', 'name')
 
         from datetime import date
         today = date.today()
@@ -231,6 +231,13 @@ class MyStaffCheckInView(APIView):
             
         from stores.models import Store
         store = get_object_or_404(Store, id=store_id)
+        
+        # Validate Store Code (PIN)
+        store_code_input = request.data.get('store_code')
+        if not store_code_input:
+            return Response({"detail": "Store ID (PIN) is required for check-in"}, status=status.HTTP_400_BAD_REQUEST)
+        if store.store_code and store.store_code != store_code_input:
+            return Response({"detail": "Invalid Store ID (PIN)"}, status=status.HTTP_400_BAD_REQUEST)
         
         from datetime import date
         from django.utils import timezone
@@ -432,8 +439,21 @@ class AnnouncementViewSet(viewsets.ModelViewSet):
         except StaffProfile.DoesNotExist:
             return Announcement.objects.none()
 
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+
     def perform_create(self, serializer):
         announcement = serializer.save(created_by=self.request.user)
+        
+        # Save multiple uploaded images
+        images = self.request.FILES.getlist('images')
+        for img in images:
+            AnnouncementImage.objects.create(announcement=announcement, image=img)
+            
+        # Save multiple uploaded files
+        from .models import AnnouncementFile
+        files = self.request.FILES.getlist('files')
+        for f in files:
+            AnnouncementFile.objects.create(announcement=announcement, file=f)
         
         from datetime import date
         today = date.today()

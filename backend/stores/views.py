@@ -146,6 +146,14 @@ class AdminStoreListCreateView(APIView):
         open_t  = _parse_time(data.get('open_time',  '08:00'))
         close_t = _parse_time(data.get('close_time', '21:00'))
 
+        schedules = data.get('schedules', '{}')
+        if isinstance(schedules, list): schedules = schedules[0]
+        import json
+        try:
+            parsed_schedules = json.loads(schedules) if isinstance(schedules, str) else schedules
+        except Exception:
+            parsed_schedules = {}
+
         store = Store(
             slug         = slug,
             name         = name,
@@ -156,6 +164,7 @@ class AdminStoreListCreateView(APIView):
             phone        = data.get('phone', ''),
             open_time    = open_t,
             close_time   = close_t,
+            schedules    = parsed_schedules,
             store_code   = store_code,
             map_link     = data.get('map_link', ''),
             provenance   = data.get('provenance', ''),
@@ -220,6 +229,15 @@ class AdminStoreDetailView(APIView):
             val = data['order']
             if isinstance(val, list): val = val[0]
             store.order = int(val or 0)
+
+        if 'schedules' in data:
+            val = data['schedules']
+            if isinstance(val, list): val = val[0]
+            import json
+            try:
+                store.schedules = json.loads(val) if isinstance(val, str) else val
+            except Exception as e:
+                return Response({'detail': f'Schedules parsing error: {str(e)}'}, status=400)
 
         if store.store_code and Store.objects.filter(store_code=store.store_code).exclude(pk=store.pk).exists():
             return Response({'detail': f'Store ID "{store.store_code}" is already in use.'}, status=400)

@@ -72,7 +72,7 @@ class StoreListSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'slug', 'name', 'shortName',
             'address', 'city', 'fullAddress', 'phone', 'storeCode',
-            'openTime', 'closeTime', 'hours',
+            'openTime', 'closeTime', 'hours', 'schedules',
             'mapLink', 'lat', 'lng',
             'features', 'availability', 'provenance',
             'image', 'leftoverPacks', 'is_active',
@@ -97,6 +97,18 @@ class StoreListSerializer(serializers.ModelSerializer):
     def get_leftoverPacks(self, obj):
         active_packs = obj.leftover_packs.filter(is_active=True)
         return LeftoverPackSerializer(active_packs, many=True, context=self.context).data
+
+    def to_internal_value(self, data):
+        import json
+        if 'schedules' in data and isinstance(data['schedules'], str):
+            try:
+                # QueryDict is immutable, copy it
+                _data = data.copy()
+                _data['schedules'] = json.loads(data['schedules'])
+                return super().to_internal_value(_data)
+            except Exception:
+                pass
+        return super().to_internal_value(data)
 
 
 class StoreDetailSerializer(StoreListSerializer):

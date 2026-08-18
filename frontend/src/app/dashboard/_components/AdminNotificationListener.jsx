@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useDashboardAuth } from "@/app/dashboard/_context/DashboardAuthContext";
 import { toast } from "@/app/dashboard/_components/Toaster";
 import { Bell } from "lucide-react";
+import { hasValidSession } from "@/app/dashboard/_lib/auth";
 
 export default function AdminNotificationListener() {
   const { user } = useDashboardAuth();
@@ -98,7 +99,11 @@ export default function AdminNotificationListener() {
       es.onerror = () => {
         // Do not use console.error — triggers Next.js dev error overlay
         es.close();
-        reconnectTimer = setTimeout(connect, 5000);
+        if (hasValidSession()) {
+          reconnectTimer = setTimeout(connect, 5000);
+        } else {
+          window.dispatchEvent(new CustomEvent("admin:session-expired"));
+        }
       };
     };
 

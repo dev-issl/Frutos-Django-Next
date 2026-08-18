@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Trash2, Calendar, ClipboardList, Edit, Ban, MapPin, ChevronLeft, ChevronDown, Store as StoreIcon } from "lucide-react";
+import { Plus, Trash2, Calendar, ClipboardList, Edit, Ban, MapPin, ChevronLeft, ChevronRight, ChevronDown, Store as StoreIcon, FileText, Download, Clock, CheckCircle, Printer, Eye } from "lucide-react";
 import Container from "@/app/dashboard/_components/Container";
 import DataTable from "@/app/dashboard/_components/DataTable";
 import Modal from "@/app/dashboard/_components/Modal";
@@ -38,6 +38,12 @@ export default function StaffDetailsPage() {
   const [storeFilterOpen, setStoreFilterOpen] = useState(false);
   const [taskStatusFilter, setTaskStatusFilter] = useState("ALL");
   const [attendanceFilter, setAttendanceFilter] = useState("ALL");
+
+  const currentYearMonth = new Date().toISOString().slice(0, 7);
+  const [reportMonth, setReportMonth] = useState(currentYearMonth);
+  const [reportMonthPickerOpen, setReportMonthPickerOpen] = useState(false);
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
+  const [pickerYear, setPickerYear] = useState(parseInt(currentYearMonth.split('-')[0]));
 
   const { data: staffProfile, isLoading: isStaffLoading } = useSWR(
     staffId ? `/api/staff/admin/employees/${staffId}/` : null,
@@ -85,6 +91,111 @@ export default function StaffDetailsPage() {
 
   const tasks = tasksRaw?.results || (Array.isArray(tasksRaw) ? tasksRaw : []);
   const filteredTasks = tasks.filter(t => taskStatusFilter === "ALL" || t.status === taskStatusFilter);
+
+  const reportData = useMemo(() => {
+    if (!allShifts) return { shifts: [], totalHours: 0, daysPresent: 0, daysAbsent: 0, daysOff: 0 };
+    const monthShifts = allShifts.filter(s => s.date.startsWith(reportMonth));
+    let totalMins = 0;
+    let present = 0;
+    let absent = 0;
+    let off = 0;
+
+    monthShifts.forEach(s => {
+      if (s.status === 'ABSENT') absent++;
+      else if (s.status === 'DAY_OFF') off++;
+      else if (s.status === 'COMPLETED' || s.status === 'IN_PROGRESS') {
+        present++;
+        if (s.start_time && s.end_time) {
+          const start = new Date(`1970-01-01T${s.start_time}`);
+          let end = new Date(`1970-01-01T${s.end_time}`);
+          if (end < start) end.setDate(end.getDate() + 1);
+          let durationMins = (end - start) / 60000;
+          if (s.break_duration_minutes) durationMins -= s.break_duration_minutes;
+          totalMins += Math.max(0, durationMins);
+        }
+      }
+    });
+    
+    return {
+      shifts: monthShifts.sort((a, b) => new Date(a.date) - new Date(b.date)),
+      totalHours: `${Math.floor(totalMins / 60)}h ${Math.round(totalMins % 60)}m`,
+      daysPresent: present,
+      daysAbsent: absent,
+      daysOff: off
+    };
+  }, [allShifts, reportMonth]);
+
+  const handlePrint = () => {
+    setExportMenuOpen(false);
+    setTimeout(() => window.print(), 100);
+  };
+
+  const handleDownloadActualPDF = async () => {
+    setExportMenuOpen(false);
+    toast.success("Generating PDF. Please wait...");
+    try {
+      const { toPng } = await import('html-to-image');
+      const { jsPDF } = await import('jspdf');
+      
+      const element = document.getElementById('monthly-report-container');
+      if (!element) throw new Error("Report container not found");
+      
+      const editBtns = element.querySelectorAll('.report-edit-btn');
+      editBtns.forEach(btn => btn.style.display = 'none');
+      
+      const tableWrapper = element.querySelector('.overflow-x-auto');
+      let originalOverflow = '';
+      if (tableWrapper) {
+        originalOverflow = tableWrapper.style.overflow;
+        tableWrapper.style.overflow = 'visible';
+      }
+      
+      element.classList.add('pdf-mode');
+      
+      // html-to-image supports modern CSS via SVG foreignObject.
+      const dataUrl = await toPng(element, { 
+        quality: 0.98, 
+        pixelRatio: 2,
+        backgroundColor: '#ffffff',
+        skipFonts: true
+      });
+      
+      element.classList.remove('pdf-mode');
+      if (tableWrapper) {
+        tableWrapper.style.overflow = originalOverflow;
+      }
+      editBtns.forEach(btn => btn.style.display = ''); 
+      
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'px',
+        format: 'a4'
+      });
+      
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (element.offsetHeight * pdfWidth) / element.offsetWidth;
+      
+      pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`Monthly_Report_${staffProfile?.user?.name}_${reportMonth}.pdf`);
+      
+      toast.success("PDF Downloaded successfully!");
+    } catch (err) {
+      console.error("PDF Generation Error:", err);
+      toast.error("Failed to generate PDF. Please try again.");
+    }
+  };
+
+  const handleFullscreen = () => {
+    setExportMenuOpen(false);
+    const elem = document.getElementById("monthly-report-container");
+    if (!elem) return;
+    
+    if (!document.fullscreenElement) {
+      elem.requestFullscreen().catch(() => toast.error("Could not enter fullscreen mode"));
+    } else {
+      document.exitFullscreen();
+    }
+  };
 
   const formatTime = (timeStr) => {
     if (!timeStr) return "";
@@ -234,15 +345,15 @@ export default function StaffDetailsPage() {
     },
     {
       key: "location", label: "Location", render: (_, row) => row.store_name ? (
-        <div className="flex flex-col items-center text-center">
+        <div className="flex flex-col items-start text-left">
           <span className="font-semibold text-slate-800">{row.store_name}</span>
           {row.store_location && (
             row.store_map_link ? (
-              <a href={row.store_map_link} target="_blank" rel="noopener noreferrer" className="text-[11px] text-blue-600 hover:text-blue-800 hover:underline mt-0.5 flex items-center justify-center gap-1 w-fit transition-colors">
+              <a href={row.store_map_link} target="_blank" rel="noopener noreferrer" className="text-[11px] text-blue-600 hover:text-blue-800 hover:underline mt-0.5 flex items-center gap-1 w-fit transition-colors">
                 <MapPin className="w-3 h-3 shrink-0" /> <span className="truncate max-w-[150px]">{row.store_location}</span>
               </a>
             ) : (
-              <span className="text-[11px] text-slate-500 mt-0.5 flex items-center justify-center gap-1 w-fit">
+              <span className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-1 w-fit">
                 <MapPin className="w-3 h-3 text-slate-400 shrink-0" /> <span className="truncate max-w-[150px]">{row.store_location}</span>
               </span>
             )
@@ -330,8 +441,76 @@ export default function StaffDetailsPage() {
   const activeShift = shifts.find(s => s.status === 'IN_PROGRESS' && new Date(s.date).setHours(0, 0, 0, 0) === new Date().setHours(0, 0, 0, 0));
 
   return (
-    <Container
-      title={`Staff: ${staffProfile.user?.name}`}
+    <>
+      <style>{`
+        .pdf-header {
+          display: none;
+        }
+        .pdf-mode .pdf-header {
+          display: block !important;
+        }
+        .pdf-mode {
+          background: white !important;
+          color: black !important;
+          padding: 30px !important;
+        }
+        .pdf-mode td {
+          padding-top: 8px !important;
+          padding-bottom: 8px !important;
+          padding-left: 16px !important;
+          padding-right: 16px !important;
+          font-size: 11px !important;
+        }
+        .pdf-mode th {
+          padding-top: 10px !important;
+          padding-bottom: 10px !important;
+          padding-left: 16px !important;
+          padding-right: 16px !important;
+          font-size: 10px !important;
+        }
+        .pdf-mode .grid {
+          gap: 10px !important;
+          margin-bottom: 16px !important;
+        }
+        .pdf-mode .mb-5 {
+          margin-bottom: 16px !important;
+        }
+        .pdf-stat-label {
+          white-space: nowrap !important;
+          overflow: visible !important;
+          text-overflow: clip !important;
+          font-size: 8px !important;
+          letter-spacing: 0.05em !important;
+        }
+        .pdf-stat-value {
+          white-space: nowrap !important;
+          overflow: visible !important;
+          font-size: 16px !important;
+          line-height: 1.2 !important;
+        }
+        @media print {
+          body * {
+            visibility: hidden;
+          }
+          #monthly-report-container, #monthly-report-container * {
+            visibility: visible;
+          }
+          #monthly-report-container {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            padding: 0 !important;
+            margin: 0 !important;
+            background: white !important;
+          }
+          .report-edit-btn {
+            display: none !important;
+          }
+        }
+      `}</style>
+      <Container
+        title={`Staff: ${staffProfile.user?.name}`}
       description={`${staffProfile.role} • ${staffProfile.store_name || "Unassigned"}`}
       actions={
         <button
@@ -392,6 +571,12 @@ export default function StaffDetailsPage() {
           className={`px-5 py-3 font-semibold text-sm flex items-center gap-2 border-b-2 transition-all cursor-pointer ${activeTab === "OFF_DAYS" ? 'border-[#00694C] text-[#00694C]' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'}`}
         >
           <Ban size={16} /> Attendance & Leaves
+        </button>
+        <button
+          onClick={() => setActiveTab("REPORT")}
+          className={`px-5 py-3 font-semibold text-sm flex items-center gap-2 border-b-2 transition-all cursor-pointer ${activeTab === "REPORT" ? 'border-[#00694C] text-[#00694C]' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'}`}
+        >
+          <FileText size={16} /> Monthly Report
         </button>
       </div>
 
@@ -613,6 +798,270 @@ export default function StaffDetailsPage() {
           </div>
         )}
 
+        {/* Monthly Report Section */}
+        {activeTab === "REPORT" && (
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-white">
+              <h3 className="font-bold text-slate-800 flex items-center gap-2"><FileText size={18} className="text-[#00694C]" /> Monthly Report</h3>
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <button 
+                    onClick={() => {
+                      setPickerYear(parseInt(reportMonth.split('-')[0]));
+                      setReportMonthPickerOpen(!reportMonthPickerOpen);
+                    }}
+                    className="flex items-center gap-2.5 px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 hover:bg-slate-50 hover:border-[#00694C]/50 transition-all shadow-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#00694C]/20 cursor-pointer"
+                  >
+                    <Calendar size={16} className="text-[#00694C]" />
+                    {new Date(reportMonth + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                    <ChevronDown size={14} className={`text-slate-400 transition-transform ${reportMonthPickerOpen ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  <AnimatePresence>
+                    {reportMonthPickerOpen && (
+                      <>
+                        <div className="fixed inset-0 z-40" onClick={() => setReportMonthPickerOpen(false)}></div>
+                        <motion.div 
+                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                          transition={{ duration: 0.15, ease: "easeOut" }}
+                          className="absolute right-0 top-full mt-2 w-[240px] bg-white rounded-2xl shadow-xl border border-slate-100 z-50 overflow-hidden ring-1 ring-black/5"
+                        >
+                          <div className="flex items-center justify-between p-3 border-b border-slate-100 bg-slate-50/50">
+                            <button 
+                              onClick={() => setPickerYear(y => y - 1)} 
+                              className="p-1.5 bg-white rounded-lg text-slate-500 hover:text-[#00694C] hover:bg-emerald-50 transition-colors shadow-sm border border-slate-200 hover:border-emerald-200 cursor-pointer"
+                            >
+                              <ChevronLeft size={16} strokeWidth={2.5} />
+                            </button>
+                            <span className="font-black text-slate-700 tracking-wide text-[15px]">{pickerYear}</span>
+                            <button 
+                              onClick={() => setPickerYear(y => y + 1)} 
+                              className="p-1.5 bg-white rounded-lg text-slate-500 hover:text-[#00694C] hover:bg-emerald-50 transition-colors shadow-sm border border-slate-200 hover:border-emerald-200 cursor-pointer"
+                            >
+                              <ChevronRight size={16} strokeWidth={2.5} />
+                            </button>
+                          </div>
+                          <div className="grid grid-cols-3 gap-2 p-3">
+                            {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map((m, i) => {
+                              const monthStr = `${pickerYear}-${String(i + 1).padStart(2, '0')}`;
+                              const isSelected = reportMonth === monthStr;
+                              return (
+                                <button
+                                  key={m}
+                                  onClick={() => {
+                                    setReportMonth(monthStr);
+                                    setReportMonthPickerOpen(false);
+                                  }}
+                                  className={`py-2 text-xs font-bold rounded-xl transition-all tracking-wide cursor-pointer ${
+                                    isSelected 
+                                      ? 'bg-[#00694C] text-white shadow-md shadow-[#00694C]/30' 
+                                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-transparent hover:border-slate-200'
+                                  }`}
+                                >
+                                  {m}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </motion.div>
+                      </>
+                    )}
+                  </AnimatePresence>
+                </div>
+                
+                <div className="relative">
+                  <button 
+                    onClick={() => setExportMenuOpen(!exportMenuOpen)} 
+                    className="text-xs bg-[#00694C] text-white px-4 py-2 rounded-lg hover:bg-[#085041] font-semibold flex items-center gap-2 transition-all shadow-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#00694C]/20"
+                  >
+                    Export <ChevronDown size={14} className={`transition-transform ${exportMenuOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  
+                  <AnimatePresence>
+                    {exportMenuOpen && (
+                      <>
+                        <div className="fixed inset-0 z-40" onClick={() => setExportMenuOpen(false)}></div>
+                        <motion.div 
+                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                          transition={{ duration: 0.15, ease: "easeOut" }}
+                          className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-100 z-50 overflow-hidden ring-1 ring-black/5 flex flex-col py-1.5"
+                        >
+                          <button onClick={handlePrint} className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-[#00694C] transition-colors cursor-pointer w-full text-left">
+                            <Printer size={16} className="text-slate-400" />
+                            Print Report
+                          </button>
+                          <button onClick={handleDownloadActualPDF} className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-[#00694C] transition-colors cursor-pointer w-full text-left">
+                            <Download size={16} className="text-slate-400" />
+                            Download as PDF
+                          </button>
+                          <button onClick={handleFullscreen} className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-[#00694C] transition-colors cursor-pointer w-full text-left">
+                            <Eye size={16} className="text-slate-400" />
+                            View Fullscreen
+                          </button>
+                        </motion.div>
+                      </>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+            </div>
+            
+            <div id="monthly-report-container" className="p-6 sm:p-8 bg-white md:bg-slate-50/30">
+              
+              {/* PDF Only Company Header */}
+              <div className="pdf-header border-b border-slate-200 pb-4 mb-6">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h1 className="text-2xl font-black text-[#00694C] tracking-tight">EL ARBOL</h1>
+                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Premium Fruits & Organic Produce</p>
+                  </div>
+                  <div className="text-right text-[10px] text-slate-500 font-medium leading-relaxed">
+                    <p>Road 12/A, Dhanmondi, Dhaka</p>
+                    <p>info@elarbol.com | +880 123456789</p>
+                    <p className="text-[#00694C] font-bold mt-1">Report Generated: {new Date().toLocaleDateString()}</p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Report Header Card */}
+              <div className="mb-5 bg-white rounded-xl border border-slate-200 shadow-sm p-4 flex items-center gap-4">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-10 h-10 bg-[#00694C]/10 rounded-lg flex items-center justify-center border border-[#00694C]/15 shrink-0">
+                    <FileText className="w-5 h-5 text-[#00694C]" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-base font-bold text-slate-800 tracking-tight">{staffProfile?.user?.name}</h2>
+                      <span className="bg-[#00694C]/10 text-[#00694C] px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider">{staffProfile?.role}</span>
+                    </div>
+                    <p className="text-slate-400 text-[11px] font-medium mt-0.5 flex items-center gap-1.5">
+                      <MapPin size={10} className="shrink-0" />
+                      {staffProfile?.store_name || 'Unassigned'}
+                      <span className="text-slate-300">•</span>
+                      <span className="text-slate-500 font-semibold">{new Date(reportMonth + '-01').toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} Report</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Stat Cards — compact horizontal strip */}
+              <div className="grid grid-cols-4 gap-3 mb-5">
+                <div className="bg-white px-4 py-3 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3 hover:shadow-md transition-all">
+                  <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100 shrink-0">
+                    <CheckCircle size={14} strokeWidth={2.5} />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="pdf-stat-label text-[9px] font-bold uppercase tracking-widest text-slate-400 whitespace-nowrap">Days Present</div>
+                    <div className="pdf-stat-value text-lg font-black text-slate-800 leading-tight whitespace-nowrap">{reportData.daysPresent}</div>
+                  </div>
+                </div>
+
+                <div className="bg-white px-4 py-3 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3 hover:shadow-md transition-all">
+                  <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 shrink-0">
+                    <Clock size={14} strokeWidth={2.5} />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="pdf-stat-label text-[9px] font-bold uppercase tracking-widest text-slate-400 whitespace-nowrap">Total Hours</div>
+                    <div className="pdf-stat-value text-lg font-black text-slate-800 leading-tight whitespace-nowrap">{reportData.totalHours}</div>
+                  </div>
+                </div>
+
+                <div className="bg-white px-4 py-3 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3 hover:shadow-md transition-all">
+                  <div className="w-7 h-7 rounded-lg bg-red-50 text-red-600 flex items-center justify-center border border-red-100 shrink-0">
+                    <Ban size={14} strokeWidth={2.5} />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="pdf-stat-label text-[9px] font-bold uppercase tracking-widest text-slate-400 whitespace-nowrap">Days Absent</div>
+                    <div className="pdf-stat-value text-lg font-black text-red-600 leading-tight whitespace-nowrap">{reportData.daysAbsent}</div>
+                  </div>
+                </div>
+
+                <div className="bg-white px-4 py-3 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3 hover:shadow-md transition-all">
+                  <div className="w-7 h-7 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center border border-orange-100 shrink-0">
+                    <Calendar size={14} strokeWidth={2.5} />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="pdf-stat-label text-[9px] font-bold uppercase tracking-widest text-slate-400 whitespace-nowrap">Days Off</div>
+                    <div className="pdf-stat-value text-lg font-black text-orange-600 leading-tight whitespace-nowrap">{reportData.daysOff}</div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Shift Log Table */}
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+                  <h4 className="font-bold text-slate-800 uppercase tracking-wider text-sm flex items-center gap-2">
+                    <Calendar size={16} className="text-slate-400" /> Shift Log
+                  </h4>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-slate-200 text-slate-500">
+                        <th className="py-2.5 px-6 font-bold text-xs uppercase tracking-widest w-[20%]">Date</th>
+                        <th className="py-2.5 px-6 font-bold text-xs uppercase tracking-widest w-[20%]">Status</th>
+                        <th className="py-2.5 px-6 font-bold text-xs uppercase tracking-widest w-[25%]">Time</th>
+                        <th className="py-2.5 px-6 font-bold text-xs uppercase tracking-widest w-[25%]">Store</th>
+                        <th className="py-2.5 px-6 font-bold text-xs uppercase tracking-widest text-right report-edit-btn w-[10%]">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {reportData.shifts.length === 0 ? (
+                        <tr><td colSpan="5" className="py-12 text-center text-slate-400 font-medium">No records found for this month</td></tr>
+                      ) : (
+                        reportData.shifts.map(shift => (
+                          <tr key={shift.id} className="hover:bg-slate-50/80 transition-colors group">
+                            <td className="py-2.5 px-6 font-semibold text-slate-700 text-sm">{formatDate(shift.date)}</td>
+                            <td className="py-2.5 px-6">
+                              {shift.status === 'ABSENT' ? (
+                                <span className="inline-flex items-center px-2.5 py-0.5 text-[11px] font-bold tracking-wide rounded-md bg-red-50 text-red-600 border border-red-200 whitespace-nowrap">ABSENT</span>
+                              ) : shift.status === 'DAY_OFF' ? (
+                                <span className="inline-flex items-center px-2.5 py-0.5 text-[11px] font-bold tracking-wide rounded-md bg-orange-50 text-orange-600 border border-orange-200 whitespace-nowrap">DAY OFF</span>
+                              ) : (
+                                <span className="inline-flex items-center px-2.5 py-0.5 text-[11px] font-bold tracking-wide rounded-md bg-emerald-50 text-emerald-600 border border-emerald-200 whitespace-nowrap">PRESENT</span>
+                              )}
+                            </td>
+                            <td className="py-2.5 px-6 text-slate-600 font-medium text-sm">
+                              {shift.start_time ? `${formatTime(shift.start_time)} - ${shift.end_time ? formatTime(shift.end_time) : '?'}` : '—'}
+                            </td>
+                            <td className="py-2.5 px-6 text-slate-600 font-medium text-sm">
+                              {shift.store_name ? (
+                                <div className="flex items-center gap-1.5">
+                                  <MapPin size={13} className="text-slate-400" />
+                                  <span className="truncate">{shift.store_name}</span>
+                                </div>
+                              ) : '—'}
+                            </td>
+                            <td className="py-2.5 px-6 text-right report-edit-btn">
+                              <button 
+                                onClick={() => {
+                                  if (shift.status === 'ABSENT' || shift.status === 'DAY_OFF') {
+                                    setEditOffDay(shift); setOffDayOpen(true);
+                                  } else {
+                                    setEditShift(shift); setShiftOpen(true);
+                                  }
+                                }} 
+                                className="inline-flex items-center justify-center w-8 h-8 text-slate-400 hover:text-[#00694C] hover:bg-emerald-50 border border-transparent hover:border-emerald-100 rounded-lg transition-all cursor-pointer opacity-0 group-hover:opacity-100 focus:opacity-100" 
+                                title="Edit Record"
+                              >
+                                <Edit size={14} strokeWidth={2.5} />
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
 
       <Modal open={shiftOpen} onClose={() => { setShiftOpen(false); setEditShift(null); }} title={
@@ -647,5 +1096,6 @@ export default function StaffDetailsPage() {
       <ConfirmDialog open={!!deleteOffDay} onClose={() => setDeleteOffDay(null)} onConfirm={handleDeleteOffDay} title="Delete Record" message="Are you sure you want to delete this attendance record?" />
 
     </Container>
+    </>
   );
 }

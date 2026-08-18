@@ -31,6 +31,15 @@ export function StaffAuthProvider({ children }) {
   }, []);
 
   useEffect(() => {
+    const handler = () => {
+      setUser(null);
+      window.location.href = "/staff/login";
+    };
+    window.addEventListener("admin:session-expired", handler);
+    return () => window.removeEventListener("admin:session-expired", handler);
+  }, []);
+
+  useEffect(() => {
     if (loading) return;
     if (pathname === "/staff/login") return;
     if (!user) {

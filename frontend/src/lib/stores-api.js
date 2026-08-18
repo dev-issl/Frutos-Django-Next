@@ -50,15 +50,112 @@ export function sortStoresByDistance(storeList, userLat, userLng) {
 }
 
 export function isStoreOpen(store) {
-    if (!store?.openTime || !store?.closeTime) return false
+    const statusInfo = getStoreStatusInfo(store);
+    return statusInfo.isOpen;
+}
+
+export function getStoreCloseTime(store) {
+    if (!store) return null;
+    if (store.schedules && typeof store.schedules === 'object' && Object.keys(store.schedules).length > 0) {
+        const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+        const dayName = days[new Date().getDay()];
+        
+        let scheds = store.schedules;
+        if (typeof scheds === 'string') {
+            try { scheds = JSON.parse(scheds); } catch (e) { }
+        }
+        
+        const todaySched = scheds[dayName];
+        if (todaySched && todaySched.isOpen && todaySched.close) {
+            return formatTime12h(todaySched.close);
+        }
+        if (todaySched && !todaySched.isOpen) return null; // Closed
+    }
+    return formatTime12h(store.closeTime);
+}
+
+export function getStoreStatusInfo(store) {
+    if (!store) return { isOpen: false, text: 'Closed Today', color: '#ef4444', bgColor: '#FEE2E2', rawText: 'Closed Today' }
+    
     const now = new Date()
     const nowMins = now.getHours() * 60 + now.getMinutes()
-    const toMins = (t) => { const [h, m] = t.split(':').map(Number); return h * 60 + m }
+    const toMins = (t) => {
+        if (!t) return 0
+        const [h, m] = t.split(':').map(Number)
+        return h * 60 + m
+    }
+
+    if (store.schedules && typeof store.schedules === 'object' && Object.keys(store.schedules).length > 0) {
+        const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+        const dayName = days[now.getDay()]
+        
+        let scheds = store.schedules;
+        if (typeof scheds === 'string') {
+            try { scheds = JSON.parse(scheds) } catch (e) { }
+        }
+        
+        const todaySched = scheds[dayName]
+        if (todaySched) {
+            if (!todaySched.isOpen) return { isOpen: false, text: 'Closed Today', color: '#ef4444', bgColor: '#FEE2E2', rawText: 'Closed' };
+            if (!todaySched.open || !todaySched.close) return { isOpen: true, text: 'Open Today', color: '#16a34a', bgColor: '#E7F1DF', rawText: 'Open' };
+            
+            const open = toMins(todaySched.open)
+            const close = toMins(todaySched.close)
+            
+            let onBreak = false;
+            let breakEndTime = '';
+            if (todaySched.breakStart && todaySched.breakEnd) {
+                const bStart = toMins(todaySched.breakStart)
+                const bEnd = toMins(todaySched.breakEnd)
+                if (nowMins >= bStart && nowMins < bEnd) {
+                    onBreak = true;
+                    breakEndTime = formatTime12h(todaySched.breakEnd);
+                }
+            }
+            
+            const isCurrentlyOpen = close <= open ? (nowMins >= open || nowMins < close) : (nowMins >= open && nowMins < close);
+            
+            if (onBreak) {
+                return { isOpen: false, text: `On Break till ${breakEndTime}`, color: '#d97706', bgColor: '#fef3c7', rawText: `Break till ${breakEndTime}` };
+            }
+            if (isCurrentlyOpen) {
+                return { isOpen: true, text: `Open till ${formatTime12h(todaySched.close)}`, color: '#16a34a', bgColor: '#E7F1DF', rawText: 'Open' };
+            }
+            return { isOpen: false, text: 'Closed', color: '#ef4444', bgColor: '#FEE2E2', rawText: 'Closed' };
+        }
+    }
+
+    // Fallback logic
+    if (!store.openTime || !store.closeTime) return { isOpen: false, text: 'Closed', color: '#ef4444', bgColor: '#FEE2E2', rawText: 'Closed' }
     const open = toMins(store.openTime)
     const close = toMins(store.closeTime)
-    return close <= open ?
-        nowMins >= open || nowMins < close :
-        nowMins >= open && nowMins < close
+    const isCurrentlyOpen = close <= open ? (nowMins >= open || nowMins < close) : (nowMins >= open && nowMins < close);
+    if (isCurrentlyOpen) {
+        return { isOpen: true, text: `Open till ${formatTime12h(store.closeTime)}`, color: '#16a34a', bgColor: '#E7F1DF', rawText: 'Open' };
+    }
+    return { isOpen: false, text: 'Closed', color: '#ef4444', bgColor: '#FEE2E2', rawText: 'Closed' };
+}
+
+export function getTodayHoursText(store) {
+    if (!store) return 'No schedule';
+    if (store.schedules && typeof store.schedules === 'object' && Object.keys(store.schedules).length > 0) {
+        const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+        const dayName = days[new Date().getDay()];
+        let scheds = store.schedules;
+        if (typeof scheds === 'string') {
+            try { scheds = JSON.parse(scheds); } catch (e) { }
+        }
+        const todaySched = scheds[dayName];
+        if (todaySched) {
+            if (!todaySched.isOpen) return 'Closed Today';
+            let txt = `${formatTime12h(todaySched.open)} — ${formatTime12h(todaySched.close)}`;
+            if (todaySched.breakStart && todaySched.breakEnd) {
+                txt += ` (Break: ${formatTime12h(todaySched.breakStart)} - ${formatTime12h(todaySched.breakEnd)})`;
+            }
+            return txt;
+        }
+    }
+    return store.hours || `${formatTime12h(store.openTime || store.open_time)} — ${formatTime12h(store.closeTime || store.close_time)}`;
 }
 
 /** 'HH:MM' → '8:00 AM' */

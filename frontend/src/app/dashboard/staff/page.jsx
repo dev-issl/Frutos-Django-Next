@@ -176,6 +176,7 @@ export default function StaffPage() {
         can_create_products: permissionsItem.can_create_products || false,
         can_update_products: permissionsItem.can_update_products || false,
         can_delete_products: permissionsItem.can_delete_products || false,
+        restricted_stores: permissionsItem.restricted_stores || [],
       };
       await api.patch(`/api/staff/admin/employees/${permissionsItem.id}/`, payload);
       toast.success("Permissions updated successfully");
@@ -575,6 +576,31 @@ export default function StaffPage() {
               <span className="text-sm font-medium text-slate-700">Can delete products</span>
             </label>
           </div>
+          
+          <div className="flex flex-col gap-3 p-4 bg-slate-50 border border-slate-100 rounded-xl mt-2">
+            <p className="text-sm font-bold text-slate-700 mb-1">Restricted Stores</p>
+            <p className="text-xs text-slate-500 mb-2">Check the stores where this staff member is NOT allowed to check in.</p>
+            <div className="grid grid-cols-2 gap-3">
+              {stores.map(store => (
+                <label key={store.id} className="flex items-center gap-3 cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    checked={(permissionsItem?.restricted_stores || []).includes(store.id)} 
+                    onChange={e => {
+                      const current = permissionsItem?.restricted_stores || [];
+                      const updated = e.target.checked 
+                        ? [...current, store.id] 
+                        : current.filter(id => id !== store.id);
+                      setPermissionsItem({ ...permissionsItem, restricted_stores: updated });
+                    }} 
+                    className="w-4 h-4 text-rose-600 rounded border-slate-300 focus:ring-rose-500" 
+                  />
+                  <span className="text-sm font-medium text-slate-700">{store.name}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
           <div className="flex justify-end pt-2">
             <button type="submit" className="db-btn-primary">
               Save Permissions
