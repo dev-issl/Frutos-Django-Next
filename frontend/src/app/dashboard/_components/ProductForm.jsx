@@ -13,17 +13,7 @@ const TABS = [
   { id: "specs",       label: "Specifications" },
 ];
 
-const UNIT_OPTIONS = [
-  { value: "BAN", label: "BANDEJA (TRAY)" },
-  { value: "CAJ", label: "CAJA (BOX)" },
-  { value: "GRA", label: "GRANDE (LARGE)" },
-  { value: "KG", label: "KILO (KILO)" },
-  { value: "MAN", label: "MANOJO (BUNCH)" },
-  { value: "MED", label: "MEDIO CAJA (HALF BOX)" },
-  { value: "PAL", label: "PALET (PALLET)" },
-  { value: "PEQ", label: "PEQUEÑO (SMALL)" },
-  { value: "PIE", label: "PIEZA (PIECE)" },
-];
+
 
 // ── Shared styles ──────────────────────────────────────────────
 const inputCls = "w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300 transition-all";
@@ -31,12 +21,13 @@ const labelCls = "block text-xs font-bold text-slate-500 uppercase tracking-wide
 
 export default function ProductForm({
   initialValues, onSubmit, submitLabel = "Save",
-  categories, brands, colors: propColors, sizes: propSizes, subcategories, stores, productClasses,
+  categories, brands, colors: propColors, sizes: propSizes, subcategories, stores, productClasses, displayUnits = [],
 }) {
   const [form, setForm] = useState({
     name: "", slug: "", description: "", nutritional_info: "",
     origin: "", unit: "", wholesale_unit: "", badge: "", badge_color: "", variant: "",
-    price: "", discount_price: "", wholesale_price: "",
+    price: "", discount_price: "", wholesale_price: "", wholesale_discount_price: "",
+    restaurant_price: "", restaurant_discount_price: "", restaurant_unit: "",
     minimum_purchase: "", tax_rate: "",
     stock: "", is_active: "true",
     weight: "", length: "", width: "", height: "",
@@ -314,9 +305,9 @@ export default function ProductForm({
       {activeTab === "pricing" && (
         <div className="space-y-6">
           {/* Retail Configuration */}
-          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+          <div className="bg-white border border-slate-200 rounded-xl p-5">
             <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest mb-4 flex items-center gap-2">
-              <span className="w-2 h-2 bg-teal-500 rounded-full"></span> Normal User (Retail)
+              <span className="w-2 h-2 bg-teal-500 rounded-full"></span> Customer
             </h4>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div>
@@ -334,7 +325,7 @@ export default function ProductForm({
                 <SearchableSelect
                   value={form.unit || ""}
                   onChange={v => handleChange("unit", v)}
-                  options={UNIT_OPTIONS}
+                  options={displayUnits.map(u => ({ value: u.abbreviation || u.name, label: u.name }))}
                   placeholder="Select or type..."
                   allowCustom={true}
                 />
@@ -352,23 +343,28 @@ export default function ProductForm({
             </div>
           </div>
 
-          {/* Wholesale Configuration */}
-          <div className="bg-amber-50/50 border border-amber-200/60 rounded-xl p-5 shadow-sm">
+          {/* Internal Wholesale Configuration */}
+          <div className="bg-amber-50/50 border border-amber-200/60 rounded-xl p-5">
             <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest mb-4 flex items-center gap-2">
-              <span className="w-2 h-2 bg-amber-500 rounded-full"></span> Wholesale (B2B)
+              <span className="w-2 h-2 bg-amber-500 rounded-full"></span> Internal Wholesale
             </h4>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div>
-                <label className={labelCls}>Wholesale Price (€)</label>
+                <label className={labelCls}>Internal Wholesale Price (€)</label>
                 <input type="number" step="0.01" min="0" className={inputCls}
                   value={form.wholesale_price || ""} onChange={e => handleChange("wholesale_price", e.target.value)} placeholder="0.00" />
               </div>
               <div>
-                <label className={labelCls}>Wholesale Unit</label>
+                <label className={labelCls}>Internal Wholesale Sale Price (€)</label>
+                <input type="number" step="0.01" min="0" className={inputCls}
+                  value={form.wholesale_discount_price || ""} onChange={e => handleChange("wholesale_discount_price", e.target.value)} placeholder="0.00" />
+              </div>
+              <div>
+                <label className={labelCls}>Internal Wholesale Unit</label>
                 <SearchableSelect
                   value={form.wholesale_unit || ""}
                   onChange={v => handleChange("wholesale_unit", v)}
-                  options={UNIT_OPTIONS}
+                  options={displayUnits.map(u => ({ value: u.abbreviation || u.name, label: u.name }))}
                   placeholder="Select or type..."
                   allowCustom={true}
                 />
@@ -377,6 +373,45 @@ export default function ProductForm({
                 <label className={labelCls}>Min Purchase Qty</label>
                 <input type="number" min="1" className={inputCls} value={form.minimum_purchase || ""}
                   onChange={e => handleChange("minimum_purchase", e.target.value)} placeholder="e.g., 5" />
+              </div>
+              <div>
+                <label className={labelCls}>Stock</label>
+                <input type="number" min="0" className={inputCls} value={form.wholesale_stock || ""}
+                  onChange={e => handleChange("wholesale_stock", e.target.value)} placeholder="0" />
+              </div>
+            </div>
+          </div>
+
+          {/* External Wholesale Configuration */}
+          <div className="bg-emerald-50/50 border border-emerald-200/60 rounded-xl p-5 mt-4">
+            <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest mb-4 flex items-center gap-2">
+              <span className="w-2 h-2 bg-emerald-500 rounded-full"></span> External Wholesale
+            </h4>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div>
+                <label className={labelCls}>External Wholesale Price (€)</label>
+                <input type="number" step="0.01" min="0" className={inputCls}
+                  value={form.restaurant_price || ""} onChange={e => handleChange("restaurant_price", e.target.value)} placeholder="0.00" />
+              </div>
+              <div>
+                <label className={labelCls}>External Wholesale Sale Price (€)</label>
+                <input type="number" step="0.01" min="0" className={inputCls}
+                  value={form.restaurant_discount_price || ""} onChange={e => handleChange("restaurant_discount_price", e.target.value)} placeholder="0.00" />
+              </div>
+              <div>
+                <label className={labelCls}>External Wholesale Unit</label>
+                <SearchableSelect
+                  value={form.restaurant_unit || ""}
+                  onChange={v => handleChange("restaurant_unit", v)}
+                  options={displayUnits.map(u => ({ value: u.abbreviation || u.name, label: u.name }))}
+                  placeholder="Select or type..."
+                  allowCustom={true}
+                />
+              </div>
+              <div>
+                <label className={labelCls}>Stock</label>
+                <input type="number" min="0" className={inputCls} value={form.restaurant_stock || ""}
+                  onChange={e => handleChange("restaurant_stock", e.target.value)} placeholder="0" />
               </div>
             </div>
           </div>

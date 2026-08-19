@@ -64,6 +64,17 @@ class WholesaleUser(AbstractBaseUser, PermissionsMixin):
     )
     email = models.EmailField(unique=True, db_index=True)
 
+    USER_TYPE_CHOICES = [
+        ('WHOLESALER', 'Internal Wholesale (Nijeder)'),
+        ('RESTAURANT', 'External Wholesale (Bahirer)'),
+    ]
+    user_type = models.CharField(
+        max_length=20,
+        choices=USER_TYPE_CHOICES,
+        default='WHOLESALER',
+        db_index=True
+    )
+
     # Business info
     business_name = models.CharField(max_length=200)
     contact_name = models.CharField(max_length=200)

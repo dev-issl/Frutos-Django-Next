@@ -78,7 +78,7 @@ const VOLUME_VALUES = {
 
 const EMPTY_APPLY = {
   businessName: '', contactName: '', tradeLicense: '', email: '', phone: '',
-  businessType: '', volume: '', postcode: '', password: '',
+  businessType: '', volume: '', postcode: '', password: '', accountType: 'RESTAURANT'
 }
 
 
@@ -348,6 +348,7 @@ export default function WholesaleModal({ isOpen, onClose }) {
         postcode: applyData.postcode,
         business_type: BUSINESS_TYPE_VALUES[applyData.businessType] || 'other',
         monthly_volume: VOLUME_VALUES[applyData.volume] || '400_1000',
+        user_type: applyData.accountType,
       }
       await wholesaleRegister(payload)
 
@@ -575,6 +576,7 @@ export default function WholesaleModal({ isOpen, onClose }) {
 
               <form onSubmit={handleApplySubmit} noValidate>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                     <div>
                       <label className="ws-label">Business Name *</label>

@@ -8,12 +8,12 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from orders.models import Order
-from .models import Product, Category, SubCategory, Color, Brand, Size, ProductSpecification, ProductAdditionalImage, Review, Offer, ProductStoreStock
+from .models import Product, Category, SubCategory, Color, Brand, Size, DisplayUnit, ProductSpecification, ProductAdditionalImage, Review, Offer, ProductStoreStock
 from django.db.models import Count, ProtectedError, Prefetch
 from .serializers import (
     ProductSerializer, ProductWriteSerializer,
     CategorySerializer, SubCategorySerializer,
-    ColorSerializer, BrandSerializer, SizeSerializer,
+    ColorSerializer, BrandSerializer, SizeSerializer, DisplayUnitSerializer,
     ReviewSerializer, ReviewCreateSerializer,
     OfferSerializer, OfferDetailSerializer
 )
@@ -599,6 +599,23 @@ class SizeViewSet(viewsets.ModelViewSet):
         except ProtectedError:
             return Response(
                 {'detail': 'Cannot delete this size because it is used by one or more products.'},
+                status=status.HTTP_409_CONFLICT
+            )
+
+class DisplayUnitViewSet(viewsets.ModelViewSet):
+    queryset = DisplayUnit.objects.all().order_by('name')
+    serializer_class = DisplayUnitSerializer
+    permission_classes = [IsAdminOrReadOnly]
+    pagination_class = None
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    search_fields = ['name', 'abbreviation']
+
+    def destroy(self, request, *args, **kwargs):
+        try:
+            return super().destroy(request, *args, **kwargs)
+        except ProtectedError:
+            return Response(
+                {'detail': 'Cannot delete this display unit because it is used by one or more products.'},
                 status=status.HTTP_409_CONFLICT
             )
 

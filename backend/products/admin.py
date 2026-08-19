@@ -564,3 +564,8 @@ class OfferAdmin(admin.ModelAdmin):
             'fields': ('start_date', 'end_date')
         }),
     )
+
+@admin.register(DisplayUnit)
+class DisplayUnitAdmin(admin.ModelAdmin):
+    list_display = ('name', 'abbreviation', 'created_at')
+    search_fields = ('name', 'abbreviation')

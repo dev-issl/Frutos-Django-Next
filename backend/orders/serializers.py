@@ -140,14 +140,31 @@ class OrderCreateSerializer(serializers.Serializer):
                 item_type = item_data.get('item_type', 'product')
                 qty       = item_data['quantity']
                 
+                user_type = getattr(user, 'user_type', 'CUSTOMER') if user else 'CUSTOMER'
+
                 if item_type == 'product':
                     try:
                         product = Product.objects.get(id=item_data['product'])
                     except Product.DoesNotExist:
                         raise serializers.ValidationError(f"Product '{item_data['product']}' not found.")
                     
-                    if product.stock is not None and product.stock < qty:
-                        raise serializers.ValidationError(f"Not enough stock for '{product.name}'. Available: {product.stock}, Requested: {qty}")
+                    if user_type == 'WHOLESALER':
+                        available_stock = product.wholesale_stock
+                        stock_field = 'wholesale_stock'
+                    elif user_type == 'RESTAURANT':
+                        available_stock = product.restaurant_stock
+                        stock_field = 'restaurant_stock'
+                    else:
+                        available_stock = product.stock
+                        stock_field = 'stock'
+
+                    if available_stock is not None and available_stock < qty:
+                        raise serializers.ValidationError(f"Not enough stock for '{product.name}'. Available: {available_stock}, Requested: {qty}")
+                    
+                    # Deduct stock
+                    if available_stock is not None:
+                        setattr(product, stock_field, available_stock - qty)
+                        product.save(update_fields=[stock_field])
                     
                     unit_price = product.discount_price if product.discount_price else product.price
                     subtotal   = unit_price * qty
@@ -323,11 +340,19 @@ class OrderCreateSerializer(serializers.Serializer):
             except Exception as e:
                 logger.error(f"Failed to send new order notification to customer: {e}")
 
-            # 2. Check if any product went out of stock
+            # 2. Check if any product went out of stock to alert admins
             for item in cart_items:
                 if item.get('item_type') == 'product':
                     product = item['product']
-                    if product.stock is not None and product.stock <= 0:
+                    user_type = getattr(user, 'user_type', 'CUSTOMER') if user else 'CUSTOMER'
+                    if user_type == 'WHOLESALER':
+                        current_stock = product.wholesale_stock
+                    elif user_type == 'RESTAURANT':
+                        current_stock = product.restaurant_stock
+                    else:
+                        current_stock = product.stock
+
+                    if current_stock is not None and current_stock <= 0:
                         try:
                             send_admin_notification(
                                 notification_type='out_of_stock',
@@ -747,19 +772,20 @@ class OrderSerializer(serializers.ModelSerializer):
     shipping_method = ShippingMethodSerializer(read_only=True)
     shipping_address = AddressSerializer(read_only=True)
     is_wholesale_order = serializers.SerializerMethodField()
+    user_type = serializers.SerializerMethodField()
 
     class Meta:
         model  = Order
         fields = [
             'id', 'order_number', 'total_amount', 'cart_subtotal', 'refunded_amount', 'status', 'payment_status',
             'shipping_address', 'shipping_method', 'tracking_number', 'fulfillment_store',
-            'ordered_at', 'items', 'updates', 'payment', 'is_wholesale_order'
+            'ordered_at', 'items', 'updates', 'payment', 'is_wholesale_order', 'user_type'
         ]
 
     def get_is_wholesale_order(self, obj):
         if getattr(obj, 'is_wholesale_order', False) or obj.wholesale_user_id:
             return True
-        if obj.user_id and getattr(obj.user, 'user_type', None) == 'WHOLESALER':
+        if obj.user_id and getattr(obj.user, 'user_type', None) in ['WHOLESALER', 'RESTAURANT']:
             return True
         if obj.customer_email:
             try:
@@ -769,3 +795,23 @@ class OrderSerializer(serializers.ModelSerializer):
             except Exception:
                 pass
         return False
+
+    def get_user_type(self, obj):
+        if obj.wholesale_user_id:
+            return obj.wholesale_user.user_type
+        if obj.user_id:
+            return getattr(obj.user, 'user_type', 'CUSTOMER')
+        if obj.customer_email:
+            try:
+                from wholesale.models import WholesaleUser
+                ws = WholesaleUser.objects.filter(email__iexact=obj.customer_email).first()
+                if ws:
+                    return ws.user_type
+                from django.contrib.auth import get_user_model
+                User = get_user_model()
+                u = User.objects.filter(email__iexact=obj.customer_email).first()
+                if u:
+                    return getattr(u, 'user_type', 'CUSTOMER')
+            except Exception:
+                pass
+        return 'CUSTOMER'

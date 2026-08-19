@@ -45,6 +45,11 @@ class SizeSerializer(serializers.ModelSerializer):
         model = Size
         fields = ['id', 'name']
 
+class DisplayUnitSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DisplayUnit
+        fields = ['id', 'name', 'abbreviation', 'created_at']
+
 class SubCategorySerializer(serializers.ModelSerializer):
     image_url = serializers.SerializerMethodField()
     category_name = serializers.CharField(source='category.name', read_only=True)
@@ -235,10 +240,11 @@ class ProductSerializer(serializers.ModelSerializer):
         model = Product
         fields = [
             'id', 'shop', 'stores', 'brand', 'name', 'slug', 'description', 'category', 'sub_category', 'shipping_category',
-            'price', 'discount_price', 'wholesale_price', 'minimum_purchase', 'tax_rate', 'stock', 'is_active',
+            'price', 'discount_price', 'wholesale_price', 'wholesale_discount_price', 'restaurant_price', 'restaurant_discount_price', 
+            'minimum_purchase', 'tax_rate', 'stock', 'wholesale_stock', 'restaurant_stock', 'is_active',
             'weight', 'length', 'width', 'height',  # Added physical properties for shipping
             'thumbnail_url', 'specifications', 'additional_images',
-            'origin', 'unit', 'wholesale_unit', 'badge', 'badge_color', 'variant',
+            'origin', 'unit', 'wholesale_unit', 'restaurant_unit', 'badge', 'badge_color', 'variant',
             'colors', 'sizes', 'reviews', 'rating', 'review_count', 'user_can_review',
             'store_stocks',
             'created_at', 'updated_at', 'created_by_name', 'updated_by_name',
@@ -305,6 +311,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'is_wholesaler': False,
             'is_approved_wholesaler': False,
             'wholesaler_status': None,
+            'is_restaurant': False,
             'is_admin': False
         }
         
@@ -330,6 +337,8 @@ class ProductSerializer(serializers.ModelSerializer):
                 except:
                     # If wholesaler_profile doesn't exist, user is not approved
                     user_context['wholesaler_status'] = 'PENDING'
+            elif getattr(request.user, 'user_type', '') == 'RESTAURANT':
+                user_context['is_restaurant'] = True
         
         # Add user context to response for frontend logic
         data['_user_context'] = user_context
@@ -338,18 +347,37 @@ class ProductSerializer(serializers.ModelSerializer):
         if user_context['is_admin']:
             # Admins see everything, do nothing
             pass
+        elif user_context['is_restaurant']:
+            # For restaurant users, remove wholesale fields
+            data.pop('wholesale_price', None)
+            data.pop('wholesale_discount_price', None)
+            data.pop('wholesale_unit', None)
+            data.pop('minimum_purchase', None)
+            
+            restaurant_price = instance.restaurant_price
+            if not restaurant_price or restaurant_price < 1:
+                data.pop('restaurant_price', None)
+                data.pop('restaurant_discount_price', None)
         elif user_context['is_approved_wholesaler']:
-            # For approved wholesalers: only include wholesale_price if it exists and >= 1
+            # For approved wholesalers: remove restaurant fields
+            data.pop('restaurant_price', None)
+            data.pop('restaurant_discount_price', None)
+            data.pop('restaurant_unit', None)
+            
             wholesale_price = instance.wholesale_price
             if not wholesale_price or wholesale_price < 1:
-                # Remove wholesale pricing if not available
                 data.pop('wholesale_price', None)
-            # Always keep minimum_purchase for approved wholesalers
+                data.pop('wholesale_discount_price', None)
         else:
             # For non-approved wholesalers, customers, and unauthenticated users: 
-            # Remove wholesale_price and minimum_purchase for security
+            # Remove wholesale and restaurant price fields for security
             data.pop('wholesale_price', None)
+            data.pop('wholesale_discount_price', None)
+            data.pop('wholesale_unit', None)
             data.pop('minimum_purchase', None)
+            data.pop('restaurant_price', None)
+            data.pop('restaurant_discount_price', None)
+            data.pop('restaurant_unit', None)
         
         return data
 
@@ -374,7 +402,7 @@ class ProductWriteSerializer(serializers.ModelSerializer):
             'price', 'discount_price', 'wholesale_price',
             'minimum_purchase', 'tax_rate',
             'origin', 'unit', 'wholesale_unit', 'badge', 'badge_color', 'variant',
-            'stock', 'is_active',
+            'stock', 'wholesale_stock', 'restaurant_stock', 'is_active',
             'weight', 'length', 'width', 'height',
             'thumbnail', 'colors', 'sizes',
         ]

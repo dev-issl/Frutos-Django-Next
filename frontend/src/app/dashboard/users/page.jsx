@@ -7,6 +7,7 @@ import DataTable from "@/app/dashboard/_components/DataTable";
 import Modal from "@/app/dashboard/_components/Modal";
 import FormModal from "@/app/dashboard/_components/FormModal";
 import ConfirmDialog from "@/app/dashboard/_components/ConfirmDialog";
+import SearchableSelect from "@/app/dashboard/_components/SearchableSelect";
 import { useToastContext } from "@/app/dashboard/_components/Toaster";
 import useSWR from "swr";
 import { adminUsersApi } from "@/app/dashboard/_lib/auth";
@@ -15,12 +16,11 @@ import api, { API_BASE_URL } from "@/app/dashboard/_lib/api";
 const PAGE_SIZE = 20;
 
 const FILTERS = [
-  { label: "All",        value: "" },
-  { label: "Customers",  value: "CUSTOMER" },
-  { label: "Wholesale",  value: "WHOLESALE" },
-  { label: "Sellers",    value: "SELLER" },
-  { label: "Admins",     value: "ADMIN" },
-  { label: "Staff",      value: "STAFF" },
+  { label: "All", value: "" },
+  { label: "Customers", value: "CUSTOMER" },
+  { label: "Internal Wholesale", value: "WHOLESALER" },
+  { label: "External Wholesale", value: "RESTAURANT" },
+  { label: "Admins", value: "ADMIN" },
 ];
 
 function RoleBadge({ value }) {
@@ -28,6 +28,7 @@ function RoleBadge({ value }) {
     ADMIN:     "bg-purple-100 text-purple-700",
     SELLER:    "bg-blue-100 text-blue-700",
     WHOLESALE: "bg-emerald-100 text-emerald-700",
+    RESTAURANT:"bg-amber-100 text-amber-600",
     VENDOR:    "bg-amber-100 text-amber-700",
     CUSTOMER:  "bg-slate-100 text-slate-600",
     STAFF:     "bg-teal-100 text-teal-700",
@@ -62,6 +63,7 @@ const editFields = [
   { key: "user_type", label: "Role", type: "select", required: true, options: [
     { value: "CUSTOMER", label: "Customer" },
     { value: "WHOLESALE", label: "Wholesaler" },
+    { value: "RESTAURANT", label: "Restaurant" },
     { value: "SELLER",   label: "Seller" },
     { value: "VENDOR",   label: "Vendor" },
     { value: "ADMIN",    label: "Admin" },
@@ -87,6 +89,8 @@ const createFields = [
   { key: "password",  label: "Password",  required: true, placeholder: "Min 8 characters", type: "password" },
   { key: "user_type", label: "Role", type: "select", required: true, options: [
     { value: "CUSTOMER", label: "Customer" },
+    { value: "WHOLESALE", label: "Wholesaler" },
+    { value: "RESTAURANT", label: "Restaurant" },
     { value: "SELLER",   label: "Seller" },
     { value: "VENDOR",   label: "Vendor" },
     { value: "ADMIN",    label: "Admin" },
@@ -102,6 +106,7 @@ export default function UsersPage() {
   const [viewItem, setViewItem]     = useState(null);
   const [editItem, setEditItem]     = useState(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const [createUserType, setCreateUserType] = useState('CUSTOMER');
   const [deleteItem, setDeleteItem] = useState(null);
 
   const { data: rawData, isLoading, mutate } = useSWR(
@@ -274,22 +279,68 @@ export default function UsersPage() {
       )}
       />
 
-      <Modal open={createOpen} onClose={() => setCreateOpen(false)} title="Create User" maxWidth="max-w-2xl">
-        <form onSubmit={(e) => { e.preventDefault(); const fd = new FormData(e.target); handleCreate(Object.fromEntries(fd)); }} className="space-y-4">
+      <Modal open={createOpen} onClose={() => { setCreateOpen(false); setCreateUserType('CUSTOMER'); }} title="Create User" maxWidth="max-w-2xl">
+        <form onSubmit={(e) => { 
+          e.preventDefault(); 
+          const fd = new FormData(e.target); 
+          fd.append('name', `${fd.get('first_name')} ${fd.get('last_name')}`.trim());
+          fd.delete('first_name');
+          fd.delete('last_name');
+          handleCreate(fd); 
+        }} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <div><label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Full Name *</label><input required name="name" className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-[#00694C]/40 outline-none" placeholder="John Doe" /></div>
+            <div><label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">First Name *</label><input required name="first_name" className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-[#00694C]/40 outline-none" placeholder="John" /></div>
+            <div><label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Last Name *</label><input required name="last_name" className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-[#00694C]/40 outline-none" placeholder="Doe" /></div>
             <div><label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Email *</label><input required name="email" type="email" className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-[#00694C]/40 outline-none" placeholder="user@example.com" /></div>
             <div><label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Password *</label><input required name="password" type="password" className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-[#00694C]/40 outline-none" placeholder="Min 8 chars" /></div>
             <div>
               <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Role *</label>
-              <select name="user_type" required className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-[#00694C]/40 outline-none">
-                <option value="CUSTOMER">Customer</option>
-                <option value="SELLER">Seller</option>
-                <option value="VENDOR">Vendor</option>
-                <option value="ADMIN">Admin</option>
-              </select>
+              <SearchableSelect 
+                name="user_type" 
+                value={createUserType} 
+                onChange={setCreateUserType} 
+                required 
+                options={[
+                  { label: "Customer", value: "CUSTOMER" },
+                  { label: "Internal Wholesale", value: "WHOLESALER" },
+                  { label: "External Wholesale", value: "RESTAURANT" }
+                ]}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Profile Image</label>
+              <input type="file" name="profile_image" accept="image/*" className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-[#00694C]/40 outline-none cursor-pointer hover:bg-white transition-colors shadow-sm text-slate-500 file:mr-4 file:py-1.5 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-[#00694C]/10 file:text-[#00694C] hover:file:bg-[#00694C]/20 file:cursor-pointer file:transition-colors" />
             </div>
           </div>
+          {(createUserType === 'WHOLESALER' || createUserType === 'RESTAURANT') && (
+            <div className="grid grid-cols-2 gap-4 mt-2">
+              <div><label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Business Name *</label><input required name="business_name" className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-[#00694C]/40 outline-none" placeholder="El Arbol S.L." /></div>
+              <div><label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Trade License Number *</label><input required name="trade_license_number" className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-[#00694C]/40 outline-none" placeholder="12345678" /></div>
+              <div><label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Contact Phone</label><input name="phone" className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-[#00694C]/40 outline-none" placeholder="+34 600 000 000" /></div>
+              <div><label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Postcode</label><input name="postcode" className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-[#00694C]/40 outline-none" placeholder="28001" /></div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Business Type</label>
+                <select name="business_type" className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-[#00694C]/40 outline-none cursor-pointer hover:bg-white transition-colors shadow-sm text-slate-700">
+                  <option value="restaurant">Restaurant / Bistro</option>
+                  <option value="hotel">Hotel / Resort</option>
+                  <option value="catering">Catering Company</option>
+                  <option value="food_retail">Food Retail / Grocery</option>
+                  <option value="dark_kitchen">Dark Kitchen</option>
+                  <option value="cafe">Café / Bakery</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Monthly Volume</label>
+                <select name="monthly_volume" className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-[#00694C]/40 outline-none cursor-pointer hover:bg-white transition-colors shadow-sm text-slate-700">
+                  <option value="400_1000">€400 – €1,000</option>
+                  <option value="1000_3000">€1,000 – €3,000</option>
+                  <option value="3000_7000">€3,000 – €7,000</option>
+                  <option value="7000_plus">€7,000+</option>
+                </select>
+              </div>
+            </div>
+          )}
           <div className="flex justify-end pt-2 border-t border-slate-100">
             <button style={{cursor: 'pointer'}} type="submit" className="px-5 py-2 text-sm font-bold bg-[#00694C] text-white rounded-lg hover:bg-[#085041] transition-colors shadow-sm">CREATE USER</button>
           </div>
@@ -298,18 +349,32 @@ export default function UsersPage() {
 
       <Modal open={!!editItem} onClose={() => setEditItem(null)} title="Edit User" maxWidth="max-w-2xl">
         {editItem && (
-          <form onSubmit={(e) => { e.preventDefault(); const fd = new FormData(e.target); handleEdit(Object.fromEntries(fd)); }} className="space-y-4">
+          <form onSubmit={(e) => { 
+            e.preventDefault(); 
+            const fd = new FormData(e.target); 
+            const vals = Object.fromEntries(fd);
+            vals.name = `${vals.first_name} ${vals.last_name}`.trim();
+            delete vals.first_name;
+            delete vals.last_name;
+            handleEdit(vals); 
+          }} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <div><label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Full Name *</label><input required name="name" defaultValue={editItem.name} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-[#00694C]/40 outline-none" /></div>
+              <div><label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">First Name *</label><input required name="first_name" defaultValue={editItem.name?.split(' ')[0] || ''} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-[#00694C]/40 outline-none" /></div>
+              <div><label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Last Name *</label><input required name="last_name" defaultValue={editItem.name?.split(' ').slice(1).join(' ') || ''} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-[#00694C]/40 outline-none" /></div>
               <div>
                 <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Role *</label>
-                <select name="user_type" defaultValue={editItem.user_type} required className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-[#00694C]/40 outline-none">
-                  <option value="CUSTOMER">Customer</option>
-                  <option value="WHOLESALE">Wholesaler</option>
-                  <option value="SELLER">Seller</option>
-                  <option value="VENDOR">Vendor</option>
-                  <option value="ADMIN">Admin</option>
-                </select>
+                <SearchableSelect 
+                  name="user_type" 
+                  value={editItem.user_type} 
+                  onChange={(val) => setEditItem({...editItem, user_type: val})} 
+                  required 
+                  options={[
+                    { label: "Customer", value: "CUSTOMER" },
+                    { label: "Internal Wholesale", value: "WHOLESALER" },
+                    { label: "External Wholesale", value: "RESTAURANT" },
+                    { label: "Admin", value: "ADMIN" }
+                  ]}
+                />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Status *</label>

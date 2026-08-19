@@ -32,7 +32,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     USER_TYPE_CHOICES = [
         ('CUSTOMER', 'Customer'),
         ('SELLER', 'Seller'),
-        ('WHOLESALER', 'Wholesaler'),
+        ('WHOLESALER', 'Internal Wholesale (Nijeder)'),
+        ('RESTAURANT', 'External Wholesale (Bahirer)'),
         ('VENDOR', 'Vendor'),
         ('AFFILIATE', 'Affiliate'),
         ('ADMIN', 'Admin'),

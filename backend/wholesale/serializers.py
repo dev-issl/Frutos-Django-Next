@@ -22,7 +22,7 @@ class WholesaleRegisterSerializer(serializers.ModelSerializer):
             'business_name', 'contact_name',
             'trade_license_number',
             'phone', 'postcode',
-            'business_type', 'monthly_volume',
+            'business_type', 'monthly_volume', 'user_type',
         )
 
     def validate_email(self, value):

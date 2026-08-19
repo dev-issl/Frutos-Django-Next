@@ -892,13 +892,59 @@ class AdminUserListView(APIView):
 
         if not email or not password:
             return Response({'detail': 'Email and password required.'}, status=400)
+        if user_type in ['WHOLESALER', 'RESTAURANT']:
+            from wholesale.models import WholesaleUser
+            if WholesaleUser.objects.filter(email__iexact=email).exists():
+                return Response({'detail': 'Email already exists.'}, status=400)
+                
+            business_name = request.data.get('business_name', '').strip()
+            contact_name = request.data.get('contact_name', name).strip()
+            trade_license_number = request.data.get('trade_license_number', '').strip()
+            phone = request.data.get('phone', '').strip()
+            postcode = request.data.get('postcode', '').strip()
+            business_type = request.data.get('business_type', 'other')
+            monthly_volume = request.data.get('monthly_volume', '400_1000')
+            
+            if not business_name or not contact_name or not trade_license_number:
+                return Response({'detail': 'Business Name, Contact Name, and Trade License Number are required.'}, status=400)
+                
+            ws_user = WholesaleUser.objects.create_user(
+                email=email,
+                password=password,
+                user_type=user_type,
+                business_name=business_name,
+                contact_name=contact_name,
+                trade_license_number=trade_license_number,
+                phone=phone,
+                postcode=postcode,
+                business_type=business_type,
+                monthly_volume=monthly_volume,
+                status='approved'  # Admins create approved users
+            )
+            profile_image = request.FILES.get('profile_image')
+            if profile_image:
+                ws_user.profile_image = profile_image
+                ws_user.save()
+            return Response({
+                'id':        f'ws_{ws_user.id}',
+                'email':     ws_user.email,
+                'name':      ws_user.contact_name,
+                'user_type': 'WHOLESALE',
+                'is_active': ws_user.is_active,
+            }, status=201)
+
         if User.objects.filter(email__iexact=email).exists():
             return Response({'detail': 'Email already exists.'}, status=400)
 
         user = User.objects.create_user(email=email, password=password, name=name)
         if hasattr(user, 'user_type'):
             user.user_type = user_type
-            user.save()
+            
+        profile_image = request.FILES.get('profile_image')
+        if profile_image and hasattr(user, 'profile_image'):
+            user.profile_image = profile_image
+            
+        user.save()
 
         return Response({
             'id':        user.id,

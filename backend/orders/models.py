@@ -470,6 +470,12 @@ class Coupon(models.Model):
     used_count            = models.PositiveIntegerField(default=0)
     applicable_products   = models.ManyToManyField('products.Product', blank=True, related_name='coupons')
     eligible_users        = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, related_name='specific_coupons')
+    target_user_type      = models.CharField(
+        max_length=20, 
+        blank=True, 
+        null=True, 
+        help_text="If set, this coupon is only valid for users of this type (e.g., RESTAURANT, WHOLESALER)"
+    )
     active                = models.BooleanField(default=True, db_index=True)
     created_at            = models.DateTimeField(auto_now_add=True)
     valid_from            = models.DateTimeField(default=timezone.now, db_index=True)
@@ -519,7 +525,13 @@ class Coupon(models.Model):
                 return False, f"This coupon is not yet valid. It becomes active on {self.valid_from.strftime('%Y-%m-%d %H:%M')}."
             elif now > self.expires_at:
                 return False, "This coupon has expired."
-        
+        # Check target user type if specified
+        if self.target_user_type:
+            if user is None:
+                return False, f"User authentication is required to use this coupon."
+            if user.user_type != self.target_user_type:
+                return False, f"This coupon is only valid for {self.target_user_type} users."
+                
         # Calculate total quantity in cart
         total_quantity = sum(item.get('quantity', 0) for item in cart_items)
         

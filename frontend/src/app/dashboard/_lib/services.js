@@ -461,6 +461,12 @@ export const sizesService = createModelService("/api/products/sizes", {
     modelName: "size",
 });
 
+export const displayUnitsService = createModelService("/api/products/display-units", {
+    lookupField: "id",
+    appLabel: "products",
+    modelName: "displayunit",
+});
+
 export const offersService = createModelService("/api/products/offers", {
     lookupField: "slug",
     appLabel: "products",

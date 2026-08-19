@@ -90,6 +90,10 @@ function CouponViewModal({ open, item, type, onClose }) {
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Min Quantity</p>
                     <p className="text-sm font-semibold text-slate-800">{item.min_quantity_required || 1}</p>
                  </div>
+                 <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Target User</p>
+                    <p className="text-sm font-semibold text-slate-800">{item.target_user_type || "All Users"}</p>
+                 </div>
                </div>
 
                <div className="grid grid-cols-2 gap-4">
@@ -225,6 +229,7 @@ function CouponForm({ initial = {}, onSubmit, submitLabel = "Save" }) {
         valid_from:           v.valid_from ? new Date(v.valid_from).toISOString() : null,
         expires_at:           v.expires_at ? new Date(v.expires_at).toISOString() : null,
         applicable_products:  selectedProductIds,
+        target_user_type:     v.target_user_type || null,
       });
     } finally { setSubmitting(false); }
   };
@@ -247,6 +252,20 @@ function CouponForm({ initial = {}, onSubmit, submitLabel = "Save" }) {
            <div>
              <label className={lbl}>Coupon Type *</label>
              <SearchableSelect required value={v.type} onChange={val => set("type", val)} options={COUPON_TYPES} />
+           </div>
+
+           <div>
+             <label className={lbl}>Target User Type</label>
+             <SearchableSelect
+               value={v.target_user_type || ""}
+               onChange={val => set("target_user_type", val)}
+               options={[
+                 { value: "", label: "All Users" },
+                 { value: "CUSTOMER", label: "Normal Users" },
+                 { value: "WHOLESALE", label: "Wholesale Users" },
+                 { value: "RESTAURANT", label: "Restaurant Users" },
+               ]}
+             />
            </div>
 
            <div>

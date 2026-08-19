@@ -47,8 +47,9 @@ const FILTERS = [
   { label: "Shipped", value: "SHIPPED" },
   { label: "Delivered", value: "DELIVERED" },
   { label: "Cancelled", value: "CANCELLED" },
-  { label: "Wholesale", value: "WHOLESALE" },
-  { label: "Customer", value: "RETAIL" },
+  { label: "Internal Wholesale", value: "WHOLESALER" },
+  { label: "External Wholesale", value: "RESTAURANT" },
+  { label: "Customer", value: "CUSTOMER" },
   { label: "Cash", value: "payment_cash" },
   { label: "Debit/Credit Card", value: "payment_card" },
 ];
@@ -103,9 +104,10 @@ export default function OrdersPage() {
 
   const rawList = rawData?.results || (Array.isArray(rawData) ? rawData : []);
   const data = rawList.filter(o => {
-    // Check segment
-    if (activeFilters.includes("WHOLESALE") && !o.is_wholesale_order) return false;
-    if (activeFilters.includes("RETAIL") && o.is_wholesale_order) return false;
+    // Check segment (user role)
+    const roleFilters = ["WHOLESALER", "RESTAURANT", "CUSTOMER"];
+    const hasRoleFilter = activeFilters.some(f => roleFilters.includes(f));
+    if (hasRoleFilter && !activeFilters.includes(o.user_type)) return false;
 
     // Check status
     const statusFilters = ["PENDING", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"];
@@ -113,8 +115,9 @@ export default function OrdersPage() {
     if (hasStatusFilter && !activeFilters.includes(o.status)) return false;
 
     // Check payment
-    if (activeFilters.includes("payment_cash") && o.payment_method !== "cash") return false;
-    if (activeFilters.includes("payment_card") && o.payment_method !== "card") return false;
+    const paymentFilters = ["payment_cash", "payment_card"];
+    const hasPaymentFilter = activeFilters.some(f => paymentFilters.includes(f));
+    if (hasPaymentFilter && !activeFilters.includes(`payment_${o.payment_method}`)) return false;
 
     // Check time
     if (activeFilters.includes("THIS_WEEK")) {
@@ -287,15 +290,16 @@ export default function OrdersPage() {
                   }
                   setActiveFilters(prev => {
                     let next = [...prev];
-                    if (["WHOLESALE", "RETAIL"].includes(f.value)) {
-                      next = next.filter(val => !["WHOLESALE", "RETAIL"].includes(val));
-                    } else if (["THIS_WEEK", "THIS_MONTH"].includes(f.value)) {
+                    if (["THIS_WEEK", "THIS_MONTH"].includes(f.value)) {
                       next = next.filter(val => !["THIS_WEEK", "THIS_MONTH"].includes(val));
                     } else if (["PENDING", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"].includes(f.value)) {
                       next = next.filter(val => !["PENDING", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"].includes(val));
                     } else if (["payment_cash", "payment_card"].includes(f.value)) {
                       next = next.filter(val => !["payment_cash", "payment_card"].includes(val));
+                    } else if (prev.includes(f.value)) {
+                      next = next.filter(val => val !== f.value);
                     }
+                    
                     if (!prev.includes(f.value)) next.push(f.value);
                     return next;
                   });
