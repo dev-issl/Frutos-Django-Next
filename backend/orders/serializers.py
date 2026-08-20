@@ -468,6 +468,7 @@ class OrderReadSerializer(serializers.ModelSerializer):
     status_display         = serializers.CharField(source='get_status_display',         read_only=True)
     payment_status_display = serializers.CharField(source='get_payment_status_display', read_only=True)
     is_wholesale_order     = serializers.SerializerMethodField()
+    user_type              = serializers.SerializerMethodField()
 
     # Writable fields for PATCH (admin status update)
     status         = serializers.CharField(required=False)
@@ -487,14 +488,14 @@ class OrderReadSerializer(serializers.ModelSerializer):
             'street_address', 'city', 'postcode',
             'payment_method', 'card_number', 'card_expiry', 'card_cvv', 
             'delivery_date', 'delivery_slot_label',
-            'tracking_number', 'is_wholesale_order', 'fulfillment_store',
+            'tracking_number', 'is_wholesale_order', 'user_type', 'fulfillment_store',
             'ordered_at', 'items', 'payment', 'updates',
         ]
 
     def get_is_wholesale_order(self, obj):
         if getattr(obj, 'is_wholesale_order', False) or obj.wholesale_user_id:
             return True
-        if obj.user_id and getattr(obj.user, 'user_type', None) == 'WHOLESALER':
+        if obj.user_id and getattr(obj.user, 'user_type', None) in ['WHOLESALER', 'RESTAURANT']:
             return True
         if obj.customer_email:
             try:
@@ -504,6 +505,26 @@ class OrderReadSerializer(serializers.ModelSerializer):
             except Exception:
                 pass
         return False
+
+    def get_user_type(self, obj):
+        if obj.wholesale_user_id:
+            return obj.wholesale_user.user_type
+        if obj.user_id:
+            return getattr(obj.user, 'user_type', 'CUSTOMER')
+        if obj.customer_email:
+            try:
+                from wholesale.models import WholesaleUser
+                ws = WholesaleUser.objects.filter(email__iexact=obj.customer_email).first()
+                if ws:
+                    return ws.user_type
+                from django.contrib.auth import get_user_model
+                User = get_user_model()
+                u = User.objects.filter(email__iexact=obj.customer_email).first()
+                if u:
+                    return getattr(u, 'user_type', 'CUSTOMER')
+            except Exception:
+                pass
+        return 'CUSTOMER'
 
 
 # ══════════════════════════════════════════════════════════════════

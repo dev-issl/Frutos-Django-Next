@@ -38,20 +38,48 @@ function StatusBadge({ value }) {
   );
 }
 
-const FILTERS = [
-  { label: "All", value: "" },
-  { label: "This Week", value: "THIS_WEEK" },
-  { label: "This Month", value: "THIS_MONTH" },
-  { label: "Pending", value: "PENDING" },
-  { label: "Processing", value: "PROCESSING" },
-  { label: "Shipped", value: "SHIPPED" },
-  { label: "Delivered", value: "DELIVERED" },
-  { label: "Cancelled", value: "CANCELLED" },
-  { label: "Internal Wholesale", value: "WHOLESALER" },
-  { label: "External Wholesale", value: "RESTAURANT" },
-  { label: "Customer", value: "CUSTOMER" },
-  { label: "Cash", value: "payment_cash" },
-  { label: "Debit/Credit Card", value: "payment_card" },
+// ── Grouped filter config ──────────────────────────────────────
+const FILTER_GROUPS = [
+  {
+    groupKey: "time",
+    label: "Period",
+    exclusive: true, // only one time filter active at once
+    filters: [
+      { label: "This Week",  value: "THIS_WEEK" },
+      { label: "This Month", value: "THIS_MONTH" },
+    ],
+  },
+  {
+    groupKey: "status",
+    label: "Order Status",
+    exclusive: true, // only one status at once
+    filters: [
+      { label: "Pending",    value: "PENDING",    dot: "#f59e0b" },
+      { label: "Processing", value: "PROCESSING", dot: "#3b82f6" },
+      { label: "Shipped",    value: "SHIPPED",    dot: "#6366f1" },
+      { label: "Delivered",  value: "DELIVERED",  dot: "#10b981" },
+      { label: "Cancelled",  value: "CANCELLED",  dot: "#ef4444" },
+    ],
+  },
+  {
+    groupKey: "role",
+    label: "Customer Role",
+    exclusive: false, // can combine WHOLESALER + RESTAURANT
+    filters: [
+      { label: "Internal Wholesale", value: "WHOLESALER" },
+      { label: "External Wholesale", value: "RESTAURANT" },
+      { label: "Customer",           value: "CUSTOMER"   },
+    ],
+  },
+  {
+    groupKey: "payment",
+    label: "Payment",
+    exclusive: true,
+    filters: [
+      { label: "Cash",             value: "payment_cash" },
+      { label: "Debit/Credit Card", value: "payment_card" },
+    ],
+  },
 ];
 
 export default function OrdersPage() {
@@ -103,16 +131,34 @@ export default function OrdersPage() {
   );
 
   const rawList = rawData?.results || (Array.isArray(rawData) ? rawData : []);
+  // Helper: determine order's role category from available fields
+  const getOrderRole = (o) => {
+    // user_type from backend (most reliable)
+    const ut = (o.user_type || "").toUpperCase();
+    if (ut === "WHOLESALER" || ut === "INTERNAL_WHOLESALE") return "WHOLESALER";
+    if (ut === "RESTAURANT" || ut === "EXTERNAL_WHOLESALE") return "RESTAURANT";
+    if (ut === "CUSTOMER" || ut === "RETAIL") return "CUSTOMER";
+    // Legacy "WHOLESALE" fallback — treat as WHOLESALER (internal)
+    if (ut === "WHOLESALE") return "WHOLESALER";
+    // Final fallback: use is_wholesale_order flag
+    if (o.is_wholesale_order) {
+      const ct = (o.customer_type || o.shop_type || "").toUpperCase();
+      if (ct.includes("RESTAURANT") || ct.includes("EXTERNAL")) return "RESTAURANT";
+      return "WHOLESALER";
+    }
+    return "CUSTOMER";
+  };
+
   const data = rawList.filter(o => {
     // Check segment (user role)
     const roleFilters = ["WHOLESALER", "RESTAURANT", "CUSTOMER"];
     const hasRoleFilter = activeFilters.some(f => roleFilters.includes(f));
-    if (hasRoleFilter && !activeFilters.includes(o.user_type)) return false;
+    if (hasRoleFilter && !activeFilters.includes(getOrderRole(o))) return false;
 
-    // Check status
+    // Check status (case-insensitive)
     const statusFilters = ["PENDING", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"];
     const hasStatusFilter = activeFilters.some(f => statusFilters.includes(f));
-    if (hasStatusFilter && !activeFilters.includes(o.status)) return false;
+    if (hasStatusFilter && !activeFilters.includes((o.status || "").toUpperCase())) return false;
 
     // Check payment
     const paymentFilters = ["payment_cash", "payment_card"];
@@ -279,40 +325,76 @@ export default function OrdersPage() {
         />
       ) : (
         <>
-          <div className="db-filter-bar">
-            {FILTERS.map(f => (
-              <button
-                key={f.value}
-                onClick={() => {
-                  if (f.value === "") {
-                    setActiveFilters([]);
-                    return;
-                  }
-                  setActiveFilters(prev => {
-                    let next = [...prev];
-                    if (["THIS_WEEK", "THIS_MONTH"].includes(f.value)) {
-                      next = next.filter(val => !["THIS_WEEK", "THIS_MONTH"].includes(val));
-                    } else if (["PENDING", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"].includes(f.value)) {
-                      next = next.filter(val => !["PENDING", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"].includes(val));
-                    } else if (["payment_cash", "payment_card"].includes(f.value)) {
-                      next = next.filter(val => !["payment_cash", "payment_card"].includes(val));
-                    } else if (prev.includes(f.value)) {
-                      next = next.filter(val => val !== f.value);
-                    }
-                    
-                    if (!prev.includes(f.value)) next.push(f.value);
-                    return next;
-                  });
-                }}
-                className={`cursor-pointer db-filter-pill${(f.value === "" && activeFilters.length === 0) || activeFilters.includes(f.value) ? " active" : ""}`}
-              >
-                {f.label}
-              </button>
+          {/* ── Compact Inline Filter Bar ───────────────────────────── */}
+          <div className="mb-4 pb-3 border-b border-slate-100 flex items-center gap-1.5 flex-wrap">
+            {/* All pill */}
+            <button
+              onClick={() => setActiveFilters([])}
+              className={`cursor-pointer db-filter-pill${activeFilters.length === 0 ? " active" : ""}`}
+            >
+              All
+            </button>
+
+            {/* Groups inline */}
+            {FILTER_GROUPS.map((group) => (
+              <div key={group.groupKey} className="flex items-center gap-1.5">
+                {/* Separator before each group */}
+                <span className="w-px h-4 bg-slate-200 mx-0.5 shrink-0" />
+
+                {group.filters.map(f => {
+                  const isActive = activeFilters.includes(f.value);
+                  return (
+                    <button
+                      key={f.value}
+                      onClick={() => {
+                        setActiveFilters(prev => {
+                          let next = [...prev];
+                          const groupValues = group.filters.map(x => x.value);
+                          if (group.exclusive) {
+                            next = next.filter(v => !groupValues.includes(v));
+                            if (!isActive) next.push(f.value);
+                          } else {
+                            if (isActive) {
+                              next = next.filter(v => v !== f.value);
+                            } else {
+                              next.push(f.value);
+                            }
+                          }
+                          return next;
+                        });
+                      }}
+                      className={`cursor-pointer db-filter-pill flex items-center gap-1.5${isActive ? " active" : ""}`}
+                    >
+                      {f.dot && (
+                        <span
+                          className="inline-block w-1.5 h-1.5 rounded-full shrink-0"
+                          style={{ background: isActive ? "#fff" : f.dot }}
+                        />
+                      )}
+                      {f.label}
+                    </button>
+                  );
+                })}
+              </div>
             ))}
-            <span style={{ marginLeft: "auto", fontSize: "12px", color: "#94a3b8", fontWeight: "600" }}>
-              {data.length} orders
+
+            {/* Count + clear */}
+            <span className="ml-auto flex items-center gap-2">
+              {activeFilters.length > 0 && (
+                <button
+                  onClick={() => setActiveFilters([])}
+                  className="cursor-pointer text-[11px] font-bold text-slate-400 hover:text-red-500 transition-colors"
+                >
+                  Clear
+                </button>
+              )}
+              <span className="text-xs font-semibold text-slate-400">
+                {data.length} order{data.length !== 1 ? "s" : ""}
+              </span>
             </span>
           </div>
+
+
 
           {error && (
             <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3 mb-4">
@@ -573,11 +655,11 @@ export default function OrdersPage() {
           {/* Derive initial props for the report based on active page filters */}
           {(() => {
             let initialCustomerType = "all";
-            if (activeFilters.includes("WHOLESALE")) initialCustomerType = "wholesale";
-            if (activeFilters.includes("RETAIL")) initialCustomerType = "retail";
-            
+            if (activeFilters.some(f => ["WHOLESALER", "RESTAURANT"].includes(f))) initialCustomerType = "wholesale";
+            if (activeFilters.includes("CUSTOMER")) initialCustomerType = "retail";
+
             let initialTab = "monthly";
-            if (activeFilters.includes("THIS_WEEK")) initialTab = "weekly";
+            if (activeFilters.includes("THIS_WEEK"))  initialTab = "weekly";
             if (activeFilters.includes("THIS_MONTH")) initialTab = "monthly";
 
             return (

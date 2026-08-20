@@ -861,7 +861,7 @@ class AdminUserListView(APIView):
                     'id':               f'ws_{u.id}',
                     'name':             u.contact_name or u.email,
                     'email':            u.email,
-                    'user_type':        'WHOLESALE',
+                    'user_type':        u.user_type,   # WHOLESALER or RESTAURANT (actual DB value)
                     'is_active':        u.is_active,
                     'date_joined':      u.applied_at.isoformat() if u.applied_at else '',
                     'business_name':    u.business_name,
@@ -926,11 +926,13 @@ class AdminUserListView(APIView):
                 ws_user.profile_image = profile_image
                 ws_user.save()
             return Response({
-                'id':        f'ws_{ws_user.id}',
-                'email':     ws_user.email,
-                'name':      ws_user.contact_name,
-                'user_type': 'WHOLESALE',
-                'is_active': ws_user.is_active,
+                'id':             f'ws_{ws_user.id}',
+                'email':          ws_user.email,
+                'name':           ws_user.contact_name,
+                'user_type':      ws_user.user_type,   # WHOLESALER or RESTAURANT
+                'wholesale_status': 'approved',
+                'business_name':  ws_user.business_name,
+                'is_active':      ws_user.is_active,
             }, status=201)
 
         if User.objects.filter(email__iexact=email).exists():
@@ -1002,10 +1004,12 @@ class AdminUserDetailView(generics.RetrieveUpdateDestroyAPIView):
                 'id':               f'ws_{u.id}',
                 'name':             u.contact_name or u.email,
                 'email':            u.email,
-                'user_type':        'WHOLESALE',
+                'user_type':        u.user_type,   # ← actual value: WHOLESALER or RESTAURANT
                 'is_active':        u.is_active,
                 'date_joined':      u.applied_at,
                 'wholesale_status': u.status,
+                'business_name':    u.business_name,
+                'business_type':    getattr(u, 'business_type', None),
                 'profile_image':    profile_image_url,
             })
 
@@ -1049,6 +1053,10 @@ class AdminUserDetailView(generics.RetrieveUpdateDestroyAPIView):
             if 'wholesale_status' in data:
                 updates.append("status = %s")
                 params.append(data['wholesale_status'])
+            # ── Allow changing WHOLESALER ↔ RESTAURANT ──
+            if 'user_type' in data and data['user_type'] in ['WHOLESALER', 'RESTAURANT']:
+                updates.append("user_type = %s")
+                params.append(data['user_type'])
 
             if 'profile_image' in request.FILES:
                 from wholesale.models import WholesaleUser

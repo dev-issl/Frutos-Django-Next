@@ -23,19 +23,33 @@ const FILTERS = [
   { label: "Admins", value: "ADMIN" },
 ];
 
+// Role display labels
+const ROLE_LABELS = {
+  CUSTOMER:   "Customer",
+  WHOLESALER: "Internal Wholesale",
+  RESTAURANT: "External Wholesale",
+  ADMIN:      "Admin",
+  STAFF:      "Staff",
+  SELLER:     "Seller",
+  VENDOR:     "Vendor",
+  WHOLESALE:  "Wholesale",  // legacy fallback
+};
+
 function RoleBadge({ value }) {
-  const map = {
-    ADMIN:     "bg-purple-100 text-purple-700",
-    SELLER:    "bg-blue-100 text-blue-700",
-    WHOLESALE: "bg-emerald-100 text-emerald-700",
-    RESTAURANT:"bg-amber-100 text-amber-600",
-    VENDOR:    "bg-amber-100 text-amber-700",
-    CUSTOMER:  "bg-slate-100 text-slate-600",
-    STAFF:     "bg-teal-100 text-teal-700",
+  const styles = {
+    ADMIN:      "bg-purple-100 text-purple-700",
+    SELLER:     "bg-blue-100 text-blue-700",
+    WHOLESALE:  "bg-emerald-100 text-emerald-700",
+    WHOLESALER: "bg-emerald-100 text-emerald-800 ring-1 ring-emerald-300",
+    RESTAURANT: "bg-amber-100 text-amber-800 ring-1 ring-amber-300",
+    VENDOR:     "bg-amber-100 text-amber-700",
+    CUSTOMER:   "bg-slate-100 text-slate-600",
+    STAFF:      "bg-teal-100 text-teal-700",
   };
+  const label = ROLE_LABELS[value] || value || "Customer";
   return (
-    <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${map[value] || map.CUSTOMER}`}>
-      {value || "CUSTOMER"}
+    <span className={`inline-flex items-center px-2 py-0.5 text-[11px] rounded-full font-semibold ${styles[value] || styles.CUSTOMER}`}>
+      {label}
     </span>
   );
 }
@@ -56,32 +70,8 @@ function WholesaleStatusBadge({ value }) {
   );
 }
 
-
-
-const editFields = [
-  { key: "name", label: "Full Name", required: true, placeholder: "John Doe" },
-  { key: "user_type", label: "Role", type: "select", required: true, options: [
-    { value: "CUSTOMER", label: "Customer" },
-    { value: "WHOLESALE", label: "Wholesaler" },
-    { value: "RESTAURANT", label: "Restaurant" },
-    { value: "SELLER",   label: "Seller" },
-    { value: "VENDOR",   label: "Vendor" },
-    { value: "ADMIN",    label: "Admin" },
-  ]},
-  { key: "is_active", label: "Status", type: "select", required: true, options: [
-    { value: "true",  label: "Active" },
-    { value: "false", label: "Inactive" },
-  ]},
-];
-
-const wholesaleEditFields = [
-  ...editFields,
-  { key: "wholesale_status", label: "Wholesale Status", type: "select", options: [
-    { value: "pending",  label: "Pending" },
-    { value: "approved", label: "Approved" },
-    { value: "rejected", label: "Rejected" },
-  ]},
-]
+// Wholesale user types (both internal and external)
+const WHOLESALE_TYPES = ["WHOLESALER", "RESTAURANT", "WHOLESALE"];
 
 const createFields = [
   { key: "email",     label: "Email",     required: true, placeholder: "user@example.com" },
@@ -141,7 +131,7 @@ export default function UsersPage() {
     { key: "user_type", label: "Role", render: (v) => <RoleBadge value={v} /> },
     { key: "business_name", label: "Business", render: (v) => v || <span className="text-slate-400">—</span> },
     { key: "is_active", label: "Status", render: (v, row) => {
-      if (row.user_type === 'WHOLESALE' || row.user_type === 'WHOLESALER') {
+      if (WHOLESALE_TYPES.includes(row.user_type)) {
         return <WholesaleStatusBadge value={row.wholesale_status || 'pending'} />;
       }
       return (
@@ -153,10 +143,13 @@ export default function UsersPage() {
     { key: "date_joined", label: "Joined", render: (v) => v ? new Date(v).toLocaleDateString() : "—" },
   ];
 
-  // Filter client-side too (since API may not support user_type param yet)
+  // Filter client-side: handle both legacy WHOLESALE and new WHOLESALER/RESTAURANT
   const rawList = rawData?.results || rawData?.users || (Array.isArray(rawData) ? rawData : []);
   const data = activeFilter
-    ? rawList.filter(u => u.user_type === activeFilter)
+    ? rawList.filter(u => {
+        if (activeFilter === "WHOLESALER") return u.user_type === "WHOLESALER" || u.user_type === "WHOLESALE";
+        return u.user_type === activeFilter;
+      })
     : rawList;
   const totalCount = data.length;
 
@@ -271,7 +264,7 @@ export default function UsersPage() {
         <div className="flex items-center justify-end gap-1">
           <button onClick={(e) => { e.stopPropagation(); setViewItem(row); }} className="db-icon-btn" title="View"><Eye size={14} /></button>
           <button onClick={(e) => { e.stopPropagation(); setEditItem({ ...row, is_active: String(row.is_active), wholesale_status: row.wholesale_status || 'pending' }); }} className="db-icon-btn" title="Edit"><Pencil size={14} /></button>
-          {row.user_type === 'WHOLESALE' && row.wholesale_status === 'pending' && (
+          {WHOLESALE_TYPES.includes(row.user_type) && row.wholesale_status === 'pending' && (
             <button onClick={(e) => { e.stopPropagation(); handleApproveWholesale(row); }} style={{ padding: "5px 10px", fontSize: "11px", fontWeight: "700", borderRadius: "7px", background: "#22c55e", color: "white", border: "none", cursor: "pointer" }}>Approve</button>
           )}
           <button onClick={(e) => { e.stopPropagation(); setDeleteItem(row); }} className="db-icon-btn danger" title="Delete"><Trash2 size={14} /></button>
@@ -383,7 +376,7 @@ export default function UsersPage() {
                   <option value="false">Inactive</option>
                 </select>
               </div>
-              {editItem.user_type === 'WHOLESALE' && (
+              {WHOLESALE_TYPES.includes(editItem.user_type) && (
                 <div>
                   <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Wholesale Status *</label>
                   <select name="wholesale_status" defaultValue={editItem.wholesale_status || 'pending'} required className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-[#00694C]/40 outline-none">
@@ -440,7 +433,7 @@ export default function UsersPage() {
                 <p className="text-sm font-medium text-slate-500 truncate mb-2">{viewItem.email}</p>
                 <div className="flex flex-wrap gap-2">
                   <RoleBadge value={viewItem.user_type} />
-                  {viewItem.user_type === 'WHOLESALE' && <WholesaleStatusBadge value={viewItem.wholesale_status} />}
+                  {WHOLESALE_TYPES.includes(viewItem.user_type) && <WholesaleStatusBadge value={viewItem.wholesale_status} />}
                 </div>
               </div>
             </div>
@@ -458,8 +451,8 @@ export default function UsersPage() {
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Joined Date</p>
                 <p className="text-sm font-bold text-slate-800">{viewItem.date_joined ? new Date(viewItem.date_joined).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : "—"}</p>
               </div>
-              
-              {viewItem.user_type === 'WHOLESALE' && (
+
+              {WHOLESALE_TYPES.includes(viewItem.user_type) && (
                 <>
                   <div className="bg-white p-3.5 rounded-xl border border-slate-100 shadow-sm col-span-2 sm:col-span-1">
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Business Name</p>
@@ -468,6 +461,15 @@ export default function UsersPage() {
                   <div className="bg-white p-3.5 rounded-xl border border-slate-100 shadow-sm col-span-2 sm:col-span-1">
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Business Type</p>
                     <p className="text-sm font-bold text-slate-800 truncate">{viewItem.business_type || "—"}</p>
+                  </div>
+                  <div className="bg-white p-3.5 rounded-xl border border-slate-100 shadow-sm col-span-2">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Wholesale Type</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <RoleBadge value={viewItem.user_type} />
+                      <span className="text-xs text-slate-500">
+                        {viewItem.user_type === 'WHOLESALER' ? 'Created by Admin (Internal)' : 'Self-registered from website (External)'}
+                      </span>
+                    </div>
                   </div>
                 </>
               )}
