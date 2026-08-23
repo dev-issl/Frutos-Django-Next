@@ -91,11 +91,6 @@ class ProductViewSet(viewsets.ModelViewSet):
             if getattr(self.request.user, 'user_type', '') == 'ADMIN' or self.request.user.is_superuser:
                 return qs
             if getattr(self.request.user, 'user_type', '') == 'STAFF':
-                if not store_id:
-                    profile = getattr(self.request.user, 'staff_profile', None)
-                    if profile and profile.store:
-                        return qs.filter(stores=profile.store)
-                    return qs.none()
                 return qs
                 
         return qs.filter(is_active=True)
