@@ -42,7 +42,7 @@
 
 //         /** Full update */
 //         update(lookup, data) {
-//             return api.put(`${base}${lookup}/`, data);
+//             return api.patch(`${base}${lookup}/`, data);
 //         },
 
 //         /** Partial update */
@@ -347,7 +347,7 @@ export function createModelService(basePath, opts = {}) {
 
         /** Full update */
         update(lookup, data) {
-            return api.put(`${base}${lookup}/`, data);
+            return api.patch(`${base}${lookup}/`, data);
         },
 
         /** Partial update */
@@ -664,4 +664,4 @@ export const announcementsService = {
     targets: () => api.get("/api/staff/announcements/targets/"),
     create: (formData) => api.post("/api/staff/announcements/", formData),
     delete: (id) => api.delete(`/api/staff/announcements/${id}/`),
-};
+};
