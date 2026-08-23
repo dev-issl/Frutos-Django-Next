@@ -54,7 +54,26 @@ function OrderStatusBadge({ status }) {
 
 // ─── Store Details Tab ─────────────────────────────────────────────────────────
 function StoreDetailsTab({ store, currentActiveShift, onCheckIn, isCheckingIn }) {
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [pinInput, setPinInput] = useState("");
+  const [pinError, setPinError] = useState("");
+
   const isCheckedIntoThisStore = String(currentActiveShift?.store) === String(store?.id) || currentActiveShift?.store_name === store?.name;
+
+  const handleConfirmPin = async () => {
+    if (!pinInput) {
+      setPinError("Please enter the store PIN");
+      return;
+    }
+    setPinError("");
+    const result = await onCheckIn(store.id, pinInput);
+    if (result && result.success === false) {
+      setPinError(result.error);
+    } else {
+      setShowPinModal(false);
+      setPinInput("");
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -70,6 +89,12 @@ function StoreDetailsTab({ store, currentActiveShift, onCheckIn, isCheckingIn })
               <span className="text-slate-500">Name</span>
               <span className="font-bold text-slate-800">{store?.name}</span>
             </div>
+            {store?.storeCode && (
+              <div className="flex justify-between border-b border-slate-50 pb-3">
+                <span className="text-slate-500">Store Code</span>
+                <span className="font-mono font-bold text-slate-800 uppercase bg-slate-100 px-2 py-0.5 rounded text-xs">{store.storeCode}</span>
+              </div>
+            )}
             <div className="flex justify-between border-b border-slate-50 pb-3">
               <span className="text-slate-500">Location</span>
               <span className="font-semibold text-slate-700 text-right max-w-[200px]">{store?.address || "—"}</span>
@@ -98,7 +123,7 @@ function StoreDetailsTab({ store, currentActiveShift, onCheckIn, isCheckingIn })
           </p>
           
           <button
-            onClick={() => onCheckIn(store.id)}
+            onClick={() => setShowPinModal(true)}
             disabled={isCheckingIn || currentActiveShift}
             className={`w-full max-w-[250px] py-3 px-6 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${
               isCheckedIntoThisStore
@@ -117,6 +142,39 @@ function StoreDetailsTab({ store, currentActiveShift, onCheckIn, isCheckingIn })
           </button>
         </div>
       </div>
+
+      {showPinModal && (
+        <div className="fixed inset-0 bg-black/60 z-[200] flex items-center justify-center p-4 backdrop-blur-sm" onClick={() => setShowPinModal(false)}>
+          <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <h2 className="text-xl font-bold text-slate-800 mb-2">Enter Store PIN</h2>
+            <p className="text-slate-500 text-sm mb-6">Please enter the PIN for {store?.name} to start your shift.</p>
+            {pinError && <p className="text-red-500 text-sm font-semibold mb-4 text-center">{pinError}</p>}
+            <input 
+              type="text" 
+              value={pinInput} 
+              onChange={e => setPinInput(e.target.value)} 
+              placeholder="Store PIN" 
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#00694C] focus:border-transparent mb-6 text-center font-mono text-lg tracking-widest"
+              autoFocus
+              onKeyDown={e => { if (e.key === 'Enter') handleConfirmPin(); }}
+            />
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setShowPinModal(false)} 
+                className="flex-1 py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleConfirmPin}
+                className="flex-1 py-3 px-4 bg-[#00694C] hover:bg-[#00593E] text-white font-bold rounded-xl shadow-md transition-colors cursor-pointer"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

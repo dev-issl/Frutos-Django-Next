@@ -91,18 +91,21 @@ export default function StaffDashboardPage() {
   }
 
 
-  const handleCheckIn = async (overrideStoreId) => {
+  const handleCheckIn = async (overrideStoreId, overrideStoreCode) => {
     // If called directly from onClick, overrideStoreId will be an event object
     const passedId = (overrideStoreId && typeof overrideStoreId !== 'object') ? overrideStoreId : null;
     const storeIdToUse = passedId || selectedStoreForCheckIn;
+    const passedCode = overrideStoreCode ? String(overrideStoreCode) : null;
 
     if (!storeIdToUse) return;
     
     // If we're using the Attendance Modal (not switching stores), require the PIN
     const isSwitching = !!overrideStoreId && typeof overrideStoreId !== 'object';
-    if (!isSwitching && !storeCodeInput) {
+    const finalStoreCode = (isSwitching && passedCode) ? passedCode : storeCodeInput;
+
+    if (!finalStoreCode) {
       setCheckInError("Please enter the Store PIN");
-      return;
+      return { success: false, error: "Please enter the Store PIN" };
     }
 
     setCheckInError("");
@@ -110,13 +113,16 @@ export default function StaffDashboardPage() {
     try {
       await api.post("/api/staff/me/check-in/", { 
         store_id: storeIdToUse,
-        store_code: isSwitching ? undefined : storeCodeInput 
+        store_code: finalStoreCode 
       });
       mutate();
       setShowAttendanceModal(false);
       setStoreCodeInput("");
+      return { success: true };
     } catch (err) {
-      setCheckInError(err.message || "Failed to start shift");
+      const msg = err.message || "Failed to start shift";
+      setCheckInError(msg);
+      return { success: false, error: msg };
     } finally {
       setIsCheckingIn(false);
     }
