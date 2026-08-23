@@ -6,6 +6,8 @@ import { MessageCircle, MessageSquare, X, SendHorizontal, Search, Users, Phone, 
 import { toast } from '@/app/dashboard/_components/Toaster';
 import { API_BASE_URL } from '@/app/dashboard/_lib/api';
 
+import { isTokenExpired, refreshAccessToken } from '@/app/dashboard/_lib/api';
+
 const API_BASE = `${API_BASE_URL}/api`;
 const WS_BASE = API_BASE_URL.replace('http://', 'ws://').replace('https://', 'wss://');
 
@@ -53,7 +55,25 @@ export default function LiveChatWidget() {
     }
   }, [pathname]);
 
-  const getAccess = useCallback(() => accessToken, [accessToken]);
+  const getAccess = useCallback(async () => {
+    if (typeof window === 'undefined') return null;
+    let token = null;
+    if (pathname.startsWith('/dashboard')) {
+      token = localStorage.getItem('admin_access_token');
+    } else if (pathname.startsWith('/staff')) {
+      token = localStorage.getItem('staff_access_token');
+    }
+    
+    if (token && isTokenExpired(token)) {
+      try {
+        token = await refreshAccessToken();
+      } catch (error) {
+        return null;
+      }
+    }
+    return token;
+  }, [pathname]);
+  
   const [isOpen, setIsOpen] = useState(false);
   const [contacts, setContacts] = useState([]);
   const [activeChat, setActiveChat] = useState(null); // Contact object
@@ -126,7 +146,7 @@ export default function LiveChatWidget() {
   }, []);
 
   const fetchContacts = useCallback(async () => {
-    const access = getAccess();
+    const access = await getAccess();
     if (!access) return;
     try {
       const res = await fetch(`${API_BASE}/livechat/contacts/`, {
@@ -144,7 +164,7 @@ export default function LiveChatWidget() {
   }, [getAccess]);
 
   const fetchHistory = useCallback(async (userId) => {
-    const access = getAccess();
+    const access = await getAccess();
     if (!access) return;
     try {
       const res = await fetch(`${API_BASE}/livechat/history/${userId}/`, {
@@ -174,9 +194,9 @@ export default function LiveChatWidget() {
 
     fetchContacts();
 
-    const connectWebSocket = () => {
+    const connectWebSocket = async () => {
       if (!isMountedRef.current) return;
-      const access = getAccess();
+      const access = await getAccess();
       if (!access) return;
 
       if (wsRef.current && (wsRef.current.readyState === WebSocket.OPEN || wsRef.current.readyState === WebSocket.CONNECTING)) {

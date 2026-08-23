@@ -466,9 +466,9 @@ class OrderViewSet(viewsets.ModelViewSet):
         - Otherwise, for authenticated users, show only their own orders
         - For admin users, can see all orders when no specific filter is applied
         """
-        # Optimize with select_related and prefetch_related to avoid N+1 queries
         queryset = Order.objects.select_related(
             'user',
+            'wholesale_user',
             'shipping_address',
             'shipping_method',
             'payment'

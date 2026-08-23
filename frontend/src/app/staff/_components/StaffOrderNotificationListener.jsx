@@ -5,6 +5,7 @@ import { useStaffAuth } from "@/app/staff/_context/StaffAuthContext";
 import { toast } from "@/app/dashboard/_components/Toaster";
 import { ShoppingBag, AlertTriangle } from "lucide-react";
 import { hasValidSession } from "@/app/dashboard/_lib/auth";
+import { isTokenExpired, refreshAccessToken } from "@/app/dashboard/_lib/api";
 
 /**
  * Listens to the SSE notification stream for STAFF users.
@@ -15,10 +16,6 @@ export default function StaffOrderNotificationListener() {
 
   useEffect(() => {
     if (!user || user.userType !== 'STAFF') return;
-
-    // Staff token is stored in localStorage
-    const token = localStorage.getItem('staff_access_token');
-    if (!token) return;
 
     // Real notification sound — same WAV file used by admin
     const notifAudio = new Audio('/notification.wav');
@@ -55,7 +52,19 @@ export default function StaffOrderNotificationListener() {
     let es = null;
     let reconnectTimer = null;
 
-    const connect = () => {
+    const connect = async () => {
+      let token = localStorage.getItem('staff_access_token');
+      if (!token) return;
+
+      if (isTokenExpired(token)) {
+        try {
+          token = await refreshAccessToken();
+        } catch (error) {
+          window.dispatchEvent(new CustomEvent("admin:session-expired"));
+          return;
+        }
+      }
+
       const apiBase = process.env.NEXT_PUBLIC_API_URL;
       // Use context=dashboard so we receive admin_alert + out_of_stock types
       const url = `${apiBase}/auth/notifications/stream/?context=dashboard&token=${token}`;

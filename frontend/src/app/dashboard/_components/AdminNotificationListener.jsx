@@ -5,21 +5,13 @@ import { useDashboardAuth } from "@/app/dashboard/_context/DashboardAuthContext"
 import { toast } from "@/app/dashboard/_components/Toaster";
 import { Bell } from "lucide-react";
 import { hasValidSession } from "@/app/dashboard/_lib/auth";
+import { isTokenExpired, refreshAccessToken } from "@/app/dashboard/_lib/api";
 
 export default function AdminNotificationListener() {
   const { user } = useDashboardAuth();
 
   useEffect(() => {
     if (!user || (user.userType !== 'STAFF' && user.userType !== 'ADMIN')) return;
-
-    // We only need to listen if we have a token
-    const getCookie = (name) => {
-      const value = "; " + document.cookie;
-      const parts = value.split("; " + name + "=");
-      if (parts.length === 2) return parts.pop().split(";").shift();
-    };
-    const token = getCookie("access_token");
-    if (!token) return;
 
     // Real notification sound — WAV file preloaded from /public/
     const notifAudio = new Audio('/notification.wav');
@@ -56,7 +48,19 @@ export default function AdminNotificationListener() {
     let es = null;
     let reconnectTimer = null;
     
-    const connect = () => {
+    const connect = async () => {
+      let token = localStorage.getItem("admin_access_token") || localStorage.getItem("icommerce_admin_access");
+      if (!token) return;
+
+      if (isTokenExpired(token)) {
+        try {
+          token = await refreshAccessToken();
+        } catch (error) {
+          window.dispatchEvent(new CustomEvent("admin:session-expired"));
+          return;
+        }
+      }
+
       const apiBase = process.env.NEXT_PUBLIC_API_URL;
       const url = `${apiBase}/auth/notifications/stream/?context=dashboard&token=${token}`;
       es = new EventSource(url);

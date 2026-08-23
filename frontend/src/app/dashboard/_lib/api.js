@@ -98,7 +98,7 @@ export function isTokenExpired(token) {
 
 let refreshPromise = null;
 
-async function refreshAccessToken() {
+export async function refreshAccessToken() {
     const refresh = getRefreshToken();
     if (!refresh) throw new Error("No refresh token");
 

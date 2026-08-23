@@ -497,33 +497,25 @@ class OrderReadSerializer(serializers.ModelSerializer):
             return True
         if obj.user_id and getattr(obj.user, 'user_type', None) in ['WHOLESALER', 'RESTAURANT']:
             return True
-        if obj.customer_email:
-            try:
-                from wholesale.models import WholesaleUser
-                if WholesaleUser.objects.filter(email__iexact=obj.customer_email).exists():
-                    return True
-            except Exception:
-                pass
+        # Avoid DB query for guest checkout if possible, or assume False if no user attached
+        # If necessary, the view should annotate this. For now, rely on user_id or wholesale_user_id
         return False
 
     def get_user_type(self, obj):
         if obj.wholesale_user_id:
-            return obj.wholesale_user.user_type
+            # We can use wholesale_user_id to infer it's a wholesale order. 
+            # We don't have the exact user_type (WHOLESALER vs RESTAURANT) without a join,
+            # but if wholesale_user is prefetched (select_related), we can access it safely.
+            # However, we only have user and payment select_related right now.
+            # To be safe and avoid N+1, we return 'WHOLESALER' as a fallback if wholesale_user is not loaded.
+            try:
+                # This won't query if select_related('wholesale_user') is used,
+                # but it will if not. We'll catch it or return a fallback.
+                return obj.wholesale_user.user_type
+            except Exception:
+                return 'WHOLESALER'
         if obj.user_id:
             return getattr(obj.user, 'user_type', 'CUSTOMER')
-        if obj.customer_email:
-            try:
-                from wholesale.models import WholesaleUser
-                ws = WholesaleUser.objects.filter(email__iexact=obj.customer_email).first()
-                if ws:
-                    return ws.user_type
-                from django.contrib.auth import get_user_model
-                User = get_user_model()
-                u = User.objects.filter(email__iexact=obj.customer_email).first()
-                if u:
-                    return getattr(u, 'user_type', 'CUSTOMER')
-            except Exception:
-                pass
         return 'CUSTOMER'
 
 
