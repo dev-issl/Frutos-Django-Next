@@ -738,6 +738,30 @@ class FixDBView(APIView):
                         output.append('Success: SET DEFAULT nextval sequence')
                 except Exception as e:
                     output.append(f'Failed SEQUENCE: {e}')
+                    
+                # Fix UUID to BigInt issue in foreign keys
+                tables_to_fix = [
+                    ('accounts_supportticket', 'wholesale_user_id'),
+                    ('accounts_supportticketmessage', 'wholesale_sender_id'),
+                    ('orders_order', 'wholesale_user_id')
+                ]
+                for table, column in tables_to_fix:
+                    try:
+                        with transaction.atomic():
+                            # Drop existing FK constraints just in case
+                            cursor.execute(f"SELECT tc.constraint_name FROM information_schema.table_constraints tc JOIN information_schema.key_column_usage kcu ON tc.constraint_name = kcu.constraint_name WHERE tc.table_name = '{table}' AND kcu.column_name = '{column}' AND tc.constraint_type = 'FOREIGN KEY'")
+                            for (cname,) in cursor.fetchall():
+                                cursor.execute(f"ALTER TABLE {table} DROP CONSTRAINT {cname}")
+                                
+                            cursor.execute(f'ALTER TABLE {table} ALTER COLUMN {column} TYPE bigint USING NULL;')
+                            
+                            # Re-add FK constraint
+                            cursor.execute(f'ALTER TABLE {table} ADD CONSTRAINT {table}_{column}_fk FOREIGN KEY ({column}) REFERENCES wholesale_wholesaleuser(id) DEFERRABLE INITIALLY DEFERRED;')
+                            
+                            output.append(f'Success: Converted {table}.{column} to bigint')
+                    except Exception as e:
+                        output.append(f'Failed {table}.{column}: {e}')
+                        
         except Exception as e:
             output.append(f'Outer error: {e}')
         
