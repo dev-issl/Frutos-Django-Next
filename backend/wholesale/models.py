@@ -47,6 +47,9 @@ class ApplicationStatus(models.TextChoices):
 
 
 class WholesaleUser(AbstractBaseUser, PermissionsMixin):
+    # UUID primary key to match production database
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    
     # Override PermissionsMixin fields to avoid reverse accessor clash with auth.User
     groups = models.ManyToManyField(
         'auth.Group',
