@@ -295,14 +295,36 @@ class SupportTicketMessageSerializer(serializers.ModelSerializer):
         fields = ['id', 'senderName', 'senderEmail', 'isAdmin', 'message', 'attachments', 'is_edited', 'is_deleted', 'delivery_status', 'created_at']
         
     def get_senderName(self, obj):
-        if obj.wholesale_sender:
-            return obj.wholesale_sender.contact_name or obj.wholesale_sender.business_name
-        return obj.sender.name if obj.sender else 'Unknown'
+        if obj.wholesale_sender_id:
+            try:
+                from django.db import connection
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT contact_name, business_name FROM wholesale_wholesaleuser WHERE CAST(id AS TEXT) = CAST(%s AS TEXT)", [obj.wholesale_sender_id])
+                    row = cursor.fetchone()
+                    if row:
+                        return row[0] or row[1]
+            except Exception:
+                pass
+        try:
+            return obj.sender.name if obj.sender else 'Unknown'
+        except Exception:
+            return 'Unknown'
 
     def get_senderEmail(self, obj):
-        if obj.wholesale_sender:
-            return obj.wholesale_sender.email
-        return obj.sender.email if obj.sender else 'Unknown'
+        if obj.wholesale_sender_id:
+            try:
+                from django.db import connection
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT email FROM wholesale_wholesaleuser WHERE CAST(id AS TEXT) = CAST(%s AS TEXT)", [obj.wholesale_sender_id])
+                    row = cursor.fetchone()
+                    if row:
+                        return row[0]
+            except Exception:
+                pass
+        try:
+            return obj.sender.email if obj.sender else 'Unknown'
+        except Exception:
+            return 'Unknown'
         
     def get_isAdmin(self, obj):
         return obj.is_admin_reply
@@ -336,23 +358,35 @@ class SupportTicketSerializer(serializers.ModelSerializer):
 
     def get_userName(self, obj):
         if obj.wholesale_user_id:
-            from django.db import connection
-            with connection.cursor() as cursor:
-                cursor.execute("SELECT contact_name, business_name FROM wholesale_wholesaleuser WHERE id = %s", [obj.wholesale_user_id])
-                row = cursor.fetchone()
-                if row:
-                    return row[0] or row[1]
-        return obj.user.name if obj.user else 'Unknown'
+            try:
+                from django.db import connection
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT contact_name, business_name FROM wholesale_wholesaleuser WHERE CAST(id AS TEXT) = CAST(%s AS TEXT)", [obj.wholesale_user_id])
+                    row = cursor.fetchone()
+                    if row:
+                        return row[0] or row[1]
+            except Exception:
+                pass
+        try:
+            return obj.user.name if obj.user else 'Unknown'
+        except Exception:
+            return 'Unknown'
 
     def get_userEmail(self, obj):
         if obj.wholesale_user_id:
-            from django.db import connection
-            with connection.cursor() as cursor:
-                cursor.execute("SELECT email FROM wholesale_wholesaleuser WHERE id = %s", [obj.wholesale_user_id])
-                row = cursor.fetchone()
-                if row:
-                    return row[0]
-        return obj.user.email if obj.user else 'Unknown'
+            try:
+                from django.db import connection
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT email FROM wholesale_wholesaleuser WHERE CAST(id AS TEXT) = CAST(%s AS TEXT)", [obj.wholesale_user_id])
+                    row = cursor.fetchone()
+                    if row:
+                        return row[0]
+            except Exception:
+                pass
+        try:
+            return obj.user.email if obj.user else 'Unknown'
+        except Exception:
+            return 'Unknown'
 
     def get_is_user_typing(self, obj):
         if not obj.user_typing_at: return False
@@ -441,4 +475,4 @@ class AdminSupportTicketSerializer(SupportTicketSerializer):
         read_only_fields = ['id', 'created_at', 'updated_at']
 
     def get_is_wholesale(self, obj):
-        return obj.wholesale_user is not None
+        return obj.wholesale_user_id is not None

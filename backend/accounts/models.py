@@ -192,15 +192,18 @@ class SupportTicket(models.Model):
 
     def __str__(self):
         email = 'Unknown'
-        if self.user:
-            email = self.user.email
-        elif self.wholesale_user_id:
-            from django.db import connection
-            with connection.cursor() as cursor:
-                cursor.execute("SELECT email FROM wholesale_wholesaleuser WHERE id = %s", [self.wholesale_user_id])
-                row = cursor.fetchone()
-                if row:
-                    email = row[0]
+        try:
+            if self.user:
+                email = self.user.email
+            elif self.wholesale_user_id:
+                from django.db import connection
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT email FROM wholesale_wholesaleuser WHERE CAST(id AS TEXT) = CAST(%s AS TEXT)", [self.wholesale_user_id])
+                    row = cursor.fetchone()
+                    if row:
+                        email = row[0]
+        except Exception:
+            pass
         return f"Ticket #{self.id} by {email} - {self.subject}"
 
 
@@ -318,7 +321,19 @@ def notify_on_ticket_message(sender, instance, created, **kwargs):
             from django.contrib.auth import get_user_model
             User = get_user_model()
             admins = User.objects.filter(is_staff=True)
-            user_email = ticket.user.email if ticket.user else ticket.wholesale_user.email
+            user_email = 'Unknown'
+            try:
+                if ticket.user:
+                    user_email = ticket.user.email
+                elif ticket.wholesale_user_id:
+                    from django.db import connection
+                    with connection.cursor() as cursor:
+                        cursor.execute("SELECT email FROM wholesale_wholesaleuser WHERE CAST(id AS TEXT) = CAST(%s AS TEXT)", [ticket.wholesale_user_id])
+                        row = cursor.fetchone()
+                        if row:
+                            user_email = row[0]
+            except Exception:
+                pass
             for admin_user in admins:
                 existing_notif = Notification.objects.filter(
                     user=admin_user,
