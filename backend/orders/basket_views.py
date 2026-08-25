@@ -39,7 +39,7 @@ class BasketAPIView(APIView):
     """
     def get(self, request, *args, **kwargs):
         basket = get_basket_from_request(request)
-        serializer = BasketSerializer(basket)
+        serializer = BasketSerializer(basket, context={'request': request})
         response = Response(serializer.data)
         # Ensure client knows the session ID
         response['X-Session-ID'] = str(basket.session_id)
@@ -71,7 +71,7 @@ class BasketItemAPIView(APIView):
             basket_item.quantity += quantity
             basket_item.save()
             
-        serializer = BasketItemSerializer(basket_item)
+        serializer = BasketItemSerializer(basket_item, context={'request': request})
         response = Response(serializer.data, status=status.HTTP_201_CREATED)
         response['X-Session-ID'] = str(basket.session_id)
         return response
@@ -98,7 +98,7 @@ class BasketItemDetailAPIView(APIView):
             except ValueError:
                 return Response({"error": "Invalid quantity"}, status=status.HTTP_400_BAD_REQUEST)
                 
-        serializer = BasketItemSerializer(basket_item)
+        serializer = BasketItemSerializer(basket_item, context={'request': request})
         return Response(serializer.data)
 
     def delete(self, request, item_id, *args, **kwargs):
