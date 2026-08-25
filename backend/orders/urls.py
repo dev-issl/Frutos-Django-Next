@@ -94,7 +94,6 @@ app_name = 'orders'
 from .shipping_views import calculate_shipping_v2, detect_zone_api, free_shipping_check
 
 urlpatterns = [
-    path('', include(router.urls)),
     path('shipping-methods-list/',          ShippingMethodListAPIView.as_view(),    name='shipping-methods-list'),
     path('payment/accounts/',               PaymentAccountsAPIView.as_view(),       name='payment-accounts'),
     path('analyze-cart-shipping/',          analyze_cart_shipping,                  name='analyze-cart-shipping'),
@@ -121,4 +120,7 @@ urlpatterns = [
 
     path('debug/',                          debug_orders_api,                       name='debug-orders'),
     path('invoice/<str:order_number>/',     order_invoice,                          name='order-invoice'),
+    
+    # Include router urls at the very end to prevent the empty prefix (r'') from catching other valid paths
+    path('', include(router.urls)),
 ]
