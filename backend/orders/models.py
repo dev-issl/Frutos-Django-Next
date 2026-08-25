@@ -1096,3 +1096,63 @@ class LeftoverPackShippingRule(models.Model):
                 return self.zone_cost or Decimal('0')
             return standard_cost
         return standard_cost
+
+class Basket(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True, related_name='baskets')
+    session_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, help_text="Used for guest users to identify their basket")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-updated_at']
+
+    def __str__(self):
+        if self.user:
+            return f"Basket of {self.user.email}"
+        return f"Guest Basket {self.session_id}"
+
+    @property
+    def get_subtotal(self):
+        return sum(item.get_cost() for item in self.items.all())
+
+class BasketItem(models.Model):
+    basket = models.ForeignKey(Basket, related_name='items', on_delete=models.CASCADE)
+    product = models.ForeignKey('products.Product', on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField(default=1)
+    added_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('basket', 'product')
+
+    def __str__(self):
+        return f"{self.quantity} x {self.product.name}"
+
+    def get_cost(self):
+        if hasattr(self.product, 'discount_price') and self.product.discount_price:
+            return self.product.discount_price * self.quantity
+        return self.product.price * self.quantity
+
+class CheckoutSession(models.Model):
+    basket = models.OneToOneField(Basket, on_delete=models.CASCADE, related_name='checkout_session')
+    
+    # Delivery info
+    full_name = models.CharField(max_length=255, blank=True)
+    email_address = models.EmailField(blank=True)
+    phone_number = models.CharField(max_length=50, blank=True)
+    street_address = models.CharField(max_length=255, blank=True)
+    city = models.CharField(max_length=100, blank=True)
+    postcode = models.CharField(max_length=20, blank=True)
+    
+    # Delivery Window
+    delivery_date = models.DateField(null=True, blank=True)
+    delivery_slot_label = models.CharField(max_length=255, blank=True)
+    
+    # Payment and Promos
+    payment_method = models.CharField(max_length=50, blank=True)
+    coupon_code = models.CharField(max_length=50, blank=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Checkout Session for {self.basket}"

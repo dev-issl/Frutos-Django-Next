@@ -828,3 +828,40 @@ class OrderSerializer(serializers.ModelSerializer):
             except Exception:
                 pass
         return 'CUSTOMER'
+
+from .models import Basket, BasketItem, CheckoutSession
+from products.serializers import ProductSerializer
+
+class BasketItemSerializer(serializers.ModelSerializer):
+    product_details = ProductSerializer(source='product', read_only=True)
+    subtotal = serializers.SerializerMethodField()
+
+    class Meta:
+        model = BasketItem
+        fields = ['id', 'product', 'product_details', 'quantity', 'subtotal', 'added_at']
+        read_only_fields = ['id', 'added_at', 'subtotal']
+
+    def get_subtotal(self, obj):
+        return obj.get_cost()
+
+class BasketSerializer(serializers.ModelSerializer):
+    items = BasketItemSerializer(many=True, read_only=True)
+    subtotal = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Basket
+        fields = ['id', 'session_id', 'items', 'subtotal', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'session_id', 'created_at', 'updated_at', 'subtotal']
+
+    def get_subtotal(self, obj):
+        return obj.get_subtotal
+
+class CheckoutSessionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CheckoutSession
+        fields = [
+            'id', 'full_name', 'email_address', 'phone_number', 
+            'street_address', 'city', 'postcode', 'delivery_date', 
+            'delivery_slot_label', 'payment_method', 'coupon_code'
+        ]
+        read_only_fields = ['id']
