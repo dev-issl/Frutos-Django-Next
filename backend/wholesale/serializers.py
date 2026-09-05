@@ -49,6 +49,8 @@ class WholesaleRegisterSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
+        # Force all frontend signups to be External Wholesale
+        validated_data['user_type'] = 'RESTAURANT'
         password = validated_data.pop('password')
         user = WholesaleUser(**validated_data)
         user.set_password(password)
