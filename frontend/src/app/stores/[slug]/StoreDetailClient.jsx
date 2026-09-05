@@ -319,21 +319,43 @@
 
 
 'use client'
-// src/app/stores/[slug]/StoreDetailClient.jsx
-
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useState } from 'react'
 import { isStoreOpen, formatTime12h } from '@/lib/stores-api'
-import * as LucideIcons from 'lucide-react'
+import {
+  ShoppingBasket,
+  Apple,
+  Leaf,
+  Wheat,
+  Milk,
+  Wine,
+  Croissant,
+  Carrot,
+  Fish,
+  Beef,
+  Coffee,
+  Egg,
+  Package,
+  Store,
+  MapPin,
+  Clock
+} from 'lucide-react'
 import { useCart } from '@/app/context/CartContext'
 
 // ── Lucide dynamic icon helper ─────────────────────────────────────────────────
+const ICON_MAP = {
+  ShoppingBasket, Apple, Leaf, Wheat, Milk, Wine, Croissant, 
+  Carrot, Fish, Beef, Coffee, Egg, Package, Store, MapPin, Clock
+}
+
 function toPascalCase(name = '') {
   return name.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join('')
 }
+
 function AvailIcon({ name, size = 28, color = '#00694c' }) {
-  const Icon = LucideIcons[toPascalCase(name)] || LucideIcons.ShoppingBasket
+  const key = toPascalCase(name)
+  const Icon = ICON_MAP[key] || ICON_MAP.ShoppingBasket
   return <Icon size={size} color={color} strokeWidth={1.75} />
 }
 

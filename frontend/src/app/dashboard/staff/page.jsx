@@ -43,7 +43,7 @@ const columns = [
         return (
           <div className="flex flex-col items-start justify-center w-full cursor-pointer group" onClick={(e) => {
             e.stopPropagation();
-            window.dispatchEvent(new CustomEvent('switch-to-live-map', { detail: { staffId: row.id }}));
+            window.dispatchEvent(new CustomEvent('switch-to-live-map', { detail: { staffId: row.id } }));
           }}>
             <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 shadow-sm group-hover:bg-emerald-100 group-hover:shadow-md group-hover:border-emerald-300 transition-all duration-300 w-max">
               <div className="relative flex h-2 w-2">
@@ -576,24 +576,24 @@ export default function StaffPage() {
               <span className="text-sm font-medium text-slate-700">Can delete products</span>
             </label>
           </div>
-          
+
           <div className="flex flex-col gap-3 p-4 bg-slate-50 border border-slate-100 rounded-xl mt-2">
             <p className="text-sm font-bold text-slate-700 mb-1">Restricted Stores</p>
             <p className="text-xs text-slate-500 mb-2">Check the stores where this staff member is NOT allowed to check in.</p>
             <div className="grid grid-cols-2 gap-3">
               {stores.map(store => (
                 <label key={store.id} className="flex items-center gap-3 cursor-pointer">
-                  <input 
-                    type="checkbox" 
-                    checked={(permissionsItem?.restricted_stores || []).includes(store.id)} 
+                  <input
+                    type="checkbox"
+                    checked={(permissionsItem?.restricted_stores || []).includes(store.id)}
                     onChange={e => {
                       const current = permissionsItem?.restricted_stores || [];
-                      const updated = e.target.checked 
-                        ? [...current, store.id] 
+                      const updated = e.target.checked
+                        ? [...current, store.id]
                         : current.filter(id => id !== store.id);
                       setPermissionsItem({ ...permissionsItem, restricted_stores: updated });
-                    }} 
-                    className="w-4 h-4 text-rose-600 rounded border-slate-300 focus:ring-rose-500" 
+                    }}
+                    className="w-4 h-4 text-rose-600 rounded border-slate-300 focus:ring-rose-500"
                   />
                   <span className="text-sm font-medium text-slate-700">{store.name}</span>
                 </label>

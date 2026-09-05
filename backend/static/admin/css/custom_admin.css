@@ -13,9 +13,9 @@
 }
 
 /* Rotate when the parent has the .menu-open state (AdminLTE/Jazzmin behavior) */
-.nav-sidebar .nav-item.menu-open > .nav-link .fas.fa-chevron-right,
-.nav-sidebar .nav-item.menu-open > .nav-link .fas.fa-angle-left,
-.nav-sidebar .nav-item.menu-open > .nav-link .right-icon {
+.nav-sidebar .nav-item.menu-open>.nav-link .fas.fa-chevron-right,
+.nav-sidebar .nav-item.menu-open>.nav-link .fas.fa-angle-left,
+.nav-sidebar .nav-item.menu-open>.nav-link .right-icon {
   transform: rotate(90deg);
 }
 
@@ -30,7 +30,8 @@
 .sidebar-dark-gray .nav-link .fas,
 .sidebar-dark-gray .nav-link .far,
 .sidebar-dark-gray .nav-link .fal {
-  color: #e5e7eb !important; /* Tailwind gray-200 */
+  color: #e5e7eb !important;
+  /* Tailwind gray-200 */
 }
 
 /* Subtle hover affordance */

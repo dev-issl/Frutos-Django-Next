@@ -100,8 +100,8 @@ export default function LeafletMap({ stores, activeStoreId, userLocation, onStor
 
         const map = L.map(containerRef.current, { center, zoom: 11, zoomControl: false })
 
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-          attribution: '© OpenStreetMap © CARTO',
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         }).addTo(map)
 
         L.control.zoom({ position: 'bottomright' }).addTo(map)
