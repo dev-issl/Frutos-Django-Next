@@ -1,23 +1,12 @@
-  import { useState, useMemo, useEffect } from 'react'
-import { getWholesaleDailyReports, bulkDeleteWholesaleDailyReports } from '@/lib/api'
+import { useState, useMemo, useEffect } from 'react'
 import InvoiceModal from './InvoiceModal'
-import DailyReportModal from './DailyReportModal'
-import AggregatedReportModal from './AggregatedReportModal'
-import { toast } from 'react-hot-toast'
 
 export default function OrdersTab({ orders, onDeleteOrder, setProfileActiveTab, accessToken, profile }) {
-  const [mainTab, setMainTab] = useState('PREVIOUS ORDER') // 'TRACK YOUR ORDER', 'PREVIOUS ORDER', 'DAILY REPORTS'
+  const [mainTab, setMainTab] = useState('PREVIOUS ORDER') // 'TRACK YOUR ORDER', 'PREVIOUS ORDER'
   const [activeTab, setActiveTab] = useState('ALL') // 'ALL', 'PENDING', 'PROCESSING', 'DELIVERED', 'CANCELLED'
   const [currentPage, setCurrentPage] = useState(1)
   const [viewOrder, setViewOrder] = useState(null)
   
-  const [dailyReports, setDailyReports] = useState([])
-  const [selectedReportIds, setSelectedReportIds] = useState(new Set())
-  const [showDeleteReportsModal, setShowDeleteReportsModal] = useState(false)
-  const [isDeletingReports, setIsDeletingReports] = useState(false)
-  const [loadingReports, setLoadingReports] = useState(false)
-  const [showReportModal, setShowReportModal] = useState(false)
-  const [reportViewType, setReportViewType] = useState(null) // 'weekly' or 'monthly'
   const [hiddenOrderIds, setHiddenOrderIds] = useState(new Set())
   const [permanentlyDeletedOrderIds, setPermanentlyDeletedOrderIds] = useState(new Set())
   const [orderToDelete, setOrderToDelete] = useState(null)
@@ -89,56 +78,6 @@ export default function OrdersTab({ orders, onDeleteOrder, setProfileActiveTab, 
     }
   }
 
-  // Fetch daily reports
-  useEffect(() => {
-    if (mainTab === 'DAILY REPORTS' && accessToken) {
-      setLoadingReports(true)
-      setSelectedReportIds(new Set())
-      getWholesaleDailyReports(accessToken)
-        .then(data => setDailyReports(Array.isArray(data) ? data : (data?.results || [])))
-        .catch(err => console.error(err))
-        .finally(() => setLoadingReports(false))
-    }
-  }, [mainTab, accessToken])
-
-  const handleSelectReport = (id) => {
-    setSelectedReportIds(prev => {
-      const next = new Set(prev)
-      if (next.has(id)) {
-        next.delete(id)
-      } else {
-        next.add(id)
-      }
-      return next
-    })
-  }
-
-  const handleSelectAllReports = () => {
-    if (selectedReportIds.size === dailyReports.length && dailyReports.length > 0) {
-      setSelectedReportIds(new Set())
-    } else {
-      setSelectedReportIds(new Set(dailyReports.map(r => r.id)))
-    }
-  }
-
-  const handleBulkDeleteReports = async () => {
-    if (selectedReportIds.size === 0) return
-    
-    setIsDeletingReports(true)
-    try {
-      await bulkDeleteWholesaleDailyReports(accessToken, Array.from(selectedReportIds))
-      toast.success('Selected daily reports deleted successfully!')
-      setDailyReports(prev => prev.filter(r => !selectedReportIds.has(r.id)))
-      setSelectedReportIds(new Set())
-      setShowDeleteReportsModal(false)
-    } catch (err) {
-      toast.error('Failed to delete selected reports')
-      console.error(err)
-    } finally {
-      setIsDeletingReports(false)
-    }
-  }
-
   const getStatusBadge = (status) => {
     const s = (status || '').toLowerCase()
     if (s === 'pending') return <span className="bg-amber-50 text-amber-600 border border-amber-200 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider">Pending</span>
@@ -151,8 +90,8 @@ export default function OrdersTab({ orders, onDeleteOrder, setProfileActiveTab, 
 
   return (
     <div className="w-full">
-      {/* Top action tabs matching the screenshot style (Placeholder functionality for some) */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
+      {/* Top action tabs */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
         <button 
           onClick={() => setProfileActiveTab('order_line')}
           className="bg-emerald-50 border border-emerald-200 text-emerald-700 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 p-3 sm:py-4 rounded-xl shadow-sm font-semibold text-[11px] sm:text-sm transition-colors hover:bg-emerald-100 cursor-pointer"
@@ -174,112 +113,9 @@ export default function OrdersTab({ orders, onDeleteOrder, setProfileActiveTab, 
           <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           <span className="text-center">PREVIOUS ORDER</span>
         </button>
-        <button 
-          onClick={() => { setMainTab('DAILY REPORTS'); setCurrentPage(1); }}
-          className={`${mainTab === 'DAILY REPORTS' ? 'bg-rose-100 border-rose-300' : 'bg-rose-50 border-rose-100 hover:bg-rose-100'} text-rose-700 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 p-3 sm:py-4 rounded-xl shadow-sm font-semibold text-[11px] sm:text-sm transition-colors cursor-pointer`}
-        >
-          <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-          <span className="text-center">DAILY REPORTS</span>
-        </button>
       </div>
 
-      {mainTab === 'DAILY REPORTS' ? (
-        <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-          {/* Table Header / Filters */}
-          <div className="p-4 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4 bg-gray-50">
-            <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
-              Your last order [Submitted reports]
-            </h2>
-            <div className="flex gap-2 flex-wrap justify-end">
-              {selectedReportIds.size > 0 && (
-                <button 
-                  onClick={() => setShowDeleteReportsModal(true)}
-                  disabled={isDeletingReports}
-                  className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded text-sm font-semibold hover:-translate-y-0.5 hover:shadow-md transition-all duration-200 cursor-pointer disabled:opacity-50 mr-2"
-                >
-                  {isDeletingReports ? 'Deleting...' : `Delete Selected (${selectedReportIds.size})`}
-                </button>
-              )}
-              <button 
-                onClick={() => setReportViewType('weekly')}
-                className="bg-indigo-50 border border-indigo-200 text-indigo-700 px-4 py-2 rounded text-sm font-semibold hover:bg-indigo-100 hover:-translate-y-0.5 hover:shadow-sm transition-all duration-200 cursor-pointer"
-              >
-                Weekly Report
-              </button>
-              <button 
-                onClick={() => setReportViewType('monthly')}
-                className="bg-indigo-50 border border-indigo-200 text-indigo-700 px-4 py-2 rounded text-sm font-semibold hover:bg-indigo-100 hover:-translate-y-0.5 hover:shadow-sm transition-all duration-200 cursor-pointer"
-              >
-                Monthly Report
-              </button>
-              <button 
-                onClick={() => setShowReportModal(true)}
-                className="bg-[#085041] text-white px-4 py-2 rounded text-sm font-semibold hover:bg-[#064032] hover:-translate-y-0.5 hover:shadow-md transition-all duration-200 cursor-pointer ml-2"
-              >
-                Add New
-              </button>
-            </div>
-          </div>
-
-          <div className="overflow-x-auto [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full">
-            <table className="w-full text-sm text-left">
-              <thead className="bg-white text-gray-800 border-b border-gray-200 font-bold">
-                <tr>
-                  <th className="px-4 py-3 border-r border-gray-100 w-12 text-center">
-                    <input 
-                      type="checkbox" 
-                      checked={dailyReports.length > 0 && selectedReportIds.size === dailyReports.length} 
-                      onChange={handleSelectAllReports}
-                      className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
-                    />
-                  </th>
-                  <th className="px-4 py-3 border-r border-gray-100 w-12">S/N</th>
-                  <th className="px-4 py-3 border-r border-gray-100">Shop</th>
-                  <th className="px-4 py-3 border-r border-gray-100">Cash</th>
-                  <th className="px-4 py-3 border-r border-gray-100">Bank</th>
-                  <th className="px-4 py-3 border-r border-gray-100">Expense</th>
-                  <th className="px-4 py-3 border-r border-gray-100">Store</th>
-                  <th className="px-4 py-3 border-r border-gray-100">Buy</th>
-                  <th className="px-4 py-3 border-r border-gray-100">Buy note</th>
-                  <th className="px-4 py-3">Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loadingReports ? (
-                  <tr><td colSpan="10" className="px-4 py-8 text-center text-gray-500">Loading reports...</td></tr>
-                ) : dailyReports.length > 0 ? (
-                  dailyReports.map((report, index) => (
-                    <tr key={report.id} className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${selectedReportIds.has(report.id) ? 'bg-emerald-50/30' : ''}`}>
-                      <td className="px-4 py-3 border-r border-gray-100 text-center">
-                        <input 
-                          type="checkbox" 
-                          checked={selectedReportIds.has(report.id)} 
-                          onChange={() => handleSelectReport(report.id)}
-                          className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
-                        />
-                      </td>
-                      <td className="px-4 py-3 border-r border-gray-100 text-gray-500">{index + 1}</td>
-                      <td className="px-4 py-3 border-r border-gray-100">{report.shop || 'Shop'}</td>
-                      <td className="px-4 py-3 border-r border-gray-100">{report.cash}</td>
-                      <td className="px-4 py-3 border-r border-gray-100">{report.bank}</td>
-                      <td className="px-4 py-3 border-r border-gray-100">{report.expenses}</td>
-                      <td className="px-4 py-3 border-r border-gray-100">{report.store}</td>
-                      <td className="px-4 py-3 border-r border-gray-100">{report.purchase}</td>
-                      <td className="px-4 py-3 border-r border-gray-100">{report.purchase_note}</td>
-                      <td className="px-4 py-3">{report.date}</td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr><td colSpan="10" className="px-4 py-8 text-center text-gray-500">No reports found.</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      ) : (
       <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-        
         {/* Table Header / Filters */}
         <div className="p-4 border-b border-gray-200 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-gray-50">
           <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
@@ -496,30 +332,10 @@ export default function OrdersTab({ orders, onDeleteOrder, setProfileActiveTab, 
           </div>
         )}
       </div>
-      )}
 
       {/* Invoice Modal */}
       {viewOrder && (
         <InvoiceModal order={viewOrder} onClose={() => setViewOrder(null)} />
-      )}
-
-      {/* Daily Report Modal */}
-      {showReportModal && (
-        <DailyReportModal 
-          accessToken={accessToken} 
-          onClose={() => setShowReportModal(false)}
-          onReportCreated={(newReport) => setDailyReports(prev => [newReport, ...(Array.isArray(prev) ? prev : [])])}
-        />
-      )}
-
-      {/* Aggregated Report Modal */}
-      {reportViewType && (
-        <AggregatedReportModal 
-          reports={dailyReports}
-          reportType={reportViewType}
-          profile={profile}
-          onClose={() => setReportViewType(null)}
-        />
       )}
 
       {/* Permanent Delete Confirmation Modal */}
@@ -591,36 +407,6 @@ export default function OrdersTab({ orders, onDeleteOrder, setProfileActiveTab, 
                   className="px-4 py-2 rounded-lg font-semibold bg-red-600 text-white hover:bg-red-700 shadow-sm hover:shadow-md transition-all cursor-pointer text-sm"
                 >
                   Remove
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Confirmation Modal for Daily Reports */}
-      {showDeleteReportsModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden transform transition-all animate-in fade-in zoom-in-95 duration-200">
-            <div className="p-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-2 text-red-600">Delete Reports</h3>
-              <p className="text-gray-600 mb-6 text-sm leading-relaxed">
-                Are you sure you want to delete <span className="font-bold text-red-600">{selectedReportIds.size}</span> selected daily report(s)? This action cannot be undone.
-              </p>
-              <div className="flex justify-end gap-3">
-                <button
-                  onClick={() => setShowDeleteReportsModal(false)}
-                  disabled={isDeletingReports}
-                  className="px-4 py-2 rounded-lg font-semibold text-gray-600 border border-gray-200 hover:bg-gray-100 transition-colors cursor-pointer text-sm disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleBulkDeleteReports}
-                  disabled={isDeletingReports}
-                  className="px-4 py-2 rounded-lg font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors cursor-pointer text-sm disabled:opacity-50"
-                >
-                  {isDeletingReports ? 'Deleting...' : 'Delete'}
                 </button>
               </div>
             </div>
