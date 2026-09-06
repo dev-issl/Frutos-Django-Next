@@ -115,11 +115,33 @@ class LiveChatConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def save_message(self, sender_id, receiver_id, text):
-        return ChatMessage.objects.create(
+        chat_msg = ChatMessage.objects.create(
             sender_id=sender_id,
             receiver_id=receiver_id,
             text=text
         )
+        try:
+            from staff.models import StaffAdminChat
+            sender = User.objects.filter(id=sender_id).first()
+            receiver = User.objects.filter(id=receiver_id).first()
+            if sender and receiver:
+                if hasattr(sender, 'staff_profile') and sender.staff_profile:
+                    StaffAdminChat.objects.create(
+                        staff=sender.staff_profile,
+                        admin_user=receiver if getattr(receiver, 'user_type', None) == 'ADMIN' or receiver.is_superuser else None,
+                        sender='STAFF',
+                        message=text
+                    )
+                elif hasattr(receiver, 'staff_profile') and receiver.staff_profile:
+                    StaffAdminChat.objects.create(
+                        staff=receiver.staff_profile,
+                        admin_user=sender if getattr(sender, 'user_type', None) == 'ADMIN' or sender.is_superuser else None,
+                        sender='ADMIN',
+                        message=text
+                    )
+        except Exception:
+            pass
+        return chat_msg
 
     @database_sync_to_async
     def mark_messages_read(self, sender_id, receiver_id):

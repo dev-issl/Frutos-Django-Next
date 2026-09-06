@@ -786,7 +786,36 @@ class MyStaffAdminChatViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         staff_profile = get_object_or_404(StaffProfile, user=self.request.user)
-        serializer.save(staff=staff_profile, sender='STAFF')
+        instance = serializer.save(staff=staff_profile, sender='STAFF')
+
+        # Sync to ChatMessage (LiveChat model consumed by Dashboard UI)
+        from django.contrib.auth import get_user_model
+        from livechat.models import ChatMessage
+        User = get_user_model()
+
+        admin_user = User.objects.filter(models.Q(user_type='ADMIN') | models.Q(is_superuser=True)).first()
+        if admin_user:
+            chat_msg = ChatMessage.objects.create(
+                sender=self.request.user,
+                receiver=admin_user,
+                text=instance.message
+            )
+            # Broadcast via channels layer for real-time dashboard update
+            try:
+                channel_layer = get_channel_layer()
+                if channel_layer:
+                    payload = {
+                        'type': 'chat_message',
+                        'message_id': chat_msg.id,
+                        'sender_id': self.request.user.id,
+                        'receiver_id': admin_user.id,
+                        'text': instance.message,
+                        'created_at': instance.created_at.isoformat(),
+                    }
+                    async_to_sync(channel_layer.group_send)(f'chat_{admin_user.id}', payload)
+                    async_to_sync(channel_layer.group_send)(f'chat_{self.request.user.id}', payload)
+            except Exception as e:
+                logger.error(f"Error sending chat websocket message: {e}")
 
 class AdminStaffAdminChatViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdminUser]
@@ -807,5 +836,34 @@ class AdminStaffAdminChatViewSet(viewsets.ModelViewSet):
             from rest_framework.exceptions import ValidationError
             raise ValidationError({'staff_id': 'staff_id is required'})
         staff_profile = get_object_or_404(StaffProfile, id=staff_id)
-        serializer.save(staff=staff_profile, admin_user=self.request.user, sender='ADMIN')
+        instance = serializer.save(staff=staff_profile, admin_user=self.request.user, sender='ADMIN')
+
+        # Sync to ChatMessage
+        from django.contrib.auth import get_user_model
+        from livechat.models import ChatMessage
+        User = get_user_model()
+
+        if staff_profile.user:
+            chat_msg = ChatMessage.objects.create(
+                sender=self.request.user,
+                receiver=staff_profile.user,
+                text=instance.message
+            )
+            # Broadcast via channels layer
+            try:
+                channel_layer = get_channel_layer()
+                if channel_layer:
+                    payload = {
+                        'type': 'chat_message',
+                        'message_id': chat_msg.id,
+                        'sender_id': self.request.user.id,
+                        'receiver_id': staff_profile.user.id,
+                        'text': instance.message,
+                        'created_at': instance.created_at.isoformat(),
+                    }
+                    async_to_sync(channel_layer.group_send)(f'chat_{staff_profile.user.id}', payload)
+                    async_to_sync(channel_layer.group_send)(f'chat_{self.request.user.id}', payload)
+            except Exception as e:
+                logger.error(f"Error sending chat websocket message: {e}")
+
 
