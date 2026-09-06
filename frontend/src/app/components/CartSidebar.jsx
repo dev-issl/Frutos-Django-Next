@@ -251,7 +251,12 @@ export default function CartSidebar() {
     return () => { document.body.style.overflow = '' }
   }, [sidebarOpen])
 
-  const violatingItems = items.filter(item => item.qty < (parseInt(item.minimum_purchase) || parseInt(item.minWholesaleQty) || 1))
+  const violatingItems = items.filter(item => {
+    const rawMin = parseInt(item.minimum_purchase) || parseInt(item.minWholesaleQty) || 1
+    const stock = (item.stock !== undefined && item.stock !== null) ? Number(item.stock) : (item.wholesale_stock !== undefined && item.wholesale_stock !== null ? Number(item.wholesale_stock) : (item.restaurant_stock !== undefined && item.restaurant_stock !== null ? Number(item.restaurant_stock) : Infinity))
+    const minReq = stock > 0 ? Math.min(rawMin, stock) : 1
+    return item.qty < minReq
+  })
 
   function handleCheckout() {
     if (violatingItems.length > 0) {
@@ -355,22 +360,27 @@ export default function CartSidebar() {
                         <div className="flex items-center justify-between mt-2 sm:mt-2.5">
                           <div className="flex items-center bg-[#f0f4f0] rounded-md p-0.5">
                             {(() => {
-                              const minQty = parseInt(item.minimum_purchase) || parseInt(item.minWholesaleQty) || 1;
+                              const rawMin = parseInt(item.minimum_purchase) || parseInt(item.minWholesaleQty) || 1;
+                              const stock = (item.stock !== undefined && item.stock !== null) ? Number(item.stock) : (item.wholesale_stock !== undefined && item.wholesale_stock !== null ? Number(item.wholesale_stock) : (item.restaurant_stock !== undefined && item.restaurant_stock !== null ? Number(item.restaurant_stock) : Infinity));
+                              const minQty = stock > 0 ? Math.max(1, Math.min(rawMin, stock)) : 1;
                               const disabled = item.qty <= minQty;
+                              const canAddMore = stock > 0 ? item.qty < stock : true;
                               return (
-                                <button onClick={() => updateQty(item.id, Math.max(minQty, item.qty - 1), item.item_type || 'product')}
-                                  disabled={disabled}
-                                  className={`w-6 h-6 flex items-center justify-center rounded transition-colors ${disabled ? 'text-gray-400 cursor-not-allowed' : 'cursor-pointer hover:bg-[#e2e8e2]'}`}>
-                                  <span className="material-symbols-outlined text-[14px]">remove</span>
-                                </button>
+                                <>
+                                  <button onClick={() => updateQty(item.id, Math.max(minQty, item.qty - 1), item.item_type || 'product')}
+                                    disabled={disabled}
+                                    className={`w-6 h-6 flex items-center justify-center rounded transition-colors ${disabled ? 'text-gray-400 cursor-not-allowed' : 'cursor-pointer hover:bg-[#e2e8e2]'}`}>
+                                    <span className="material-symbols-outlined text-[14px]">remove</span>
+                                  </button>
+                                  <span className="w-6 text-center font-bold text-[13px]">{item.qty}</span>
+                                  <button onClick={() => updateQty(item.id, stock > 0 ? Math.min(stock, item.qty + 1) : item.qty + 1, item.item_type || 'product')}
+                                    disabled={!canAddMore}
+                                    className={`w-6 h-6 flex items-center justify-center rounded transition-colors ${!canAddMore ? 'text-gray-300 cursor-not-allowed' : 'cursor-pointer hover:bg-[#e2e8e2]'}`}>
+                                    <span className="material-symbols-outlined text-[14px]">add</span>
+                                  </button>
+                                </>
                               );
                             })()}
-                            <span className="w-6 text-center font-bold text-[13px]">{item.qty}</span>
-                            <button onClick={() => updateQty(item.id, item.stock !== undefined && item.stock !== null ? Math.min(item.stock, item.qty + 1) : item.qty + 1, item.item_type || 'product')}
-                              disabled={item.stock !== undefined && item.stock !== null && item.qty >= item.stock}
-                              className={`w-6 h-6 flex items-center justify-center rounded transition-colors ${item.stock !== undefined && item.stock !== null && item.qty >= item.stock ? 'invisible' : 'cursor-pointer hover:bg-[#e2e8e2]'}`}>
-                              <span className="material-symbols-outlined text-[14px]">add</span>
-                            </button>
                           </div>
                           <span className="font-bold text-[#855000] text-[13px] sm:text-sm">
                             €{((item.effectivePrice ?? item.price) * item.qty).toFixed(2)}
@@ -469,19 +479,24 @@ export default function CartSidebar() {
             </div>
           </div>
           <div className="space-y-3 mb-6">
-            {violatingItems.map(item => (
-              <div key={item.id} className="flex items-center justify-between rounded-xl px-4 py-3" style={{ background: '#FFF8EE', border: '1px solid #FFE4B2' }}>
-                <div>
-                  <p className="text-sm font-bold" style={{ color: '#151e13' }}>{item.name}</p>
-                  <p className="text-xs mt-0.5" style={{ color: '#B45309' }}>
-                    You have {item.qty} — minimum is <span className="font-bold">{item.minWholesaleQty}</span>
-                  </p>
+            {violatingItems.map(item => {
+              const rawMin = parseInt(item.minimum_purchase) || parseInt(item.minWholesaleQty) || 1
+              const stock = (item.stock !== undefined && item.stock !== null) ? Number(item.stock) : (item.wholesale_stock !== undefined && item.wholesale_stock !== null ? Number(item.wholesale_stock) : (item.restaurant_stock !== undefined && item.restaurant_stock !== null ? Number(item.restaurant_stock) : Infinity))
+              const minReq = stock > 0 && stock < Infinity ? Math.min(rawMin, stock) : rawMin
+              return (
+                <div key={item.id} className="flex items-center justify-between rounded-xl px-4 py-3" style={{ background: '#FFF8EE', border: '1px solid #FFE4B2' }}>
+                  <div>
+                    <p className="text-sm font-bold" style={{ color: '#151e13' }}>{item.name}</p>
+                    <p className="text-xs mt-0.5" style={{ color: '#B45309' }}>
+                      You have {item.qty} — minimum is <span className="font-bold">{minReq}</span>
+                    </p>
+                  </div>
+                  <span className="text-xs font-bold px-3 py-1 rounded-full flex-shrink-0" style={{ background: '#FFE4B2', color: '#92400E' }}>
+                    +{minReq - item.qty} needed
+                  </span>
                 </div>
-                <span className="text-xs font-bold px-3 py-1 rounded-full flex-shrink-0" style={{ background: '#FFE4B2', color: '#92400E' }}>
-                  +{item.minWholesaleQty - item.qty} needed
-                </span>
-              </div>
-            ))}
+              )
+            })}
           </div>
           <button onClick={() => setPopup(false)} className="w-full py-4 rounded-xl text-sm font-bold cursor-pointer text-white mb-2" style={{ background: 'linear-gradient(135deg, #00694c 0%, #008560 100%)' }}>
             Got it

@@ -63,7 +63,19 @@ export default function CheckoutShell({ deliveryDates, deliverySlots, initialUse
     if (sessionLoading || authLoading) return
     if (!isWholesale) return
     const hasViolation = items.some(
-      item => item.wholesalePrice && item.qty < (item.minWholesaleQty || 1)
+      item => {
+        if (!item.wholesalePrice && !item.effectivePrice) return false
+        const rawMin = parseInt(item.minimum_purchase) || parseInt(item.minWholesaleQty) || 1
+        const stock = (item.stock !== undefined && item.stock !== null)
+          ? Number(item.stock)
+          : (item.wholesale_stock !== undefined && item.wholesale_stock !== null
+              ? Number(item.wholesale_stock)
+              : (item.restaurant_stock !== undefined && item.restaurant_stock !== null
+                  ? Number(item.restaurant_stock)
+                  : Infinity))
+        const minReq = stock > 0 && stock < Infinity ? Math.min(rawMin, stock) : rawMin
+        return item.qty < minReq
+      }
     )
     if (hasViolation) router.replace('/basket')
   }, [items, isWholesale, sessionLoading, authLoading, router])
@@ -143,8 +155,19 @@ export default function CheckoutShell({ deliveryDates, deliverySlots, initialUse
   function validate() {
     if (isWholesale) {
       for (const item of items) {
-        if (item.wholesalePrice && item.qty < (item.minWholesaleQty || 1)) {
-          return `"${item.name}" requires minimum ${item.minWholesaleQty} ${item.wholesaleUnit || 'units'}.`
+        if (item.wholesalePrice || item.effectivePrice) {
+          const rawMin = parseInt(item.minimum_purchase) || parseInt(item.minWholesaleQty) || 1
+          const stock = (item.stock !== undefined && item.stock !== null)
+            ? Number(item.stock)
+            : (item.wholesale_stock !== undefined && item.wholesale_stock !== null
+                ? Number(item.wholesale_stock)
+                : (item.restaurant_stock !== undefined && item.restaurant_stock !== null
+                    ? Number(item.restaurant_stock)
+                    : Infinity))
+          const minReq = stock > 0 && stock < Infinity ? Math.min(rawMin, stock) : rawMin
+          if (item.qty < minReq) {
+            return `"${item.name}" requires minimum ${minReq} ${item.wholesaleUnit || 'units'}.`
+          }
         }
       }
     }

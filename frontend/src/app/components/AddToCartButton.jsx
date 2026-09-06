@@ -15,24 +15,36 @@ export default function AddToCartButton({
   const [added, setAdded] = useState(false)
   const [showStockError, setShowStockError] = useState(false)
 
+  const getWholesaleOrRetailStock = (prod) => {
+    if (prod.wholesalePrice || prod.wholesale_price) {
+      if (prod.wholesale_stock !== undefined && prod.wholesale_stock !== null) return Math.max(0, Number(prod.wholesale_stock));
+      if (prod.restaurant_stock !== undefined && prod.restaurant_stock !== null) return Math.max(0, Number(prod.restaurant_stock));
+    }
+    if (prod.stock !== undefined && prod.stock !== null) return Math.max(0, Number(prod.stock));
+    return Infinity;
+  };
+  const maxStock = getWholesaleOrRetailStock(product);
+
   function handleClick(e) {
     e.preventDefault()
     e.stopPropagation()
     if (!inStock) return
 
+    const existingItem = items.find(i => i.id === product.id && (i.item_type || 'product') === (product.item_type || 'product'))
+    const currentCartQty = existingItem ? existingItem.qty : 0
+
     let finalQty = qty
 
-    // Wholesale minimum check — auto increase to minWholesaleQty if below
-    if (isWholesale && product.wholesalePrice && qty < minWholesaleQty) {
-      finalQty = minWholesaleQty
+    // Wholesale minimum check:
+    // If not in cart yet, start with minWholesaleQty (or stock limit if stock < minWholesaleQty)
+    // If already in cart, increment by qty (which is 1 on ProductCard)
+    if (isWholesale && (product.wholesalePrice || product.wholesale_price) && currentCartQty === 0 && qty < minWholesaleQty) {
+      finalQty = maxStock < Infinity ? Math.min(minWholesaleQty, maxStock) : minWholesaleQty
     }
 
     // Check against available stock
-    if (product.stock !== undefined && product.stock !== null) {
-      const existingItem = items.find(i => i.id === product.id && (i.item_type || 'product') === (product.item_type || 'product'))
-      const currentCartQty = existingItem ? existingItem.qty : 0
-
-      if (currentCartQty + finalQty > product.stock) {
+    if (maxStock < Infinity) {
+      if (currentCartQty + finalQty > maxStock) {
         setShowStockError(true)
         setTimeout(() => setShowStockError(false), 3500)
         return
@@ -70,7 +82,7 @@ export default function AddToCartButton({
               Insufficient Stock
             </p>
             <p style={{ fontSize: '12.5px', color: 'rgba(255,255,255,0.65)', margin: 0, lineHeight: 1.55 }}>
-              Sorry, we only have <strong style={{ color: 'white' }}>{product.stock} {product.unit || 'units'}</strong> in stock.
+              Sorry, we only have <strong style={{ color: 'white' }}>{maxStock} {product.unit || 'units'}</strong> in stock.
             </p>
           </div>
           <button

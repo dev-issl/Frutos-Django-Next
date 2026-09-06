@@ -92,14 +92,18 @@ export default function OrderLineTab({ accessToken }) {
     setCart(prev => {
       const existing = prev.find(item => item.id === product.id)
       const step = parseInt(product.minimum_purchase) || parseInt(product.minWholesaleQty) || 1
-      const stock = product.inStock || 0
-
-      if (existing) {
-        return prev.map(item => item.id === product.id ? { ...item, quantity: Math.min(item.quantity + step, stock) } : item)
-      }
+      const stock = product.wholesale_stock !== undefined && product.wholesale_stock !== null 
+        ? Number(product.wholesale_stock) 
+        : (product.restaurant_stock !== undefined && product.restaurant_stock !== null
+            ? Number(product.restaurant_stock)
+            : (product.stock !== undefined && product.stock !== null ? Number(product.stock) : (product.inStock ? 999999 : 0)))
 
       const initialQty = Math.min(step, stock)
       if (initialQty <= 0) return prev
+
+      if (existing) {
+        return prev.map(item => item.id === product.id ? { ...item, quantity: Math.min(item.quantity + 1, stock) } : item)
+      }
 
       return [...prev, { ...product, quantity: initialQty }]
     })
@@ -112,10 +116,16 @@ export default function OrderLineTab({ accessToken }) {
   const updateQuantity = (productId, delta) => {
     setCart(prev => prev.map(item => {
       if (item.id === productId) {
+        const step = parseInt(item.minimum_purchase) || parseInt(item.minWholesaleQty) || 1
+        const stock = item.wholesale_stock !== undefined && item.wholesale_stock !== null 
+          ? Number(item.wholesale_stock) 
+          : (item.restaurant_stock !== undefined && item.restaurant_stock !== null
+              ? Number(item.restaurant_stock)
+              : (item.stock !== undefined && item.stock !== null ? Number(item.stock) : (item.inStock ? 999999 : 0)))
+        const minQty = Math.max(1, Math.min(step, stock))
         const newQ = (parseInt(item.quantity) || 0) + delta
-        if (newQ <= 0) return null
-        const stock = item.inStock || 0
-        return { ...item, quantity: Math.min(newQ, stock) }
+        if (newQ < minQty && delta < 0) return null
+        return { ...item, quantity: Math.min(Math.max(newQ, minQty), stock) }
       }
       return item
     }).filter(Boolean))
@@ -270,8 +280,13 @@ export default function OrderLineTab({ accessToken }) {
                   const qty = getQuantityInCart(product.id)
                   const isSelected = qty > 0
                   const step = parseInt(product.minimum_purchase) || parseInt(product.minWholesaleQty) || 1
-                  const stock = product.inStock || 0
-                  const canAddMore = (qty + step) <= stock
+                  const stock = product.wholesale_stock !== undefined && product.wholesale_stock !== null 
+                    ? Number(product.wholesale_stock) 
+                    : (product.restaurant_stock !== undefined && product.restaurant_stock !== null
+                        ? Number(product.restaurant_stock)
+                        : (product.stock !== undefined && product.stock !== null ? Number(product.stock) : (product.inStock ? 999999 : 0)))
+                  const minAllowedQty = Math.max(1, Math.min(step, stock))
+                  const canAddMore = (qty + 1) <= stock
                   return (
                     <div key={product.id} className={`bg-white rounded-xl border transition-all duration-300 flex flex-row min-h-[84px] h-auto overflow-hidden group items-center ${isSelected ? 'border-[#085041] shadow-sm ring-1 ring-[#085041]/10' : 'border-gray-200 shadow-sm hover:shadow hover:border-gray-300'}`}>
 
@@ -326,9 +341,9 @@ export default function OrderLineTab({ accessToken }) {
                         {isSelected ? (
                           <div className="flex items-center bg-gray-50 rounded-lg p-0.5 border border-gray-200">
                             <button
-                              onClick={() => qty > step && updateQuantity(product.id, -1)}
-                              disabled={qty <= step}
-                              className={`w-6 h-6 shrink-0 flex items-center justify-center rounded-md transition-colors ${qty > step ? 'bg-white text-gray-700 shadow-sm cursor-pointer hover:bg-gray-100' : 'text-gray-300 cursor-not-allowed bg-transparent'}`}
+                              onClick={() => updateQuantity(product.id, -1)}
+                              disabled={qty <= minAllowedQty}
+                              className={`w-6 h-6 shrink-0 flex items-center justify-center rounded-md transition-colors ${qty > minAllowedQty ? 'bg-white text-gray-700 shadow-sm cursor-pointer hover:bg-gray-100' : 'text-gray-300 cursor-not-allowed bg-transparent'}`}
                             >
                               <Minus size={12} strokeWidth={2.5} />
                             </button>
@@ -350,14 +365,14 @@ export default function OrderLineTab({ accessToken }) {
                           </div>
                         ) : (
                           <button
-                            onClick={() => addToCart(product, step)}
-                            disabled={stock < step}
-                            className={`px-3 py-1.5 text-[11px] font-bold rounded-lg flex items-center justify-center gap-1 transition-all duration-200 ${stock < step
+                            onClick={() => addToCart(product)}
+                            disabled={stock <= 0}
+                            className={`px-3 py-1.5 text-[11px] font-bold rounded-lg flex items-center justify-center gap-1 transition-all duration-200 ${stock <= 0
                                 ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                                 : 'bg-[#085041]/10 text-[#085041] cursor-pointer hover:bg-[#085041] hover:text-white hover:shadow-md'
                               }`}
                           >
-                            {stock < step ? 'Out of Stock' : (
+                            {stock <= 0 ? 'Out of Stock' : (
                               <>
                                 <Plus size={12} strokeWidth={3} />
                                 <span>Add</span>
@@ -444,9 +459,14 @@ export default function OrderLineTab({ accessToken }) {
             ) : (
               cart.map(item => {
                 const step = parseInt(item.minimum_purchase) || parseInt(item.minWholesaleQty) || 1
-                const stock = item.inStock || 0
-                const canAddMore = (item.quantity + step) <= stock
-                const canDecrease = item.quantity > step
+                const stock = item.wholesale_stock !== undefined && item.wholesale_stock !== null 
+                  ? Number(item.wholesale_stock) 
+                  : (item.restaurant_stock !== undefined && item.restaurant_stock !== null
+                      ? Number(item.restaurant_stock)
+                      : (item.stock !== undefined && item.stock !== null ? Number(item.stock) : (item.inStock ? 999999 : 0)))
+                const minAllowed = Math.max(1, Math.min(step, stock))
+                const canAddMore = (item.quantity + 1) <= stock
+                const canDecrease = item.quantity > minAllowed
                 return (
                   <div key={item.id} className="flex gap-3">
                     <div className="w-12 h-12 rounded-lg bg-gray-100 overflow-hidden relative flex-shrink-0">

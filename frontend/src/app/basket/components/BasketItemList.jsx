@@ -9,7 +9,16 @@ export default function BasketItemList({ items, updateQty, removeItem, isApprove
       {items.map(item => {
         const effectivePrice = item.effectivePrice ?? item.price
         const isWholesaleItem = item.effectivePrice && item.effectivePrice !== item.price
-        const minQty = parseInt(item.minimum_purchase) || parseInt(item.minWholesaleQty) || 1;
+        const rawMinQty = parseInt(item.minimum_purchase) || parseInt(item.minWholesaleQty) || 1
+        const stock = (item.stock !== undefined && item.stock !== null)
+          ? Number(item.stock)
+          : (item.wholesale_stock !== undefined && item.wholesale_stock !== null
+              ? Number(item.wholesale_stock)
+              : (item.restaurant_stock !== undefined && item.restaurant_stock !== null
+                  ? Number(item.restaurant_stock)
+                  : Infinity))
+        const maxStock = (stock !== null && !isNaN(stock)) ? stock : Infinity
+        const minQty = (maxStock > 0 && maxStock < Infinity) ? Math.max(1, Math.min(rawMinQty, maxStock)) : rawMinQty
         const belowMinQty = item.qty < minQty
 
         return (
@@ -69,7 +78,7 @@ export default function BasketItemList({ items, updateQty, removeItem, isApprove
 
                   {belowMinQty && (
                     <p className="text-[10px] font-bold" style={{ color: '#BA1A1A' }}>
-                      Min. {item.minWholesaleQty} needed
+                      Min. {minQty} needed
                     </p>
                   )}
                 </div>
@@ -84,7 +93,7 @@ export default function BasketItemList({ items, updateQty, removeItem, isApprove
                   <button
                     onClick={() => updateQty(item.id, Math.max(minQty, item.qty - 1), item.item_type || 'product')}
                     disabled={item.qty <= minQty}
-                    className={`w-7 h-7 md:w-8 md:h-8 flex items-center justify-center rounded transition-colors ${item.qty <= minQty ? 'text-gray-400 cursor-not-allowed' : 'cursor-pointer hover:bg-[#e2e8e2]'}`}
+                    className={`w-7 h-7 md:w-8 md:h-8 flex items-center justify-center rounded transition-colors ${item.qty <= minQty ? 'text-[#a1aca5] cursor-not-allowed' : 'cursor-pointer hover:bg-[#e2e8e2]'}`}
                     style={{ color: item.qty <= minQty ? undefined : '#3d4943' }}
                     aria-label="Decrease quantity"
                   >
@@ -99,10 +108,10 @@ export default function BasketItemList({ items, updateQty, removeItem, isApprove
                   </span>
 
                   <button
-                    onClick={() => updateQty(item.id, item.stock ? Math.min(item.stock, item.qty + 1) : item.qty + 1, item.item_type || 'product')}
-                    disabled={item.stock && item.qty >= item.stock}
-                    className={`w-7 h-7 md:w-8 md:h-8 flex items-center justify-center rounded transition-colors ${item.stock && item.qty >= item.stock ? 'text-gray-400 cursor-not-allowed' : 'cursor-pointer hover:bg-[#e2e8e2]'}`}
-                    style={{ color: item.stock && item.qty >= item.stock ? undefined : '#3d4943' }}
+                    onClick={() => updateQty(item.id, maxStock < Infinity ? Math.min(maxStock, item.qty + 1) : item.qty + 1, item.item_type || 'product')}
+                    disabled={maxStock < Infinity && item.qty >= maxStock}
+                    className={`w-7 h-7 md:w-8 md:h-8 flex items-center justify-center rounded transition-colors ${maxStock < Infinity && item.qty >= maxStock ? 'text-[#a1aca5] cursor-not-allowed' : 'cursor-pointer hover:bg-[#e2e8e2]'}`}
+                    style={{ color: maxStock < Infinity && item.qty >= maxStock ? undefined : '#3d4943' }}
                     aria-label="Increase quantity"
                   >
                     <span className="material-symbols-outlined text-[14px] md:text-[16px]">add</span>
