@@ -166,7 +166,17 @@ class OrderCreateSerializer(serializers.Serializer):
                         setattr(product, stock_field, available_stock - qty)
                         product.save(update_fields=[stock_field])
                     
-                    unit_price = product.discount_price if product.discount_price else product.price
+                    if item_data.get('unit_price') is not None:
+                        try:
+                            unit_price = Decimal(str(item_data['unit_price']))
+                        except Exception:
+                            unit_price = product.discount_price or product.price
+                    elif user_type == 'WHOLESALER':
+                        unit_price = product.wholesale_discount_price or product.wholesale_price or product.discount_price or product.price
+                    elif user_type == 'RESTAURANT':
+                        unit_price = product.restaurant_discount_price or product.restaurant_price or product.discount_price or product.price
+                    else:
+                        unit_price = product.discount_price if product.discount_price else product.price
                     subtotal   = unit_price * qty
                     cart_subtotal += subtotal
                     cart_items.append({

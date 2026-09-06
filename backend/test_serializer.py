@@ -8,35 +8,52 @@ django.setup()
 
 from products.models import Product
 from products.serializers import ProductSerializer
-from users.models import User
+from wholesale.models import WholesaleUser
 from rest_framework.test import APIRequestFactory
 
 def test():
-    # Find a wholesale user
-    user = User.objects.filter(user_type='WHOLESALER').first()
-    if not user:
-        user = User.objects.create(email='wholesale@test.com', user_type='WHOLESALER')
-        print("Created wholesale user")
-        
-    product = Product.objects.first()
+    # Get or create products/users
+    product = Product.objects.filter(name__icontains='Premium Product 30').first() or Product.objects.first()
     if not product:
         print("No product found")
         return
         
-    print(f"Testing with User: {user.email} (Type: {user.user_type})")
-    print(f"Product: {product.name}")
-    
+    print(f"--- Product: {product.name} ---")
+    print(f"Raw Price: {product.price}, Wholesale Price: {product.wholesale_price}, Restaurant Price: {product.restaurant_price}")
+    print("-" * 50)
+
     factory = APIRequestFactory()
-    request = factory.get('/')
-    request.user = user
-    
-    serializer = ProductSerializer(product, context={'request': request})
-    try:
-        data = serializer.data
-        print("Serializer data generated successfully.")
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
+
+    # 1. Test External Wholesale (RESTAURANT) User
+    ext_user = WholesaleUser.objects.filter(user_type='RESTAURANT').first()
+    if ext_user:
+        ext_user.status = 'APPROVED'
+        ext_user.save()
+        req = factory.get('/')
+        req.user = ext_user
+        s = ProductSerializer(product, context={'request': req})
+        data = s.data
+        print(f"External Wholesale User ({ext_user.email}) -> wholesale_price in response: {data.get('wholesale_price')}")
+        print(f"User context: {data.get('_user_context')}")
+    else:
+        print("No RESTAURANT WholesaleUser found")
+
+    print("-" * 50)
+
+    # 2. Test Internal Wholesale (WHOLESALER) User
+    int_user = WholesaleUser.objects.filter(user_type='WHOLESALER').first()
+    if int_user:
+        int_user.status = 'APPROVED'
+        int_user.save()
+        req = factory.get('/')
+        req.user = int_user
+        s = ProductSerializer(product, context={'request': req})
+        data = s.data
+        print(f"Internal Wholesale User ({int_user.email}) -> wholesale_price in response: {data.get('wholesale_price')}")
+        print(f"User context: {data.get('_user_context')}")
+    else:
+        print("No WHOLESALER WholesaleUser found")
 
 if __name__ == '__main__':
     test()
+

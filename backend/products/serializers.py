@@ -312,33 +312,49 @@ class ProductSerializer(serializers.ModelSerializer):
             'is_approved_wholesaler': False,
             'wholesaler_status': None,
             'is_restaurant': False,
+            'is_approved_restaurant': False,
+            'restaurant_status': None,
             'is_admin': False
         }
         
         # Check if user is authenticated and get wholesaler info
         if (request and hasattr(request, 'user') and request.user and request.user.is_authenticated):
+            user = request.user
+            user_type = getattr(user, 'user_type', '')
+            if not user_type and user.__class__.__name__ == 'WholesaleUser':
+                user_type = 'WHOLESALER'
+
+            # Helper to check approval status
+            is_approved = False
+            status_str = 'PENDING'
+            try:
+                if hasattr(user, 'wholesaler_profile'):
+                    profile = user.wholesaler_profile
+                    status_str = getattr(profile, 'approval_status', 'PENDING').upper()
+                    if status_str == 'APPROVED':
+                        is_approved = True
+                if not is_approved and hasattr(user, 'status'):
+                    status_str = str(user.status).upper()
+                    if status_str in ['APPROVED', 'APPLICATIONSTATUS.APPROVED']:
+                        is_approved = True
+                if not is_approved and hasattr(user, 'is_approved'):
+                    is_approved = bool(user.is_approved)
+            except Exception:
+                status_str = 'PENDING'
+
             # Only superusers and ADMIN user_type are treated as admin
-            # NOTE: STAFF users are NOT admin
-            if request.user.is_superuser or getattr(request.user, 'user_type', '') == 'ADMIN':
+            if user.is_superuser or user_type == 'ADMIN':
                 user_context['is_admin'] = True
-            elif getattr(request.user, 'user_type', '') == 'WHOLESALER' or request.user.__class__.__name__ == 'WholesaleUser':
+            elif user_type == 'WHOLESALER':
                 user_context['is_wholesaler'] = True
-                # Check wholesaler approval status
-                try:
-                    if hasattr(request.user, 'wholesaler_profile'):
-                        profile = request.user.wholesaler_profile
-                        user_context['wholesaler_status'] = profile.approval_status
-                        if profile.approval_status == 'APPROVED':
-                            user_context['is_approved_wholesaler'] = True
-                    elif hasattr(request.user, 'is_approved'):
-                        user_context['wholesaler_status'] = getattr(request.user, 'status', 'PENDING').upper()
-                        if request.user.is_approved:
-                            user_context['is_approved_wholesaler'] = True
-                except:
-                    # If wholesaler_profile doesn't exist, user is not approved
-                    user_context['wholesaler_status'] = 'PENDING'
-            elif getattr(request.user, 'user_type', '') == 'RESTAURANT':
+                user_context['wholesaler_status'] = status_str
+                if is_approved:
+                    user_context['is_approved_wholesaler'] = True
+            elif user_type == 'RESTAURANT':
                 user_context['is_restaurant'] = True
+                user_context['restaurant_status'] = status_str
+                if is_approved:
+                    user_context['is_approved_restaurant'] = True
         
         # Add user context to response for frontend logic
         data['_user_context'] = user_context
@@ -347,37 +363,50 @@ class ProductSerializer(serializers.ModelSerializer):
         if user_context['is_admin']:
             # Admins see everything, do nothing
             pass
-        elif user_context['is_restaurant']:
-            # For restaurant users, remove wholesale fields
-            data.pop('wholesale_price', None)
-            data.pop('wholesale_discount_price', None)
-            data.pop('wholesale_unit', None)
-            data.pop('minimum_purchase', None)
+        elif user_context['is_approved_restaurant']:
+            # For approved restaurant / external wholesale users:
+            # Map external wholesale (restaurant) pricing & unit & stock into wholesale fields
+            res_price = instance.restaurant_price
+            res_discount = instance.restaurant_discount_price
             
-            restaurant_price = instance.restaurant_price
-            if not restaurant_price or restaurant_price < 1:
-                data.pop('restaurant_price', None)
-                data.pop('restaurant_discount_price', None)
-        elif user_context['is_approved_wholesaler']:
-            # For approved wholesalers: remove restaurant fields
+            if res_price and res_price >= 1:
+                data['wholesale_price'] = res_price
+                data['wholesale_discount_price'] = res_discount
+                if instance.restaurant_unit:
+                    data['wholesale_unit'] = instance.restaurant_unit
+                if instance.restaurant_stock is not None:
+                    data['wholesale_stock'] = instance.restaurant_stock
+            else:
+                data.pop('wholesale_price', None)
+                data.pop('wholesale_discount_price', None)
+                
             data.pop('restaurant_price', None)
             data.pop('restaurant_discount_price', None)
             data.pop('restaurant_unit', None)
+            data.pop('restaurant_stock', None)
+        elif user_context['is_approved_wholesaler']:
+            # For approved internal wholesalers: remove restaurant fields
+            data.pop('restaurant_price', None)
+            data.pop('restaurant_discount_price', None)
+            data.pop('restaurant_unit', None)
+            data.pop('restaurant_stock', None)
             
             wholesale_price = instance.wholesale_price
             if not wholesale_price or wholesale_price < 1:
                 data.pop('wholesale_price', None)
                 data.pop('wholesale_discount_price', None)
         else:
-            # For non-approved wholesalers, customers, and unauthenticated users: 
+            # For non-approved wholesalers, non-approved restaurants, customers, and unauthenticated users: 
             # Remove wholesale and restaurant price fields for security
             data.pop('wholesale_price', None)
             data.pop('wholesale_discount_price', None)
             data.pop('wholesale_unit', None)
+            data.pop('wholesale_stock', None)
             data.pop('minimum_purchase', None)
             data.pop('restaurant_price', None)
             data.pop('restaurant_discount_price', None)
             data.pop('restaurant_unit', None)
+            data.pop('restaurant_stock', None)
         
         return data
 
