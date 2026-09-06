@@ -371,7 +371,10 @@ class ProductSerializer(serializers.ModelSerializer):
             
             if res_price and res_price >= 1:
                 data['wholesale_price'] = res_price
-                data['wholesale_discount_price'] = res_discount
+                if res_discount and 0 < res_discount < res_price:
+                    data['wholesale_discount_price'] = res_discount
+                else:
+                    data.pop('wholesale_discount_price', None)
                 data['minimum_purchase'] = instance.restaurant_minimum_purchase or 1
                 if instance.restaurant_unit:
                     data['wholesale_unit'] = instance.restaurant_unit
@@ -396,11 +399,16 @@ class ProductSerializer(serializers.ModelSerializer):
             data.pop('restaurant_minimum_purchase', None)
             
             wholesale_price = instance.wholesale_price
+            wholesale_discount = instance.wholesale_discount_price
             if not wholesale_price or wholesale_price < 1:
                 data.pop('wholesale_price', None)
                 data.pop('wholesale_discount_price', None)
                 data.pop('minimum_purchase', None)
             else:
+                if wholesale_discount and 0 < wholesale_discount < wholesale_price:
+                    data['wholesale_discount_price'] = wholesale_discount
+                else:
+                    data.pop('wholesale_discount_price', None)
                 data['minimum_purchase'] = instance.minimum_purchase or 1
         else:
             # For non-approved wholesalers, non-approved restaurants, customers, and unauthenticated users: 

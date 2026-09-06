@@ -117,7 +117,7 @@ export default function FloatingCart() {
             </span>
           </div>
           <div className="cart-bottom">
-            <span className="cart-price-text">৳{Math.round(subtotal)}</span>
+            <span className="cart-price-text">€{subtotal.toFixed(2)}</span>
           </div>
         </div>
       </div>

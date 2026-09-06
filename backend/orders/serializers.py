@@ -170,13 +170,34 @@ class OrderCreateSerializer(serializers.Serializer):
                         try:
                             unit_price = Decimal(str(item_data['unit_price']))
                         except Exception:
-                            unit_price = product.discount_price or product.price
+                            unit_price = product.price
                     elif user_type == 'WHOLESALER':
-                        unit_price = product.wholesale_discount_price or product.wholesale_price or product.discount_price or product.price
+                        ws_disc = product.wholesale_discount_price
+                        ws_price = product.wholesale_price
+                        if ws_disc and ws_price and Decimal('0.00') < ws_disc < ws_price:
+                            unit_price = ws_disc
+                        elif ws_price and ws_price > Decimal('0.00'):
+                            unit_price = ws_price
+                        elif product.discount_price and product.discount_price < product.price:
+                            unit_price = product.discount_price
+                        else:
+                            unit_price = product.price
                     elif user_type == 'RESTAURANT':
-                        unit_price = product.restaurant_discount_price or product.restaurant_price or product.discount_price or product.price
+                        res_disc = product.restaurant_discount_price
+                        res_price = product.restaurant_price
+                        if res_disc and res_price and Decimal('0.00') < res_disc < res_price:
+                            unit_price = res_disc
+                        elif res_price and res_price > Decimal('0.00'):
+                            unit_price = res_price
+                        elif product.discount_price and product.discount_price < product.price:
+                            unit_price = product.discount_price
+                        else:
+                            unit_price = product.price
                     else:
-                        unit_price = product.discount_price if product.discount_price else product.price
+                        if product.discount_price and product.discount_price < product.price:
+                            unit_price = product.discount_price
+                        else:
+                            unit_price = product.price
                     subtotal   = unit_price * qty
                     cart_subtotal += subtotal
                     cart_items.append({
