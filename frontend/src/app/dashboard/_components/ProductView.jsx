@@ -85,13 +85,25 @@ export default function ProductView({ item, stores }) {
           </div>
         </Section>
 
-        {/* Wholesale Pricing Section */}
-        <Section title="Wholesale Information" className="bg-amber-50/30 border-amber-100">
+        {/* Internal Wholesale Pricing Section */}
+        <Section title="Internal Wholesale" className="bg-amber-50/30 border-amber-100">
           <div className="grid grid-cols-2 gap-y-6 gap-x-4">
-            <InfoBlock label="Wholesale Price" value={item.wholesale_price ? `€${Number(item.wholesale_price).toLocaleString()}` : "N/A"} />
-            <InfoBlock label="Minimum Purchase" value={item.minimum_purchase || "N/A"} />
-            <InfoBlock label="Wholesale Unit" value={item.wholesale_unit} />
-            <InfoBlock label="Commission Rate" value={item.affiliate_commission_rate ? `${item.affiliate_commission_rate}%` : "N/A"} />
+            <InfoBlock label="Internal Price" value={item.wholesale_price ? `€${Number(item.wholesale_price).toLocaleString()}` : "N/A"} />
+            <InfoBlock label="Internal Sale Price" value={item.wholesale_discount_price ? `€${Number(item.wholesale_discount_price).toLocaleString()}` : "N/A"} />
+            <InfoBlock label="Internal Unit" value={item.wholesale_unit || "N/A"} />
+            <InfoBlock label="Min Purchase Qty" value={item.minimum_purchase || "N/A"} />
+            <InfoBlock label="Stock" value={item.wholesale_stock ?? "N/A"} />
+          </div>
+        </Section>
+
+        {/* External Wholesale Pricing Section */}
+        <Section title="External Wholesale" className="bg-emerald-50/30 border-emerald-100">
+          <div className="grid grid-cols-2 gap-y-6 gap-x-4">
+            <InfoBlock label="External Price" value={item.restaurant_price ? `€${Number(item.restaurant_price).toLocaleString()}` : "N/A"} />
+            <InfoBlock label="External Sale Price" value={item.restaurant_discount_price ? `€${Number(item.restaurant_discount_price).toLocaleString()}` : "N/A"} />
+            <InfoBlock label="External Unit" value={item.restaurant_unit || "N/A"} />
+            <InfoBlock label="Min Purchase Qty" value={item.restaurant_minimum_purchase || "N/A"} />
+            <InfoBlock label="Stock" value={item.restaurant_stock ?? "N/A"} />
           </div>
         </Section>
       </div>

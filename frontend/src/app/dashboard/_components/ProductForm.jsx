@@ -27,7 +27,7 @@ export default function ProductForm({
     name: "", slug: "", description: "", nutritional_info: "",
     origin: "", unit: "", wholesale_unit: "", badge: "", badge_color: "", variant: "",
     price: "", discount_price: "", wholesale_price: "", wholesale_discount_price: "",
-    restaurant_price: "", restaurant_discount_price: "", restaurant_unit: "",
+    restaurant_price: "", restaurant_discount_price: "", restaurant_unit: "", restaurant_minimum_purchase: "",
     minimum_purchase: "", tax_rate: "",
     stock: "", wholesale_stock: "", restaurant_stock: "", is_active: "true",
     weight: "", length: "", width: "", height: "",
@@ -126,6 +126,7 @@ export default function ProductForm({
         restaurant_price:         form.restaurant_price || null,
         restaurant_discount_price:form.restaurant_discount_price || null,
         restaurant_unit:          form.restaurant_unit || "",
+        restaurant_minimum_purchase: form.restaurant_minimum_purchase || null,
         minimum_purchase:         form.minimum_purchase || null,
         tax_rate:                 form.tax_rate || "5.00",
         stock:                    form.stock || 0,
@@ -393,7 +394,7 @@ export default function ProductForm({
             <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest mb-4 flex items-center gap-2">
               <span className="w-2 h-2 bg-emerald-500 rounded-full"></span> External Wholesale
             </h4>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div>
                 <label className={labelCls}>External Wholesale Price (€)</label>
                 <input type="number" step="0.01" min="0" className={inputCls}
@@ -413,6 +414,11 @@ export default function ProductForm({
                   placeholder="Select or type..."
                   allowCustom={true}
                 />
+              </div>
+              <div>
+                <label className={labelCls}>Min Purchase Qty</label>
+                <input type="number" min="1" className={inputCls} value={form.restaurant_minimum_purchase || ""}
+                  onChange={e => handleChange("restaurant_minimum_purchase", e.target.value)} placeholder="e.g., 5" />
               </div>
               <div>
                 <label className={labelCls}>Stock</label>

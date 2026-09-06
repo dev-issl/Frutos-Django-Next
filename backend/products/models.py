@@ -223,7 +223,11 @@ class Product(models.Model):
     )
     minimum_purchase = models.PositiveIntegerField(
         default=1,
-        help_text="Minimum quantity required for wholesale orders. Admin can set different values per product (e.g., Mobile=10, Laptop=5, Fashion=60)"
+        help_text="Minimum quantity required for internal wholesale orders (Nijeder)"
+    )
+    restaurant_minimum_purchase = models.PositiveIntegerField(
+        default=1,
+        help_text="Minimum quantity required for external wholesale orders (Bahirer)"
     )
     tax_rate = models.DecimalField(
         max_digits=5,

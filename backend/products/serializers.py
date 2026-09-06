@@ -241,7 +241,7 @@ class ProductSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'shop', 'stores', 'brand', 'name', 'slug', 'description', 'category', 'sub_category', 'shipping_category',
             'price', 'discount_price', 'wholesale_price', 'wholesale_discount_price', 'restaurant_price', 'restaurant_discount_price', 
-            'minimum_purchase', 'tax_rate', 'stock', 'wholesale_stock', 'restaurant_stock', 'is_active',
+            'minimum_purchase', 'restaurant_minimum_purchase', 'tax_rate', 'stock', 'wholesale_stock', 'restaurant_stock', 'is_active',
             'weight', 'length', 'width', 'height',  # Added physical properties for shipping
             'thumbnail_url', 'specifications', 'additional_images',
             'origin', 'unit', 'wholesale_unit', 'restaurant_unit', 'badge', 'badge_color', 'variant',
@@ -365,13 +365,14 @@ class ProductSerializer(serializers.ModelSerializer):
             pass
         elif user_context['is_approved_restaurant']:
             # For approved restaurant / external wholesale users:
-            # Map external wholesale (restaurant) pricing & unit & stock into wholesale fields
+            # Map external wholesale (restaurant) pricing & min purchase & unit & stock into wholesale fields
             res_price = instance.restaurant_price
             res_discount = instance.restaurant_discount_price
             
             if res_price and res_price >= 1:
                 data['wholesale_price'] = res_price
                 data['wholesale_discount_price'] = res_discount
+                data['minimum_purchase'] = instance.restaurant_minimum_purchase or 1
                 if instance.restaurant_unit:
                     data['wholesale_unit'] = instance.restaurant_unit
                 if instance.restaurant_stock is not None:
@@ -379,22 +380,28 @@ class ProductSerializer(serializers.ModelSerializer):
             else:
                 data.pop('wholesale_price', None)
                 data.pop('wholesale_discount_price', None)
+                data.pop('minimum_purchase', None)
                 
             data.pop('restaurant_price', None)
             data.pop('restaurant_discount_price', None)
             data.pop('restaurant_unit', None)
             data.pop('restaurant_stock', None)
+            data.pop('restaurant_minimum_purchase', None)
         elif user_context['is_approved_wholesaler']:
             # For approved internal wholesalers: remove restaurant fields
             data.pop('restaurant_price', None)
             data.pop('restaurant_discount_price', None)
             data.pop('restaurant_unit', None)
             data.pop('restaurant_stock', None)
+            data.pop('restaurant_minimum_purchase', None)
             
             wholesale_price = instance.wholesale_price
             if not wholesale_price or wholesale_price < 1:
                 data.pop('wholesale_price', None)
                 data.pop('wholesale_discount_price', None)
+                data.pop('minimum_purchase', None)
+            else:
+                data['minimum_purchase'] = instance.minimum_purchase or 1
         else:
             # For non-approved wholesalers, non-approved restaurants, customers, and unauthenticated users: 
             # Remove wholesale and restaurant price fields for security
@@ -407,6 +414,7 @@ class ProductSerializer(serializers.ModelSerializer):
             data.pop('restaurant_discount_price', None)
             data.pop('restaurant_unit', None)
             data.pop('restaurant_stock', None)
+            data.pop('restaurant_minimum_purchase', None)
         
         return data
 
@@ -430,7 +438,7 @@ class ProductWriteSerializer(serializers.ModelSerializer):
             'category', 'sub_category', 'shipping_category',
             'price', 'discount_price', 'wholesale_price', 'wholesale_discount_price',
             'restaurant_price', 'restaurant_discount_price',
-            'minimum_purchase', 'tax_rate',
+            'minimum_purchase', 'restaurant_minimum_purchase', 'tax_rate',
             'origin', 'unit', 'wholesale_unit', 'restaurant_unit', 'badge', 'badge_color', 'variant',
             'stock', 'wholesale_stock', 'restaurant_stock', 'is_active',
             'weight', 'length', 'width', 'height',
@@ -450,6 +458,7 @@ class ProductWriteSerializer(serializers.ModelSerializer):
             'restaurant_price':        {'allow_null': True, 'required': False},
             'restaurant_discount_price':{'allow_null': True, 'required': False},
             'minimum_purchase':        {'required': False},
+            'restaurant_minimum_purchase': {'required': False, 'allow_null': True},
             'tax_rate':                {'required': False},
             'weight':                  {'allow_null': True, 'required': False},
             'length':                  {'allow_null': True, 'required': False},

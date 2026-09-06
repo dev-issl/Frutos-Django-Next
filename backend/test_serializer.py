@@ -17,9 +17,13 @@ def test():
     if not product:
         print("No product found")
         return
-        
+
+    product.minimum_purchase = 5
+    product.restaurant_minimum_purchase = 12
+    product.save()
+
     print(f"--- Product: {product.name} ---")
-    print(f"Raw Price: {product.price}, Wholesale Price: {product.wholesale_price}, Restaurant Price: {product.restaurant_price}")
+    print(f"Internal Min Qty: {product.minimum_purchase}, External Min Qty: {product.restaurant_minimum_purchase}")
     print("-" * 50)
 
     factory = APIRequestFactory()
@@ -33,8 +37,7 @@ def test():
         req.user = ext_user
         s = ProductSerializer(product, context={'request': req})
         data = s.data
-        print(f"External Wholesale User ({ext_user.email}) -> wholesale_price in response: {data.get('wholesale_price')}")
-        print(f"User context: {data.get('_user_context')}")
+        print(f"External Wholesale User ({ext_user.email}) -> minimum_purchase in response: {data.get('minimum_purchase')}")
     else:
         print("No RESTAURANT WholesaleUser found")
 
@@ -49,11 +52,11 @@ def test():
         req.user = int_user
         s = ProductSerializer(product, context={'request': req})
         data = s.data
-        print(f"Internal Wholesale User ({int_user.email}) -> wholesale_price in response: {data.get('wholesale_price')}")
-        print(f"User context: {data.get('_user_context')}")
+        print(f"Internal Wholesale User ({int_user.email}) -> minimum_purchase in response: {data.get('minimum_purchase')}")
     else:
         print("No WHOLESALER WholesaleUser found")
 
 if __name__ == '__main__':
     test()
+
 
