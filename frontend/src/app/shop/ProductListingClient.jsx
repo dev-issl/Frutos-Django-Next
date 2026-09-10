@@ -134,7 +134,9 @@ export default function ProductListingClient({ initialProducts = [], categories 
 
   const fetchFresh = useCallback(async () => {
     try {
-      const res = await fetch('/api/products-fresh')
+      const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null
+      const headers = token ? { 'Authorization': `Bearer ${token}` } : {}
+      const res = await fetch('/api/products-fresh', { headers })
       if (!res.ok) return
       const data = await res.json()
       setProducts(data.products)
@@ -142,6 +144,10 @@ export default function ProductListingClient({ initialProducts = [], categories 
     } catch (e) {
     }
   }, [])
+
+  useEffect(() => {
+    setProducts(initialProducts)
+  }, [initialProducts])
 
   useEffect(() => {
     const interval = setInterval(fetchFresh, 10_000) // 10 সেকেন্ড
