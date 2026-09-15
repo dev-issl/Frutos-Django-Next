@@ -174,7 +174,7 @@ class OrderCreateSerializer(serializers.Serializer):
                     elif user_type == 'WHOLESALER':
                         ws_disc = product.wholesale_discount_price
                         ws_price = product.wholesale_price
-                        if ws_disc and ws_price and Decimal('0.00') < ws_disc < ws_price:
+                        if ws_disc and ws_disc > Decimal('0.00') and (not ws_price or ws_price == Decimal('0.00') or ws_disc < ws_price):
                             unit_price = ws_disc
                         elif ws_price and ws_price > Decimal('0.00'):
                             unit_price = ws_price
@@ -185,7 +185,7 @@ class OrderCreateSerializer(serializers.Serializer):
                     elif user_type == 'RESTAURANT':
                         res_disc = product.restaurant_discount_price
                         res_price = product.restaurant_price
-                        if res_disc and res_price and Decimal('0.00') < res_disc < res_price:
+                        if res_disc and res_disc > Decimal('0.00') and (not res_price or res_price == Decimal('0.00') or res_disc < res_price):
                             unit_price = res_disc
                         elif res_price and res_price > Decimal('0.00'):
                             unit_price = res_price
