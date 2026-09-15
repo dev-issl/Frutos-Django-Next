@@ -330,7 +330,7 @@ class ProductSerializer(serializers.ModelSerializer):
             try:
                 if hasattr(user, 'wholesaler_profile'):
                     profile = user.wholesaler_profile
-                    status_str = getattr(profile, 'approval_status', 'PENDING').upper()
+                    status_str = str(getattr(profile, 'approval_status', 'PENDING')).upper()
                     if status_str == 'APPROVED':
                         is_approved = True
                 if not is_approved and hasattr(user, 'status'):
@@ -345,12 +345,12 @@ class ProductSerializer(serializers.ModelSerializer):
             # Only superusers and ADMIN user_type are treated as admin
             if user.is_superuser or user_type == 'ADMIN':
                 user_context['is_admin'] = True
-            elif user_type == 'WHOLESALER':
+            elif user_type in ['WHOLESALER', 'INTERNAL_WHOLESALE']:
                 user_context['is_wholesaler'] = True
                 user_context['wholesaler_status'] = status_str
                 if is_approved:
                     user_context['is_approved_wholesaler'] = True
-            elif user_type == 'RESTAURANT':
+            elif user_type in ['RESTAURANT', 'EXTERNAL_WHOLESALE']:
                 user_context['is_restaurant'] = True
                 user_context['restaurant_status'] = status_str
                 if is_approved:
@@ -369,10 +369,22 @@ class ProductSerializer(serializers.ModelSerializer):
             res_price = instance.restaurant_price
             res_discount = instance.restaurant_discount_price
             
-            if res_price and res_price >= 1:
-                data['wholesale_price'] = res_price
-                if res_discount and 0 < res_discount < res_price:
-                    data['wholesale_discount_price'] = res_discount
+            effective_res_price = None
+            effective_res_discount = None
+
+            if res_discount and res_discount >= 1:
+                if res_price and res_price > res_discount:
+                    effective_res_price = res_price
+                    effective_res_discount = res_discount
+                else:
+                    effective_res_price = res_discount
+            elif res_price and res_price >= 1:
+                effective_res_price = res_price
+
+            if effective_res_price:
+                data['wholesale_price'] = effective_res_price
+                if effective_res_discount:
+                    data['wholesale_discount_price'] = effective_res_discount
                 else:
                     data.pop('wholesale_discount_price', None)
                 data['minimum_purchase'] = instance.restaurant_minimum_purchase or 1
@@ -380,6 +392,7 @@ class ProductSerializer(serializers.ModelSerializer):
                     data['wholesale_unit'] = instance.restaurant_unit
                 if instance.restaurant_stock is not None:
                     data['wholesale_stock'] = instance.restaurant_stock
+                    data['stock'] = instance.restaurant_stock
             else:
                 data.pop('wholesale_price', None)
                 data.pop('wholesale_discount_price', None)
@@ -400,16 +413,35 @@ class ProductSerializer(serializers.ModelSerializer):
             
             wholesale_price = instance.wholesale_price
             wholesale_discount = instance.wholesale_discount_price
-            if not wholesale_price or wholesale_price < 1:
+
+            effective_ws_price = None
+            effective_ws_discount = None
+
+            if wholesale_discount and wholesale_discount >= 1:
+                if wholesale_price and wholesale_price > wholesale_discount:
+                    effective_ws_price = wholesale_price
+                    effective_ws_discount = wholesale_discount
+                else:
+                    effective_ws_price = wholesale_discount
+            elif wholesale_price and wholesale_price >= 1:
+                effective_ws_price = wholesale_price
+
+            if not effective_ws_price:
                 data.pop('wholesale_price', None)
                 data.pop('wholesale_discount_price', None)
                 data.pop('minimum_purchase', None)
             else:
-                if wholesale_discount and 0 < wholesale_discount < wholesale_price:
-                    data['wholesale_discount_price'] = wholesale_discount
+                data['wholesale_price'] = effective_ws_price
+                if effective_ws_discount:
+                    data['wholesale_discount_price'] = effective_ws_discount
                 else:
                     data.pop('wholesale_discount_price', None)
                 data['minimum_purchase'] = instance.minimum_purchase or 1
+                if instance.wholesale_unit:
+                    data['wholesale_unit'] = instance.wholesale_unit
+                if instance.wholesale_stock is not None:
+                    data['wholesale_stock'] = instance.wholesale_stock
+                    data['stock'] = instance.wholesale_stock
         else:
             # For non-approved wholesalers, non-approved restaurants, customers, and unauthenticated users: 
             # Remove wholesale and restaurant price fields for security

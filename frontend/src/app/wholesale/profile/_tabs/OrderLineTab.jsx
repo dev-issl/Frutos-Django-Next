@@ -158,7 +158,9 @@ export default function OrderLineTab({ accessToken }) {
   }
 
   const getDisplayPrice = (item) => {
-    return item.wholesalePrice || (item.discount_price ? parseFloat(item.discount_price) : parseFloat(item.price))
+    const wsPrice = item.wholesale_discount_price ? parseFloat(item.wholesale_discount_price) : (item.wholesale_price ? parseFloat(item.wholesale_price) : (item.wholesalePrice ? parseFloat(item.wholesalePrice) : null))
+    if (wsPrice !== null && !isNaN(wsPrice)) return wsPrice
+    return item.discount_price ? parseFloat(item.discount_price) : parseFloat(item.price || 0)
   }
 
   const getDisplayUnit = (item) => {

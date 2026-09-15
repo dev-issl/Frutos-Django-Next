@@ -5,10 +5,17 @@ import { auth } from '@/auth'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET() {
+export async function GET(request) {
     try {
         const session = await auth()
-        const token = session?.user?.accessToken
+        let token = session?.user?.accessToken
+
+        if (!token && request) {
+            const cookieToken = request.cookies?.get('access_token')?.value
+            const authHeader = request.headers?.get('authorization')
+            const headerToken = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : null
+            token = cookieToken || headerToken || null
+        }
 
         const [products, categories] = await Promise.all([
             getProducts({ token }),
