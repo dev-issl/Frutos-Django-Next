@@ -27,6 +27,7 @@ class OrderItemCreateSerializer(serializers.Serializer):
     leftover_pack = serializers.IntegerField(required=False, allow_null=True)
     item_type     = serializers.CharField(required=False, default='product')
     quantity      = serializers.IntegerField(min_value=1)
+    unit_price    = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, allow_null=True)
     color         = serializers.CharField(allow_null=True, required=False, allow_blank=True)
     size          = serializers.CharField(allow_null=True, required=False, allow_blank=True)
 

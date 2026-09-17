@@ -25,7 +25,8 @@ function normalizeCartItem(item) {
     return {
       leftover_pack: item.id,
       item_type: 'pack',
-      quantity: parseInt(item?.qty ?? item?.quantity ?? item?.count ?? 0, 10)
+      quantity: parseInt(item?.qty ?? item?.quantity ?? item?.count ?? 0, 10),
+      unit_price: item.price
     }
   }
 
@@ -42,7 +43,7 @@ function normalizeCartItem(item) {
   const sizeId = item?.size != null && String(item.size).trim() !== '' && !isNaN(Number(item.size))
     ? item.size
     : null
-  return { product: productId, item_type: 'product', quantity, color: item.color, size: sizeId }
+  return { product: productId, item_type: 'product', quantity, unit_price: item.price, color: item.color, size: sizeId }
 }
 
 export default function CheckoutShell({ deliveryDates, deliverySlots, initialUserData, deliveryConfig }) {
