@@ -86,6 +86,10 @@ class ProductViewSet(viewsets.ModelViewSet):
         store_id = self.request.query_params.get('store')
         if store_id:
             qs = qs.filter(stores__id=store_id)
+            
+        store_slug = self.request.query_params.get('store_slug')
+        if store_slug:
+            qs = qs.filter(stores__slug=store_slug)
         
         if self.request.user and self.request.user.is_authenticated:
             if getattr(self.request.user, 'user_type', '') == 'ADMIN' or self.request.user.is_superuser:
