@@ -16,6 +16,9 @@ const nextConfig = {
                 // Production domains
                 'elarbol.icommerce.com.bd',
                 'www.elarbol.icommerce.com.bd',
+                'elarbolfrutal.es',
+                'www.elarbolfrutal.es',
+                'backend.elarbolfrutal.es',
             ]
         },
     },
@@ -43,6 +46,16 @@ const nextConfig = {
                 pathname: '/media/**',
             },
             // Production — media served via nginx (no port needed)
+            {
+                protocol: 'https',
+                hostname: 'backend.elarbolfrutal.es',
+                pathname: '/media/**',
+            },
+            {
+                protocol: 'https',
+                hostname: 'elarbolfrutal.es',
+                pathname: '/media/**',
+            },
             {
                 protocol: 'https',
                 hostname: 'elarbol.icommerce.com.bd',

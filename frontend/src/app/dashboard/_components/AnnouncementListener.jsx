@@ -40,7 +40,8 @@ export default function AnnouncementListener() {
     
     const connect = () => {
       const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-      const host = process.env.NEXT_PUBLIC_WS_URL;
+      const rawHost = process.env.NEXT_PUBLIC_WS_URL || "127.0.0.1:8000";
+      const host = rawHost.replace(/^https?:\/\//, '').replace(/^wss?:\/\//, '').replace(/\/+$/, '');
       const wsUrl = `${protocol}//${host}/ws/announcements/`;
       
       ws = new WebSocket(wsUrl);

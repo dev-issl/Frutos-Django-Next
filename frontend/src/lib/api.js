@@ -52,46 +52,72 @@ function normalizeProduct(p) {
 
 //  Products 
 export async function getProducts({ category, search, inStock, accessToken, limit = 100 } = {}) {
-    const params = new URLSearchParams()
-    if (category && category !== 'All') params.set('category', category)
-    if (search) params.set('search', search)
-    if (inStock !== undefined) params.set('in_stock', inStock)
-    if (limit) params.set('page_size', limit)
+    try {
+        const params = new URLSearchParams()
+        if (category && category !== 'All') params.set('category', category)
+        if (search) params.set('search', search)
+        if (inStock !== undefined) params.set('in_stock', inStock)
+        if (limit) params.set('page_size', limit)
 
-    const query = params.toString() ? `?${params}` : ''
-    const path = `${PRODUCT_BASE}/${query}`.replace(/([^:]\/)\/+/g, "$1")
-    const data = await apiAuthFetch(path, accessToken)
-    const results = Array.isArray(data) ? data : (data.results || [])
-    return results.map(normalizeProduct)
+        const query = params.toString() ? `?${params}` : ''
+        const path = `${PRODUCT_BASE}/${query}`.replace(/([^:]\/)\/+/g, "$1")
+        const data = await apiAuthFetch(path, accessToken)
+        const results = Array.isArray(data) ? data : (data.results || [])
+        return results.map(normalizeProduct)
+    } catch (err) {
+        console.warn('[api] getProducts error:', err.message)
+        return []
+    }
 }
 
 export async function getProductBySlug(slug, accessToken) {
-    const data = await apiAuthFetch(`${PRODUCT_BASE}/${slug}/`, accessToken)
-    return {
-        ...normalizeProduct(data),
-        related: (data.related || []).map(normalizeProduct),
+    try {
+        const data = await apiAuthFetch(`${PRODUCT_BASE}/${slug}/`, accessToken)
+        return {
+            ...normalizeProduct(data),
+            related: (data.related || []).map(normalizeProduct),
+        }
+    } catch (err) {
+        console.warn(`[api] getProductBySlug ${slug} error:`, err.message)
+        return null
     }
 }
 
 export async function getProductById(id, accessToken) {
-    const data = await apiAuthFetch(`${PRODUCT_BASE}/${id}/`, accessToken)
-    return {
-        ...normalizeProduct(data),
-        related: (data.related || []).map(normalizeProduct),
+    try {
+        const data = await apiAuthFetch(`${PRODUCT_BASE}/${id}/`, accessToken)
+        return {
+            ...normalizeProduct(data),
+            related: (data.related || []).map(normalizeProduct),
+        }
+    } catch (err) {
+        console.warn(`[api] getProductById ${id} error:`, err.message)
+        return null
     }
 }
 
 // ─── Categories ───────────────────────────────────────────────────────────────
 
 export async function getCategories() {
-    const data = await apiFetch('/products/categories/')
-    const results = Array.isArray(data) ? data : (data.results || [])
-    const names = results.map(cat => cat.name)
-    return ['All', ...names, 'On Sale']
+    try {
+        const data = await apiFetch('/products/categories/')
+        const results = Array.isArray(data) ? data : (data.results || [])
+        const names = results.map(cat => cat.name)
+        return ['All', ...names, 'On Sale']
+    } catch (err) {
+        console.warn('[api] getCategories error:', err.message)
+        return ['All', 'On Sale']
+    }
 }
 
 export async function getCategoryObjects() {
-    return apiFetch('/products/categories/')
+    try {
+        const data = await apiFetch('/products/categories/')
+        return Array.isArray(data) ? data : (data.results || [])
+    } catch (err) {
+        console.warn('[api] getCategoryObjects error:', err.message)
+        return []
+    }
 }
 
 // ─── Delivery Windows ─────────────────────────────────────────────────────────

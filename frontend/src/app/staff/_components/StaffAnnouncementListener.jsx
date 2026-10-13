@@ -46,8 +46,9 @@ export default function StaffAnnouncementListener() {
     
     const connect = () => {
       const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-      const host = process.env.NEXT_PUBLIC_WS_URL;
-      const wsUrl = `${protocol}//${host.split(':')[0]}:8000/ws/announcements/`;
+      const host = process.env.NEXT_PUBLIC_WS_URL || "127.0.0.1:8000";
+      const cleanHost = host.replace(/^https?:\/\//, '').replace(/^wss?:\/\//, '').replace(/\/+$/, '');
+      const wsUrl = `${protocol}//${cleanHost}${(!cleanHost.includes(':') && protocol === 'ws:') ? ':8000' : ''}/ws/announcements/`;
       
       ws = new WebSocket(wsUrl);
 

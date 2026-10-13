@@ -115,8 +115,8 @@
  */
 
 const PLACEHOLDER = 'https://placehold.co/400x400/ECF7E4/00694C?text=No+Image'
-const API_BASE = process.env.NEXT_PUBLIC_API_URL
-const MEDIA_BASE = API_BASE.replace('/api', '')
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'
+const MEDIA_BASE = API_BASE ? API_BASE.replace('/api', '') : 'http://127.0.0.1:8000'
 
 const BASE_ROUTE = '/products'
 
@@ -292,17 +292,27 @@ export async function getProducts({ category, search, inStock, token } = {}) {
         return allResults
     }
 
-    const results = await fetchAllPages(startUrl)
-    return results.map(normalizeProduct)
+    try {
+        const results = await fetchAllPages(startUrl)
+        return results.map(normalizeProduct)
+    } catch (error) {
+        console.warn(`[getProducts] Error fetching products: ${error.message}`)
+        return []
+    }
 }
 
 export async function getProductById(id) {
-    const data = await apiFetch(`${PRODUCT_ENDPOINT}/${id}/`, {
-        next: { tags: [`product-${id}`, 'products'] },
-    })
-    return {
-        ...normalizeProduct(data),
-        related: toArray(data.related).map(normalizeProduct),
+    try {
+        const data = await apiFetch(`${PRODUCT_ENDPOINT}/${id}/`, {
+            next: { tags: [`product-${id}`, 'products'] },
+        })
+        return {
+            ...normalizeProduct(data),
+            related: toArray(data.related).map(normalizeProduct),
+        }
+    } catch (error) {
+        console.warn(`[getProductById] Error fetching product ${id}: ${error.message}`)
+        return null
     }
 }
 
@@ -330,21 +340,32 @@ export async function getProductBySlug(slug, options = {}) {
                 related: toArray(data.related).map(normalizeProduct),
             }
         }
-        throw error
+        console.warn(`[getProductBySlug] Error fetching product slug ${slug}: ${error.message}`)
+        return null
     }
 }
 
 // ─── Categories ───────────────────────────────────────────────────────────────
 
 export async function getCategories() {
-    const data = await apiFetch(`${CATEGORY_ENDPOINT}/`)
-    const names = toArray(data).map(cat => cat.name)
-    return ['All', ...names, 'On Sale']
+    try {
+        const data = await apiFetch(`${CATEGORY_ENDPOINT}/`)
+        const names = toArray(data).map(cat => cat.name)
+        return ['All', ...names, 'On Sale']
+    } catch (error) {
+        console.warn(`[getCategories] Error fetching categories: ${error.message}`)
+        return ['All', 'On Sale']
+    }
 }
 
 export async function getCategoryObjects() {
-    const data = await apiFetch(`${CATEGORY_ENDPOINT}/`)
-    return toArray(data)
+    try {
+        const data = await apiFetch(`${CATEGORY_ENDPOINT}/`)
+        return toArray(data)
+    } catch (error) {
+        console.warn(`[getCategoryObjects] Error fetching categories: ${error.message}`)
+        return []
+    }
 }
 
 // ─── Reviews ──────────────────────────────────────────────────────────────────
@@ -373,38 +394,48 @@ export async function submitReview(token, data) {
 // ─── Offers ───────────────────────────────────────────────────────────────────
 
 export async function getOffers() {
-    const data = await apiFetch(`${BASE_ROUTE}/offers/`, { cache: 'no-store' })
-    return toArray(data).map(offer => ({
-        id: offer.id,
-        title: offer.title,
-        slug: offer.slug,
-        image: buildImageUrl(offer.banner_image_url || offer.banner_image),
-        description: offer.description,
-        startDate: offer.start_date,
-        endDate: offer.end_date,
-        isActive: offer.is_active,
-    }))
+    try {
+        const data = await apiFetch(`${BASE_ROUTE}/offers/`, { cache: 'no-store' })
+        return toArray(data).map(offer => ({
+            id: offer.id,
+            title: offer.title,
+            slug: offer.slug,
+            image: buildImageUrl(offer.banner_image_url || offer.banner_image),
+            description: offer.description,
+            startDate: offer.start_date,
+            endDate: offer.end_date,
+            isActive: offer.is_active,
+        }))
+    } catch (error) {
+        console.warn(`[getOffers] Error fetching offers: ${error.message}`)
+        return []
+    }
 }
 
 export async function getOfferBySlug(slug) {
-    const data = await apiFetch(`${BASE_ROUTE}/offers/${slug}/`, { cache: 'no-store' })
-    return {
-        id: data.id,
-        title: data.title,
-        slug: data.slug,
-        image: buildImageUrl(data.banner_image_url || data.banner_image),
-        description: data.description,
-        startDate: data.start_date,
-        endDate: data.end_date,
-        isActive: data.is_active,
-        products: data.items ? data.items.map(item => {
-            const normalized = normalizeProduct(item.product);
-            return {
-                ...normalized,
-                oldPrice: normalized.price,
-                price: Number(item.offer_price),
-                onSale: true, // We can optionally force this to true to highlight the offer price
-            };
-        }) : [],
+    try {
+        const data = await apiFetch(`${BASE_ROUTE}/offers/${slug}/`, { cache: 'no-store' })
+        return {
+            id: data.id,
+            title: data.title,
+            slug: data.slug,
+            image: buildImageUrl(data.banner_image_url || data.banner_image),
+            description: data.description,
+            startDate: data.start_date,
+            endDate: data.end_date,
+            isActive: data.is_active,
+            products: data.items ? data.items.map(item => {
+                const normalized = normalizeProduct(item.product);
+                return {
+                    ...normalized,
+                    oldPrice: normalized.price,
+                    price: Number(item.offer_price),
+                    onSale: true, // We can optionally force this to true to highlight the offer price
+                };
+            }) : [],
+        }
+    } catch (error) {
+        console.warn(`[getOfferBySlug] Error fetching offer ${slug}: ${error.message}`)
+        return null
     }
 }
