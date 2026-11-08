@@ -495,6 +495,8 @@ def site_config(request):
             'navbar_logo_url': settings_map.get('navbar_logo_url', '/el-erbol-logo.png'),
             'footer_logo_url': settings_map.get('footer_logo_url', '/el-erbol-logo.png'),
             'favicon_url':     settings_map.get('favicon_url', '/favicon.ico'),
+            'chat_logo_url':   settings_map.get('chat_logo_url', '') or settings_map.get('navbar_logo_url', ''),
+            'logo_url':        settings_map.get('logo_url', ''),
 
             # Contact
             'contact_email':   settings_map.get('contact_email', ''),

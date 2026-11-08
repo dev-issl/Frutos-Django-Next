@@ -184,7 +184,7 @@ class Product(models.Model):
     sub_category = models.ForeignKey(SubCategory, on_delete=models.PROTECT, related_name='products', null=True, blank=True, db_index=True)
     shipping_category = models.ForeignKey(
         'Category',
-        on_delete=models.PROTECT, 
+        on_delete=models.SET_NULL, 
         related_name='shipping_category_products',
         blank=True,
         null=True,

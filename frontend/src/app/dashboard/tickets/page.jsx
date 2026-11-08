@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
   MessageSquare, Eye, Reply, CheckCircle2, Clock, AlertCircle,
-  XCircle, Loader2, ChevronDown, ZoomIn, X, Send, RefreshCw, Paperclip, Upload, User, MoreVertical, Mail, Tag, AlertTriangle, Smile, Download, Trash2, Search
+  XCircle, Loader2, ChevronDown, ZoomIn, X, Send, RefreshCw, Paperclip, Upload, User, MoreVertical, Mail, Tag, AlertTriangle, Smile, Download, Trash2, Search,
+  Plus, Users, Building2, CheckSquare, Square, Check, Layers, Store
 } from "lucide-react";
 import Container from "@/app/dashboard/_components/Container";
 import { useToastContext } from "@/app/dashboard/_components/Toaster";
@@ -109,6 +110,615 @@ function ImageViewer({ src, onClose }) {
         className="max-w-[90vw] max-h-[85vh] object-contain rounded-lg shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       />
+    </div>
+  );
+}
+
+/* ─── Create Ticket Modal ────────────────────────────────────── */
+function CreateTicketModal({ onClose, onSuccess }) {
+  const toast = useToastContext();
+
+  // Recipient selection states
+  const [recipientType, setRecipientType] = useState("wholesale"); // "wholesale" | "normal"
+  const [wholesaleSubFilter, setWholesaleSubFilter] = useState("all"); // "all" | "internal" | "external"
+  const [targetMode, setTargetMode] = useState("selected"); // "selected" | "group"
+  const [userSearch, setUserSearch] = useState("");
+  const [users, setUsers] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [selectedIds, setSelectedIds] = useState(new Set());
+
+  // Form states
+  const [subject, setSubject] = useState("");
+  const [category, setCategory] = useState("GENERAL");
+  const [priority, setPriority] = useState("MEDIUM");
+  const [message, setMessage] = useState("");
+  const [images, setImages] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
+  const [submitting, setSubmitting] = useState(false);
+
+  const fileInputRef = useRef(null);
+
+  // Fetch users on mount
+  useEffect(() => {
+    let isMounted = true;
+    const fetchUsers = async () => {
+      setLoadingUsers(true);
+      try {
+        const res = await api.get("/api/auth/admin/users/", { page_size: 500 });
+        const list = Array.isArray(res) ? res : (res?.results || []);
+        if (isMounted) setUsers(list);
+      } catch (err) {
+        console.error("Failed to load users:", err);
+      } finally {
+        if (isMounted) setLoadingUsers(false);
+      }
+    };
+    fetchUsers();
+    return () => { isMounted = false; };
+  }, []);
+
+  // Filter candidate users based on current filters and search
+  const filteredUsers = useMemo(() => {
+    return users.filter((u) => {
+      if (recipientType === "wholesale") {
+        if (!u.is_wholesale) return false;
+        if (wholesaleSubFilter === "internal" && u.user_type !== "WHOLESALER") return false;
+        if (wholesaleSubFilter === "external" && u.user_type !== "RESTAURANT") return false;
+      } else {
+        if (u.is_wholesale) return false;
+      }
+
+      if (userSearch.trim()) {
+        const q = userSearch.toLowerCase().trim();
+        const nameMatch = (u.name || "").toLowerCase().includes(q);
+        const emailMatch = (u.email || "").toLowerCase().includes(q);
+        const businessMatch = (u.business_name || "").toLowerCase().includes(q);
+        if (!nameMatch && !emailMatch && !businessMatch) return false;
+      }
+
+      return true;
+    });
+  }, [users, recipientType, wholesaleSubFilter, userSearch]);
+
+  const handleRecipientTypeChange = (type) => {
+    setRecipientType(type);
+    setSelectedIds(new Set());
+  };
+
+  const handleToggleSelectUser = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleSelectAllFiltered = () => {
+    const next = new Set(selectedIds);
+    filteredUsers.forEach((u) => next.add(u.id));
+    setSelectedIds(next);
+  };
+
+  const handleClearSelection = () => {
+    setSelectedIds(new Set());
+  };
+
+  const handleFiles = (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+
+    setImages((prev) => [...prev, ...files]);
+    const newPreviews = files.map((file) => ({
+      name: file.name,
+      size: (file.size / 1024).toFixed(1) + " KB",
+      url: file.type.startsWith("image/") ? URL.createObjectURL(file) : null,
+      file,
+    }));
+    setImagePreviews((prev) => [...prev, ...newPreviews]);
+  };
+
+  const removeFile = (index) => {
+    setImages((prev) => prev.filter((_, i) => i !== index));
+    setImagePreviews((prev) => {
+      const removed = prev[index];
+      if (removed?.url) URL.revokeObjectURL(removed.url);
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!subject.trim()) {
+      toast.error("Please enter a ticket subject.");
+      return;
+    }
+    if (!message.trim()) {
+      toast.error("Please enter a message / description.");
+      return;
+    }
+
+    if (targetMode === "selected" && selectedIds.size === 0) {
+      toast.error("Please select at least one recipient user.");
+      return;
+    }
+
+    if (targetMode === "group" && filteredUsers.length === 0) {
+      toast.error("No active users found in the selected group.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const formData = new FormData();
+      formData.append("subject", subject.trim());
+      formData.append("description", message.trim());
+      formData.append("category", category);
+      formData.append("priority", priority);
+      formData.append("recipient_type", recipientType);
+      formData.append("target_mode", targetMode);
+      formData.append("group_filter", recipientType === "wholesale" ? wholesaleSubFilter : "all_normal");
+
+      if (targetMode === "selected") {
+        const selectedList = Array.from(selectedIds);
+        const wsIds = [];
+        const uIds = [];
+        selectedList.forEach((id) => {
+          if (typeof id === "string" && id.startsWith("ws_")) {
+            wsIds.push(id.replace("ws_", ""));
+          } else if (typeof id === "string" && id.includes("-")) {
+            wsIds.push(id);
+          } else {
+            uIds.push(id);
+          }
+        });
+
+        wsIds.forEach((id) => formData.append("wholesale_user_ids", id));
+        uIds.forEach((id) => formData.append("user_ids", id));
+      }
+
+      images.forEach((img) => {
+        formData.append("images", img);
+      });
+
+      const res = await api.post("/api/auth/admin/tickets/", formData);
+      const count = res?.count || (Array.isArray(res?.tickets) ? res.tickets.length : 1);
+      toast.success(res?.detail || `Ticket successfully created for ${count} recipient(s)!`);
+      if (onSuccess) onSuccess();
+      onClose();
+    } catch (err) {
+      toast.error(err?.message || "Failed to create ticket.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const totalTargetCount = targetMode === "selected" ? selectedIds.size : filteredUsers.length;
+
+  return (
+    <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-3 sm:p-4 animate-in fade-in duration-200" onClick={onClose}>
+      <div
+        className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[92vh] flex flex-col border border-slate-100 overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Modal Header */}
+        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-[#00a884] flex items-center justify-center font-bold">
+              <Plus className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-slate-800">Create Support Ticket</h3>
+              <p className="text-xs text-slate-500">Initiate ticket conversation with users or wholesale partners</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+            title="Close"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Modal Form Body */}
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5">
+          {/* Section 1: Recipient Type & Filter */}
+          <div className="space-y-3">
+            <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider">
+              1. Choose Recipient Type
+            </label>
+            <div className="grid grid-cols-2 gap-2.5">
+              <button
+                type="button"
+                onClick={() => handleRecipientTypeChange("wholesale")}
+                className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                  recipientType === "wholesale"
+                    ? "bg-[#00a884]/10 border-[#00a884] text-[#00a884] shadow-sm ring-2 ring-[#00a884]/20"
+                    : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                }`}
+              >
+                <Building2 className="w-4 h-4" />
+                <span>Wholesale Users</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleRecipientTypeChange("normal")}
+                className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                  recipientType === "normal"
+                    ? "bg-[#00a884]/10 border-[#00a884] text-[#00a884] shadow-sm ring-2 ring-[#00a884]/20"
+                    : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                }`}
+              >
+                <User className="w-4 h-4" />
+                <span>Normal Users (Customers)</span>
+              </button>
+            </div>
+
+            {/* Wholesale sub-filters */}
+            {recipientType === "wholesale" && (
+              <div className="flex items-center gap-2 pt-1 flex-wrap">
+                <span className="text-[11px] font-medium text-slate-500">Wholesale Category:</span>
+                <div className="inline-flex bg-slate-100 p-0.5 rounded-lg text-xs font-medium">
+                  <button
+                    type="button"
+                    onClick={() => setWholesaleSubFilter("all")}
+                    className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
+                      wholesaleSubFilter === "all"
+                        ? "bg-white text-slate-900 font-semibold shadow-xs"
+                        : "text-slate-500 hover:text-slate-900"
+                    }`}
+                  >
+                    All Wholesale
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setWholesaleSubFilter("internal")}
+                    className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
+                      wholesaleSubFilter === "internal"
+                        ? "bg-white text-emerald-700 font-semibold shadow-xs"
+                        : "text-slate-500 hover:text-slate-900"
+                    }`}
+                  >
+                    Internal Wholesale
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setWholesaleSubFilter("external")}
+                    className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
+                      wholesaleSubFilter === "external"
+                        ? "bg-white text-purple-700 font-semibold shadow-xs"
+                        : "text-slate-500 hover:text-slate-900"
+                    }`}
+                  >
+                    External Wholesale
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Section 2: Target Mode Selection */}
+          <div className="space-y-3 pt-2 border-t border-slate-100">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">
+                2. Target Recipients
+              </label>
+
+              {/* Mode Switch Pills */}
+              <div className="inline-flex bg-slate-100 p-0.5 rounded-lg text-xs font-medium">
+                <button
+                  type="button"
+                  onClick={() => setTargetMode("selected")}
+                  className={`px-3 py-1 rounded-md transition-all cursor-pointer flex items-center gap-1.5 ${
+                    targetMode === "selected"
+                      ? "bg-white text-slate-900 font-semibold shadow-xs"
+                      : "text-slate-500 hover:text-slate-900"
+                  }`}
+                >
+                  <CheckSquare className="w-3.5 h-3.5" />
+                  <span>Select Specific ({selectedIds.size})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTargetMode("group")}
+                  className={`px-3 py-1 rounded-md transition-all cursor-pointer flex items-center gap-1.5 ${
+                    targetMode === "group"
+                      ? "bg-white text-emerald-700 font-semibold shadow-xs"
+                      : "text-slate-500 hover:text-slate-900"
+                  }`}
+                >
+                  <Users className="w-3.5 h-3.5" />
+                  <span>Group Broadcast ({filteredUsers.length})</span>
+                </button>
+              </div>
+            </div>
+
+            {targetMode === "group" ? (
+              /* Group Broadcast Explanatory Box */
+              <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-xl p-4 text-sm text-emerald-900 flex items-start gap-3">
+                <div className="p-2 rounded-lg bg-emerald-100 text-[#00a884] shrink-0 mt-0.5">
+                  <Users className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-emerald-950">Group Forwarding / Broadcast</h4>
+                  <p className="text-xs text-emerald-700 mt-1 leading-relaxed">
+                    {recipientType === "wholesale"
+                      ? `This ticket and message will be delivered individually to all ${filteredUsers.length} matching active ${
+                          wholesaleSubFilter === "internal"
+                            ? "Internal Wholesale"
+                            : wholesaleSubFilter === "external"
+                            ? "External Wholesale"
+                            : "Wholesale"
+                        } accounts.`
+                      : `This ticket and message will be delivered individually to all ${filteredUsers.length} active retail customer accounts.`}
+                  </p>
+                  <p className="text-[11px] text-emerald-600 mt-1.5 font-medium flex items-center gap-1">
+                    <span>⚡ Instant Delivery:</span> Each recipient receives their own isolated ticket & chat thread with instant notification.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              /* Specific User Selection Box */
+              <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-xs">
+                {/* Search & Select Actions */}
+                <div className="p-2.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between gap-2 flex-wrap">
+                  <div className="relative flex-1 min-w-[180px]">
+                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      placeholder="Search by name, email, or business..."
+                      value={userSearch}
+                      onChange={(e) => setUserSearch(e.target.value)}
+                      className="w-full pl-8 pr-3 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-[#00a884]"
+                    />
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs">
+                    <button
+                      type="button"
+                      onClick={handleSelectAllFiltered}
+                      className="px-2 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-md font-medium cursor-pointer transition-colors"
+                    >
+                      Select All ({filteredUsers.length})
+                    </button>
+                    {selectedIds.size > 0 && (
+                      <button
+                        type="button"
+                        onClick={handleClearSelection}
+                        className="px-2 py-1 text-red-600 hover:bg-red-50 rounded-md font-medium cursor-pointer transition-colors"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* User List */}
+                <div className="max-h-48 overflow-y-auto divide-y divide-slate-100">
+                  {loadingUsers ? (
+                    <div className="py-8 flex items-center justify-center text-slate-400 text-xs gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin text-[#00a884]" />
+                      <span>Loading user list...</span>
+                    </div>
+                  ) : filteredUsers.length === 0 ? (
+                    <div className="py-8 text-center text-slate-400 text-xs">
+                      No users match the current filter.
+                    </div>
+                  ) : (
+                    filteredUsers.map((u) => {
+                      const isSelected = selectedIds.has(u.id);
+                      return (
+                        <div
+                          key={u.id}
+                          onClick={() => handleToggleSelectUser(u.id)}
+                          className={`flex items-center justify-between px-3 py-2 cursor-pointer transition-colors select-none ${
+                            isSelected ? "bg-emerald-50/60" : "hover:bg-slate-50"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => handleToggleSelectUser(u.id)}
+                              className="w-4 h-4 rounded text-[#00a884] focus:ring-[#00a884] border-slate-300 rounded-sm cursor-pointer"
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                            <div className="w-7 h-7 rounded-full bg-slate-200 text-slate-600 font-bold text-xs flex items-center justify-center shrink-0 overflow-hidden">
+                              {u.photo ? (
+                                <img src={u.photo} alt="" className="w-full h-full object-cover" />
+                              ) : (
+                                (u.name || u.email || "U")[0].toUpperCase()
+                              )}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-xs font-semibold text-slate-800 truncate">
+                                {u.name || u.email}
+                              </p>
+                              <p className="text-[11px] text-slate-400 truncate">
+                                {u.business_name ? `${u.business_name} • ${u.email}` : u.email}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="shrink-0 ml-2">
+                            {u.is_wholesale ? (
+                              u.user_type === "WHOLESALER" ? (
+                                <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-emerald-100 text-emerald-800">
+                                  Internal Wholesale
+                                </span>
+                              ) : (
+                                <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-purple-100 text-purple-800">
+                                  External Wholesale
+                                </span>
+                              )
+                            ) : (
+                              <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-blue-100 text-blue-800">
+                                Customer
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Section 3: Ticket Info */}
+          <div className="space-y-4 pt-2 border-t border-slate-100">
+            <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider">
+              3. Ticket Details & Message
+            </label>
+
+            {/* Subject */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Subject <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                required
+                placeholder="e.g., Update on wholesale order delivery or pricing notice..."
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                className="w-full px-3.5 py-2 text-xs sm:text-sm border border-slate-200 rounded-xl focus:outline-none focus:border-[#00a884] focus:ring-2 focus:ring-[#00a884]/10 transition-all placeholder:text-slate-400"
+              />
+            </div>
+
+            {/* Category & Priority Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Category</label>
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="w-full px-3 py-2 text-xs sm:text-sm border border-slate-200 rounded-xl focus:outline-none focus:border-[#00a884] bg-white cursor-pointer"
+                >
+                  <option value="GENERAL">General</option>
+                  <option value="TECHNICAL">Technical</option>
+                  <option value="PAYMENT">Payment</option>
+                  <option value="ACCOUNT">Account</option>
+                  <option value="ORDER">Order</option>
+                  <option value="PRODUCT">Product</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Priority</label>
+                <select
+                  value={priority}
+                  onChange={(e) => setPriority(e.target.value)}
+                  className="w-full px-3 py-2 text-xs sm:text-sm border border-slate-200 rounded-xl focus:outline-none focus:border-[#00a884] bg-white cursor-pointer"
+                >
+                  <option value="LOW">Low</option>
+                  <option value="MEDIUM">Medium</option>
+                  <option value="HIGH">High</option>
+                  <option value="URGENT">Urgent</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Message Body */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Message / Description <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                required
+                rows={4}
+                placeholder="Write your support message here. The recipient(s) will receive this message immediately and can reply directly..."
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                className="w-full px-3.5 py-2.5 text-xs sm:text-sm border border-slate-200 rounded-xl focus:outline-none focus:border-[#00a884] focus:ring-2 focus:ring-[#00a884]/10 transition-all placeholder:text-slate-400 resize-none"
+              />
+            </div>
+
+            {/* Attachments */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-semibold text-slate-700">Attachments (Optional)</label>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  accept="image/*,.pdf,.doc,.docx"
+                  onChange={handleFiles}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg cursor-pointer transition-colors"
+                >
+                  <Paperclip className="w-3.5 h-3.5" />
+                  <span>Attach Files</span>
+                </button>
+              </div>
+
+              {imagePreviews.length > 0 && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 p-2 bg-slate-50 border border-slate-200 rounded-xl">
+                  {imagePreviews.map((p, idx) => (
+                    <div key={idx} className="relative group bg-white border border-slate-200 rounded-lg p-2 flex items-center gap-2">
+                      {p.url ? (
+                        <img src={p.url} alt="" className="w-8 h-8 rounded object-cover shrink-0" />
+                      ) : (
+                        <Paperclip className="w-5 h-5 text-slate-400 shrink-0" />
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[11px] font-medium text-slate-700 truncate">{p.name}</p>
+                        <p className="text-[10px] text-slate-400">{p.size}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeFile(idx)}
+                        className="p-1 text-slate-400 hover:text-red-500 rounded-full hover:bg-red-50 transition-colors cursor-pointer"
+                        title="Remove"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Modal Footer */}
+          <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-3 flex-wrap">
+            <div className="text-xs text-slate-500">
+              Targeting: <span className="font-bold text-slate-800">{totalTargetCount} recipient{totalTargetCount !== 1 ? "s" : ""}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 rounded-xl border border-slate-200 text-slate-700 text-xs sm:text-sm font-medium hover:bg-slate-50 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={submitting || totalTargetCount === 0}
+                className="flex items-center gap-2 px-5 py-2 rounded-xl bg-[#00a884] hover:bg-[#008f6f] disabled:opacity-50 text-white text-xs sm:text-sm font-semibold shadow-sm hover:shadow transition-all cursor-pointer"
+              >
+                {submitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Creating...</span>
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4" />
+                    <span>Create & Send Ticket</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
@@ -789,6 +1399,7 @@ export default function TicketsPage() {
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [ticketToDelete, setTicketToDelete] = useState(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const PAGE_SIZE = 15;
 
   // Auto-open ticket from URL
@@ -905,8 +1516,30 @@ export default function TicketsPage() {
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
   return (
-    <Container title="Support Tickets" description="Review and respond to vendor support tickets">
+    <Container
+      title="Support Tickets"
+      description="Review, create, and manage support tickets for customers and wholesale partners"
+      actions={
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="flex items-center gap-2 px-4 py-2.5 bg-[#00a884] hover:bg-[#008f6f] text-white text-[13px] font-semibold rounded-xl shadow-sm hover:shadow transition-all cursor-pointer active:scale-95 shrink-0"
+        >
+          <Plus className="w-4 h-4" />
+          <span>Create Ticket</span>
+        </button>
+      }
+    >
       {/* Modals */}
+      {showCreateModal && (
+        <CreateTicketModal
+          onClose={() => setShowCreateModal(false)}
+          onSuccess={() => {
+            fetchTickets();
+            fetchCounts();
+          }}
+        />
+      )}
+
       {selectedTicket && (
         <TicketDetailModal
           ticket={selectedTicket}
@@ -985,6 +1618,16 @@ export default function TicketsPage() {
               title="Refresh"
             >
               <RefreshCw className="w-4 h-4" />
+            </button>
+
+            {/* Quick Create Ticket Button */}
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="flex items-center gap-1.5 px-3 py-2 bg-[#00a884] hover:bg-[#008f6f] text-white text-[13px] font-semibold rounded-xl shadow-sm transition-all shrink-0 cursor-pointer"
+              title="Create Ticket"
+            >
+              <Plus className="w-4 h-4" />
+              <span className="hidden sm:inline">New Ticket</span>
             </button>
           </div>
 

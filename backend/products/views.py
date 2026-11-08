@@ -9,7 +9,7 @@ from rest_framework import status
 
 from orders.models import Order
 from .models import Product, Category, SubCategory, Color, Brand, Size, DisplayUnit, ProductSpecification, ProductAdditionalImage, Review, Offer, ProductStoreStock
-from django.db.models import Count, ProtectedError, Prefetch
+from django.db.models import Count, ProtectedError, Prefetch, Q
 from .serializers import (
     ProductSerializer, ProductWriteSerializer,
     CategorySerializer, SubCategorySerializer,
@@ -382,12 +382,9 @@ class ProductViewSet(viewsets.ModelViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 class CategoryViewSet(viewsets.ModelViewSet):
-    # Annotate with product & subcategory counts for richer frontend data
+    # Annotate with subcategory count for richer frontend data
     # Prefetch subcategories to avoid N+1 queries
-    queryset = Category.objects.prefetch_related(
-        Prefetch('subcategories', queryset=SubCategory.objects.annotate(total_products=Count('products', distinct=True)))
-    ).annotate(
-        total_products=Count('subcategories__products', distinct=True),
+    queryset = Category.objects.prefetch_related('subcategories').annotate(
         sub_category_count=Count('subcategories', distinct=True)
     ).order_by('name')
     serializer_class = CategorySerializer
@@ -426,11 +423,41 @@ class CategoryViewSet(viewsets.ModelViewSet):
             )
 
     def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+
+        # 1. Unlink any products or leftover packs that reference this category purely for shipping
+        Product.objects.filter(shipping_category=instance).update(shipping_category=None)
+        try:
+            from stores.models import LeftoverPack
+            LeftoverPack.objects.filter(shipping_category=instance).update(shipping_category=None)
+        except Exception:
+            pass
+
+        # 2. Check if this category has actual catalog products (directly or through subcategories)
+        associated_products = Product.objects.filter(
+            Q(category=instance) | Q(sub_category__category=instance)
+        ).distinct()
+        product_count = associated_products.count()
+
+        if product_count > 0:
+            sample_names = ", ".join(associated_products.values_list('name', flat=True)[:3])
+            more_text = f" and {product_count - 3} more" if product_count > 3 else ""
+            return Response(
+                {
+                    'detail': f'Cannot delete category "{instance.name}" because it contains {product_count} product(s) ({sample_names}{more_text}). Remove or reassign those products first.'
+                },
+                status=status.HTTP_409_CONFLICT
+            )
+
         try:
             return super().destroy(request, *args, **kwargs)
-        except ProtectedError:
+        except ProtectedError as e:
+            protected_items = [f"{getattr(obj, 'name', str(obj))}" for obj in list(e.protected_objects)[:3]]
+            items_str = ", ".join(protected_items)
             return Response(
-                {'detail': 'Cannot delete this category because it has products. Remove or reassign those products first.'},
+                {
+                    'detail': f'Cannot delete category "{instance.name}" because it is referenced by: {items_str}.'
+                },
                 status=status.HTTP_409_CONFLICT
             )
 
@@ -488,6 +515,31 @@ class SubCategoryViewSet(viewsets.ModelViewSet):
             return Response(
                 {"error": f"Internal server error: {str(e)}"}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        associated_products = Product.objects.filter(sub_category=instance).distinct()
+        product_count = associated_products.count()
+        if product_count > 0:
+            sample_names = ", ".join(associated_products.values_list('name', flat=True)[:3])
+            more_text = f" and {product_count - 3} more" if product_count > 3 else ""
+            return Response(
+                {
+                    'detail': f'Cannot delete subcategory "{instance.name}" because it contains {product_count} product(s) ({sample_names}{more_text}). Remove or reassign those products first.'
+                },
+                status=status.HTTP_409_CONFLICT
+            )
+
+        try:
+            return super().destroy(request, *args, **kwargs)
+        except ProtectedError as e:
+            protected_items = [f"{getattr(obj, 'name', str(obj))}" for obj in list(e.protected_objects)[:3]]
+            return Response(
+                {
+                    'detail': f'Cannot delete subcategory "{instance.name}" because it is referenced by: {", ".join(protected_items)}.'
+                },
+                status=status.HTTP_409_CONFLICT
             )
 
 class ColorViewSet(viewsets.ModelViewSet):

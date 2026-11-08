@@ -5,6 +5,7 @@ const FALLBACK_CONFIG = {
     brand_tagline: 'Rooted in quality, growing for the future. We provide the bridge between local farmers and your dinner table.',
     navbar_logo_url: '/el-erbol-logo.png',
     footer_logo_url: '/el-erbol-logo.png',
+    chat_logo_url: '/favicon_orrange.jpeg',
     favicon_url: '/favicon.ico',
     contact_email: 'hello@elarbol.com',
     contact_phone: '+34 900 123 456',

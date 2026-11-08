@@ -98,8 +98,8 @@ class SubCategorySerializer(serializers.ModelSerializer):
 
 class CategorySerializer(serializers.ModelSerializer):
     subcategories = SubCategorySerializer(many=True, read_only=True)
-    total_products = serializers.IntegerField(read_only=True)
-    sub_category_count = serializers.IntegerField(read_only=True)
+    total_products = serializers.SerializerMethodField()
+    sub_category_count = serializers.SerializerMethodField()
     image_url = serializers.SerializerMethodField()
 
     class Meta:
@@ -113,6 +113,17 @@ class CategorySerializer(serializers.ModelSerializer):
             'slug': {'required': False, 'allow_blank': True, 'validators': []},
             'image': {'required': False, 'allow_null': True},
         }
+
+    def get_total_products(self, obj):
+        from products.models import Product
+        return Product.objects.filter(
+            Q(category=obj) | Q(sub_category__category=obj)
+        ).distinct().count()
+
+    def get_sub_category_count(self, obj):
+        if hasattr(obj, 'sub_category_count'):
+            return obj.sub_category_count
+        return obj.subcategories.count()
 
     def validate(self, attrs):
         name = attrs.get('name', getattr(self.instance, 'name', None))

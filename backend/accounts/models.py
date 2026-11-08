@@ -276,11 +276,14 @@ def notify_on_ticket_message(sender, instance, created, **kwargs):
                         metadata={'ticket_id': ticket.id, 'icon': 'support_agent', 'message_count': count}
                     )
                 else:
+                    is_new = (ticket.messages.count() <= 1)
+                    notif_title = f'New Support Ticket #{ticket.id}' if is_new else f'New reply on Ticket #{ticket.id}'
+                    notif_msg = f'Support Team created a ticket: "{ticket.subject}"' if is_new else f'You received a new response regarding: {ticket.subject}'
                     WholesaleNotification.objects.create(
                         user_id=ticket.wholesale_user_id,
                         type=WholesaleNotification.Type.GENERAL,
-                        title=f'New reply on Ticket #{ticket.id}',
-                        message=f'You received a new response regarding: {ticket.subject}',
+                        title=notif_title,
+                        message=notif_msg,
                         metadata={'ticket_id': ticket.id, 'icon': 'support_agent', 'message_count': 1}
                     )
             elif ticket.user:
@@ -306,11 +309,14 @@ def notify_on_ticket_message(sender, instance, created, **kwargs):
                         metadata={'ticket_id': ticket.id, 'icon': 'support_agent', 'message_count': count}
                     )
                 else:
+                    is_new = (ticket.messages.count() <= 1)
+                    notif_title = f'New Support Ticket #{ticket.id}' if is_new else f'New reply on Ticket #{ticket.id}'
+                    notif_msg = f'Support Team created a ticket: "{ticket.subject}"' if is_new else f'You received a new response regarding: {ticket.subject}'
                     Notification.objects.create(
                         user=ticket.user,
                         type='ticket_reply',
-                        title=f'New reply on Ticket #{ticket.id}',
-                        message=f'You received a new response regarding: {ticket.subject}',
+                        title=notif_title,
+                        message=notif_msg,
                         metadata={'ticket_id': ticket.id, 'icon': 'support_agent', 'message_count': 1}
                     )
         else:

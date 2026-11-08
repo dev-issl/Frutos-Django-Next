@@ -5,6 +5,9 @@ import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import ProductCard from '@/app/components/ProductCard'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
+import { useSession } from 'next-auth/react'
+import { useAuth } from '@/app/context/AuthContext'
+import { getFrutasCategoryName, checkIsInternalWholesale } from '@/lib/categoryHelper'
 
 const SORT_OPTIONS = ['Promotional first', 'Price: Low to High', 'Price: High to Low', 'Newest arrivals']
 
@@ -127,10 +130,19 @@ function Pagination({ currentPage, totalPages, onPageChange }) {
 //   initialProducts — array of products fetched server-side from the API
 //   categories      — ['All', 'Fruits', 'Vegetables', ...] from the API
 //   productClasses  — ['Class A', 'Class B', ...] from site settings
-export default function ProductListingClient({ initialProducts = [], categories = [], productClasses = [] }) {
+export default function ProductListingClient({ 
+  initialProducts = [], 
+  categories = [], 
+  productClasses = [],
+  isInternalWholesaleUser: initialIsInternalWholesale = false 
+}) {
 
   const [products, setProducts] = useState(initialProducts)
   const [cats, setCats] = useState(categories)
+
+  const { data: session } = useSession()
+  const { user } = useAuth()
+  const isInternalWholesale = initialIsInternalWholesale || checkIsInternalWholesale(session, user)
 
   const fetchFresh = useCallback(async () => {
     try {
@@ -157,11 +169,24 @@ export default function ProductListingClient({ initialProducts = [], categories 
   const searchParams = useSearchParams()
   const initialCatParam = searchParams.get('category')
 
-  const CATEGORY_PILLS = ['All Produce', ...categories.filter(c => c.name !== 'All' && c.name !== 'On Sale').map(c => c.name)]
+  const CATEGORY_PILLS = useMemo(() => {
+    const currentCats = cats && cats.length > 0 ? cats : categories
+    return ['All Produce', ...currentCats.filter(c => c.name !== 'All' && c.name !== 'On Sale').map(c => c.name)]
+  }, [cats, categories])
 
-  const initCat = initialCatParam && CATEGORY_PILLS.includes(initialCatParam) ? initialCatParam : 'All Produce'
+  const frutasCatName = useMemo(() => getFrutasCategoryName(CATEGORY_PILLS), [CATEGORY_PILLS])
+
+  const defaultCategory = (isInternalWholesale && frutasCatName) ? frutasCatName : 'All Produce'
+  const initCat = initialCatParam && CATEGORY_PILLS.includes(initialCatParam) ? initialCatParam : defaultCategory
 
   const [activeCategory, setActiveCategory]   = useState(initCat)
+  const userManuallyChangedCat = useRef(Boolean(initialCatParam))
+
+  useEffect(() => {
+    if (isInternalWholesale && frutasCatName && !userManuallyChangedCat.current && !initialCatParam) {
+      setActiveCategory(frutasCatName)
+    }
+  }, [isInternalWholesale, frutasCatName, initialCatParam])
   const [activeSubCategory, setActiveSubCategory] = useState(null)
   const [activeVariant, setActiveVariant] = useState(null)
   const [sortBy, setSortBy]                   = useState('Promotional first')
@@ -238,11 +263,12 @@ export default function ProductListingClient({ initialProducts = [], categories 
   const visibleProducts = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
 
   function clearFilters() {
-    setActiveCategory('All Produce')
+    userManuallyChangedCat.current = true
+    setActiveCategory(isInternalWholesale && frutasCatName ? frutasCatName : 'All Produce')
     setActiveSubCategory(null)
     setActiveVariant(null)
     setInStockOnly(false)
-    setPriceMax(50)
+    setPriceMax(maxProductPrice)
     setSortBy('Promotional first')
     setSearchQuery('')
   }
@@ -328,6 +354,7 @@ export default function ProductListingClient({ initialProducts = [], categories 
               <div key={`sidebar-${cat}-${index}`}>
                 <button
                   onClick={() => {
+                    userManuallyChangedCat.current = true;
                     if (isActive && cat !== 'All Produce') {
                       setActiveCategory('All Produce');
                       setActiveSubCategory(null);

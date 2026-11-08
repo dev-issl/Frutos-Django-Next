@@ -181,7 +181,7 @@ export default function WholesaleProfileClient({ initialProfile, initialNotifica
             <OverviewTab profile={profile} orders={orders} setActiveTab={setActiveTab} />
           )}
           {activeTab === 'order_line' && (
-            <OrderLineTab accessToken={accessToken} />
+            <OrderLineTab accessToken={accessToken} isInternalWholesale={isInternalWholesale} />
           )}
           {activeTab === 'account_info' && (
             <AccountInfoTab 

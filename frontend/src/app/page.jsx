@@ -10,6 +10,7 @@ import OffersSection      from '@/app/components/OffersSection'
 import { getProducts, getCategories, getOffers } from '@/lib/api_product'
 import { getHomepageData }            from '@/lib/api_homepage'
 import { normalizeFeatureCards, normalizeSteps } from '@/app/config/homepageIcons'
+import { checkIsInternalWholesale }   from '@/lib/categoryHelper'
 
 import { auth } from '@/auth'
 
@@ -33,6 +34,8 @@ export default async function HomePage() {
   const featureCards = normalizeFeatureCards(feature_cards)
   const normalizedSteps = normalizeSteps(steps)
 
+  const isInternalWholesale = checkIsInternalWholesale(session)
+
   return (
     <>
       <HeroSection
@@ -45,6 +48,7 @@ export default async function HomePage() {
         <ProductGrid
           initialProducts={products}
           categories={categories}
+          isInternalWholesaleUser={isInternalWholesale}
         />
         <WeekendBox />
         <LeftoverPackBanner banner={leftover_banner} />

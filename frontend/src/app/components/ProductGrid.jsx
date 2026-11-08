@@ -1,19 +1,37 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-// import { products, categories } from '@/app/data/products'
+import { useSession } from 'next-auth/react'
+import { useAuth } from '@/app/context/AuthContext'
+import { getFrutasCategoryName, checkIsInternalWholesale } from '@/lib/categoryHelper'
 
 import { getProducts, getCategories } from '@/lib/api_product'
 
 import ProductCard from '@/app/components/ProductCard'
 import Link from 'next/link'
 
-
-
-export default function ProductGrid({ initialProducts = [], categories = [] }) {
+export default function ProductGrid({ 
+  initialProducts = [], 
+  categories = [], 
+  isInternalWholesaleUser: initialIsInternalWholesale = false 
+}) {
   const [products, setProducts] = useState(initialProducts)
-  const [active, setActive] = useState('All')
+  const { data: session } = useSession()
+  const { user } = useAuth()
+  const isInternalWholesale = initialIsInternalWholesale || checkIsInternalWholesale(session, user)
+
+  const frutasCat = useMemo(() => getFrutasCategoryName(categories), [categories])
+
+  const [active, setActive] = useState(() => (initialIsInternalWholesale && frutasCat) ? frutasCat : 'All')
+  const userManuallyChangedRef = useRef(false)
+
+  useEffect(() => {
+    if (isInternalWholesale && frutasCat && !userManuallyChangedRef.current) {
+      setActive(frutasCat)
+    }
+  }, [isInternalWholesale, frutasCat])
+
   const [notified, setNotified] = useState({})
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 8
@@ -46,7 +64,10 @@ export default function ProductGrid({ initialProducts = [], categories = [] }) {
             return (
               <button
                 key={`${cat}-${index}`}
-                onClick={() => setActive(cat)}
+                onClick={() => {
+                  userManuallyChangedRef.current = true
+                  setActive(cat)
+                }}
                 className="shrink-0 rounded-full transition-all duration-200"
                 style={{
                   fontSize: '12.5px',
@@ -85,7 +106,7 @@ export default function ProductGrid({ initialProducts = [], categories = [] }) {
 
           {/* See All — visible on both mobile and desktop */}
           <Link
-            href="/shop"
+            href={isInternalWholesale && frutasCat ? `/shop?category=${encodeURIComponent(frutasCat)}` : "/shop"}
             className="flex items-center gap-1 hover:underline"
             style={{ fontSize: '13px', fontWeight: 500, color: '#00694C', whiteSpace: 'nowrap' }}
           >

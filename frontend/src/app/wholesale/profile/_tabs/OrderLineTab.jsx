@@ -9,8 +9,9 @@ import { signOut } from 'next-auth/react'
 import { useCart } from '@/app/context/CartContext'
 import { siteSettingsService } from '@/app/dashboard/_lib/services'
 import SearchableSelect from '@/app/dashboard/_components/SearchableSelect'
+import { getFrutasCategoryName } from '@/lib/categoryHelper'
 
-export default function OrderLineTab({ accessToken }) {
+export default function OrderLineTab({ accessToken, isInternalWholesale = false }) {
   const router = useRouter()
   const { clearCart, addItem } = useCart()
   const [products, setProducts] = useState([])
@@ -47,6 +48,13 @@ export default function OrderLineTab({ accessToken }) {
         ])
         setCategories(catsRes || [])
         setProducts(prodsRes || [])
+
+        if (isInternalWholesale) {
+          const frutasCat = getFrutasCategoryName(catsRes || [])
+          if (frutasCat) {
+            setActiveCategory(frutasCat)
+          }
+        }
       } catch (err) {
         if (err.message && err.message.includes('401')) {
           console.warn('Session expired (401), logging out...')

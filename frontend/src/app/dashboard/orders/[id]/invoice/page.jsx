@@ -225,19 +225,128 @@ function A4Invoice({ order, items, subtotal, total, shipping, storeName, logoUrl
 }
 
 /* ─── Wholesale Invoice Layout ─── */
-function WholesaleInvoice({ order, items, storeName, allProducts = [] }) {
-  const productsByCategoryAndSub = allProducts.reduce((acc, p) => {
-    const cat = p.category_name || (p.category && p.category.name) || "Uncategorized";
-    const subcat = p.sub_category_name || (p.sub_category && p.sub_category.name) || "Others";
-    
-    if (!acc[cat]) acc[cat] = {};
-    if (!acc[cat][subcat]) acc[cat][subcat] = [];
-    acc[cat][subcat].push(p);
+function WholesaleInvoice({ order, items, total, storeName, allProducts = [] }) {
+  // Helpers
+  const formatClass = (val) => {
+    if (!val) return "";
+    return String(val)
+      .replace(/^(class|clase)\s+/i, "")
+      .replace(/^calidad\s+/i, "")
+      .trim();
+  };
+
+  const cleanUnit = (unit) => {
+    if (!unit) return "KG";
+    return String(unit).replace(/^per\s+/i, "").trim().toUpperCase();
+  };
+
+  const formatPrice = (val) => {
+    if (val === undefined || val === null || val === "") return "";
+    const num = Number(val);
+    if (isNaN(num)) return "";
+    return num.toLocaleString(undefined, {
+      minimumFractionDigits: num % 1 === 0 ? 0 : 2,
+      maximumFractionDigits: 2,
+    });
+  };
+
+  const getCategoryPriority = (name = "") => {
+    const norm = String(name)
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+    if (
+      norm.includes("frutas y verduras") ||
+      norm.includes("frutas") ||
+      norm.includes("verduras") ||
+      norm.includes("fruta") ||
+      norm.includes("verdura") ||
+      norm.includes("fruit")
+    ) {
+      return 0; // Highest priority: FRUTAS Y VERDURAS always first
+    }
+    return 1;
+  };
+
+  const orderedItemsMap = items.reduce((acc, item) => {
+    if (item && item.product) {
+      acc[item.product] = item;
+      acc[String(item.product)] = item;
+    }
     return acc;
   }, {});
 
-  const orderedItemsMap = items.reduce((acc, item) => {
-    acc[item.product] = item;
+  // Determine if this order is External Wholesale or Internal Wholesale
+  const getWholesaleType = (o) => {
+    const ut = (o?.user_type || o?.wholesale_user_type || o?.wholesale_user?.user_type || "").toUpperCase();
+    if (ut === "RESTAURANT" || ut === "EXTERNAL_WHOLESALE" || ut.includes("RESTAURANT") || ut.includes("EXTERNAL")) {
+      return "EXTERNAL";
+    }
+    if (ut === "WHOLESALER" || ut === "INTERNAL_WHOLESALE" || ut === "WHOLESALE" || ut.includes("INTERNAL")) {
+      return "INTERNAL";
+    }
+    if (o?.is_wholesale_order) {
+      const ct = (o?.customer_type || o?.shop_type || "").toUpperCase();
+      if (ct.includes("RESTAURANT") || ct.includes("EXTERNAL")) return "EXTERNAL";
+      return "INTERNAL";
+    }
+    return "INTERNAL";
+  };
+
+  const isExternalWholesale = getWholesaleType(order) === "EXTERNAL";
+  const isInternalWholesale = !isExternalWholesale;
+
+  // For External Wholesale: ONLY take products that were actually ordered in this order!
+  // For Internal Wholesale: full warehouse picking catalogue
+  let targetProducts = [];
+  if (isExternalWholesale) {
+    const productsInOrder = allProducts.filter(
+      (p) => !!orderedItemsMap[p.id] || !!orderedItemsMap[String(p.id)]
+    );
+    const foundIds = new Set(productsInOrder.map((p) => String(p.id)));
+
+    // Ensure any ordered item not found in allProducts is still rendered
+    const missingItems = items.filter(
+      (it) => it && it.product && !foundIds.has(String(it.product))
+    );
+    const syntheticProducts = missingItems.map((it) => ({
+      id: it.product,
+      name: it.product_name || "Ordered Product",
+      category_name: it.category_name || "FRUTAS Y VERDURAS",
+      sub_category_name: it.sub_category_name || "General",
+      variant: it.size_name || it.variant || "",
+      wholesale_unit: it.size_name || it.unit || "KG",
+      wholesale_price: it.unit_price,
+    }));
+
+    targetProducts = [...productsInOrder, ...syntheticProducts];
+  } else {
+    // For Internal Wholesale: full catalogue picking list
+    const foundIds = new Set(allProducts.map((p) => String(p.id)));
+    const missingItems = items.filter(
+      (it) => it && it.product && !foundIds.has(String(it.product))
+    );
+    const syntheticProducts = missingItems.map((it) => ({
+      id: it.product,
+      name: it.product_name || "Ordered Product",
+      category_name: it.category_name || "FRUTAS Y VERDURAS",
+      sub_category_name: it.sub_category_name || "General",
+      variant: it.size_name || it.variant || "",
+      wholesale_unit: it.size_name || it.unit || "KG",
+      wholesale_price: it.unit_price,
+    }));
+    targetProducts = [...allProducts, ...syntheticProducts];
+  }
+
+  // Group by Category and Subcategory
+  const productsByCategoryAndSub = targetProducts.reduce((acc, p) => {
+    const cat = (p.category_name || (p.category && p.category.name) || "FRUTAS Y VERDURAS").trim();
+    const subcat = (p.sub_category_name || (p.sub_category && p.sub_category.name) || "General").trim();
+
+    if (!acc[cat]) acc[cat] = {};
+    if (!acc[cat][subcat]) acc[cat][subcat] = [];
+    acc[cat][subcat].push(p);
     return acc;
   }, {});
 
@@ -247,114 +356,165 @@ function WholesaleInvoice({ order, items, storeName, allProducts = [] }) {
 
   return (
     <div className="bg-white border border-slate-200 rounded-lg shadow-sm max-w-4xl mx-auto print:shadow-none print:border-0 print:max-w-none">
-      <div className="p-4 print:p-8" style={{ minHeight: "297mm", margin: "0 auto" }}>
+      <div className="p-3 sm:p-4 print:p-6" style={{ minHeight: "297mm", margin: "0 auto" }}>
         
-        {/* Simple Header matching the paper photo */}
-        <div className="flex justify-between items-end border-b-2 border-black pb-2 mb-4">
-          <h1 className="text-sm font-bold text-black uppercase tracking-wide">
-            Tienda: {storeName}
-          </h1>
-          <div className="text-sm font-bold text-black">
+        {/* Simple Header */}
+        <div className="flex justify-between items-end border-b-2 border-black pb-1.5 mb-3">
+          <div className="flex items-center gap-2">
+            <h1 className="text-sm font-bold text-black uppercase tracking-wide">
+              Tienda: {storeName}
+            </h1>
+            <span className={`px-1.5 py-0.5 text-[9px] font-bold rounded uppercase tracking-wider ${
+              isExternalWholesale ? "bg-purple-100 text-purple-800" : "bg-emerald-100 text-emerald-800"
+            }`}>
+              {isExternalWholesale ? "External Wholesale" : "Internal Wholesale"}
+            </span>
+          </div>
+          <div className="text-xs font-bold text-black">
             #{order.order_number} {orderDate && `| Fecha: ${orderDate}`}
           </div>
         </div>
 
-        {/* Items Grid (Warehouse Picking List) */}
-        <div className="mb-4">
+        {/* Items Grid (Warehouse Picking List / Compact Invoice) */}
+        <div className="mb-4 space-y-3">
           {Object.keys(productsByCategoryAndSub).length > 0 ? (
             Object.entries(productsByCategoryAndSub)
-              .sort((a, b) => {
-                const hasOrderedA = Object.values(a[1]).some(sub => sub.some(p => orderedItemsMap[p.id]));
-                const hasOrderedB = Object.values(b[1]).some(sub => sub.some(p => orderedItemsMap[p.id]));
+              .sort(([catA, subA], [catB, subB]) => {
+                // 1. "FRUTAS Y VERDURAS" always first
+                const prioA = getCategoryPriority(catA);
+                const prioB = getCategoryPriority(catB);
+                if (prioA !== prioB) return prioA - prioB;
+
+                // 2. Categories with ordered products come before un-ordered ones
+                const hasOrderedA = Object.values(subA).some(sub => sub.some(p => orderedItemsMap[p.id] || orderedItemsMap[String(p.id)]));
+                const hasOrderedB = Object.values(subB).some(sub => sub.some(p => orderedItemsMap[p.id] || orderedItemsMap[String(p.id)]));
                 if (hasOrderedA && !hasOrderedB) return -1;
                 if (!hasOrderedA && hasOrderedB) return 1;
 
-                const nameA = a[0].toLowerCase();
-                const nameB = b[0].toLowerCase();
-                
-                const getPriority = (name) => {
-                  if (name.includes('fruit')) return 1;
-                  if (name.includes('groc')) return 2;
-                  return 3;
-                };
-
-                const prioA = getPriority(nameA);
-                const prioB = getPriority(nameB);
-
-                if (prioA !== prioB) return prioA - prioB;
-                return nameA.localeCompare(nameB);
+                return catA.localeCompare(catB);
               })
               .map(([category, subcategories]) => (
-              <div key={category} className="break-inside-avoid mb-2">
+              <div key={category} className="break-inside-avoid">
                 {/* Category Header */}
-                <div className="bg-slate-200 print:bg-slate-200 border-b-2 border-slate-300 px-3 py-1 mb-2 rounded-t-sm">
-                  <h4 className="text-[12px] font-black text-slate-800 uppercase tracking-widest">
+                <div className="bg-slate-200 print:bg-slate-200 border-b border-slate-300 px-2.5 py-0.5 mb-1.5 rounded-t-sm flex items-center justify-between">
+                  <h4 className="text-[11px] font-black text-slate-800 uppercase tracking-widest">
                     {category}
                   </h4>
                 </div>
                 
                 {Object.entries(subcategories)
-                  .sort((a, b) => {
-                    const hasOrderedA = a[1].some(p => orderedItemsMap[p.id]);
-                    const hasOrderedB = b[1].some(p => orderedItemsMap[p.id]);
+                  .sort(([subA, prodsA], [subB, prodsB]) => {
+                    const hasOrderedA = prodsA.some(p => orderedItemsMap[p.id] || orderedItemsMap[String(p.id)]);
+                    const hasOrderedB = prodsB.some(p => orderedItemsMap[p.id] || orderedItemsMap[String(p.id)]);
                     if (hasOrderedA && !hasOrderedB) return -1;
                     if (!hasOrderedA && hasOrderedB) return 1;
 
-                    if (a[0] === "Others") return 1;
-                    if (b[0] === "Others") return -1;
-                    return a[0].localeCompare(b[0]);
+                    if (subA === "General" || subA === "Others") return 1;
+                    if (subB === "General" || subB === "Others") return -1;
+                    return subA.localeCompare(subB);
                   })
                   .map(([subcat, prods]) => (
-                    <div key={subcat} className="mb-3">
-                      <div className="bg-slate-50 print:bg-slate-50 border border-b-0 border-slate-300 px-2 py-0.5 rounded-t-sm inline-block">
-                        <h5 className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">
+                    <div key={subcat} className="mb-2">
+                      <div className="bg-slate-100 print:bg-slate-100 border border-b-0 border-slate-300 px-2 py-0.5 rounded-t-sm inline-block">
+                        <h5 className="text-[9.5px] font-bold text-slate-700 uppercase tracking-wider">
                           {subcat}
                         </h5>
                       </div>
-                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 border-l border-t border-slate-300">
-                        {prods.sort((p1, p2) => {
-                          const o1 = orderedItemsMap[p1.id] ? 1 : 0;
-                          const o2 = orderedItemsMap[p2.id] ? 1 : 0;
-                          if (o1 !== o2) return o2 - o1;
-                          return p1.name.localeCompare(p2.name);
-                        }).map(p => {
-                          const ordered = orderedItemsMap[p.id];
-                          return (
-                            <div key={p.id} className={`flex border-r border-b border-slate-300 text-[11px] min-h-[44px] ${ordered ? 'bg-slate-50 print:bg-slate-50' : 'bg-white'}`}>
-                              {/* Name (Left side) */}
-                              <div className="flex-1 px-1.5 py-1 flex flex-col justify-center min-w-0 border-r border-slate-300 border-dashed leading-normal">
-                                <span className={`uppercase ${ordered ? "font-bold text-slate-900 text-[11px]" : "text-slate-700 text-[11px]"}`} title={p.name}>
-                                  {p.name}
-                                </span>
-                                {ordered && (
-                                  <div className="flex items-center gap-1 mt-[2px] flex-wrap">
-                                    {p.variant && (
-                                      <span className="inline-block bg-slate-800 text-white px-1.5 py-[2px] rounded-[3px] text-[9px] font-bold tracking-wide shrink-0">
-                                        {p.variant}
+
+                      {/* Compact Grid with No Empty Spaces */}
+                      <div className={`grid ${
+                        isExternalWholesale 
+                          ? "grid-cols-1 sm:grid-cols-2 md:grid-cols-3" 
+                          : "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4"
+                      } border-l border-t border-slate-300`}>
+                        {prods
+                          .sort((p1, p2) => {
+                            const o1 = (orderedItemsMap[p1.id] || orderedItemsMap[String(p1.id)]) ? 1 : 0;
+                            const o2 = (orderedItemsMap[p2.id] || orderedItemsMap[String(p2.id)]) ? 1 : 0;
+                            if (o1 !== o2) return o2 - o1;
+                            return p1.name.localeCompare(p2.name);
+                          })
+                          .map((p) => {
+                            const ordered = orderedItemsMap[p.id] || orderedItemsMap[String(p.id)];
+                            const classCode = formatClass(p.variant || (ordered && ordered.size_name) || p.quality);
+                            const unitCode = cleanUnit(p.wholesale_unit || p.unit || (ordered && ordered.size_name) || "KG");
+                            const rawPrice = ordered ? (ordered.unit_price || p.wholesale_price || p.price) : (p.wholesale_price || p.price);
+                            const priceStr = formatPrice(rawPrice);
+
+                            return (
+                              <div
+                                key={p.id}
+                                className={`flex items-center justify-between border-r border-b border-slate-300 px-2 py-1 text-[11px] leading-tight ${
+                                  ordered ? "bg-slate-50 print:bg-slate-50 font-medium" : "bg-white"
+                                }`}
+                                style={{ minHeight: "30px" }}
+                              >
+                                {/* Name, Quantity, Class, Price all compact in one flow */}
+                                <div className="flex items-center gap-1.5 flex-wrap min-w-0 flex-1 py-0.5">
+                                  <span
+                                    className={`uppercase truncate ${
+                                      ordered ? "font-bold text-slate-900 text-[11px]" : "text-slate-700 text-[10.5px]"
+                                    }`}
+                                    title={p.name}
+                                  >
+                                    {p.name}
+                                  </span>
+
+                                  {ordered && (
+                                    <div className="inline-flex items-center gap-1 shrink-0">
+                                      {/* Quantity right next to name */}
+                                      <span className="inline-flex items-center px-1.5 py-[1px] bg-slate-200/90 print:bg-slate-200 text-slate-900 rounded font-black text-[10px] whitespace-nowrap">
+                                        {ordered.quantity} {unitCode}
                                       </span>
-                                    )}
-                                    <span className="text-slate-900 font-bold text-[10px]">
-                                      €{Number(ordered.unit_price || p.wholesale_price || p.price).toLocaleString()}
-                                    </span>
+
+                                      {/* Class: just A, B, C */}
+                                      {classCode && (
+                                        <span className="inline-flex items-center px-1 py-[1px] bg-slate-800 print:bg-slate-800 text-white rounded font-black text-[9px] uppercase tracking-tight shrink-0">
+                                          {classCode}
+                                        </span>
+                                      )}
+
+                                      {/* Price */}
+                                      {priceStr && (
+                                        <span className="text-slate-900 font-black text-[10.5px] whitespace-nowrap">
+                                          €{priceStr}
+                                        </span>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Internal wholesale un-ordered item check area */}
+                                {!ordered && (
+                                  <div className="w-7 shrink-0 flex items-center justify-end pl-1">
+                                    <span className="w-5 h-3.5 border border-dashed border-slate-300 rounded-[2px]" />
                                   </div>
                                 )}
                               </div>
-                              {/* Quantity Box (Right side partition) */}
-                              <div className={`w-14 shrink-0 flex items-center justify-center font-black text-xs text-center px-1 ${ordered ? 'text-slate-900 bg-slate-200/50 print:bg-slate-200/50' : 'text-slate-300'}`}>
-                                {ordered ? `${ordered.quantity} ${(p.wholesale_unit || p.unit || 'pcs').replace(/^per\s+/i, '')}` : ""}
-                              </div>
-                            </div>
-                          );
-                        })}
+                            );
+                          })}
                       </div>
                     </div>
                   ))}
               </div>
             ))
           ) : (
-            <div className="p-8 text-center text-slate-400 border border-slate-200 rounded-lg">Loading products grid...</div>
+            <div className="p-8 text-center text-slate-400 border border-slate-200 rounded-lg">
+              {isExternalWholesale ? "No ordered wholesale products found for this order." : "Loading products grid..."}
+            </div>
           )}
         </div>
+
+        {/* Order Summary / Totals */}
+        <div className="flex justify-between items-center border-t-2 border-black pt-2 mt-4 text-xs font-bold">
+          <div className="text-slate-600">
+            Total Items: <span className="text-black">{items.length}</span>
+          </div>
+          <div className="text-right text-sm">
+            Total: <span className="text-black font-black">€{Number(total || order.total_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          </div>
+        </div>
+
       </div>
     </div>
   );
@@ -405,8 +565,15 @@ export default function InvoicePage() {
     { revalidateOnFocus: false }
   );
 
+  const isWholesaleOrder = Boolean(
+    order?.is_wholesale_order ||
+    order?.user_type === "WHOLESALER" ||
+    order?.user_type === "RESTAURANT" ||
+    order?.wholesale_user_id
+  );
+
   const { data: productsRaw } = useSWR(
-    order?.is_wholesale_order ? "all-products-invoice" : null,
+    isWholesaleOrder ? "all-products-invoice" : null,
     () => productsService.list({ page_size: 1000 }),
     { revalidateOnFocus: false }
   );
@@ -476,44 +643,100 @@ export default function InvoicePage() {
   const generateExportData = () => {
     let exportData = [];
     
-    if (order?.is_wholesale_order) {
+    if (isWholesaleOrder) {
+        const getWholesaleType = (o) => {
+          const ut = (o?.user_type || o?.wholesale_user_type || o?.wholesale_user?.user_type || "").toUpperCase();
+          if (ut === "RESTAURANT" || ut === "EXTERNAL_WHOLESALE" || ut.includes("RESTAURANT") || ut.includes("EXTERNAL")) {
+            return "EXTERNAL";
+          }
+          if (ut === "WHOLESALER" || ut === "INTERNAL_WHOLESALE" || ut === "WHOLESALE" || ut.includes("INTERNAL")) {
+            return "INTERNAL";
+          }
+          if (o?.is_wholesale_order) {
+            const ct = (o?.customer_type || o?.shop_type || "").toUpperCase();
+            if (ct.includes("RESTAURANT") || ct.includes("EXTERNAL")) return "EXTERNAL";
+            return "INTERNAL";
+          }
+          return "INTERNAL";
+        };
+        const isExternalWholesale = getWholesaleType(order) === "EXTERNAL";
+
         const orderedItemsMap = items.reduce((acc, item) => {
-          acc[item.product] = item;
+          if (item && item.product) {
+            acc[item.product] = item;
+            acc[String(item.product)] = item;
+          }
           return acc;
         }, {});
+
+        const formatClass = (val) => {
+          if (!val) return "";
+          return String(val)
+            .replace(/^(class|clase)\s+/i, "")
+            .replace(/^calidad\s+/i, "")
+            .trim();
+        };
+
+        const cleanUnit = (unit) => {
+          if (!unit) return "KG";
+          return String(unit).replace(/^per\s+/i, "").trim().toUpperCase();
+        };
+
+        const getCategoryPriority = (name = "") => {
+          const norm = String(name)
+            .trim()
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "");
+          if (
+            norm.includes("frutas y verduras") ||
+            norm.includes("frutas") ||
+            norm.includes("verduras") ||
+            norm.includes("fruta") ||
+            norm.includes("verdura") ||
+            norm.includes("fruit")
+          ) {
+            return 0;
+          }
+          return 1;
+        };
         
-        const sortedProducts = [...allProducts].sort((a, b) => {
-           const getPriority = (name) => {
-             if (name.includes('fruit')) return 1;
-             if (name.includes('groc')) return 2;
-             return 3;
-           };
-           const catA = String(a.category_name || a.category || "Uncategorized").toLowerCase();
-           const catB = String(b.category_name || b.category || "Uncategorized").toLowerCase();
+        let targetList = allProducts;
+        if (isExternalWholesale) {
+          targetList = allProducts.filter(p => !!orderedItemsMap[p.id] || !!orderedItemsMap[String(p.id)]);
+        }
+
+        const sortedProducts = [...targetList].sort((a, b) => {
+           const catA = String(a.category_name || a.category || "FRUTAS Y VERDURAS");
+           const catB = String(b.category_name || b.category || "FRUTAS Y VERDURAS");
            
-           const prioA = getPriority(catA);
-           const prioB = getPriority(catB);
+           const prioA = getCategoryPriority(catA);
+           const prioB = getCategoryPriority(catB);
            if (prioA !== prioB) return prioA - prioB;
-           if (catA !== catB) return catA.localeCompare(catB);
+           if (catA.toLowerCase() !== catB.toLowerCase()) return catA.localeCompare(catB);
            
-           const subA = String(a.subcategory_name || a.subcategory || "Other").toLowerCase();
-           const subB = String(b.subcategory_name || b.subcategory || "Other").toLowerCase();
-           if (subA !== subB) return subA.localeCompare(subB);
+           const subA = String(a.subcategory_name || a.subcategory || "General");
+           const subB = String(b.subcategory_name || b.subcategory || "General");
+           if (subA.toLowerCase() !== subB.toLowerCase()) return subA.localeCompare(subB);
            
            return String(a.name || "").localeCompare(String(b.name || ""));
         });
 
         exportData = sortedProducts.map((p, index) => {
-            const ordered = orderedItemsMap[p.id];
+            const ordered = orderedItemsMap[p.id] || orderedItemsMap[String(p.id)];
+            const classVal = formatClass(p.variant || (ordered && ordered.size_name) || p.quality);
+            const unitVal = cleanUnit(p.wholesale_unit || p.unit || (ordered && ordered.size_name) || "KG");
+            const priceVal = ordered ? (ordered.unit_price || p.wholesale_price || p.price) : (p.wholesale_price || p.price);
+
             return {
                 "#": index + 1,
-                "Category": p.category_name || p.category || "Uncategorized",
+                "Category": p.category_name || p.category || "FRUTAS Y VERDURAS",
                 "Product Name": p.name || 'Unknown Product',
-                "Variant": p.variant || "—",
-                "Price": Number(ordered?.unit_price || p.wholesale_price || p.price).toFixed(2),
+                "Class": classVal || "—",
+                "Price": Number(priceVal || 0).toFixed(2),
                 "Order Qty": ordered ? ordered.quantity : "",
-                "Unit": ordered ? (p.wholesale_unit || p.unit || 'pcs').replace(/^per\s+/i, '') : "",
-                "Amount": ordered ? (ordered.quantity * Number(ordered.unit_price || p.wholesale_price || p.price)).toFixed(2) : ""
+                "Unit": ordered ? unitVal : "",
+                "Amount": ordered ? (ordered.quantity * Number(priceVal || 0)).toFixed(2) : ""
             };
         });
         
@@ -640,7 +863,7 @@ export default function InvoicePage() {
         </Link>
         <div className="flex items-center gap-2">
           {/* Format Toggle - Hidden for Wholesale */}
-          {!order.is_wholesale_order && (
+          {!isWholesaleOrder && (
             <div className="flex items-center border border-slate-200 rounded-md overflow-hidden">
               <button
                 onClick={() => setInvoiceType("a4")}
@@ -728,7 +951,7 @@ export default function InvoicePage() {
 
       {/* Invoice Content */}
       <div id="invoice-print-area" className="w-full">
-        {order.is_wholesale_order ? (
+        {isWholesaleOrder ? (
           <WholesaleInvoice order={order} items={items} subtotal={subtotal} total={total} shipping={shipping} storeName={storeName} logoUrl={logoUrl} contactEmail={contactEmail} contactPhone={contactPhone} contactAddress={contactAddress} allProducts={allProducts} />
         ) : invoiceType === "pos" ? (
           <POSInvoice order={order} items={items} subtotal={subtotal} total={total} shipping={shipping} storeName={storeName} logoUrl={logoUrl} contactEmail={contactEmail} contactPhone={contactPhone} contactAddress={contactAddress} />

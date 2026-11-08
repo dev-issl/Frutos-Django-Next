@@ -1,6 +1,7 @@
 // src/app/shop/page.jsx
 import { getProducts, getCategories, getCategoryObjects } from '@/lib/api_product'
 import ProductListingClient from './ProductListingClient'
+import { checkIsInternalWholesale } from '@/lib/categoryHelper'
 
 import { Suspense } from 'react'
 import { auth } from '@/auth'
@@ -33,12 +34,15 @@ export default async function MarketPage() {
     productClasses = productClassesStr.split(',').map(s => s.trim()).filter(Boolean)
   }
 
+  const isInternalWholesale = checkIsInternalWholesale(session)
+
   return (
     <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading Market...</div>}>
       <ProductListingClient
         initialProducts={products}
         categories={categoryObjects}
         productClasses={productClasses}
+        isInternalWholesaleUser={isInternalWholesale}
       />
     </Suspense>
   )

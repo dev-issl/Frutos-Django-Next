@@ -357,27 +357,40 @@ class SupportTicketSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'status', 'admin_response', 'created_at', 'updated_at']
 
     def get_userName(self, obj):
+        if getattr(obj, 'wholesale_user', None):
+            try:
+                ws = obj.wholesale_user
+                return (ws.contact_name or ws.business_name or ws.email or 'Wholesale User').strip()
+            except Exception:
+                pass
         if obj.wholesale_user_id:
             try:
                 from django.db import connection
                 with connection.cursor() as cursor:
-                    cursor.execute("SELECT contact_name, business_name FROM wholesale_wholesaleuser WHERE CAST(id AS TEXT) = CAST(%s AS TEXT)", [obj.wholesale_user_id])
+                    cursor.execute("SELECT contact_name, business_name FROM wholesale_wholesaleuser WHERE CAST(id AS TEXT) = CAST(%s AS TEXT)", [str(obj.wholesale_user_id)])
                     row = cursor.fetchone()
                     if row:
                         return row[0] or row[1]
             except Exception:
                 pass
         try:
-            return obj.user.name if obj.user else 'Unknown'
+            if obj.user:
+                return (getattr(obj.user, 'name', None) or getattr(obj.user, 'full_name', None) or obj.user.email or 'Unknown').strip()
+            return 'Unknown'
         except Exception:
             return 'Unknown'
 
     def get_userEmail(self, obj):
+        if getattr(obj, 'wholesale_user', None):
+            try:
+                return obj.wholesale_user.email
+            except Exception:
+                pass
         if obj.wholesale_user_id:
             try:
                 from django.db import connection
                 with connection.cursor() as cursor:
-                    cursor.execute("SELECT email FROM wholesale_wholesaleuser WHERE CAST(id AS TEXT) = CAST(%s AS TEXT)", [obj.wholesale_user_id])
+                    cursor.execute("SELECT email FROM wholesale_wholesaleuser WHERE CAST(id AS TEXT) = CAST(%s AS TEXT)", [str(obj.wholesale_user_id)])
                     row = cursor.fetchone()
                     if row:
                         return row[0]

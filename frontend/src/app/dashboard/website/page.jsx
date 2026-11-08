@@ -766,6 +766,7 @@ function NavbarConfigForm() {
   const [data, setData] = useState({
     brand_name: { id: null, value: "" },
     navbar_logo_url: { id: null, value: "", file: null },
+    chat_logo_url: { id: null, value: "", file: null },
   });
 
   const [loading, setLoading] = useState(true);
@@ -791,6 +792,7 @@ function NavbarConfigForm() {
       const newData = {
         brand_name: { id: null, value: "" },
         navbar_logo_url: { id: null, value: "", file: null },
+        chat_logo_url: { id: null, value: "", file: null },
       };
       
       items.forEach(item => {
@@ -840,6 +842,12 @@ function NavbarConfigForm() {
       }
 
       toast.success("Navbar config saved successfully");
+      if (typeof window !== 'undefined') {
+        const logo = data.chat_logo_url?.value || data.navbar_logo_url?.value;
+        window.dispatchEvent(new CustomEvent('site_settings_updated', {
+          detail: { chat_logo_url: logo, navbar_logo_url: data.navbar_logo_url?.value }
+        }));
+      }
       fetchData();
       router.refresh();
     } catch (e) {
@@ -866,33 +874,69 @@ function NavbarConfigForm() {
               <input type="text" value={data.brand_name.value} onChange={(e) => handleChange("brand_name", e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-slate-900" placeholder="e.g., El Árbol" />
             </div>
 
-            <div className="flex flex-col">
-              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">Navbar Logo</label>
-              <div className="relative w-full min-h-[160px] border-2 border-dashed border-slate-200 hover:border-slate-300 rounded-xl overflow-hidden group transition-all bg-slate-50 hover:bg-slate-100 flex flex-col items-center justify-center cursor-pointer p-4">
-                {data.navbar_logo_url.value ? (
-                  <div className="flex flex-col items-center gap-2 w-full">
-                    <img src={data.navbar_logo_url.value} alt="Navbar Logo Preview" className="h-24 object-contain bg-[#00694C]/5 rounded-lg shadow-sm px-4" />
-                    <span className="text-[10px] text-slate-500 font-medium px-2 py-1 bg-white rounded-md shadow-sm">Click to change</span>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center gap-2 text-slate-400 group-hover:text-slate-600 transition-colors">
-                    <ImageIcon className="w-8 h-8" />
-                    <span className="text-xs font-medium">Upload Logo</span>
-                    <span className="text-[10px]">Recommended: Transparent PNG</span>
-                  </div>
-                )}
-                <input 
-                  type="file" 
-                  accept="image/*" 
-                  onChange={(e) => {
-                    const file = e.target.files[0];
-                    if (file) {
-                      setData(prev => ({ ...prev, navbar_logo_url: { ...prev.navbar_logo_url, value: URL.createObjectURL(file), file } }));
-                    }
-                  }} 
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
-                  title="Upload Navbar Logo"
-                />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Navbar Logo */}
+              <div className="flex flex-col">
+                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">Navbar Logo</label>
+                <div className="relative w-full min-h-[160px] border-2 border-dashed border-slate-200 hover:border-slate-300 rounded-xl overflow-hidden group transition-all bg-slate-50 hover:bg-slate-100 flex flex-col items-center justify-center cursor-pointer p-4">
+                  {data.navbar_logo_url.value ? (
+                    <div className="flex flex-col items-center gap-2 w-full">
+                      <img src={data.navbar_logo_url.value} alt="Navbar Logo Preview" className="h-24 object-contain bg-[#00694C]/5 rounded-lg shadow-sm px-4" />
+                      <span className="text-[10px] text-slate-500 font-medium px-2 py-1 bg-white rounded-md shadow-sm">Click to change</span>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-2 text-slate-400 group-hover:text-slate-600 transition-colors">
+                      <ImageIcon className="w-8 h-8" />
+                      <span className="text-xs font-medium">Upload Logo</span>
+                      <span className="text-[10px]">Recommended: Transparent PNG</span>
+                    </div>
+                  )}
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        setData(prev => ({ ...prev, navbar_logo_url: { ...prev.navbar_logo_url, value: URL.createObjectURL(file), file } }));
+                      }
+                    }} 
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
+                    title="Upload Navbar Logo"
+                  />
+                </div>
+              </div>
+
+              {/* Chat Widget Logo / Icon */}
+              <div className="flex flex-col">
+                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+                  Chat Widget Logo / Icon
+                </label>
+                <div className="relative w-full min-h-[160px] border-2 border-dashed border-slate-200 hover:border-slate-300 rounded-xl overflow-hidden group transition-all bg-slate-50 hover:bg-slate-100 flex flex-col items-center justify-center cursor-pointer p-4">
+                  {data.chat_logo_url?.value ? (
+                    <div className="flex flex-col items-center gap-2 w-full">
+                      <img src={data.chat_logo_url.value} alt="Chat Logo Preview" className="h-20 w-20 object-contain bg-[#00694C]/5 rounded-full p-2 shadow-sm" />
+                      <span className="text-[10px] text-slate-500 font-medium px-2 py-1 bg-white rounded-md shadow-sm">Click to change</span>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-2 text-slate-400 group-hover:text-slate-600 transition-colors text-center px-4">
+                      <ImageIcon className="w-8 h-8" />
+                      <span className="text-xs font-medium">Upload Chat Logo</span>
+                      <span className="text-[10px]">Dashboard & Staff Chat Icon (ডিফল্ট: Navbar Logo)</span>
+                    </div>
+                  )}
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        setData(prev => ({ ...prev, chat_logo_url: { ...prev.chat_logo_url, value: URL.createObjectURL(file), file } }));
+                      }
+                    }} 
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
+                    title="Upload Chat Widget Logo"
+                  />
+                </div>
               </div>
             </div>
           </div>

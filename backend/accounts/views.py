@@ -1326,14 +1326,19 @@ class SupportTicketListCreateView(generics.ListCreateAPIView):
         return SupportTicket.objects.filter(user=self.request.user)
 
 
-class AdminSupportTicketListView(generics.ListAPIView):
+class AdminSupportTicketListView(generics.ListCreateAPIView):
     """
     GET  /api/auth/admin/tickets/  — list ALL tickets for admin
+    POST /api/auth/admin/tickets/  — create tickets for user(s) or wholesale user(s)
     """
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = AdminSupportTicketSerializer
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_queryset(self):
+        if not (self.request.user.is_staff or getattr(self.request.user, 'user_type', None) in ['ADMIN', 'SELLER']):
+            return SupportTicket.objects.none()
+
         qs = SupportTicket.objects.all()
         status_param = self.request.query_params.get('status')
         if status_param and status_param != 'all':
@@ -1351,10 +1356,188 @@ class AdminSupportTicketListView(generics.ListAPIView):
             qs = qs.filter(
                 Q(subject__icontains=search) | 
                 Q(user__email__icontains=search) |
-                Q(user__name__icontains=search)
+                Q(user__name__icontains=search) |
+                Q(wholesale_user__email__icontains=search) |
+                Q(wholesale_user__contact_name__icontains=search) |
+                Q(wholesale_user__business_name__icontains=search)
             )
             
         return qs
+
+    def post(self, request, *args, **kwargs):
+        if not (request.user.is_staff or getattr(request.user, 'user_type', None) in ['ADMIN', 'SELLER']):
+            return Response({'detail': 'Forbidden: Admin access required.'}, status=403)
+
+        subject = (request.data.get('subject') or '').strip()
+        description = (request.data.get('description') or request.data.get('message') or '').strip()
+        category = (request.data.get('category') or 'GENERAL').upper().strip()
+        priority = (request.data.get('priority') or 'MEDIUM').upper().strip()
+
+        if not subject:
+            return Response({'detail': 'Subject is required.'}, status=400)
+        if not description:
+            return Response({'detail': 'Message / Description is required.'}, status=400)
+
+        # Validate category and priority against model choices
+        valid_categories = dict(SupportTicket.CATEGORY_CHOICES).keys()
+        if category not in valid_categories:
+            category = 'GENERAL'
+        valid_priorities = dict(SupportTicket.PRIORITY_CHOICES).keys()
+        if priority not in valid_priorities:
+            priority = 'MEDIUM'
+
+        recipient_type = request.data.get('recipient_type', 'wholesale')
+        target_mode = request.data.get('target_mode', 'selected')
+        group_filter = request.data.get('group_filter', 'all')
+
+        import json
+        from wholesale.models import WholesaleUser
+        User = get_user_model()
+
+        def parse_id_list(raw_val):
+            if not raw_val:
+                return []
+            if isinstance(raw_val, list):
+                out = []
+                for item in raw_val:
+                    if isinstance(item, str) and item.startswith('[') and item.endswith(']'):
+                        try:
+                            out.extend(json.loads(item))
+                        except Exception:
+                            out.append(item)
+                    else:
+                        out.append(item)
+                return out
+            if isinstance(raw_val, str):
+                raw_val = raw_val.strip()
+                if raw_val.startswith('[') and raw_val.endswith(']'):
+                    try:
+                        return json.loads(raw_val)
+                    except Exception:
+                        pass
+                return [x.strip() for x in raw_val.split(',') if x.strip()]
+            return [raw_val]
+
+        wholesale_targets = []
+        normal_targets = []
+
+        if target_mode == 'group':
+            if recipient_type == 'wholesale':
+                ws_qs = WholesaleUser.objects.filter(is_active=True)
+                if group_filter == 'internal':
+                    ws_qs = ws_qs.filter(user_type='WHOLESALER')
+                elif group_filter == 'external':
+                    ws_qs = ws_qs.filter(user_type='RESTAURANT')
+                wholesale_targets = list(ws_qs)
+            elif recipient_type == 'normal':
+                normal_targets = list(User.objects.filter(is_active=True, user_type='CUSTOMER'))
+        else: # 'selected' mode
+            raw_ws = request.data.getlist('wholesale_user_ids') if hasattr(request.data, 'getlist') and request.data.getlist('wholesale_user_ids') else request.data.get('wholesale_user_ids')
+            raw_users = request.data.getlist('user_ids') if hasattr(request.data, 'getlist') and request.data.getlist('user_ids') else request.data.get('user_ids')
+
+            ws_ids = parse_id_list(raw_ws)
+            u_ids = parse_id_list(raw_users)
+
+            clean_ws_ids = []
+            for item in ws_ids:
+                s = str(item).strip()
+                if s.startswith('ws_'):
+                    s = s[3:]
+                if s:
+                    clean_ws_ids.append(s)
+
+            clean_u_ids = []
+            for item in u_ids:
+                try:
+                    clean_u_ids.append(int(item))
+                except (ValueError, TypeError):
+                    pass
+
+            if clean_ws_ids:
+                wholesale_targets = list(WholesaleUser.objects.filter(id__in=clean_ws_ids))
+            if clean_u_ids:
+                normal_targets = list(User.objects.filter(id__in=clean_u_ids))
+
+        if not wholesale_targets and not normal_targets:
+            return Response({'detail': 'No recipients found for the selected criteria.'}, status=400)
+
+        # Cache file uploads into memory buffers for distribution across multiple tickets
+        from django.core.files.base import ContentFile
+        from .models import SupportTicketMessage, SupportTicketImage, SupportTicketMessageAttachment
+        from .utils import broadcast_ticket_message
+
+        uploaded_files = request.FILES.getlist('images')
+        file_data_list = []
+        for f in uploaded_files:
+            try:
+                f.seek(0)
+                content = f.read()
+                file_data_list.append((f.name, content))
+            except Exception as e:
+                print(f"[AdminSupportTicketListView] file read error: {e}")
+
+        created_tickets = []
+
+        # Create tickets for wholesale targets
+        for ws_user in wholesale_targets:
+            ticket = SupportTicket.objects.create(
+                wholesale_user=ws_user,
+                subject=subject,
+                description=description,
+                category=category,
+                priority=priority,
+                status='OPEN',
+                responded_by=request.user,
+            )
+            msg = SupportTicketMessage.objects.create(
+                ticket=ticket,
+                sender=request.user,
+                message=description,
+                is_admin_reply=True,
+            )
+            for fname, fcontent in file_data_list:
+                SupportTicketImage.objects.create(ticket=ticket, image=ContentFile(fcontent, name=fname))
+                SupportTicketMessageAttachment.objects.create(message=msg, file=ContentFile(fcontent, name=fname))
+
+            try:
+                broadcast_ticket_message(msg)
+            except Exception:
+                pass
+            created_tickets.append(ticket)
+
+        # Create tickets for normal targets
+        for norm_user in normal_targets:
+            ticket = SupportTicket.objects.create(
+                user=norm_user,
+                subject=subject,
+                description=description,
+                category=category,
+                priority=priority,
+                status='OPEN',
+                responded_by=request.user,
+            )
+            msg = SupportTicketMessage.objects.create(
+                ticket=ticket,
+                sender=request.user,
+                message=description,
+                is_admin_reply=True,
+            )
+            for fname, fcontent in file_data_list:
+                SupportTicketImage.objects.create(ticket=ticket, image=ContentFile(fcontent, name=fname))
+                SupportTicketMessageAttachment.objects.create(message=msg, file=ContentFile(fcontent, name=fname))
+
+            try:
+                broadcast_ticket_message(msg)
+            except Exception:
+                pass
+            created_tickets.append(ticket)
+
+        serializer = AdminSupportTicketSerializer(created_tickets, many=True)
+        return Response({
+            'detail': f'Successfully created {len(created_tickets)} support ticket(s).',
+            'count': len(created_tickets),
+            'tickets': serializer.data
+        }, status=201)
 
 
 class AdminSupportTicketDetailView(generics.RetrieveUpdateDestroyAPIView):

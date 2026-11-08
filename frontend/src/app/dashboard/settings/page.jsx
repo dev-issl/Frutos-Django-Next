@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect } from "react";
 import { Save, Store, Globe, Bell, Shield, Palette, Mail, Loader2 } from "lucide-react";
@@ -57,6 +57,9 @@ export default function SettingsPage() {
       });
       await Promise.all(updates);
       toast.success("Settings saved");
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('site_settings_updated', { detail: localSettings }));
+      }
       mutate();
     } catch (err) {
       toast.error(err?.message || "Save failed");
@@ -166,6 +169,16 @@ export default function SettingsPage() {
                   <div className="mt-2 flex items-center gap-3">
                     <img src={getSetting("logo_url")} alt="Logo preview" className="h-10 object-contain border border-slate-200 rounded p-1 bg-white" onError={e => e.target.style.display="none"} />
                     <p className="text-xs text-slate-400">Logo preview</p>
+                  </div>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Chat Widget Logo URL</label>
+                <input type="url" value={getSetting("chat_logo_url", "")} onChange={(e) => setSetting("chat_logo_url", e.target.value)} placeholder="https://example.com/chat-icon.png (Optional - defaults to Store/Navbar Logo)" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-gray-400" />
+                {getSetting("chat_logo_url") && (
+                  <div className="mt-2 flex items-center gap-3">
+                    <img src={getSetting("chat_logo_url")} alt="Chat Logo preview" className="h-10 w-10 object-contain border border-slate-200 rounded-full p-1 bg-white" onError={e => e.target.style.display="none"} />
+                    <p className="text-xs text-slate-400">Chat Logo preview</p>
                   </div>
                 )}
               </div>

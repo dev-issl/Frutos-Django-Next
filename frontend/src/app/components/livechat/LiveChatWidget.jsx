@@ -13,10 +13,47 @@ const WS_BASE = API_BASE_URL.replace('http://', 'ws://').replace('https://', 'ws
 
 
 
-export default function LiveChatWidget() {
+export default function LiveChatWidget({ initialLogoUrl = '' }) {
   const pathname = usePathname();
   const [user, setUser] = useState(null);
   const [accessToken, setAccessToken] = useState(null);
+  const [logoUrl, setLogoUrl] = useState(initialLogoUrl || '/favicon_orrange.jpeg');
+  const [imgError, setImgError] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadLogo() {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/website/site-config/?t=${Date.now()}`);
+        if (res.ok) {
+          const data = await res.json();
+          const l = data?.chat_logo_url || data?.navbar_logo_url || data?.logo_url || data?.favicon_url;
+          if (l && isMounted) {
+            setLogoUrl(l);
+            setImgError(false);
+          }
+        }
+      } catch (err) {
+        // fallback
+      }
+    }
+    loadLogo();
+
+    const handleUpdate = (e) => {
+      const newLogo = e?.detail?.chat_logo_url || e?.detail?.navbar_logo_url || e?.detail?.logo_url || e?.detail?.favicon_url;
+      if (newLogo) {
+        setLogoUrl(newLogo);
+        setImgError(false);
+      } else {
+        loadLogo();
+      }
+    };
+    window.addEventListener('site_settings_updated', handleUpdate);
+    return () => {
+      isMounted = false;
+      window.removeEventListener('site_settings_updated', handleUpdate);
+    };
+  }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -391,11 +428,27 @@ export default function LiveChatWidget() {
       <div className={`fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[9999] transition-all duration-300 ${isOpen ? 'opacity-0 scale-50 pointer-events-none' : 'opacity-100 scale-100'}`}>
         <button
           onClick={() => setIsOpen(true)}
-          className="relative flex items-center justify-center w-[50px] h-[50px] sm:w-[54px] sm:h-[54px] bg-emerald-600 text-white rounded-full shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer"
+          className="relative flex items-center justify-center w-[54px] h-[54px] sm:w-[60px] sm:h-[60px] rounded-full shadow-lg hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer p-0 border-0 bg-transparent overflow-visible group"
+          title="Chat Support"
         >
-          <MessageCircle size={30} />
+          {logoUrl && !imgError ? (
+            <div className="w-full h-full rounded-full overflow-hidden bg-white shadow-md flex items-center justify-center">
+              <img
+                src={logoUrl}
+                alt="Chat Logo"
+                className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105"
+                onError={() => setImgError(true)}
+              />
+            </div>
+          ) : (
+            <div className="w-full h-full rounded-full bg-emerald-600 flex items-center justify-center text-white shadow-md">
+              <MessageCircle size={32} />
+            </div>
+          )}
+
+          {/* Unread Message Count Badge at top right */}
           {totalUnread > 0 && (
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] sm:text-xs font-bold w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center rounded-full border-2 border-white animate-bounce">
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] sm:text-xs font-bold w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center rounded-full border-2 border-white animate-bounce shadow-md">
               {totalUnread}
             </span>
           )}
@@ -411,7 +464,12 @@ export default function LiveChatWidget() {
         {/* --- CONTACTS LIST VIEW --- */}
         <div className="flex flex-col h-full bg-white text-gray-900">
           <div className="pt-4 pb-2 px-4 flex justify-between items-center">
-            <h3 className="font-bold text-2xl">Chats</h3>
+            <h3 className="font-bold text-2xl flex items-center gap-2">
+              {logoUrl && !imgError && (
+                <img src={logoUrl} alt="Logo" className="w-7 h-7 object-contain rounded-full shadow-sm bg-slate-50 p-0.5" />
+              )}
+              Chats
+            </h3>
             <button 
               onClick={() => setIsOpen(false)}
               className="p-2 -mr-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"

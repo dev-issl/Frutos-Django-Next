@@ -95,7 +95,9 @@ export default async function RootLayout({ children }) {
                 </main>
                 <FloatingCart />
                 <CartSidebar />
-                <LiveChatWidget />
+                <LiveChatWidget 
+                  initialLogoUrl={siteConfig?.chat_logo_url || siteConfig?.navbar_logo_url || siteConfig?.favicon_url || '/favicon_orrange.jpeg'} 
+                />
               </CartProvider>
               <FooterWrapper config={siteConfig} />
             </WishlistProvider>
