@@ -241,13 +241,16 @@ export async function wholesaleRegister(payload) {
     return data
 }
 
-export async function wholesaleLogin(email, password) {
+export async function wholesaleLogin(emailOrPayload, password) {
+    const body = typeof emailOrPayload === 'object' && emailOrPayload !== null
+        ? emailOrPayload
+        : { email: emailOrPayload, password }
     const res = await fetch(`${WS_BASE}/auth/login/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify(body),
     })
-    const data = await res.json()
+    const data = await res.json().catch(() => ({}))
     if (!res.ok) throw data
     return data
 }

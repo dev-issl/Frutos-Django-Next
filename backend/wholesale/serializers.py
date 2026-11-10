@@ -100,15 +100,19 @@ class WholesaleLoginSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         from django.db.models import Q
-        login_val = (attrs.get('wholesale_id') or attrs.get('email') or '').strip()
-        password = attrs.get('password')
         login_type = (attrs.get('login_type') or '').strip().lower()
+        if login_type == 'wholesale_id':
+            login_val = (attrs.get('wholesale_id') or attrs.get('email') or '').strip()
+        else:
+            login_val = (attrs.get('email') or attrs.get('wholesale_id') or '').strip()
+        password = attrs.get('password')
 
         if not login_val:
             raise serializers.ValidationError('Email or Wholesale ID is required.')
 
-        # If login_type is 'wholesale_id' or wholesale_id field is supplied or no password supplied:
-        is_id_only_login = (login_type == 'wholesale_id') or bool(attrs.get('wholesale_id')) or not password
+        # ID-only login (without password):
+        # Triggered when no password is provided, or login_type is explicitly 'wholesale_id' without password
+        is_id_only_login = not password or (login_type == 'wholesale_id' and not password)
 
         if is_id_only_login:
             user = WholesaleUser.objects.filter(

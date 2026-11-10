@@ -2,7 +2,7 @@
 // src/app/wholesale/WholesaleModal.jsx
 import { useState, useEffect, useRef } from 'react'
 import { signIn, signOut, useSession } from 'next-auth/react'
-import { wholesaleRegister } from '@/lib/api'
+import { wholesaleRegister, wholesaleLogin } from '@/lib/api'
 import { getStores, haversineDistance } from '@/lib/stores-api'
 import { useAuth } from '@/app/context/AuthContext'
 import { MapPin, Search, ChevronDown, Check, X, Navigation, Briefcase, TrendingUp } from 'lucide-react'
@@ -1139,14 +1139,40 @@ export default function WholesaleModal({ isOpen, onClose }) {
         await signOut({ redirect: false })
       }
 
+      const identifier = loginMode === 'wholesale_id'
+        ? loginData.wholesaleId.trim()
+        : loginData.email.trim()
+
+      const payload = {
+        login_type: loginMode === 'wholesale_id' ? 'wholesale_id' : 'email',
+      }
+      if (loginMode === 'wholesale_id') {
+        payload.wholesale_id = identifier
+      } else {
+        payload.email = identifier
+        payload.password = loginData.password
+      }
+
+      // Check with backend API first to display exact error message
+      try {
+        await wholesaleLogin(payload)
+      } catch (err) {
+        const errorMsg = err?.non_field_errors?.[0] || err?.detail || err?.error || err?.message || (
+          loginMode === 'wholesale_id'
+            ? 'Wholesale ID not found or account deactivated. Please try again.'
+            : 'Invalid email or password. Please try again.'
+        )
+        setServerError(errorMsg)
+        return
+      }
+
       const credentials = loginMode === 'wholesale_id'
         ? {
-            wholesaleId: loginData.wholesaleId.trim(),
-            email: loginData.wholesaleId.trim(),
+            wholesaleId: identifier,
             loginType: 'wholesale_id',
           }
         : {
-            email: loginData.email.trim(),
+            email: identifier,
             password: loginData.password,
             loginType: 'email',
           }

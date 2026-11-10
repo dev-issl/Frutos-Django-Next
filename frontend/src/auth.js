@@ -29,9 +29,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 const isIdLogin = credentials.loginType === 'wholesale_id' || (!credentials.password && Boolean(credentials.wholesaleId || identifier.toUpperCase().startsWith('WHL-')))
 
                 const payload = {
-                    email: identifier,
-                    wholesale_id: identifier,
                     login_type: isIdLogin ? 'wholesale_id' : 'email',
+                }
+                if (isIdLogin || identifier.toUpperCase().startsWith('WHL-')) {
+                    payload.wholesale_id = identifier
+                    payload.email = identifier
+                } else {
+                    payload.email = identifier
                 }
                 if (credentials.password) {
                     payload.password = credentials.password
