@@ -1,5 +1,5 @@
 // src/app/api/products-fresh/route.js
-import { getProducts, getCategories } from '@/lib/api_product'
+import { getProducts, getCategoryObjects } from '@/lib/api_product'
 import { NextResponse } from 'next/server'
 import { auth } from '@/auth'
 
@@ -19,7 +19,7 @@ export async function GET(request) {
 
         const [products, categories] = await Promise.all([
             getProducts({ token }),
-            getCategories(),
+            getCategoryObjects(),
         ])
         return NextResponse.json({ products, categories })
     } catch (err) {

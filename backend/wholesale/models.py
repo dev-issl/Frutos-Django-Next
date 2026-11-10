@@ -46,6 +46,26 @@ class ApplicationStatus(models.TextChoices):
     SUSPENDED = 'suspended', 'Suspended'
 
 
+def generate_unique_wholesale_id():
+    """Generate a unique sequential Wholesale ID like WHL-1001, WHL-1002, etc."""
+    prefix = 'WHL-'
+    start_num = 1000
+    try:
+        existing_ids = WholesaleUser.objects.filter(wholesale_id__startswith=prefix).values_list('wholesale_id', flat=True)
+        max_num = start_num
+        for wid in existing_ids:
+            if wid and str(wid).startswith(prefix):
+                part = str(wid)[len(prefix):]
+                if part.isdigit():
+                    val = int(part)
+                    if val > max_num:
+                        max_num = val
+        return f"{prefix}{max_num + 1}"
+    except Exception:
+        import random
+        return f"{prefix}{random.randint(1001, 9999)}"
+
+
 class WholesaleUser(AbstractBaseUser, PermissionsMixin):
     # UUID primary key to match production database
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -78,9 +98,27 @@ class WholesaleUser(AbstractBaseUser, PermissionsMixin):
         db_index=True
     )
 
+    wholesale_id = models.CharField(
+        max_length=50,
+        unique=True,
+        blank=True,
+        null=True,
+        db_index=True,
+        help_text="Unique Wholesale Identifier (e.g. WHL-1001)"
+    )
+    store = models.ForeignKey(
+        'stores.Store',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='wholesale_users',
+        help_text="Preferred / fulfillment store for this wholesale user"
+    )
+
     # Business info
     business_name = models.CharField(max_length=200)
     contact_name = models.CharField(max_length=200)
+    cif = models.CharField(max_length=100, blank=True, null=True, help_text="CIF / Tax ID number")
     trade_license_number = models.CharField(max_length=100, blank=True, null=True)
     phone = models.CharField(max_length=50, blank=True)
     postcode = models.CharField(max_length=20, blank=True)
@@ -140,6 +178,22 @@ class WholesaleUser(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return f"{self.business_name} <{self.email}>"
+
+    def save(self, *args, **kwargs):
+        # Do NOT auto-generate wholesale_id. Wholesale IDs are created/assigned only by admins.
+        # Clean wholesale_id: empty or whitespace string becomes None to preserve uniqueness on null values.
+        if self.wholesale_id:
+            cleaned = str(self.wholesale_id).strip()
+            self.wholesale_id = cleaned if cleaned else None
+        else:
+            self.wholesale_id = None
+
+        # Auto-sync cif and trade_license_number for consistency and backward compatibility
+        if self.cif and not self.trade_license_number:
+            self.trade_license_number = self.cif
+        elif self.trade_license_number and not self.cif:
+            self.cif = self.trade_license_number
+        super().save(*args, **kwargs)
 
     @property
     def is_approved(self):

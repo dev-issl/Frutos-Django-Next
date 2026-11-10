@@ -3,7 +3,9 @@
 import { useState, useEffect, useRef } from 'react'
 import { signIn, signOut, useSession } from 'next-auth/react'
 import { wholesaleRegister } from '@/lib/api'
+import { getStores, haversineDistance } from '@/lib/stores-api'
 import { useAuth } from '@/app/context/AuthContext'
+import { MapPin, Search, ChevronDown, Check, X, Navigation, Briefcase, TrendingUp } from 'lucide-react'
 
 function PineTree() {
   return (
@@ -58,6 +60,16 @@ const BUSINESS_TYPES = [
   'Food Retail / Grocery', 'Dark Kitchen', 'Café / Bakery', 'Other',
 ]
 
+const BUSINESS_TYPE_DETAILS = {
+  'Restaurant / Bistro': { subtitle: 'Dining, bistro & casual restaurants', tag: 'Foodservice' },
+  'Hotel / Resort': { subtitle: 'Hotels, resorts & breakfast banquets', tag: 'Hospitality' },
+  'Catering Company': { subtitle: 'Event caterers & bulk food supply', tag: 'Catering' },
+  'Food Retail / Grocery': { subtitle: 'Grocery stores, supermarkets & deli', tag: 'Retail' },
+  'Dark Kitchen': { subtitle: 'Cloud kitchens & delivery brands', tag: 'Cloud Kitchen' },
+  'Café / Bakery': { subtitle: 'Coffee shops, artisanal bakeries & patisserie', tag: 'Café' },
+  'Other': { subtitle: 'Corporate, wholesale & general commercial', tag: 'Commercial' },
+}
+
 const BUSINESS_TYPE_VALUES = {
   'Restaurant / Bistro': 'restaurant', 'Hotel / Resort': 'hotel',
   'Catering Company': 'catering', 'Food Retail / Grocery': 'food_retail',
@@ -69,6 +81,13 @@ const VOLUME_RANGES = [
   '€3,000 – €7,000 / month', '€7,000+ / month',
 ]
 
+const VOLUME_DETAILS = {
+  '€400 – €1,000 / month': { subtitle: 'Starter wholesale tier (€400 min)', tag: 'Starter' },
+  '€1,000 – €3,000 / month': { subtitle: 'Regular wholesale volume tier', tag: 'Growth' },
+  '€3,000 – €7,000 / month': { subtitle: 'High volume bulk wholesale pricing', tag: 'Scale' },
+  '€7,000+ / month': { subtitle: 'Enterprise tier with dedicated logistics', tag: 'Enterprise' },
+}
+
 const VOLUME_VALUES = {
   '€400 – €1,000 / month': '400_1000',
   '€1,000 – €3,000 / month': '1000_3000',
@@ -77,8 +96,9 @@ const VOLUME_VALUES = {
 }
 
 const EMPTY_APPLY = {
-  businessName: '', contactName: '', tradeLicense: '', email: '', phone: '',
-  businessType: '', volume: '', postcode: '', password: '', accountType: 'RESTAURANT'
+  businessName: '', contactName: '', cif: '', tradeLicense: '', email: '', phone: '',
+  businessType: '', volume: '', postcode: '', password: '', accountType: 'RESTAURANT',
+  store: '',
 }
 
 
@@ -204,7 +224,7 @@ function WholesaleForgotPasswordFlow({ onBack, onSuccess }) {
             Verify OTP
           </button>
           <p style={{ fontSize: '13px', color: '#6D7A73', textAlign: 'center', marginTop: '14px' }}>
-            Didn't receive it?{' '}
+            Didn&apos;t receive it?{' '}
             <button type="button" onClick={handleResend} disabled={resendTimer > 0}
               style={{ color: resendTimer > 0 ? '#BCCAC1' : '#00694C', fontWeight: 600, background: 'none', border: 'none', cursor: resendTimer > 0 ? 'default' : 'pointer', padding: 0, fontSize: '13px', fontFamily: 'inherit' }}>
               {resendTimer > 0 ? `Resend in ${resendTimer}s` : 'Resend'}
@@ -266,27 +286,687 @@ function WholesaleForgotPasswordFlow({ onBack, onSuccess }) {
 }
 
 
+function CustomSelect({
+  name,
+  value,
+  onChange,
+  options,
+  details = {},
+  placeholder = "Select...",
+  hasError = false,
+  icon: Icon = null
+}) {
+  const [isOpen, setIsOpen] = useState(false)
+  const containerRef = useRef(null)
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (containerRef.current && !containerRef.current.contains(event.target)) {
+        setIsOpen(false)
+      }
+    }
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [isOpen])
+
+  const selectedDetail = value ? details[value] : null
+
+  return (
+    <div ref={containerRef} style={{ position: 'relative', zIndex: isOpen ? 60 : 1 }}>
+      {/* Trigger Button */}
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => setIsOpen(p => !p)}
+        onKeyDown={e => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            setIsOpen(p => !p)
+          } else if (e.key === 'Escape') {
+            setIsOpen(false)
+          }
+        }}
+        style={{
+          width: '100%',
+          padding: '10px 13px',
+          border: hasError
+            ? '1.5px solid #D94040'
+            : isOpen
+              ? '1.5px solid #00694C'
+              : '1.5px solid #C8D5CC',
+          borderRadius: '10px',
+          background: '#fff',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          cursor: 'pointer',
+          outline: 'none',
+          boxShadow: isOpen ? '0 0 0 3px rgba(0, 105, 76, 0.1)' : 'none',
+          transition: 'border-color 0.15s, box-shadow 0.15s',
+          boxSizing: 'border-box',
+          fontFamily: 'inherit',
+          userSelect: 'none',
+          gap: '10px'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: 1 }}>
+          {Icon && <Icon size={15} color={value ? '#00694C' : '#8A9991'} style={{ flexShrink: 0 }} />}
+          <div style={{ minWidth: 0, flex: 1 }}>
+            {value ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontSize: '13.5px', fontWeight: 600, color: '#151E13', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {value}
+                </span>
+                {selectedDetail?.tag && (
+                  <span style={{
+                    fontSize: '9.5px',
+                    fontWeight: 700,
+                    padding: '1px 6px',
+                    borderRadius: '4px',
+                    background: '#EAF2EC',
+                    color: '#00694C',
+                    flexShrink: 0
+                  }}>
+                    {selectedDetail.tag}
+                  </span>
+                )}
+              </div>
+            ) : (
+              <span style={{ fontSize: '13.5px', color: '#A0ADA6' }}>{placeholder}</span>
+            )}
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+          {value && (
+            <span
+              role="button"
+              tabIndex={0}
+              onClick={(e) => {
+                e.stopPropagation()
+                onChange({ target: { name, value: '' } })
+              }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '18px',
+                height: '18px',
+                borderRadius: '50%',
+                background: '#E2EDE6',
+                color: '#4A5B52',
+                cursor: 'pointer'
+              }}
+              title="Clear selection"
+            >
+              <X size={11} strokeWidth={2.5} />
+            </span>
+          )}
+          <ChevronDown
+            size={16}
+            color="#6D7A73"
+            style={{
+              transition: 'transform 0.2s ease',
+              transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)'
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Floating Options Panel */}
+      {isOpen && (
+        <div
+          className="ws-scroll"
+          style={{
+            position: 'absolute',
+            top: 'calc(100% + 5px)',
+            left: 0,
+            right: 0,
+            zIndex: 100,
+            background: '#ffffff',
+            borderRadius: '12px',
+            border: '1.5px solid #C8D5CC',
+            boxShadow: '0 14px 30px -4px rgba(21, 30, 19, 0.18), 0 4px 10px rgba(0, 0, 0, 0.04)',
+            overflow: 'hidden',
+            maxHeight: '230px',
+            overflowY: 'auto',
+            padding: '5px',
+            animation: 'wsSlideUp 0.15s ease'
+          }}
+        >
+          {options.map((opt) => {
+            const isSelected = opt === value
+            const d = details[opt]
+
+            return (
+              <div
+                key={opt}
+                onClick={() => {
+                  onChange({ target: { name, value: opt } })
+                  setIsOpen(false)
+                }}
+                style={{
+                  padding: '8px 10px',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  background: isSelected ? '#E7F1DF' : 'transparent',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '10px',
+                  marginTop: '2px',
+                  transition: 'background 0.12s'
+                }}
+                onMouseEnter={e => {
+                  if (!isSelected) e.currentTarget.style.background = '#F0F7F3'
+                }}
+                onMouseLeave={e => {
+                  if (!isSelected) e.currentTarget.style.background = 'transparent'
+                }}
+              >
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{
+                      fontSize: '13px',
+                      fontWeight: isSelected ? 700 : 500,
+                      color: isSelected ? '#00694C' : '#151E13'
+                    }}>
+                      {opt}
+                    </span>
+                    {d?.tag && (
+                      <span style={{
+                        fontSize: '9.5px',
+                        fontWeight: 600,
+                        padding: '1px 5px',
+                        borderRadius: '4px',
+                        background: isSelected ? '#00694C' : '#EAF2EC',
+                        color: isSelected ? '#ffffff' : '#00694C'
+                      }}>
+                        {d.tag}
+                      </span>
+                    )}
+                  </div>
+                  {d?.subtitle && (
+                    <p style={{
+                      fontSize: '11px',
+                      color: isSelected ? '#3A5A44' : '#6D7A73',
+                      margin: '2px 0 0',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      {d.subtitle}
+                    </p>
+                  )}
+                </div>
+
+                {isSelected && (
+                  <div style={{
+                    width: '18px',
+                    height: '18px',
+                    borderRadius: '50%',
+                    background: '#00694C',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0
+                  }}>
+                    <Check size={11} color="#fff" strokeWidth={3} />
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+
+const DEFAULT_USER_COORDS = { lat: 23.7500, lng: 90.3800 }
+
+function SearchableStoreSelect({ stores, value, onChange, userPostcode = '', placeholder = "Select preferred store (optional)..." }) {
+  const [isOpen, setIsOpen] = useState(false)
+  const [search, setSearch] = useState('')
+  const [userLocation, setUserLocation] = useState(DEFAULT_USER_COORDS)
+  const containerRef = useRef(null)
+  const searchInputRef = useRef(null)
+
+  const selectedStore = stores.find(s => String(s.id) === String(value))
+
+  // Retrieve user location for distance calculation with reliable fallback
+  useEffect(() => {
+    if (typeof window !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          if (pos?.coords?.latitude && pos?.coords?.longitude) {
+            setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude })
+          }
+        },
+        () => {
+          // Default fallback coordinates are already set in state
+        },
+        { timeout: 6000, enableHighAccuracy: false, maximumAge: 60000 }
+      )
+    }
+  }, [])
+
+  const getDistanceKm = (store) => {
+    if (!userLocation || store == null) return null
+    const lat = store.lat != null ? parseFloat(store.lat) : null
+    const lng = store.lng != null ? parseFloat(store.lng) : null
+    if (lat == null || lng == null || isNaN(lat) || isNaN(lng)) return null
+    return haversineDistance(userLocation.lat, userLocation.lng, lat, lng)
+  }
+
+  const formatDistanceKm = (km) => {
+    if (km == null || isNaN(km)) return null
+    if (km < 1) return `${km.toFixed(1)} km`
+    if (km < 10) return `${km.toFixed(1)} km`
+    return `${Math.round(km)} km`
+  }
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (containerRef.current && !containerRef.current.contains(event.target)) {
+        setIsOpen(false)
+      }
+    }
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [isOpen])
+
+  useEffect(() => {
+    if (isOpen && searchInputRef.current) {
+      const timer = setTimeout(() => {
+        searchInputRef.current?.focus()
+      }, 50)
+      return () => clearTimeout(timer)
+    }
+  }, [isOpen])
+
+  const cleanPostcode = (userPostcode || '').trim().toLowerCase()
+
+  const filteredStores = stores.filter(s => {
+    if (!search.trim()) return true
+    const q = search.toLowerCase()
+    const name = (s.name || '').toLowerCase()
+    const code = (s.storeCode || s.store_code || '').toLowerCase()
+    const city = (s.city || '').toLowerCase()
+    const address = (s.fullAddress || s.full_address || s.address || '').toLowerCase()
+    return name.includes(q) || code.includes(q) || city.includes(q) || address.includes(q)
+  })
+
+  // Sort stores by proximity (closest distance first)
+  const sortedStores = [...filteredStores].sort((a, b) => {
+    const distA = getDistanceKm(a)
+    const distB = getDistanceKm(b)
+    if (distA != null && distB != null) return distA - distB
+    if (distA != null) return -1
+    if (distB != null) return 1
+    return 0
+  })
+
+  const selectedDistKm = selectedStore ? getDistanceKm(selectedStore) : null
+  const selectedDistText = selectedDistKm != null ? formatDistanceKm(selectedDistKm) : null
+
+  return (
+    <div ref={containerRef} style={{ position: 'relative', zIndex: isOpen ? 50 : 1 }}>
+      {/* Trigger Field */}
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => setIsOpen(p => !p)}
+        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setIsOpen(p => !p); } }}
+        style={{
+          width: '100%',
+          padding: selectedStore ? '7px 12px' : '10px 13px',
+          border: isOpen ? '1.5px solid #00694C' : '1.5px solid #C8D5CC',
+          borderRadius: '10px',
+          background: '#fff',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          textAlign: 'left',
+          cursor: 'pointer',
+          outline: 'none',
+          boxShadow: isOpen ? '0 0 0 3px rgba(0, 105, 76, 0.1)' : 'none',
+          transition: 'border-color 0.15s, box-shadow 0.15s',
+          boxSizing: 'border-box',
+          fontFamily: 'inherit',
+          gap: '8px'
+        }}
+      >
+        {selectedStore ? (
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '13.5px', fontWeight: 600, color: '#151E13' }}>
+                {selectedStore.name}
+              </span>
+              {(selectedStore.storeCode || selectedStore.store_code) && (
+                <span style={{ fontSize: '10px', fontFamily: 'monospace', fontWeight: 700, background: '#E7F1DF', color: '#00694C', padding: '1px 6px', borderRadius: '4px' }}>
+                  {selectedStore.storeCode || selectedStore.store_code}
+                </span>
+              )}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
+              <MapPin size={12} color="#00694C" style={{ flexShrink: 0 }} />
+              <span style={{ fontSize: '11.5px', color: '#6D7A73', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {selectedStore.city ? `${selectedStore.city} • ` : ''}{selectedStore.fullAddress || selectedStore.full_address || selectedStore.address || 'Standard Location'}
+              </span>
+            </div>
+          </div>
+        ) : (
+          <span style={{ fontSize: '13.5px', color: '#9DAAA3' }}>{placeholder}</span>
+        )}
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+          {selectedDistText && (
+            <span style={{
+              fontSize: '11px',
+              fontWeight: 700,
+              color: '#00694C',
+              background: '#E7F1DF',
+              border: '1px solid #D1E5D5',
+              padding: '2px 7px',
+              borderRadius: '6px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '3.5px',
+              whiteSpace: 'nowrap'
+            }}>
+              <Navigation size={9} style={{ transform: 'rotate(45deg)' }} />
+              {selectedDistText}
+            </span>
+          )}
+
+          {selectedStore && (
+            <span
+              role="button"
+              tabIndex={0}
+              onClick={(e) => {
+                e.stopPropagation()
+                onChange({ target: { name: 'store', value: '' } })
+              }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '18px',
+                height: '18px',
+                borderRadius: '50%',
+                background: '#E2EDE6',
+                color: '#4A5B52',
+                cursor: 'pointer'
+              }}
+              title="Clear selection"
+            >
+              <X size={11} strokeWidth={2.5} />
+            </span>
+          )}
+          <ChevronDown
+            size={16}
+            color="#6D7A73"
+            style={{
+              transition: 'transform 0.2s ease',
+              transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)'
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Floating Searchable Dropdown */}
+      {isOpen && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 'calc(100% + 6px)',
+            left: 0,
+            right: 0,
+            zIndex: 100,
+            background: '#ffffff',
+            borderRadius: '12px',
+            border: '1.5px solid #C8D5CC',
+            boxShadow: '0 14px 30px -4px rgba(21, 30, 19, 0.18), 0 4px 10px rgba(0, 0, 0, 0.04)',
+            overflow: 'hidden',
+            animation: 'wsSlideUp 0.15s ease'
+          }}
+        >
+          {/* Search Input Box */}
+          <div style={{ padding: '8px 10px', borderBottom: '1px solid #EEF3F0', background: '#FAFCFB' }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '7px 10px',
+              background: '#fff',
+              border: '1.5px solid #00694C',
+              borderRadius: '8px'
+            }}>
+              <Search size={14} color="#00694C" style={{ flexShrink: 0 }} />
+              <input
+                ref={searchInputRef}
+                type="text"
+                placeholder="Search store name, city, address or code..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                style={{
+                  width: '100%',
+                  border: 'none',
+                  outline: 'none',
+                  fontSize: '12.5px',
+                  color: '#151E13',
+                  background: 'transparent',
+                  fontFamily: 'inherit'
+                }}
+              />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch('')}
+                  style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#9DAAA3', padding: 0 }}
+                >
+                  <X size={13} />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Stores List */}
+          <div style={{ maxHeight: '230px', overflowY: 'auto', padding: '6px' }}>
+            {/* Auto-Assign Option */}
+            <div
+              onClick={() => {
+                onChange({ target: { name: 'store', value: '' } })
+                setIsOpen(false)
+              }}
+              style={{
+                padding: '8px 10px',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                background: !value ? '#F0F7F3' : 'transparent',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                transition: 'background 0.12s'
+              }}
+              onMouseEnter={e => { if (value) e.currentTarget.style.background = '#F6FAF7' }}
+              onMouseLeave={e => { if (value) e.currentTarget.style.background = 'transparent' }}
+            >
+              <div>
+                <p style={{ fontSize: '13px', fontWeight: 600, color: !value ? '#00694C' : '#3A5A44', margin: 0 }}>
+                  Auto-Assign (Default Nearest Store)
+                </p>
+                <p style={{ fontSize: '11px', color: '#8A9991', margin: '2px 0 0' }}>
+                  Let system automatically assign the best fulfillment branch
+                </p>
+              </div>
+              {!value && <Check size={15} color="#00694C" strokeWidth={2.5} />}
+            </div>
+
+            {sortedStores.length === 0 ? (
+              <div style={{ padding: '20px 16px', textAlign: 'center', color: '#8A9991', fontSize: '12.5px' }}>
+                No stores found matching &ldquo;{search}&rdquo;
+              </div>
+            ) : (
+              sortedStores.map(st => {
+                const isSelected = String(st.id) === String(value)
+                const isNearUser = cleanPostcode && ((st.fullAddress || st.full_address || st.address || '') + ' ' + (st.city || '')).toLowerCase().includes(cleanPostcode)
+                const distKm = getDistanceKm(st)
+                const distText = formatDistanceKm(distKm)
+
+                return (
+                  <div
+                    key={st.id}
+                    onClick={() => {
+                      onChange({ target: { name: 'store', value: st.id } })
+                      setIsOpen(false)
+                    }}
+                    style={{
+                      padding: '8px 10px',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      background: isSelected ? '#E7F1DF' : 'transparent',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: '10px',
+                      marginTop: '2px',
+                      transition: 'background 0.12s'
+                    }}
+                    onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = '#F0F7F3' }}
+                    onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent' }}
+                  >
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: '13px', fontWeight: 600, color: isSelected ? '#00694C' : '#151E13' }}>
+                          {st.name}
+                        </span>
+                        {(st.storeCode || st.store_code) && (
+                          <span style={{
+                            fontSize: '9.5px',
+                            fontFamily: 'monospace',
+                            fontWeight: 700,
+                            padding: '1px 5px',
+                            borderRadius: '4px',
+                            background: isSelected ? '#00694C' : '#EAF2EC',
+                            color: isSelected ? '#fff' : '#00694C'
+                          }}>
+                            {st.storeCode || st.store_code}
+                          </span>
+                        )}
+                        {isNearUser && (
+                          <span style={{
+                            fontSize: '9.5px',
+                            fontWeight: 600,
+                            padding: '1px 6px',
+                            borderRadius: '4px',
+                            background: '#DEF7EC',
+                            color: '#03543F'
+                          }}>
+                            Near delivery postcode
+                          </span>
+                        )}
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
+                        <MapPin size={11} color="#00694C" style={{ flexShrink: 0 }} />
+                        <span style={{ fontSize: '11.5px', color: '#5C6E64', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {st.city ? `${st.city} • ` : ''}{st.fullAddress || st.full_address || st.address || 'Standard Location'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                      {distText && (
+                        <span style={{
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          color: isSelected ? '#00694C' : '#1b5e39',
+                          background: isSelected ? '#d0ebd8' : '#eaf6ee',
+                          border: isSelected ? '1px solid #9dd7ac' : '1px solid #cce8d4',
+                          padding: '2.5px 7px',
+                          borderRadius: '6px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '3.5px',
+                          whiteSpace: 'nowrap',
+                          fontFamily: 'inherit'
+                        }}>
+                          <Navigation size={10} style={{ transform: 'rotate(45deg)' }} />
+                          {distText}
+                        </span>
+                      )}
+
+                      {isSelected && (
+                        <div style={{ width: '18px', height: '18px', borderRadius: '50%', background: '#00694C', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <Check size={11} color="#fff" strokeWidth={3} />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )
+              })
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+
 export default function WholesaleModal({ isOpen, onClose }) {
   const { data: session } = useSession()
   const { user: normalUser, logout: normalLogout } = useAuth()
   const [step, setStep] = useState(1)  // 1=apply, 2=login, 3=success
+  const [loginMode, setLoginMode] = useState('wholesale_id') // 'wholesale_id' or 'email'
   const [showPass, setShowPass] = useState(false)
   const [errors, setErrors] = useState({})
   const [loading, setLoading] = useState(false)
   const [serverError, setServerError] = useState('')
   const [applyData, setApplyData] = useState(EMPTY_APPLY)
-  const [loginData, setLoginData] = useState({ email: '', password: '' })
+  const [loginData, setLoginData] = useState({ email: '', password: '', wholesaleId: '' })
+  const [stores, setStores] = useState([])
   const overlayRef = useRef(null)
+
+  useEffect(() => {
+    let isMounted = true
+    getStores()
+      .then(data => {
+        if (isMounted && Array.isArray(data)) {
+          setStores(data)
+        }
+      })
+      .catch(() => {})
+    return () => { isMounted = false }
+  }, [])
 
   const [showForgot, setShowForgot] = useState(false)
 
   // If user is already logged in via NextAuth, jump to success-like state
   const isLoggedIn = !!session?.user
 
+  const [prevOpen, setPrevOpen] = useState(isOpen)
+  if (isOpen !== prevOpen) {
+    setPrevOpen(isOpen)
+    if (isOpen) {
+      setStep(1)
+      setLoginMode('wholesale_id')
+      setErrors({})
+      setServerError('')
+      setApplyData(EMPTY_APPLY)
+      setLoginData({ email: '', password: '', wholesaleId: '' })
+    }
+  }
+
   useEffect(() => {
     if (isOpen) {
-      setStep(1); setErrors({}); setServerError('')
-      setApplyData(EMPTY_APPLY); setLoginData({ email: '', password: '' })
       document.body.style.overflow = 'hidden'
     } else {
       document.body.style.overflow = ''
@@ -304,22 +984,29 @@ export default function WholesaleModal({ isOpen, onClose }) {
 
   const handleApplyChange = (e) => {
     const { name, value } = e.target
-    setApplyData(p => ({ ...p, [name]: value }))
-    if (errors[name]) setErrors(p => ({ ...p, [name]: '' }))
+    setApplyData(p => ({
+      ...p,
+      [name]: value,
+      ...(name === 'cif' ? { tradeLicense: value } : {}),
+      ...(name === 'tradeLicense' ? { cif: value } : {})
+    }))
+    if (errors[name] || (name === 'cif' && errors.tradeLicense)) {
+      setErrors(p => ({ ...p, [name]: '', tradeLicense: '', cif: '' }))
+    }
     setServerError('')
   }
 
   const validateApply = () => {
     const e = {}
-    const tradeLicense = applyData.tradeLicense.trim()
+    const cif = (applyData.cif || applyData.tradeLicense || '').trim()
     const phone = applyData.phone.trim()
     const phonePattern = /^\+?[\d\s\-()]{7,25}$/
-    const tradePattern = /^[A-Za-z0-9\-\/\s]{4,100}$/
+    const cifPattern = /^[A-Za-z0-9\-\/\s]{4,100}$/
 
     if (!applyData.businessName.trim()) e.businessName = 'Required'
     if (!applyData.contactName.trim()) e.contactName = 'Required'
-    if (!tradeLicense) e.tradeLicense = 'Required'
-    else if (!tradePattern.test(tradeLicense)) e.tradeLicense = 'Enter a valid license number'
+    if (!cif) e.cif = 'CIF is required'
+    else if (!cifPattern.test(cif)) e.cif = 'Enter a valid CIF (e.g. B12345678)'
     if (!applyData.email.trim() || !/\S+@\S+\.\S+/.test(applyData.email)) e.email = 'Valid email required'
     if (!phone) e.phone = 'Required'
     else if (!phonePattern.test(phone)) e.phone = 'Enter a valid phone number'
@@ -338,17 +1025,22 @@ export default function WholesaleModal({ isOpen, onClose }) {
     setServerError('')
     try {
       // 1. Register with Django backend
+      const cifValue = (applyData.cif || applyData.tradeLicense || '').trim().toUpperCase()
       const payload = {
         email: applyData.email.toLowerCase(),
         password: applyData.password,
         business_name: applyData.businessName,
         contact_name: applyData.contactName,
-        trade_license_number: applyData.tradeLicense,
+        cif: cifValue,
+        trade_license_number: cifValue,
         phone: applyData.phone,
         postcode: applyData.postcode,
         business_type: BUSINESS_TYPE_VALUES[applyData.businessType] || 'other',
         monthly_volume: VOLUME_VALUES[applyData.volume] || '400_1000',
         user_type: applyData.accountType,
+      }
+      if (applyData.store) {
+        payload.store = applyData.store
       }
       await wholesaleRegister(payload)
 
@@ -373,7 +1065,8 @@ export default function WholesaleModal({ isOpen, onClose }) {
       const fieldMap = {
         business_name: 'businessName',
         contact_name: 'contactName',
-        trade_license_number: 'tradeLicense',
+        cif: 'cif',
+        trade_license_number: 'cif',
         phone: 'phone',
         postcode: 'postcode',
         business_type: 'businessType',
@@ -421,9 +1114,18 @@ export default function WholesaleModal({ isOpen, onClose }) {
   const handleLoginSubmit = async (e) => {
     e.preventDefault()
     const errs = {}
-    if (!loginData.email.trim()) errs.email = 'Required'
-    if (!loginData.password) errs.password = 'Required'
-    if (Object.keys(errs).length) { setErrors(errs); return }
+
+    if (loginMode === 'wholesale_id') {
+      const wid = (loginData.wholesaleId || '').trim()
+      if (!wid) {
+        setErrors({ wholesaleId: 'Wholesale ID is required' })
+        return
+      }
+    } else {
+      if (!loginData.email.trim()) errs.email = 'Business email is required'
+      if (!loginData.password) errs.password = 'Password is required'
+      if (Object.keys(errs).length) { setErrors(errs); return }
+    }
 
     setLoading(true)
     setServerError('')
@@ -437,13 +1139,29 @@ export default function WholesaleModal({ isOpen, onClose }) {
         await signOut({ redirect: false })
       }
 
+      const credentials = loginMode === 'wholesale_id'
+        ? {
+            wholesaleId: loginData.wholesaleId.trim(),
+            email: loginData.wholesaleId.trim(),
+            loginType: 'wholesale_id',
+          }
+        : {
+            email: loginData.email.trim(),
+            password: loginData.password,
+            loginType: 'email',
+          }
+
       const result = await signIn('wholesale', {
-        email: loginData.email,
-        password: loginData.password,
+        ...credentials,
         redirect: false,
       })
+
       if (result?.error) {
-        setServerError('Invalid email or password. Please try again.')
+        setServerError(
+          loginMode === 'wholesale_id'
+            ? 'Wholesale ID not found or account deactivated. Please try again.'
+            : 'Invalid email or password. Please try again.'
+        )
       } else {
         onClose()
         window.location.href = '/wholesale/profile'
@@ -580,56 +1298,81 @@ export default function WholesaleModal({ isOpen, onClose }) {
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                     <div>
                       <label className="ws-label">Business Name *</label>
-                      <input className={`ws-inp${errors.businessName ? ' ws-inp-err' : ''}`} name="businessName" placeholder="Restaurante Sol" value={applyData.businessName} onChange={handleApplyChange} />
+                      <input className={`ws-inp${errors.businessName ? ' ws-inp-err' : ''}`} name="businessName" placeholder="Restaurante Sol" value={applyData.businessName || ''} onChange={handleApplyChange} />
                       {errors.businessName && <p className="ws-err-msg">{errors.businessName}</p>}
                     </div>
                     <div>
                       <label className="ws-label">Contact Name *</label>
-                      <input className={`ws-inp${errors.contactName ? ' ws-inp-err' : ''}`} name="contactName" placeholder="María García" value={applyData.contactName} onChange={handleApplyChange} />
+                      <input className={`ws-inp${errors.contactName ? ' ws-inp-err' : ''}`} name="contactName" placeholder="María García" value={applyData.contactName || ''} onChange={handleApplyChange} />
                       {errors.contactName && <p className="ws-err-msg">{errors.contactName}</p>}
                     </div>
                   </div>
 
                   <div>
                     <label className="ws-label">Business Email *</label>
-                    <input className={`ws-inp${errors.email ? ' ws-inp-err' : ''}`} type="email" name="email" placeholder="orders@yourbusiness.com" value={applyData.email} onChange={handleApplyChange} autoComplete="email" />
+                    <input className={`ws-inp${errors.email ? ' ws-inp-err' : ''}`} type="email" name="email" placeholder="orders@yourbusiness.com" value={applyData.email || ''} onChange={handleApplyChange} autoComplete="email" />
                     {errors.email && <p className="ws-err-msg">{errors.email}</p>}
                   </div>
 
                   <div>
-                    <label className="ws-label">Trade License Number *</label>
-                    <input className={`ws-inp${errors.tradeLicense ? ' ws-inp-err' : ''}`} name="tradeLicense" placeholder="e.g. TL-123456" value={applyData.tradeLicense} onChange={handleApplyChange} required />
-                    {errors.tradeLicense && <p className="ws-err-msg">{errors.tradeLicense}</p>}
+                    <label className="ws-label">CIF *</label>
+                    <input className={`ws-inp${errors.cif ? ' ws-inp-err' : ''}`} name="cif" placeholder="e.g. B12345678" value={applyData.cif ?? applyData.tradeLicense ?? ''} onChange={handleApplyChange} required />
+                    {errors.cif && <p className="ws-err-msg">{errors.cif}</p>}
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                     <div>
                       <label className="ws-label">Phone *</label>
-                      <input className={`ws-inp${errors.phone ? ' ws-inp-err' : ''}`} name="phone" placeholder="+34 600 000 000" value={applyData.phone} onChange={handleApplyChange} required />
+                      <input className={`ws-inp${errors.phone ? ' ws-inp-err' : ''}`} name="phone" placeholder="+34 600 000 000" value={applyData.phone || ''} onChange={handleApplyChange} required />
                       {errors.phone && <p className="ws-err-msg">{errors.phone}</p>}
                     </div>
                     <div>
                       <label className="ws-label">Delivery Postcode</label>
-                      <input className="ws-inp" name="postcode" placeholder="28001" value={applyData.postcode} onChange={handleApplyChange} />
+                      <input className="ws-inp" name="postcode" placeholder="28001" value={applyData.postcode || ''} onChange={handleApplyChange} />
                     </div>
                   </div>
 
                   <div>
                     <label className="ws-label">Business Type *</label>
-                    <select className={`ws-sel${errors.businessType ? ' ws-sel-err' : ''}`} name="businessType" value={applyData.businessType} onChange={handleApplyChange}>
-                      <option value="">Select type…</option>
-                      {BUSINESS_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                    </select>
+                    <CustomSelect
+                      name="businessType"
+                      value={applyData.businessType || ''}
+                      onChange={handleApplyChange}
+                      options={BUSINESS_TYPES}
+                      details={BUSINESS_TYPE_DETAILS}
+                      placeholder="Select type…"
+                      hasError={!!errors.businessType}
+                      icon={Briefcase}
+                    />
                     {errors.businessType && <p className="ws-err-msg">{errors.businessType}</p>}
                   </div>
 
                   <div>
                     <label className="ws-label">Estimated Monthly Volume *</label>
-                    <select className={`ws-sel${errors.volume ? ' ws-sel-err' : ''}`} name="volume" value={applyData.volume} onChange={handleApplyChange}>
-                      <option value="">Select range…</option>
-                      {VOLUME_RANGES.map(v => <option key={v} value={v}>{v}</option>)}
-                    </select>
+                    <CustomSelect
+                      name="volume"
+                      value={applyData.volume || ''}
+                      onChange={handleApplyChange}
+                      options={VOLUME_RANGES}
+                      details={VOLUME_DETAILS}
+                      placeholder="Select range…"
+                      hasError={!!errors.volume}
+                      icon={TrendingUp}
+                    />
                     {errors.volume && <p className="ws-err-msg">{errors.volume}</p>}
+                  </div>
+
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
+                      <label className="ws-label" style={{ margin: 0 }}>Preferred Fulfillment Store</label>
+                      <span style={{ fontSize: '11px', color: '#6D7A73' }}>Optional</span>
+                    </div>
+                    <SearchableStoreSelect
+                      stores={stores}
+                      value={applyData.store || ''}
+                      onChange={handleApplyChange}
+                      userPostcode={applyData.postcode || ''}
+                    />
                   </div>
 
                   <div>
@@ -637,7 +1380,7 @@ export default function WholesaleModal({ isOpen, onClose }) {
                     <div style={{ position: 'relative' }}>
                       <input className={`ws-inp${errors.password ? ' ws-inp-err' : ''}`}
                         type={showPass ? 'text' : 'password'} name="password"
-                        placeholder="Min. 8 characters" value={applyData.password}
+                        placeholder="Min. 8 characters" value={applyData.password || ''}
                         onChange={handleApplyChange} autoComplete="new-password"
                         style={{ paddingRight: '40px' }} />
                       <button type="button" className="ws-pass-eye" onClick={() => setShowPass(p => !p)}>
@@ -676,6 +1419,57 @@ export default function WholesaleModal({ isOpen, onClose }) {
                 <p style={{ fontSize: '13px', color: '#6D7A73', margin: 0 }}>Sign in to your wholesale account</p>
               </div>
 
+              {/* Login Mode Switcher */}
+              <div style={{
+                display: 'flex',
+                background: '#F0F5F2',
+                padding: '4px',
+                borderRadius: '11px',
+                marginBottom: '18px',
+                border: '1px solid #E2EDE6'
+              }}>
+                <button
+                  type="button"
+                  onClick={() => { setLoginMode('wholesale_id'); setErrors({}); setServerError('') }}
+                  style={{
+                    flex: 1,
+                    padding: '8px 12px',
+                    fontSize: '12.5px',
+                    fontWeight: loginMode === 'wholesale_id' ? 700 : 500,
+                    borderRadius: '8px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    background: loginMode === 'wholesale_id' ? '#FFFFFF' : 'transparent',
+                    color: loginMode === 'wholesale_id' ? '#00694C' : '#6D7A73',
+                    boxShadow: loginMode === 'wholesale_id' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                    transition: 'all 0.15s ease',
+                    fontFamily: 'inherit'
+                  }}
+                >
+                  Wholesale ID (Quick)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setLoginMode('email'); setErrors({}); setServerError('') }}
+                  style={{
+                    flex: 1,
+                    padding: '8px 12px',
+                    fontSize: '12.5px',
+                    fontWeight: loginMode === 'email' ? 700 : 500,
+                    borderRadius: '8px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    background: loginMode === 'email' ? '#FFFFFF' : 'transparent',
+                    color: loginMode === 'email' ? '#00694C' : '#6D7A73',
+                    boxShadow: loginMode === 'email' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                    transition: 'all 0.15s ease',
+                    fontFamily: 'inherit'
+                  }}
+                >
+                  Email & Password
+                </button>
+              </div>
+
               {serverError && (
                 <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '10px', padding: '10px 14px', marginBottom: '16px', fontSize: '13px', color: '#D94040' }}>
                   {serverError}
@@ -684,37 +1478,85 @@ export default function WholesaleModal({ isOpen, onClose }) {
 
               <form onSubmit={handleLoginSubmit} noValidate>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                  <div>
-                    <label className="ws-label">Business Email</label>
-                    <input className={`ws-inp${errors.email ? ' ws-inp-err' : ''}`} type="email"
-                      placeholder="orders@yourbusiness.com" value={loginData.email}
-                      onChange={e => { setLoginData(p => ({ ...p, email: e.target.value })); setErrors(p => ({ ...p, email: '' })); setServerError('') }} />
-                    {errors.email && <p className="ws-err-msg">{errors.email}</p>}
-                  </div>
+                  {loginMode === 'wholesale_id' ? (
+                    <div>
+                      <label className="ws-label">Wholesale ID *</label>
+                      <input
+                        className={`ws-inp${errors.wholesaleId ? ' ws-inp-err' : ''}`}
+                        type="text"
+                        placeholder="e.g. WHL-1001"
+                        value={loginData.wholesaleId || ''}
+                        onChange={e => {
+                          setLoginData(p => ({ ...p, wholesaleId: e.target.value }))
+                          setErrors(p => ({ ...p, wholesaleId: '' }))
+                          setServerError('')
+                        }}
+                        autoFocus
+                      />
+                      {errors.wholesaleId && <p className="ws-err-msg">{errors.wholesaleId}</p>}
+                      <p style={{ fontSize: '12px', color: '#6D7A73', margin: '6px 0 0', lineHeight: 1.4 }}>
+                        Instant wholesale access with your assigned ID. No password required.
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      <div>
+                        <label className="ws-label">Business Email *</label>
+                        <input
+                          className={`ws-inp${errors.email ? ' ws-inp-err' : ''}`}
+                          type="email"
+                          placeholder="orders@yourbusiness.com"
+                          value={loginData.email || ''}
+                          onChange={e => {
+                            setLoginData(p => ({ ...p, email: e.target.value }))
+                            setErrors(p => ({ ...p, email: '' }))
+                            setServerError('')
+                          }}
+                        />
+                        {errors.email && <p className="ws-err-msg">{errors.email}</p>}
+                      </div>
 
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-                      <label className="ws-label" style={{ margin: 0 }}>Password</label>
-                      <button type="button" onClick={() => { setShowForgot(true); setErrors({}); setServerError('') }}
-                        style={{ fontSize: '12px', color: '#00694C', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 500 }}>
-                        Forgot password?
-                      </button>
-                    </div>
-                    <div style={{ position: 'relative' }}>
-                      <input className={`ws-inp${errors.password ? ' ws-inp-err' : ''}`}
-                        type={showPass ? 'text' : 'password'} placeholder="••••••••"
-                        value={loginData.password}
-                        onChange={e => { setLoginData(p => ({ ...p, password: e.target.value })); setErrors(p => ({ ...p, password: '' })); setServerError('') }}
-                        style={{ paddingRight: '40px' }} />
-                      <button type="button" className="ws-pass-eye" onClick={() => setShowPass(p => !p)}>
-                        <EyeIcon show={showPass} />
-                      </button>
-                    </div>
-                    {errors.password && <p className="ws-err-msg">{errors.password}</p>}
-                  </div>
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+                          <label className="ws-label" style={{ margin: 0 }}>Password *</label>
+                          <button
+                            type="button"
+                            onClick={() => { setShowForgot(true); setErrors({}); setServerError('') }}
+                            style={{ fontSize: '12px', color: '#00694C', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 500 }}
+                          >
+                            Forgot password?
+                          </button>
+                        </div>
+                        <div style={{ position: 'relative' }}>
+                          <input
+                            className={`ws-inp${errors.password ? ' ws-inp-err' : ''}`}
+                            type={showPass ? 'text' : 'password'}
+                            placeholder="••••••••"
+                            value={loginData.password || ''}
+                            onChange={e => {
+                              setLoginData(p => ({ ...p, password: e.target.value }))
+                              setErrors(p => ({ ...p, password: '' }))
+                              setServerError('')
+                            }}
+                            style={{ paddingRight: '40px' }}
+                          />
+                          <button type="button" className="ws-pass-eye" onClick={() => setShowPass(p => !p)}>
+                            <EyeIcon show={showPass} />
+                          </button>
+                        </div>
+                        {errors.password && <p className="ws-err-msg">{errors.password}</p>}
+                      </div>
+                    </>
+                  )}
 
                   <button type="submit" className="ws-btn" disabled={loading} style={{ marginTop: '6px' }}>
-                    {loading ? <><SpinnerIcon /> Signing in…</> : 'Log In to Wholesale'}
+                    {loading ? (
+                      <><SpinnerIcon /> Signing in…</>
+                    ) : loginMode === 'wholesale_id' ? (
+                      'Log In with Wholesale ID'
+                    ) : (
+                      'Log In to Wholesale'
+                    )}
                   </button>
                 </div>
               </form>

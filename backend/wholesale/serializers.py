@@ -13,16 +13,31 @@ class WholesaleRegisterSerializer(serializers.ModelSerializer):
         validators=[validate_password],
         style={'input_type': 'password'}
     )
-
+    cif = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        max_length=100
+    )
+    trade_license_number = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        max_length=100
+    )
+    store = serializers.PrimaryKeyRelatedField(
+        queryset=__import__('stores.models', fromlist=['Store']).Store.objects.filter(is_active=True),
+        required=False,
+        allow_null=True
+    )
 
     class Meta:
         model = WholesaleUser
         fields = (
             'email', 'password',
             'business_name', 'contact_name',
-            'trade_license_number',
+            'cif', 'trade_license_number',
             'phone', 'postcode',
             'business_type', 'monthly_volume', 'user_type',
+            'store',
         )
 
     def validate_email(self, value):
@@ -32,13 +47,18 @@ class WholesaleRegisterSerializer(serializers.ModelSerializer):
             )
         return value.lower()
 
-    def validate_trade_license_number(self, value):
-        value = value.strip()
-        if len(value) < 4:
-            raise serializers.ValidationError('Enter a valid trade license number.')
-        if not re.match(r'^[A-Za-z0-9\-\/\s]+$', value):
-            raise serializers.ValidationError('Trade license may only contain letters, numbers, spaces, hyphens, or slashes.')
-        return value
+    def validate(self, attrs):
+        cif_val = (attrs.get('cif') or attrs.get('trade_license_number') or '').strip()
+        if not cif_val:
+            raise serializers.ValidationError({'cif': 'CIF is required.'})
+        clean_cif = re.sub(r'[\s\-]', '', cif_val).upper()
+        if len(clean_cif) < 4:
+            raise serializers.ValidationError({'cif': 'Enter a valid CIF number (e.g. B12345678).'})
+        if not re.match(r'^[A-Za-z0-9\-\/\s]+$', cif_val):
+            raise serializers.ValidationError({'cif': 'CIF may only contain letters, numbers, spaces, or hyphens.'})
+        attrs['cif'] = clean_cif
+        attrs['trade_license_number'] = clean_cif
+        return attrs
 
     def validate_phone(self, value):
         value = value.strip()
@@ -51,6 +71,11 @@ class WholesaleRegisterSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         # Force all frontend signups to be External Wholesale
         validated_data['user_type'] = 'RESTAURANT'
+        if not validated_data.get('store'):
+            from stores.models import Store
+            default_store = Store.objects.filter(is_active=True).first()
+            if default_store:
+                validated_data['store'] = default_store
         password = validated_data.pop('password')
         user = WholesaleUser(**validated_data)
         user.set_password(password)
@@ -61,31 +86,60 @@ class WholesaleRegisterSerializer(serializers.ModelSerializer):
             notification_type='wholesale_pending',
             title='New Wholesale Application',
             message=f'Business "{user.business_name}" applied for a wholesale account and is pending approval.',
-            metadata={'wholesaleUserId': user.id, 'email': user.email, 'icon': 'storefront'}
+            metadata={'wholesaleUserId': str(user.id), 'email': user.email, 'icon': 'storefront'}
         )
         
         return user
 
 
 class WholesaleLoginSerializer(serializers.Serializer):
-    email = serializers.EmailField()
-    password = serializers.CharField(write_only=True)
+    email = serializers.CharField(required=False, allow_blank=True)
+    wholesale_id = serializers.CharField(required=False, allow_blank=True)
+    password = serializers.CharField(required=False, allow_blank=True, write_only=True)
+    login_type = serializers.CharField(required=False, allow_blank=True)
 
     def validate(self, attrs):
-        from django.contrib.auth import authenticate
-        email = attrs.get('email', '').lower()
+        from django.db.models import Q
+        login_val = (attrs.get('wholesale_id') or attrs.get('email') or '').strip()
         password = attrs.get('password')
+        login_type = (attrs.get('login_type') or '').strip().lower()
 
-        try:
-            user = WholesaleUser.objects.get(email=email)
-        except WholesaleUser.DoesNotExist:
-            raise serializers.ValidationError('Invalid email or password.')
+        if not login_val:
+            raise serializers.ValidationError('Email or Wholesale ID is required.')
 
-        if not user.check_password(password):
-            raise serializers.ValidationError('Invalid email or password.')
+        # If login_type is 'wholesale_id' or wholesale_id field is supplied or no password supplied:
+        is_id_only_login = (login_type == 'wholesale_id') or bool(attrs.get('wholesale_id')) or not password
+
+        if is_id_only_login:
+            user = WholesaleUser.objects.filter(
+                wholesale_id__iexact=login_val
+            ).first()
+
+            if not user:
+                raise serializers.ValidationError('Wholesale ID not found or not assigned yet. Please contact your administrator.')
+
+            if not user.is_active:
+                raise serializers.ValidationError('This account has been deactivated.')
+
+            if user.status != 'approved':
+                raise serializers.ValidationError('Your wholesale application is pending review. Please wait for admin approval.')
+
+            attrs['user'] = user
+            return attrs
+
+        # Email/ID + password login:
+        user = WholesaleUser.objects.filter(
+            Q(email__iexact=login_val) | Q(wholesale_id__iexact=login_val)
+        ).first()
+
+        if not user or not user.check_password(password):
+            raise serializers.ValidationError('Invalid email/Wholesale ID or password.')
 
         if not user.is_active:
             raise serializers.ValidationError('This account has been deactivated.')
+
+        if user.status != 'approved':
+            raise serializers.ValidationError('Your wholesale application is pending review. Please wait for admin approval.')
 
         attrs['user'] = user
         return attrs
@@ -97,7 +151,8 @@ class WholesaleUserPublicSerializer(serializers.ModelSerializer):
     display_business_type = serializers.CharField(read_only=True)
     display_volume = serializers.CharField(read_only=True)
     profile_image_url = serializers.SerializerMethodField()
-
+    store_name = serializers.CharField(source='store.name', read_only=True, default=None)
+    store_code = serializers.CharField(source='store.store_code', read_only=True, default=None)
 
     def get_profile_image_url(self, obj):
         request = self.context.get('request')
@@ -106,13 +161,13 @@ class WholesaleUserPublicSerializer(serializers.ModelSerializer):
             return request.build_absolute_uri(url) if request else url
         return None
 
-
     class Meta:
         model = WholesaleUser
         fields = (
-            'id', 'email', 'user_type',
+            'id', 'email', 'wholesale_id', 'user_type',
             'business_name', 'contact_name',
-            'trade_license_number',
+            'cif', 'trade_license_number',
+            'store', 'store_id', 'store_name', 'store_code',
             'phone', 'postcode',
             'business_type', 'display_business_type',
             'monthly_volume', 'display_volume',
@@ -123,16 +178,22 @@ class WholesaleUserPublicSerializer(serializers.ModelSerializer):
             'profile_image_url',
         )
         read_only_fields = (
-            'id', 'user_type', 'status', 'is_approved', 'applied_at', 'approved_at',
+            'id', 'wholesale_id', 'user_type', 'status', 'is_approved', 'applied_at', 'approved_at',
             'account_manager_name', 'account_manager_email',
-            'total_orders', 'total_spent',
+            'total_orders', 'total_spent', 'store_name', 'store_code',
         )
 
 
 class WholesaleProfileUpdateSerializer(serializers.ModelSerializer):
+    store = serializers.PrimaryKeyRelatedField(
+        queryset=__import__('stores.models', fromlist=['Store']).Store.objects.filter(is_active=True),
+        required=False,
+        allow_null=True
+    )
+
     class Meta:
         model = WholesaleUser
-        fields = ('contact_name', 'phone', 'postcode', 'monthly_volume')
+        fields = ('contact_name', 'phone', 'postcode', 'monthly_volume', 'cif', 'store')
 
 
 class ChangePasswordSerializer(serializers.Serializer):

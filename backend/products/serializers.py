@@ -246,6 +246,7 @@ class ProductSerializer(serializers.ModelSerializer):
     updated_by_name = serializers.CharField(source='updated_by.name', read_only=True)
     created_by_role = serializers.CharField(source='created_by.user_type', read_only=True)
     updated_by_role = serializers.CharField(source='updated_by.user_type', read_only=True)
+    variants = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -256,11 +257,42 @@ class ProductSerializer(serializers.ModelSerializer):
             'is_unlimited_stock', 'is_unlimited_wholesale_stock', 'is_unlimited_restaurant_stock', 'is_active',
             'weight', 'length', 'width', 'height',  # Added physical properties for shipping
             'thumbnail_url', 'specifications', 'additional_images',
-            'origin', 'unit', 'wholesale_unit', 'restaurant_unit', 'badge', 'badge_color', 'variant',
+            'origin', 'unit', 'wholesale_unit', 'restaurant_unit', 'badge', 'badge_color', 'variant', 'variants',
             'colors', 'sizes', 'reviews', 'rating', 'review_count', 'user_can_review',
             'store_stocks',
             'created_at', 'updated_at', 'created_by_name', 'updated_by_name',
             'created_by_role', 'updated_by_role'
+        ]
+
+    def get_variants(self, obj):
+        if not obj.name:
+            return []
+        siblings = Product.objects.filter(
+            name__iexact=obj.name,
+            is_active=True
+        ).exclude(variant__isnull=True).exclude(variant='').order_by('variant')
+
+        all_variants = list(siblings)
+        if len(all_variants) <= 1:
+            return []
+
+        return [
+            {
+                "id": str(s.id),
+                "name": s.name,
+                "slug": s.slug,
+                "variant": s.variant,
+                "price": str(s.price),
+                "discount_price": str(s.discount_price) if s.discount_price else None,
+                "wholesale_price": str(s.wholesale_price) if s.wholesale_price else None,
+                "restaurant_price": str(s.restaurant_price) if s.restaurant_price else None,
+                "stock": s.stock,
+                "is_unlimited_stock": s.is_unlimited_stock,
+                "is_unlimited_wholesale_stock": s.is_unlimited_wholesale_stock,
+                "is_unlimited_restaurant_stock": s.is_unlimited_restaurant_stock,
+                "unit": s.unit,
+            }
+            for s in all_variants
         ]
         
     def get_thumbnail_url(self, obj):

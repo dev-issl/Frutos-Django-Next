@@ -2,7 +2,7 @@
 'use client'
 // src/app/checkout/components/CheckoutShell.jsx
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
 import { useCart } from '@/app/context/CartContext'
@@ -11,6 +11,7 @@ import CheckoutProgress from './CheckoutProgress'
 import DeliverySection  from './DeliverySection'
 import PaymentSection   from './PaymentSection'
 import OrderSidebar     from './OrderSidebar'
+import { checkIsInternalWholesale } from '@/lib/categoryHelper'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL
 
@@ -57,7 +58,8 @@ export default function CheckoutShell({ deliveryDates, deliverySlots, initialUse
 
   const { authFetch, isAuthenticated, loading: authLoading, user } = useAuth()
 
-  const isWholesale    = session?.user?.isApproved === true
+  const isWholesale    = session?.user?.isApproved === true || Boolean(session?.user?.accessToken)
+  const isInternalWholesale = checkIsInternalWholesale(session, user)
   const sessionLoading = status === 'loading'
 
   useEffect(() => {
@@ -94,23 +96,27 @@ export default function CheckoutShell({ deliveryDates, deliverySlots, initialUse
 
   const [savedAddresses,  setSavedAddresses]  = useState(initialUserData?.addresses || [])
   const [prefilled,       setPrefilled]       = useState(!!initialUserData?.street)
-  const [addressesLoaded, setAddressesLoaded] = useState(!!initialUserData)
+  const addressesLoadedRef = useRef(!!initialUserData)
+  const userLoadedRef      = useRef(false)
 
   // ✅ FIX: user থেকে email-ও নেওয়া হচ্ছে
   useEffect(() => {
-    if (!user) return
+    if (!user || userLoadedRef.current) return
+    userLoadedRef.current = true
     const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ')
-    setForm(prev => ({
-      ...prev,
-      name:  prev.name  || fullName,
-      email: prev.email || user.email || '',
-      phone: prev.phone || user?.profile?.phone || '',
-    }))
+    setTimeout(() => {
+      setForm(prev => ({
+        ...prev,
+        name:  prev.name  || fullName,
+        email: prev.email || user.email || '',
+        phone: prev.phone || user?.profile?.phone || '',
+      }))
+    }, 0)
   }, [user])
 
   useEffect(() => {
-    if (!isAuthenticated || !authFetch || addressesLoaded) return
-    setAddressesLoaded(true)
+    if (!isAuthenticated || !authFetch || addressesLoadedRef.current) return
+    addressesLoadedRef.current = true
     authFetch(`${API_BASE}/auth/addresses/`)
       .then(r => r.json())
       .then(data => {
@@ -128,7 +134,7 @@ export default function CheckoutShell({ deliveryDates, deliverySlots, initialUse
         setPrefilled(true)
       })
       .catch(() => {})
-  }, [isAuthenticated, authFetch, addressesLoaded])
+  }, [isAuthenticated, authFetch])
 
   function applyAddress(addr) {
     setForm(prev => ({
@@ -238,9 +244,9 @@ export default function CheckoutShell({ deliveryDates, deliverySlots, initialUse
         card_expiry: cardForm.expiry.trim(),
         card_cvv: cardForm.cvv.trim(),
       }),
-      delivery_date:       dateObj?.date  || dateObj?.full  || dateObj?.label || '',
-      delivery_slot:       slotObj?.id    ?? selectedSlot,
-      delivery_slot_label: slotObj?.time  || slotObj?.label || '',
+      delivery_date:       isInternalWholesale ? '' : (dateObj?.date  || dateObj?.full  || dateObj?.label || ''),
+      delivery_slot:       isInternalWholesale ? '' : (slotObj?.id    ?? selectedSlot),
+      delivery_slot_label: isInternalWholesale ? '' : (slotObj?.time  || slotObj?.label || ''),
       ...(promoState?.code ? { coupon_code: promoState.code } : {}),
       items: sanitizedItems,
     }
@@ -346,6 +352,7 @@ export default function CheckoutShell({ deliveryDates, deliverySlots, initialUse
               savedAddresses={savedAddresses}
               onApplyAddress={applyAddress}
               isAuthenticated={isAuthenticated || isWholesale}
+              isInternalWholesale={isInternalWholesale}
             />
 
             <PaymentSection

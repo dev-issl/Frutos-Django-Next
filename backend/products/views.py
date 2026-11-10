@@ -1,5 +1,6 @@
 # products/views.py
 import logging
+from django.db import transaction
 from rest_framework import viewsets, permissions
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
@@ -203,7 +204,142 @@ class ProductViewSet(viewsets.ModelViewSet):
             from rest_framework.exceptions import ValidationError
             raise ValidationError("You do not have a shop to add products to.")
 
+    @transaction.atomic
     def create(self, request, *args, **kwargs):
+        variants_json = request.data.get('variants_json')
+        variants_list = []
+        if variants_json:
+            import json
+            try:
+                variants_list = json.loads(variants_json) if isinstance(variants_json, str) else variants_json
+            except Exception as exc:
+                logger.warning(f"Could not parse variants_json: {exc}")
+                variants_list = []
+
+        # If multiple variants are submitted in one go
+        if variants_list and len(variants_list) > 0:
+            created_products = []
+            thumbnail_file = request.FILES.get('thumbnail')
+            additional_image_files = request.FILES.getlist('additional_images')
+            specs_json = request.data.get('specifications_json')
+
+            for idx, v_data in enumerate(variants_list):
+                item_data = request.data.copy()
+                if 'variants_json' in item_data:
+                    del item_data['variants_json']
+                if idx > 0 and 'thumbnail' in item_data:
+                    del item_data['thumbnail']
+
+                v_name = (v_data.get('variant') or v_data.get('name') or '').strip()
+                item_data['variant'] = v_name
+
+                if 'price' in v_data and v_data['price'] != '':
+                    item_data['price'] = v_data['price']
+                if 'discount_price' in v_data:
+                    item_data['discount_price'] = v_data['discount_price'] or None
+                if 'wholesale_price' in v_data:
+                    item_data['wholesale_price'] = v_data['wholesale_price'] or None
+                if 'wholesale_discount_price' in v_data:
+                    item_data['wholesale_discount_price'] = v_data['wholesale_discount_price'] or None
+                if 'restaurant_price' in v_data:
+                    item_data['restaurant_price'] = v_data['restaurant_price'] or None
+                if 'restaurant_discount_price' in v_data:
+                    item_data['restaurant_discount_price'] = v_data['restaurant_discount_price'] or None
+                if 'unit' in v_data and v_data['unit']:
+                    item_data['unit'] = v_data['unit']
+                if 'wholesale_unit' in v_data and v_data['wholesale_unit']:
+                    item_data['wholesale_unit'] = v_data['wholesale_unit']
+                if 'restaurant_unit' in v_data and v_data['restaurant_unit']:
+                    item_data['restaurant_unit'] = v_data['restaurant_unit']
+                if 'stock' in v_data:
+                    item_data['stock'] = 0 if v_data.get('is_unlimited_stock') else (v_data.get('stock') or 0)
+                if 'wholesale_stock' in v_data:
+                    item_data['wholesale_stock'] = 0 if v_data.get('is_unlimited_wholesale_stock') else (v_data.get('wholesale_stock') or 0)
+                if 'restaurant_stock' in v_data:
+                    item_data['restaurant_stock'] = 0 if v_data.get('is_unlimited_restaurant_stock') else (v_data.get('restaurant_stock') or 0)
+                if 'is_unlimited_stock' in v_data:
+                    item_data['is_unlimited_stock'] = bool(v_data['is_unlimited_stock'])
+                if 'is_unlimited_wholesale_stock' in v_data:
+                    item_data['is_unlimited_wholesale_stock'] = bool(v_data['is_unlimited_wholesale_stock'])
+                if 'is_unlimited_restaurant_stock' in v_data:
+                    item_data['is_unlimited_restaurant_stock'] = bool(v_data['is_unlimited_restaurant_stock'])
+                if 'minimum_purchase' in v_data and v_data['minimum_purchase']:
+                    item_data['minimum_purchase'] = v_data['minimum_purchase']
+                if 'restaurant_minimum_purchase' in v_data and v_data['restaurant_minimum_purchase']:
+                    item_data['restaurant_minimum_purchase'] = v_data['restaurant_minimum_purchase']
+
+                # Unique slug for each variant
+                from django.utils.text import slugify
+                base_name = item_data.get('name', 'product')
+                base_slug = slugify(f"{base_name} {v_name}".strip())
+                unique_slug = base_slug
+                cnt = 1
+                while Product.objects.filter(slug=unique_slug).exists():
+                    unique_slug = f"{base_slug}-{cnt}"
+                    cnt += 1
+                item_data['slug'] = unique_slug
+
+                serializer = self.get_serializer(data=item_data)
+                serializer.is_valid(raise_exception=True)
+                self.perform_create(serializer)
+                p = serializer.instance
+
+                # Thumbnail assignment (reusing file uploaded on first)
+                if thumbnail_file:
+                    if idx == 0:
+                        p.thumbnail = thumbnail_file
+                        p.save(update_fields=['thumbnail'])
+                    elif created_products and created_products[0].thumbnail:
+                        p.thumbnail = created_products[0].thumbnail.name
+                        p.save(update_fields=['thumbnail'])
+
+                # Auto-assign product to staff's store
+                if getattr(request.user, 'user_type', '') == 'STAFF':
+                    profile = getattr(request.user, 'staff_profile', None)
+                    if profile and profile.store:
+                        p.stores.add(profile.store)
+
+                # Specifications
+                if specs_json:
+                    import json
+                    try:
+                        for s in json.loads(specs_json):
+                            if s.get('name') and s.get('value'):
+                                ProductSpecification.objects.create(product=p, name=s['name'], value=s['value'])
+                    except Exception:
+                        pass
+
+                # Additional images
+                if idx == 0:
+                    for img in additional_image_files:
+                        ProductAdditionalImage.objects.create(product=p, image=img)
+                elif created_products:
+                    for img_obj in created_products[0].additional_images.all():
+                        ProductAdditionalImage.objects.create(product=p, image=img_obj.image.name)
+
+                # Store stocks
+                stock_value = p.stock
+                for store in p.stores.all():
+                    ProductStoreStock.objects.get_or_create(
+                        product=p, store=store,
+                        defaults={'stock': stock_value}
+                    )
+
+                created_products.append(p)
+
+            # Notify admin when vendor/seller creates a product
+            if request.user.user_type in ('VENDOR', 'SELLER'):
+                _create_notification(
+                    'PRODUCT_CREATED',
+                    f'{request.user.name or request.user.email} added "{created_products[0].name}" ({len(created_products)} variants)',
+                    f'New product with {len(created_products)} variants added.',
+                    actor=request.user,
+                )
+
+            read_serializer = ProductSerializer(created_products[0], context=self.get_serializer_context())
+            return Response(read_serializer.data, status=status.HTTP_201_CREATED)
+
+        # Standard single product creation
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)

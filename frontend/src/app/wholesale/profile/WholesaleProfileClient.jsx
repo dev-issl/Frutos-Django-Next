@@ -28,15 +28,14 @@ export default function WholesaleProfileClient({ initialProfile, initialNotifica
   const [notifications, setNotifications] = useState(initialNotifications)
   const [orders,        setOrders]        = useState(initialOrders || [])
   
-  const [activeTab, setActiveTab] = useState(() => {
-    const tab = searchParams?.get('tab')
-    return tab || 'overview'
-  })
+  const tabParam = searchParams?.get('tab')
+  const [prevTabParam, setPrevTabParam] = useState(tabParam)
+  const [activeTab, setActiveTab] = useState(() => tabParam || 'overview')
 
-  useEffect(() => {
-    const tab = searchParams?.get('tab')
-    if (tab) setActiveTab(tab)
-  }, [searchParams])
+  if (tabParam !== prevTabParam) {
+    setPrevTabParam(tabParam)
+    if (tabParam) setActiveTab(tabParam)
+  }
 
   // ── Edit profile ──────────────────────────────────────────────────────────
   const [editForm,    setEditForm]    = useState({
@@ -145,11 +144,9 @@ export default function WholesaleProfileClient({ initialProfile, initialNotifica
     profile?.user_type === 'internal' || 
     String(profile?.user_type).toUpperCase() === 'WHOLESALER'
 
-  useEffect(() => {
-    if (isInternalWholesale && (activeTab === 'notifications' || activeTab === 'settings')) {
-      setActiveTab('overview')
-    }
-  }, [isInternalWholesale, activeTab])
+  const currentTab = (isInternalWholesale && (activeTab === 'notifications' || activeTab === 'settings'))
+    ? 'overview'
+    : activeTab
 
   const allTabs = [
     { id: 'overview',       label: 'Dashboard' },
@@ -171,33 +168,35 @@ export default function WholesaleProfileClient({ initialProfile, initialNotifica
   return (
     <div className="bg-[#f8fcfb] min-h-screen flex flex-col md:flex-row">
       <ProfileSidebar
-        profile={profile} activeTab={activeTab} setActiveTab={setActiveTab}
+        profile={profile} activeTab={currentTab} setActiveTab={setActiveTab}
         tabs={tabs} onLogout={handleLogout}
       />
 
       <div className="flex-1 overflow-y-auto">
         <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full h-full">
-          {activeTab === 'overview' && (
+          {currentTab === 'overview' && (
             <OverviewTab profile={profile} orders={orders} setActiveTab={setActiveTab} />
           )}
-          {activeTab === 'order_line' && (
+          {currentTab === 'order_line' && (
             <OrderLineTab accessToken={accessToken} isInternalWholesale={isInternalWholesale} />
           )}
-          {activeTab === 'account_info' && (
+          {currentTab === 'account_info' && (
             <AccountInfoTab 
               profile={profile} 
               onImageUpload={handleImageUpload} 
               imageUploading={imageUploading} 
               isInternalWholesale={isInternalWholesale}
+              accessToken={accessToken}
+              onProfileUpdate={setProfile}
             />
           )}
-          {activeTab === 'orders' && (
+          {currentTab === 'orders' && (
             <OrdersTab orders={orders} onDeleteOrder={handleDeleteOrder} setProfileActiveTab={setActiveTab} accessToken={accessToken} profile={profile} />
           )}
-          {activeTab === 'support_tickets' && (
+          {currentTab === 'support_tickets' && (
             <WholesaleSupportTicketsTab accessToken={accessToken} />
           )}
-          {activeTab === 'notifications' && (
+          {currentTab === 'notifications' && (
             <NotificationsTab
               notifications={notifications}
               unreadCount={unreadCount}
@@ -206,7 +205,7 @@ export default function WholesaleProfileClient({ initialProfile, initialNotifica
               orders={orders}
             />
           )}
-          {activeTab === 'settings' && (
+          {currentTab === 'settings' && (
             <SettingsTab
               profile={profile} editForm={editForm} onChange={handleEditChange}
               onSave={handleEditSave} saving={editSaving} success={editSuccess} error={editError}

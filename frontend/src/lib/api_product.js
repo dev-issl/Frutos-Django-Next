@@ -229,6 +229,7 @@ function normalizeProduct(p) {
         texture: p.texture || '',
         weight: p.weight ? Number(p.weight) : null,
         unitOptions: p.unit_options || p.unitOptions || [],
+        variants: p.variants || [],
     }
 }
 

@@ -126,16 +126,31 @@ class WholesaleProfileView(APIView):
                 'contact_name': 'contact_name',
                 'phone': 'phone',
                 'postcode': 'postcode',
-                'monthly_volume': 'monthly_volume'
+                'monthly_volume': 'monthly_volume',
+                'cif': 'cif',
+                'store': 'store_id',
             }
             
             for field, col in field_mappings.items():
                 if field in serializer.validated_data:
                     val = serializer.validated_data[field]
-                    updates.append(f"{col} = %s")
-                    params.append(val)
-                    setattr(request.user, field, val)
-                    
+                    if field == 'store':
+                        store_id_val = val.id if val else None
+                        updates.append(f"{col} = %s")
+                        params.append(store_id_val)
+                        request.user.store = val
+                    elif field == 'cif':
+                        updates.append(f"{col} = %s")
+                        params.append(val)
+                        updates.append("trade_license_number = %s")
+                        params.append(val)
+                        request.user.cif = val
+                        request.user.trade_license_number = val
+                    else:
+                        updates.append(f"{col} = %s")
+                        params.append(val)
+                        setattr(request.user, field, val)
+                        
             if updates:
                 update_sql = ", ".join(updates)
                 with connection.cursor() as cursor:
@@ -143,6 +158,7 @@ class WholesaleProfileView(APIView):
                         f"UPDATE wholesale_wholesaleuser SET {update_sql} WHERE email = %s",
                         params + [request.user.email]
                     )
+            request.user.refresh_from_db()
             return Response(WholesaleUserPublicSerializer(request.user, context={'request': request}).data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

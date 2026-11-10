@@ -257,6 +257,7 @@ export default function DeliverySection({
   savedAddresses  = [],
   onApplyAddress  = () => {},
   isAuthenticated = false,   // ✅ নতুন prop — CheckoutShell থেকে আসবে
+  isInternalWholesale = false,
 }) {
   const [showAddressPicker, setShowAddressPicker] = useState(false)
 
@@ -418,61 +419,63 @@ export default function DeliverySection({
         </Field>
       </div>
 
-      {/* ── Delivery Window ── */}
-      <div className="mt-8 md:mt-12">
-        <h3 className="text-[10px] uppercase tracking-widest font-bold mb-5" style={{ color: '#00694c' }}>
-          Delivery Window
-        </h3>
+      {/* ── Delivery Window (Hidden for internal wholesale) ── */}
+      {!isInternalWholesale && (
+        <div className="mt-8 md:mt-12">
+          <h3 className="text-[10px] uppercase tracking-widest font-bold mb-5" style={{ color: '#00694c' }}>
+            Delivery Window
+          </h3>
 
-        {deliveryDates.length > 0 ? (
-          <div className="flex gap-3 mb-5 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
-            {deliveryDates.map((d, i) => {
-              const active = selectedDate === i
-              return (
-                <button key={d.date} onClick={() => setSelectedDate(i)}
-                  className="px-5 md:px-6 py-3 rounded-full text-sm flex-shrink-0 font-bold transition-all cursor-pointer"
-                  style={{
-                    background: active ? '#d4ede5' : '#f0f4f0',
-                    color:      active ? '#095041' : '#3d4943',
-                    border:     active ? '1.5px solid #95d4bc' : '1.5px solid transparent',
-                  }}>
-                  {d.label === 'Today' ? `Today, ${d.full}` : `${d.short}, ${d.full}`}
-                </button>
-              )
-            })}
-          </div>
-        ) : (
-          <p className="text-sm mb-5" style={{ color: '#6d7a73' }}>No delivery dates available.</p>
-        )}
+          {deliveryDates.length > 0 ? (
+            <div className="flex gap-3 mb-5 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+              {deliveryDates.map((d, i) => {
+                const active = selectedDate === i
+                return (
+                  <button key={d.date} onClick={() => setSelectedDate(i)}
+                    className="px-5 md:px-6 py-3 rounded-full text-sm flex-shrink-0 font-bold transition-all cursor-pointer"
+                    style={{
+                      background: active ? '#d4ede5' : '#f0f4f0',
+                      color:      active ? '#095041' : '#3d4943',
+                      border:     active ? '1.5px solid #95d4bc' : '1.5px solid transparent',
+                    }}>
+                    {d.label === 'Today' ? `Today, ${d.full}` : `${d.short}, ${d.full}`}
+                  </button>
+                )
+              })}
+            </div>
+          ) : (
+            <p className="text-sm mb-5" style={{ color: '#6d7a73' }}>No delivery dates available.</p>
+          )}
 
-        {deliverySlots.length > 0 ? (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {deliverySlots.map(slot => {
-              const active = selectedSlot === String(slot.id)
-              return (
-                <button key={slot.id} disabled={!slot.is_available}
-                  onClick={() => slot.is_available && setSelectedSlot(String(slot.id))}
-                  className="p-3 md:p-4 rounded-xl text-center transition-all"
-                  style={{
-                    border:     active ? '2px solid #00694c' : '1.5px solid #e8eee8',
-                    background: active ? 'rgba(0,105,76,0.05)' : '#fff',
-                    opacity:    slot.is_available ? 1 : 0.4,
-                    cursor:     slot.is_available ? 'pointer' : 'not-allowed',
-                  }}>
-                  <span className="block text-[10px] mb-1" style={{ color: active ? 'rgba(0,105,76,0.7)' : '#6d7a73' }}>
-                    {slot.label}
-                  </span>
-                  <span className="block font-bold text-xs md:text-sm" style={{ color: active ? '#00694c' : '#151e13' }}>
-                    {slot.time}
-                  </span>
-                </button>
-              )
-            })}
-          </div>
-        ) : (
-          <p className="text-sm" style={{ color: '#6d7a73' }}>No time slots configured yet.</p>
-        )}
-      </div>
+          {deliverySlots.length > 0 ? (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {deliverySlots.map(slot => {
+                const active = selectedSlot === String(slot.id)
+                return (
+                  <button key={slot.id} disabled={!slot.is_available}
+                    onClick={() => slot.is_available && setSelectedSlot(String(slot.id))}
+                    className="p-3 md:p-4 rounded-xl text-center transition-all"
+                    style={{
+                      border:     active ? '2px solid #00694c' : '1.5px solid #e8eee8',
+                      background: active ? 'rgba(0,105,76,0.05)' : '#fff',
+                      opacity:    slot.is_available ? 1 : 0.4,
+                      cursor:     slot.is_available ? 'pointer' : 'not-allowed',
+                    }}>
+                    <span className="block text-[10px] mb-1" style={{ color: active ? 'rgba(0,105,76,0.7)' : '#6d7a73' }}>
+                      {slot.label}
+                    </span>
+                    <span className="block font-bold text-xs md:text-sm" style={{ color: active ? '#00694c' : '#151e13' }}>
+                      {slot.time}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          ) : (
+            <p className="text-sm" style={{ color: '#6d7a73' }}>No time slots configured yet.</p>
+          )}
+        </div>
+      )}
     </section>
   )
 }

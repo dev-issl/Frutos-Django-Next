@@ -12,22 +12,36 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             id: 'wholesale',
             name: 'Wholesale',
             credentials: {
-                email: { label: 'Email', type: 'email' },
+                email: { label: 'Email or Wholesale ID', type: 'text' },
                 password: { label: 'Password', type: 'password' },
+                wholesaleId: { label: 'Wholesale ID', type: 'text' },
+                loginType: { label: 'Login Type', type: 'text' },
             },
             async authorize(credentials) {
-                if (!credentials || !credentials.email || !credentials.password) {
+                if (!credentials) {
                     return null
+                }
+                const identifier = (credentials.wholesaleId || credentials.email || '').trim()
+                if (!identifier) {
+                    return null
+                }
+
+                const isIdLogin = credentials.loginType === 'wholesale_id' || (!credentials.password && Boolean(credentials.wholesaleId || identifier.toUpperCase().startsWith('WHL-')))
+
+                const payload = {
+                    email: identifier,
+                    wholesale_id: identifier,
+                    login_type: isIdLogin ? 'wholesale_id' : 'email',
+                }
+                if (credentials.password) {
+                    payload.password = credentials.password
                 }
 
                 try {
                     const res = await fetch(WHOLESALE_BASE + '/auth/login/', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            email: credentials.email,
-                            password: credentials.password,
-                        }),
+                        body: JSON.stringify(payload),
                     })
 
                     if (!res.ok) return null
@@ -38,6 +52,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                     return {
                         id: u.id,
                         email: u.email,
+                        wholesaleId: u.wholesale_id || '',
+                        wholesale_id: u.wholesale_id || '',
+                        store: u.store || null,
+                        storeId: u.store_id || (u.store ? (typeof u.store === 'object' ? u.store.id : u.store) : null),
+                        storeName: u.store_name || (u.store && typeof u.store === 'object' ? u.store.name : null),
+                        storeCode: u.store_code || (u.store && typeof u.store === 'object' ? u.store.store_code : null),
                         userType: u.user_type || 'WHOLESALER',
                         name: u.contact_name,
                         businessName: u.business_name,
@@ -73,6 +93,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             if (user) {
                 token.id = user.id
                 token.email = user.email
+                token.wholesaleId = user.wholesaleId
+                token.storeId = user.storeId
+                token.storeName = user.storeName
+                token.storeCode = user.storeCode
+                token.store = user.store
                 token.userType = user.userType || user.user_type || 'WHOLESALER'
                 token.businessName = user.businessName
                 token.contactName = user.contactName
@@ -115,6 +140,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             session.user = {
                 id: token.id,
                 email: token.email,
+                wholesaleId: token.wholesaleId || '',
+                wholesale_id: token.wholesaleId || '',
+                store: token.store || null,
+                storeId: token.storeId || null,
+                storeName: token.storeName || null,
+                storeCode: token.storeCode || null,
                 userType: token.userType || 'WHOLESALER',
                 user_type: token.userType || 'WHOLESALER',
                 businessName: token.businessName,

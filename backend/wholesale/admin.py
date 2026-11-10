@@ -25,12 +25,12 @@ class WholesaleNotificationInline(admin.TabularInline):
 class WholesaleUserAdmin(UserAdmin):
     # list_display তে প্রোফাইল ইমেজ প্রিভিউ যোগ করা হয়েছে
     list_display = (
-        'profile_tag', 'business_name', 'email', 'contact_name',
-        'business_type', 'monthly_volume', 'status_badge',
+        'profile_tag', 'wholesale_id', 'business_name', 'email', 'contact_name', 'cif',
+        'store', 'business_type', 'monthly_volume', 'status_badge',
         'total_orders', 'total_spent_display', 'applied_at',
     )
-    list_filter = ('status', 'business_type', 'monthly_volume', 'is_active', 'applied_at')
-    search_fields = ('business_name', 'email', 'contact_name', 'postcode')
+    list_filter = ('status', 'store', 'business_type', 'monthly_volume', 'is_active', 'applied_at')
+    search_fields = ('wholesale_id', 'business_name', 'email', 'contact_name', 'cif', 'trade_license_number', 'postcode')
     ordering = ('-applied_at',)
     
     # readonly_fields এ ইমেজের প্রিভিউ ট্যাগ যোগ করা হয়েছে
@@ -41,8 +41,9 @@ class WholesaleUserAdmin(UserAdmin):
     fieldsets = (
         ('Business Information', {
             'fields': (
+                'wholesale_id', 'store',
                 'profile_image', 'profile_tag_large', 'business_name', 
-                'contact_name', 'email', 'phone', 'postcode',
+                'contact_name', 'cif', 'trade_license_number', 'email', 'phone', 'postcode',
                 'business_type', 'monthly_volume'
             )
         }),
@@ -72,6 +73,7 @@ class WholesaleUserAdmin(UserAdmin):
             'classes': ('wide',),
             'fields': (
                 'email', 'password1', 'password2',
+                'wholesale_id', 'store',
                 'business_name', 'contact_name', 'profile_image', 
                 'phone', 'business_type', 'monthly_volume', 'postcode',
                 'status',

@@ -639,6 +639,44 @@ export default function ProductDetailClient({ product: initialProduct, related }
           {unitLabel && <span style={{ fontSize: '13px', color: '#6D7A73' }}>{unitLabel}</span>}
         </div>
 
+        {/* Variant Selector (Mobile) */}
+        {product.variants && product.variants.length > 1 && (
+          <div className="mt-3 mb-1 p-2.5 bg-[#f9fcf6] border border-[#BCCAC1]/40 rounded-xl">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] font-bold text-[#151E13] uppercase tracking-wider">
+                Quality / Variant:
+              </span>
+              {product.variant && (
+                <span className="text-[11px] text-[#6D7A73]">
+                  Selected: <strong className="text-[#00694C]">{product.variant}</strong>
+                </span>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {product.variants.map((v) => {
+                const isSelected = v.id === product.id || v.slug === product.slug || v.variant === product.variant;
+                const vPrice = isWholesalePrice ? (v.wholesale_price || v.price) : v.price;
+                return (
+                  <Link
+                    key={v.id}
+                    href={`/products/${v.slug}`}
+                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all border ${
+                      isSelected
+                        ? "bg-[#00694C] text-white border-[#00694C] shadow-sm"
+                        : "bg-white text-[#151E13] border-[#BCCAC1]/40 hover:border-[#00694C] hover:bg-[#F2FDEA]"
+                    }`}
+                  >
+                    <span>{v.variant || "Standard"}</span>
+                    <span className={isSelected ? "text-emerald-200 font-semibold" : "text-[#6D7A73]"}>
+                      €{Number(vPrice || 0).toFixed(2)}
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         <div className="mt-5 flex items-baseline gap-2">
             <span className="text-3xl font-bold"
               style={{
@@ -791,6 +829,44 @@ export default function ProductDetailClient({ product: initialProduct, related }
                   Fresh from {cleanOrigin}
                 </p>
                 <StarRating rating={product.rating} reviews={product.reviews} size={16} />
+
+                {/* Variant Selector (Desktop) */}
+                {product.variants && product.variants.length > 1 && (
+                  <div className="mt-4 mb-2 p-3 bg-[#f9fcf6] border border-[#BCCAC1]/40 rounded-xl">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-bold text-[#151E13] uppercase tracking-wider">
+                        Available Qualities / Variants:
+                      </span>
+                      {product.variant && (
+                        <span className="text-xs text-[#6D7A73]">
+                          Selected: <strong className="text-[#00694C]">{product.variant}</strong>
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {product.variants.map((v) => {
+                        const isSelected = v.id === product.id || v.slug === product.slug || v.variant === product.variant;
+                        const vPrice = isWholesalePrice ? (v.wholesale_price || v.price) : v.price;
+                        return (
+                          <Link
+                            key={v.id}
+                            href={`/products/${v.slug}`}
+                            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
+                              isSelected
+                                ? "bg-[#00694C] text-white border-[#00694C] shadow-sm"
+                                : "bg-white text-[#151E13] border-[#BCCAC1]/40 hover:border-[#00694C] hover:bg-[#F2FDEA]"
+                            }`}
+                          >
+                            <span>{v.variant || "Standard"}</span>
+                            <span className={isSelected ? "text-emerald-200 font-semibold" : "text-[#6D7A73]"}>
+                              €{Number(vPrice || 0).toFixed(2)}
+                            </span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="bg-white p-4 rounded-md border-l-4 border-[#00694C]"

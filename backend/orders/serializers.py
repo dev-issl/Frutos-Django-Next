@@ -282,6 +282,15 @@ class OrderCreateSerializer(serializers.Serializer):
                     final_wholesale_user = user
                 else:
                     final_user = user
+            else:
+                customer_email = validated_data.get('customer_email')
+                if customer_email:
+                    from wholesale.models import WholesaleUser
+                    final_wholesale_user = WholesaleUser.objects.filter(email__iexact=customer_email).first()
+
+            fulfillment_store_id = validated_data.get('fulfillment_store_id')
+            if not fulfillment_store_id and final_wholesale_user and getattr(final_wholesale_user, 'store_id', None):
+                fulfillment_store_id = final_wholesale_user.store_id
 
             import random
             from django.utils import timezone
@@ -305,7 +314,7 @@ class OrderCreateSerializer(serializers.Serializer):
                     validated_data.get('delivery_slot_label', '')
                     or validated_data.get('delivery_slot', '')
                 ),
-                fulfillment_store_id = validated_data.get('fulfillment_store_id'),
+                fulfillment_store_id = fulfillment_store_id,
                 promo_discount      = product_discount,
                 cart_subtotal       = cart_subtotal,
                 total_amount        = total_amount,
@@ -510,6 +519,9 @@ class OrderReadSerializer(serializers.ModelSerializer):
     payment_status_display = serializers.CharField(source='get_payment_status_display', read_only=True)
     is_wholesale_order     = serializers.SerializerMethodField()
     user_type              = serializers.SerializerMethodField()
+    fulfillment_store_name = serializers.CharField(source='fulfillment_store.name', read_only=True, default=None)
+    fulfillment_store_code = serializers.CharField(source='fulfillment_store.store_code', read_only=True, default=None)
+    wholesale_id           = serializers.CharField(source='wholesale_user.wholesale_id', read_only=True, default=None)
 
     # Writable fields for PATCH (admin status update)
     status         = serializers.CharField(required=False)
@@ -530,6 +542,7 @@ class OrderReadSerializer(serializers.ModelSerializer):
             'payment_method', 'card_number', 'card_expiry', 'card_cvv', 
             'delivery_date', 'delivery_slot_label',
             'tracking_number', 'is_wholesale_order', 'user_type', 'fulfillment_store',
+            'fulfillment_store_name', 'fulfillment_store_code', 'wholesale_id',
             'ordered_at', 'items', 'payment', 'updates',
         ]
 

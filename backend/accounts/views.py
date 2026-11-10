@@ -854,17 +854,28 @@ class AdminUserListView(APIView):
                 ws_qs = ws_qs.filter(
                     Q(email__icontains=search) |
                     Q(business_name__icontains=search) |
-                    Q(contact_name__icontains=search)
+                    Q(contact_name__icontains=search) |
+                    Q(wholesale_id__icontains=search)
                 )
             for u in ws_qs:
                 ws_data.append({
                     'id':               f'ws_{u.id}',
                     'name':             u.contact_name or u.email,
                     'email':            u.email,
+                    'wholesale_id':     u.wholesale_id or '',
                     'user_type':        u.user_type,   # WHOLESALER or RESTAURANT (actual DB value)
                     'is_active':        u.is_active,
                     'date_joined':      u.applied_at.isoformat() if u.applied_at else '',
                     'business_name':    u.business_name,
+                    'cif':              u.cif or u.trade_license_number or '',
+                    'trade_license_number': u.trade_license_number or u.cif or '',
+                    'phone':            u.phone or '',
+                    'postcode':         u.postcode or '',
+                    'business_type':    u.business_type or '',
+                    'monthly_volume':   u.monthly_volume or '',
+                    'store_id':         u.store_id,
+                    'store_name':       u.store.name if u.store else None,
+                    'store_code':       u.store.store_code if u.store else None,
                     'wholesale_status': u.status,
                     'is_wholesale':     True,
                     'photo':            request.build_absolute_uri(u.profile_image.url) if (u.profile_image and getattr(u.profile_image, 'name', None)) else None,
@@ -899,22 +910,29 @@ class AdminUserListView(APIView):
                 
             business_name = request.data.get('business_name', '').strip()
             contact_name = request.data.get('contact_name', name).strip()
-            trade_license_number = request.data.get('trade_license_number', '').strip()
+            cif = (request.data.get('cif') or request.data.get('trade_license_number') or '').strip().upper()
             phone = request.data.get('phone', '').strip()
             postcode = request.data.get('postcode', '').strip()
             business_type = request.data.get('business_type', 'other')
             monthly_volume = request.data.get('monthly_volume', '400_1000')
             
-            if not business_name or not contact_name or not trade_license_number:
-                return Response({'detail': 'Business Name, Contact Name, and Trade License Number are required.'}, status=400)
+            if not business_name or not contact_name or not cif:
+                return Response({'detail': 'Business Name, Contact Name, and CIF are required.'}, status=400)
+
+            wholesale_id = (request.data.get('wholesale_id') or '').strip().upper() or None
+            if wholesale_id:
+                if WholesaleUser.objects.filter(wholesale_id__iexact=wholesale_id).exists():
+                    return Response({'detail': f'Wholesale ID "{wholesale_id}" is already assigned to another user.'}, status=400)
                 
             ws_user = WholesaleUser.objects.create_user(
                 email=email,
                 password=password,
                 user_type=user_type,
+                wholesale_id=wholesale_id,
                 business_name=business_name,
                 contact_name=contact_name,
-                trade_license_number=trade_license_number,
+                cif=cif,
+                trade_license_number=cif,
                 phone=phone,
                 postcode=postcode,
                 business_type=business_type,
@@ -926,13 +944,20 @@ class AdminUserListView(APIView):
                 ws_user.profile_image = profile_image
                 ws_user.save()
             return Response({
-                'id':             f'ws_{ws_user.id}',
-                'email':          ws_user.email,
-                'name':           ws_user.contact_name,
-                'user_type':      ws_user.user_type,   # WHOLESALER or RESTAURANT
+                'id':               f'ws_{ws_user.id}',
+                'email':            ws_user.email,
+                'name':             ws_user.contact_name,
+                'wholesale_id':     ws_user.wholesale_id or '',
+                'user_type':        ws_user.user_type,   # WHOLESALER or RESTAURANT
                 'wholesale_status': 'approved',
-                'business_name':  ws_user.business_name,
-                'is_active':      ws_user.is_active,
+                'business_name':    ws_user.business_name,
+                'cif':              ws_user.cif or ws_user.trade_license_number or '',
+                'trade_license_number': ws_user.trade_license_number or ws_user.cif or '',
+                'phone':            ws_user.phone or '',
+                'postcode':         ws_user.postcode or '',
+                'business_type':    ws_user.business_type or '',
+                'monthly_volume':   ws_user.monthly_volume or '',
+                'is_active':        ws_user.is_active,
             }, status=201)
 
         if User.objects.filter(email__iexact=email).exists():
@@ -955,7 +980,20 @@ class AdminUserListView(APIView):
             'user_type': getattr(user, 'user_type', 'CUSTOMER'),
             'is_active': user.is_active,
         }, status=201)
-    
+
+
+class AdminGenerateWholesaleIdView(APIView):
+    """GET /api/auth/admin/users/generate-wholesale-id/
+    Generates the next unique sequential Wholesale ID (e.g. WHL-1004) on demand for admins.
+    """
+    permission_classes = [permissions.IsAdminUser]
+
+    def get(self, request):
+        from wholesale.models import generate_unique_wholesale_id
+        wid = generate_unique_wholesale_id()
+        return Response({'wholesale_id': wid})
+
+
 class AdminUserDetailView(generics.RetrieveUpdateDestroyAPIView):
     """GET/PATCH/DELETE /api/auth/admin/users/<id>/"""
     permission_classes = [permissions.IsAdminUser]
@@ -1004,12 +1042,21 @@ class AdminUserDetailView(generics.RetrieveUpdateDestroyAPIView):
                 'id':               f'ws_{u.id}',
                 'name':             u.contact_name or u.email,
                 'email':            u.email,
+                'wholesale_id':     u.wholesale_id or '',
                 'user_type':        u.user_type,   # ← actual value: WHOLESALER or RESTAURANT
                 'is_active':        u.is_active,
                 'date_joined':      u.applied_at,
                 'wholesale_status': u.status,
                 'business_name':    u.business_name,
+                'cif':              u.cif or u.trade_license_number or '',
+                'trade_license_number': u.trade_license_number or u.cif or '',
+                'phone':            u.phone or '',
+                'postcode':         u.postcode or '',
                 'business_type':    getattr(u, 'business_type', None),
+                'monthly_volume':   getattr(u, 'monthly_volume', None),
+                'store_id':         u.store_id,
+                'store_name':       u.store.name if u.store else None,
+                'store_code':       u.store.store_code if u.store else None,
                 'profile_image':    profile_image_url,
             })
 
@@ -1057,6 +1104,40 @@ class AdminUserDetailView(generics.RetrieveUpdateDestroyAPIView):
             if 'user_type' in data and data['user_type'] in ['WHOLESALER', 'RESTAURANT']:
                 updates.append("user_type = %s")
                 params.append(data['user_type'])
+
+            if 'business_name' in data and data['business_name']:
+                updates.append("business_name = %s")
+                params.append(str(data['business_name']).strip())
+
+            if 'phone' in data:
+                updates.append("phone = %s")
+                params.append(str(data['phone']).strip())
+
+            if 'cif' in data or 'trade_license_number' in data:
+                cif_val = (data.get('cif') or data.get('trade_license_number') or '').strip().upper()
+                updates.append("cif = %s")
+                params.append(cif_val or None)
+                updates.append("trade_license_number = %s")
+                params.append(cif_val or None)
+
+            # ── Allow admin to set / change / clear wholesale_id ──
+            if 'wholesale_id' in data:
+                from wholesale.models import WholesaleUser
+                raw_wid = data.get('wholesale_id')
+                new_wid = str(raw_wid).strip().upper() if raw_wid and str(raw_wid).strip() else None
+                if new_wid:
+                    clean_id = real_id.replace('-', '')
+                    existing_users = WholesaleUser.objects.filter(wholesale_id__iexact=new_wid)
+                    for ex in existing_users:
+                        if str(ex.id).replace('-', '') != clean_id:
+                            return Response({
+                                'detail': f'Wholesale ID "{new_wid}" is already assigned to another account ({ex.business_name or ex.email}).'
+                            }, status=400)
+                    updates.append("wholesale_id = %s")
+                    params.append(new_wid)
+                else:
+                    updates.append("wholesale_id = %s")
+                    params.append(None)
 
             if 'profile_image' in request.FILES:
                 from wholesale.models import WholesaleUser
