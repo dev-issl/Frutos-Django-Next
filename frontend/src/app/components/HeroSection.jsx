@@ -175,10 +175,13 @@ export default function HeroSection({ hero }) {
         {/* Desktop Full-Width Produce Crate Panorama */}
         <div className="hidden md:block absolute inset-0 w-full h-full pointer-events-none select-none">
           <Image
-            src="/homepage/hero_banner.jpg"
+            src="/homepage/hero_banner.webp"
             alt="Wooden crate overflowing with fresh organic produce on a farm table"
             fill
-            priority
+            preload
+            loading="eager"
+            fetchPriority="high"
+            decoding="sync"
             unoptimized
             sizes="100vw"
             className="object-cover object-right"
@@ -286,10 +289,12 @@ export default function HeroSection({ hero }) {
             {/* Mobile Hero Visual (<768px) */}
             <div className="relative md:hidden w-full h-[195px] sm:h-[225px] mt-5 rounded-[14px] overflow-hidden select-none pointer-events-none">
               <Image
-                src="/homepage/hero_banner.jpg"
+                src="/homepage/hero_banner.webp"
                 alt="Wooden crate overflowing with fresh organic produce on a farm table"
                 fill
-                priority
+                loading="eager"
+                fetchPriority="high"
+                decoding="sync"
                 unoptimized
                 sizes="100vw"
                 className="object-cover object-[86%_center]"

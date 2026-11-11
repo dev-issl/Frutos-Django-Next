@@ -14,32 +14,32 @@ const CATEGORY_CARDS = [
   {
     id: 'Fruits',
     label: 'Fruits',
-    image: '/homepage/cat_card_fruits.jpg',
+    image: '/homepage/cat_card_fruits.webp',
     keywords: ['fruit', 'fruta', 'apple', 'mango', 'grape', 'orange', 'berry', 'banana', 'sandia', 'limon'],
   },
   {
     id: 'Vegetables',
     label: 'Vegetables',
-    image: '/homepage/cat_card_vegetables.jpg',
+    image: '/homepage/cat_card_vegetables.webp',
     keywords: ['vegetable', 'vagitable', 'verdura', 'carrot', 'tomato', 'tomate', 'broccoli', 'brocoli', 'pepper', 'crisp'],
   },
   {
     id: 'Dairy',
     label: 'Dairy',
-    image: '/homepage/cat_card_dairy.jpg',
+    image: '/homepage/cat_card_dairy.webp',
     keywords: ['dairy', 'milk', 'cheese', 'butter', 'yogurt', 'valencia'],
   },
   {
     id: 'Organic',
     label: 'Organic',
-    image: '/homepage/cat_card_organic.jpg',
+    image: '/homepage/cat_card_organic.webp',
     keywords: ['organic', 'bio', 'natural', 'fresh', 'golden', 'wheat', 'grain'],
   },
   {
     id: 'Others',
     label: 'Others',
     href: '/shop',
-    image: '/homepage/cat_card_others.jpg',
+    image: '/homepage/cat_card_others.webp',
     keywords: ['other', 'pack', 'sale', 'box', 'sweet'],
   },
 ]
@@ -47,25 +47,25 @@ const CATEGORY_CARDS = [
 // 20 balanced showcase templates so Default ('All') and every Category filter ('Fruits', 'Vegetables', 'Dairy', 'Organic') render crisp dedicated items
 const SHOWCASE_TEMPLATES = [
   { name: 'Manzana Fuji', price: 1.50, oldPrice: 2.00, badge: 'Class A', unit: 'kg', category: 'Fruits', image: '/homepage/prod_apple.jpg' },
-  { name: 'Tomate Rojo', price: 2.50, oldPrice: 3.50, badge: 'Premium', unit: 'kg', category: 'Vegetables', image: '/homepage/prod_tomato.jpg' },
+  { name: 'Tomate Rojo', price: 2.50, oldPrice: 3.50, badge: 'Premium', unit: 'kg', category: 'Vegetables', image: '/homepage/prod_tomato.webp' },
   { name: 'Grapes', price: 3.00, oldPrice: 4.00, badge: 'Class B', unit: 'kg', category: 'Fruits', image: '/homepage/prod_grapes.jpg' },
   { name: 'Orange', price: 2.60, oldPrice: 3.50, badge: 'Class B', unit: 'kg', category: 'Fruits', image: '/homepage/prod_orange.jpg' },
   { name: 'Strawberry', price: 2.00, oldPrice: 2.80, badge: 'Premium', unit: 'kg', category: 'Organic', image: '/homepage/prod_strawberry.jpg' },
-  { name: 'Fresh Whole Milk', price: 1.80, oldPrice: 2.40, badge: 'Class A', unit: 'L', category: 'Dairy', image: '/homepage/cat_card_dairy.jpg' },
-  { name: 'Broccoli & Carrots', price: 2.20, oldPrice: 3.00, badge: 'Class A', unit: 'kg', category: 'Vegetables', image: '/homepage/cat_card_vegetables.jpg' },
+  { name: 'Fresh Whole Milk', price: 1.80, oldPrice: 2.40, badge: 'Class A', unit: 'L', category: 'Dairy', image: '/homepage/cat_card_dairy.webp' },
+  { name: 'Broccoli & Carrots', price: 2.20, oldPrice: 3.00, badge: 'Class A', unit: 'kg', category: 'Vegetables', image: '/homepage/cat_card_vegetables.webp' },
   { name: 'Mango', price: 2.80, oldPrice: 3.60, badge: 'Premium', unit: 'kg', category: 'Fruits', image: '/homepage/prod_mango.jpg' },
-  { name: 'Organic Whole Wheat', price: 3.10, oldPrice: 3.90, badge: 'Premium', unit: 'kg', category: 'Organic', image: '/homepage/cat_card_organic.jpg' },
-  { name: 'Aged Cheddar Cheese', price: 4.20, oldPrice: 5.20, badge: 'Premium', unit: 'kg', category: 'Dairy', image: '/homepage/cat_card_dairy.jpg' },
-  { name: 'Garden Harvest Mix', price: 3.50, oldPrice: 4.50, badge: 'Class A', unit: 'kg', category: 'Vegetables', image: '/homepage/cat_card_others.jpg' },
-  { name: 'Orchard Red Apples', price: 2.10, oldPrice: 2.80, badge: 'Class A', unit: 'kg', category: 'Fruits', image: '/homepage/cat_card_fruits.jpg' },
-  { name: 'Organic Soybeans', price: 2.90, oldPrice: 3.60, badge: 'Class B', unit: 'kg', category: 'Organic', image: '/homepage/cat_card_organic.jpg' },
-  { name: 'Farmhouse Cheese', price: 3.80, oldPrice: 4.80, badge: 'Class A', unit: 'kg', category: 'Dairy', image: '/homepage/cat_card_dairy.jpg' },
-  { name: 'Fresh Farm Greens', price: 3.40, oldPrice: 4.20, badge: 'Class B', unit: 'kg', category: 'Vegetables', image: '/homepage/hero_crate.jpg' },
-  { name: 'Organic Vine Tomatoes', price: 2.70, oldPrice: 3.40, badge: 'Class A', unit: 'kg', category: 'Organic', image: '/homepage/prod_tomato.jpg' },
-  { name: 'Artisan Raw Cream', price: 2.50, oldPrice: 3.10, badge: 'Class B', unit: 'L', category: 'Dairy', image: '/homepage/cat_card_dairy.jpg' },
-  { name: 'Fresh Salad Basket', price: 2.30, oldPrice: 3.00, badge: 'Class B', unit: 'kg', category: 'Vegetables', image: '/homepage/cat_card_vegetables.jpg' },
+  { name: 'Organic Whole Wheat', price: 3.10, oldPrice: 3.90, badge: 'Premium', unit: 'kg', category: 'Organic', image: '/homepage/cat_card_organic.webp' },
+  { name: 'Aged Cheddar Cheese', price: 4.20, oldPrice: 5.20, badge: 'Premium', unit: 'kg', category: 'Dairy', image: '/homepage/cat_card_dairy.webp' },
+  { name: 'Garden Harvest Mix', price: 3.50, oldPrice: 4.50, badge: 'Class A', unit: 'kg', category: 'Vegetables', image: '/homepage/cat_card_others.webp' },
+  { name: 'Orchard Red Apples', price: 2.10, oldPrice: 2.80, badge: 'Class A', unit: 'kg', category: 'Fruits', image: '/homepage/cat_card_fruits.webp' },
+  { name: 'Organic Soybeans', price: 2.90, oldPrice: 3.60, badge: 'Class B', unit: 'kg', category: 'Organic', image: '/homepage/cat_card_organic.webp' },
+  { name: 'Farmhouse Cheese', price: 3.80, oldPrice: 4.80, badge: 'Class A', unit: 'kg', category: 'Dairy', image: '/homepage/cat_card_dairy.webp' },
+  { name: 'Fresh Farm Greens', price: 3.40, oldPrice: 4.20, badge: 'Class B', unit: 'kg', category: 'Vegetables', image: '/homepage/hero_crate.webp' },
+  { name: 'Organic Vine Tomatoes', price: 2.70, oldPrice: 3.40, badge: 'Class A', unit: 'kg', category: 'Organic', image: '/homepage/prod_tomato.webp' },
+  { name: 'Artisan Raw Cream', price: 2.50, oldPrice: 3.10, badge: 'Class B', unit: 'L', category: 'Dairy', image: '/homepage/cat_card_dairy.webp' },
+  { name: 'Fresh Salad Basket', price: 2.30, oldPrice: 3.00, badge: 'Class B', unit: 'kg', category: 'Vegetables', image: '/homepage/cat_card_vegetables.webp' },
   { name: 'Organic Citrus Oranges', price: 2.90, oldPrice: 3.70, badge: 'Premium', unit: 'kg', category: 'Organic', image: '/homepage/prod_orange.jpg' },
-  { name: 'Country Glass Milk', price: 1.60, oldPrice: 2.20, badge: 'Class A', unit: 'L', category: 'Dairy', image: '/homepage/cat_card_dairy.jpg' },
+  { name: 'Country Glass Milk', price: 1.60, oldPrice: 2.20, badge: 'Class A', unit: 'L', category: 'Dairy', image: '/homepage/cat_card_dairy.webp' },
 ]
 
 function renderCategoryCardContent(item) {
@@ -77,6 +77,10 @@ function renderCategoryCardContent(item) {
           src={item.image}
           alt={item.label}
           fill
+          preload
+          loading="eager"
+          fetchPriority="high"
+          decoding="async"
           unoptimized
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
           className="object-cover transform-gpu will-change-transform transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.08]"
