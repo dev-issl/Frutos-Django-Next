@@ -67,3 +67,88 @@ export function getFrutasCategoryName(categoriesList) {
   return null
 }
 
+/**
+ * Resolves a category's fallback studio photo by keyword when the backend
+ * category has no uploaded image or fails to load.
+ */
+export function pickCategoryFallbackImage(categoryOrName) {
+  const rawName =
+    typeof categoryOrName === 'string'
+      ? categoryOrName
+      : (categoryOrName?.name || categoryOrName?.label || '')
+  const lower = rawName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+
+  if (lower.includes('dairy') || lower.includes('milk') || lower.includes('cheese') || lower.includes('lact')) {
+    return '/homepage/cat_card_dairy.webp'
+  }
+  if (lower.includes('organic') || lower.includes('bio') || lower.includes('grain') || lower.includes('wheat')) {
+    return '/homepage/cat_card_organic.webp'
+  }
+  if (lower.includes('veg') || lower.includes('vagitable') || lower.includes('verdura') || lower.includes('carrot') || lower.includes('tomato')) {
+    return '/homepage/cat_card_vegetables.webp'
+  }
+  if (lower.includes('fruit') || lower.includes('fruta') || lower.includes('apple') || lower.includes('mango')) {
+    return '/homepage/cat_card_fruits.webp'
+  }
+  return '/homepage/cat_card_others.webp'
+}
+
+/**
+ * Checks whether a normalized product belongs to a target backend category
+ * (string name, slug, or category object). Matches both direct product.category
+ * and sub_category parent category to stay consistent with Django backend filters.
+ */
+export function doesProductMatchCategory(product, target) {
+  if (!product || !target) return false
+
+  const targetObj = typeof target === 'object' ? target : null
+  const targetName = (targetObj?.name || (typeof target === 'string' ? target : '')).trim().toLowerCase()
+  const targetSlug = (targetObj?.slug || '').trim().toLowerCase()
+  const targetId = targetObj?.id != null ? String(targetObj.id) : null
+
+  if (targetName === 'all' || targetName === 'all produce') return true
+  if (targetName === 'on sale') return Boolean(product.onSale)
+
+  const pCatName = (typeof product.category === 'string' ? product.category : product.category?.name || '')
+    .trim()
+    .toLowerCase()
+  const pCatSlug = (product.categorySlug || product.category?.slug || '').trim().toLowerCase()
+  const pCatId =
+    product.categoryId != null
+      ? String(product.categoryId)
+      : product.category?.id != null
+      ? String(product.category.id)
+      : null
+
+  const pSubCatParentName = (
+    product.subCategoryCategoryName ||
+    product.sub_category?.category?.name ||
+    product.sub_category?.category_name ||
+    ''
+  )
+    .trim()
+    .toLowerCase()
+  const pSubCatParentSlug = (
+    product.subCategoryCategorySlug ||
+    product.sub_category?.category?.slug ||
+    ''
+  )
+    .trim()
+    .toLowerCase()
+  const pSubCatParentId =
+    product.subCategoryCategoryId != null
+      ? String(product.subCategoryCategoryId)
+      : product.sub_category?.category?.id != null
+      ? String(product.sub_category.category.id)
+      : typeof product.sub_category?.category === 'number'
+      ? String(product.sub_category.category)
+      : null
+
+  if (targetId && (pCatId === targetId || pSubCatParentId === targetId)) return true
+  if (targetSlug && (pCatSlug === targetSlug || pSubCatParentSlug === targetSlug)) return true
+  if (targetName && (pCatName === targetName || pSubCatParentName === targetName)) return true
+
+  return false
+}
+
+

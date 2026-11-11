@@ -500,7 +500,14 @@ export default function StoreDetailClient({ store }) {
         <div className="pt-[60px] pb-32">
           {/* Hero */}
           <div className="relative h-64 overflow-hidden" style={{ borderRadius: '0 0 24px 24px' }}>
-            <img src={store.image} alt={store.name} className="w-full h-full object-cover" />
+            <img
+              src={store.image}
+              alt={store.name}
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
+              className="w-full h-full object-cover"
+            />
             <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
             <div className="absolute bottom-4 left-5">
               {/* ← AM/PM time badge */}
@@ -631,7 +638,14 @@ export default function StoreDetailClient({ store }) {
             {/* Left */}
             <div className="col-span-3 space-y-10">
               <div className="rounded-2xl overflow-hidden h-72 relative">
-                <img src={store.image} alt={store.name} className="w-full h-full object-cover" />
+                <img
+              src={store.image}
+              alt={store.name}
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
+              className="w-full h-full object-cover"
+            />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                 <div className="absolute bottom-5 left-5">
                   {/* ← AM/PM time badge */}

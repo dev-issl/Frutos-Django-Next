@@ -1,8 +1,11 @@
 // src/app/stores/page.jsx
 // SERVER COMPONENT — no 'use client'
 
-import { getStores, isStoreOpen, FEATURE_LABELS } from '@/lib/stores-api'
+import { Suspense } from 'react'
+import { getStores } from '@/lib/stores-api'
 import StoreFinderClient from './StoreFinderClient'
+import { StoresHeroShell } from './StoresHero'
+import StoresFinderSkeleton from './StoresFinderSkeleton'
 
 export const metadata = {
   title: 'Our Stores | El Árbol',
@@ -12,9 +15,17 @@ export const metadata = {
 // Revalidate every 60 s so store data stays fresh without a full rebuild
 export const revalidate = 60
 
-export default async function StorePage() {
-  // Fetch on the server — zero client JS for the data layer
-  const stores = await getStores()
+export default function StorePage() {
+  return (
+    <StoresHeroShell>
+      <Suspense fallback={<StoresFinderSkeleton />}>
+        <StoresFinderLoader />
+      </Suspense>
+    </StoresHeroShell>
+  )
+}
 
-  return <StoreFinderClient initialStores={stores} />
+async function StoresFinderLoader() {
+  const stores = await getStores().catch(() => [])
+  return <StoreFinderClient initialStores={stores} embedded />
 }

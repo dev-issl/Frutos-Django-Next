@@ -1,33 +1,74 @@
-export default function TimelineSection({ milestones }) {
+import Image from 'next/image'
+import SectionHeader from './SectionHeader'
+
+export default function TimelineSection({ milestones = [] }) {
   return (
-    <section className="about-section-pad-white">
-      <div style={{ maxWidth: '860px', margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: '44px' }}>
-          <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#00694c', display: 'block', marginBottom: '10px' }}>
-            How we got here
-          </span>
-          <h2 className="about-h2" style={{ fontFamily: '"Playfair Display", Georgia, serif', fontWeight: 700, color: '#151e13', lineHeight: 1.2 }}>
-            Our journey
-          </h2>
-        </div>
-        <div style={{ position: 'relative' }}>
-          {/* Vertical line */}
-          <div className="about-timeline-line" style={{ position: 'absolute', top: '8px', bottom: '8px', width: '1px', background: 'rgba(188,202,193,0.4)' }} />
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            {milestones.map((m, i) => (
-              <div key={i} style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', paddingBottom: i < milestones.length - 1 ? '32px' : '0' }}>
-                {/* Year */}
-                <div className="about-timeline-year" style={{ flexShrink: 0, textAlign: 'right', paddingTop: '2px' }}>
-                  <span style={{ fontFamily: '"Playfair Display", Georgia, serif', fontSize: '14px', fontWeight: 700, color: '#00694c' }}>{m.year}</span>
+    <section className="relative w-full overflow-hidden bg-[#F2F5EC] pt-7 sm:pt-9 pb-10 sm:pb-12">
+      {/* Right-aligned alpha-masked farm field preserving the exact hill & S-wave silhouette */}
+      <div
+        aria-hidden="true"
+        className="hidden md:block pointer-events-none select-none absolute right-0 top-1 bottom-2 sm:bottom-3 w-[68%] lg:w-[60%] xl:w-[57.5%] z-0 overflow-hidden"
+      >
+        <Image
+          src="/about/journey-field.webp"
+          alt=""
+          fill
+          decoding="async"
+          unoptimized
+          sizes="(max-width: 1280px) 68vw, 960px"
+          className="object-contain object-right-bottom"
+        />
+      </div>
+
+      {/* Foreground Header & Milestones */}
+      <div className="relative z-20 max-w-[1160px] mx-auto px-4 sm:px-6 lg:px-8">
+        <SectionHeader eyebrow="OUR JOURNEY" title="Our journey" className="mb-6 sm:mb-7" />
+
+        <div className="max-w-[640px]">
+          <div className="flex flex-col">
+            {milestones.map((m, i) => {
+              const isFirst = i === 0
+              const isLast = i === milestones.length - 1
+              return (
+                <div
+                  key={i}
+                  className="relative flex items-center gap-4 sm:gap-5 py-2 sm:py-2.5"
+                >
+                  {/* Vertical connecting line spanning strictly between first dot center & last dot center */}
+                  {!isFirst && (
+                    <span
+                      aria-hidden="true"
+                      className="absolute left-[4px] top-0 h-1/2 w-[1.5px] bg-[#A7C0A8]"
+                    />
+                  )}
+                  {!isLast && (
+                    <span
+                      aria-hidden="true"
+                      className="absolute left-[4px] top-1/2 bottom-0 w-[1.5px] bg-[#A7C0A8]"
+                    />
+                  )}
+
+                  {/* Green node dot */}
+                  <span
+                    aria-hidden="true"
+                    className="relative z-10 w-[9.5px] h-[9.5px] rounded-full bg-[#669170] shadow-[0_0_0_2px_rgba(242,245,236,0.95)] shrink-0"
+                  />
+
+                  {/* Soft sage year pill */}
+                  <span className="inline-flex items-center justify-center rounded-full bg-[#DAE7D1] text-[#17432E] px-3.5 py-0.5 text-[12px] font-semibold min-w-[54px] shrink-0">
+                    {m.year}
+                  </span>
+
+                  {/* Dash + Milestone copy */}
+                  <p className="text-[13px] sm:text-[13.5px] text-[#284235] leading-snug">
+                    <span className="text-[#566F60] mr-2" aria-hidden="true">
+                      -
+                    </span>
+                    {m.event}
+                  </p>
                 </div>
-                {/* Dot */}
-                <div style={{ flexShrink: 0, marginTop: '6px', position: 'relative', zIndex: 1 }}>
-                  <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#00694c', border: '3px solid #fff', outline: '1px solid #00694c' }} />
-                </div>
-                {/* Text */}
-                <p style={{ fontSize: '14px', color: '#3d4943', lineHeight: 1.65 }}>{m.event}</p>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       </div>

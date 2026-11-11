@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import { useSafeSession } from '@/lib/useSafeSession'
 import Link from 'next/link'
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   Home,
@@ -173,8 +173,10 @@ export default function Navbar({ navbarLogoUrl = '', brandName = 'El Árbol', na
   const [mobileSearchOpen, setMobileSearchOpen]   = useState(false)
   const [allProducts, setAllProducts]             = useState([])
   const [unreadCount, setUnreadCount]             = useState(0)
+  const searchProductsLoadedRef = useRef(false)
+  const searchProductsLoadingRef = useRef(false)
 
-  // Sync brand logo & name dynamically with backend site-config
+  // Sync brand logo & name dynamically with backend site-config during idle time
   useEffect(() => {
     let active = true
     const propsKey = `${navbarLogoUrl || ''}|${brandName || ''}`
@@ -196,7 +198,14 @@ export default function Navbar({ navbarLogoUrl = '', brandName = 'El Árbol', na
       }
     }
 
-    loadSiteBranding()
+    // SSR RootLayout already passes site-config props; defer re-sync until browser is idle
+    let idleId
+    let timeoutId
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      idleId = window.requestIdleCallback(() => loadSiteBranding(), { timeout: 2500 })
+    } else {
+      timeoutId = window.setTimeout(loadSiteBranding, 1500)
+    }
 
     const handleSettingsUpdate = (e) => {
       const detailLogo = e?.detail?.navbar_logo_url || e?.detail?.logo_url
@@ -215,6 +224,10 @@ export default function Navbar({ navbarLogoUrl = '', brandName = 'El Árbol', na
     window.addEventListener('site_settings_updated', handleSettingsUpdate)
     return () => {
       active = false
+      if (idleId && typeof window.cancelIdleCallback === 'function') {
+        window.cancelIdleCallback(idleId)
+      }
+      if (timeoutId) window.clearTimeout(timeoutId)
       window.removeEventListener('site_settings_updated', handleSettingsUpdate)
     }
   }, [navbarLogoUrl, brandName, navbarTagline])
@@ -241,8 +254,10 @@ export default function Navbar({ navbarLogoUrl = '', brandName = 'El Árbol', na
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  // Fetch products for live search autocomplete
-  useEffect(() => {
+  // Fetch products for live search autocomplete lazily (on search open or browser idle)
+  const loadSearchProducts = useCallback(() => {
+    if (searchProductsLoadedRef.current || searchProductsLoadingRef.current) return
+    searchProductsLoadingRef.current = true
     const base = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api').replace(/\/$/, '')
     const mediaBase = base.replace('/api', '')
 
@@ -253,6 +268,7 @@ export default function Navbar({ navbarLogoUrl = '', brandName = 'El Árbol', na
       })
       .then((data) => {
         const arr = Array.isArray(data) ? data : data.results || []
+        searchProductsLoadedRef.current = true
         setAllProducts(
           arr.map((p) => {
             let image = p.thumbnail || p.thumbnail_url || p.image_url || p.image || null
@@ -284,7 +300,26 @@ export default function Navbar({ navbarLogoUrl = '', brandName = 'El Árbol', na
         )
       })
       .catch(() => {})
+      .finally(() => {
+        searchProductsLoadingRef.current = false
+      })
   }, [])
+
+  useEffect(() => {
+    let idleId
+    let timeoutId
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      idleId = window.requestIdleCallback(() => loadSearchProducts(), { timeout: 3500 })
+    } else {
+      timeoutId = window.setTimeout(loadSearchProducts, 2500)
+    }
+    return () => {
+      if (idleId && typeof window.cancelIdleCallback === 'function') {
+        window.cancelIdleCallback(idleId)
+      }
+      if (timeoutId) window.clearTimeout(timeoutId)
+    }
+  }, [loadSearchProducts])
 
   // Fetch unread notification count when authenticated
   const canViewNotifications = isAuthenticated || (isWholesaleUser && !isInternalWholesale)
@@ -366,15 +401,17 @@ export default function Navbar({ navbarLogoUrl = '', brandName = 'El Árbol', na
 
   useEffect(() => {
     if (desktopSearchOpen) {
+      loadSearchProducts()
       setTimeout(() => inputRef.current?.focus(), 40)
     }
-  }, [desktopSearchOpen])
+  }, [desktopSearchOpen, loadSearchProducts])
 
   useEffect(() => {
     if (mobileSearchOpen) {
+      loadSearchProducts()
       setTimeout(() => mobileInputRef.current?.focus(), 50)
     }
-  }, [mobileSearchOpen])
+  }, [mobileSearchOpen, loadSearchProducts])
 
   function toggleMobileSearch() {
     setMobileSearchOpen((prev) => {

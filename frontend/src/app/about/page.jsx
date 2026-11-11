@@ -13,22 +13,23 @@ import LeftoverPackSection from './components/LeftoverPackSection'
 import CTASection          from './components/CTASection'
 
 import { getAboutPageData }         from '@/lib/api_about'
-import { normalizeValues }          from './config/aboutIcons'   // JSX lives here
+import { normalizeValues }          from './config/aboutIcons'
 
 export const metadata = {
   title: 'About Us | El Árbol',
   description: 'Rooted in quality, growing for the future. Learn our story.',
 }
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 60
 
 export default async function AboutPage() {
-  const { hero_section, hero_image_url_final, stats, values, milestones, farm_partners, team } = await getAboutPageData()
+  const { hero_section, hero_image_url_final, stats, values, milestones, farm_partners, team } =
+    await getAboutPageData()
 
   const valuesWithIcons = normalizeValues(values)
 
   return (
-    <div style={{ background: '#f2fdea', minHeight: '100vh' }}>
+    <div className="about-page-canvas min-h-screen overflow-x-clip">
       <AboutStyles />
       <HeroSection data={{ ...(hero_section || {}), image_url: hero_image_url_final }} />
       <StatsSection stats={stats} />

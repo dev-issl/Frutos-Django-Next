@@ -4,44 +4,23 @@ import { useState, useMemo } from 'react'
 import { ArrowRight } from 'lucide-react'
 import { useSafeSession } from '@/lib/useSafeSession'
 import { useAuth } from '@/app/context/AuthContext'
-import { getFrutasCategoryName, checkIsInternalWholesale } from '@/lib/categoryHelper'
+import {
+  getFrutasCategoryName,
+  checkIsInternalWholesale,
+  pickCategoryFallbackImage,
+  doesProductMatchCategory,
+} from '@/lib/categoryHelper'
 import ProductCard from '@/app/components/ProductCard'
 import Image from 'next/image'
 import Link from 'next/link'
 
-// ── 5 Signature Category Photo Cards (Matching Mockup A-to-Z) ──────────────────
-const CATEGORY_CARDS = [
-  {
-    id: 'Fruits',
-    label: 'Fruits',
-    image: '/homepage/cat_card_fruits.webp',
-    keywords: ['fruit', 'fruta', 'apple', 'mango', 'grape', 'orange', 'berry', 'banana', 'sandia', 'limon'],
-  },
-  {
-    id: 'Vegetables',
-    label: 'Vegetables',
-    image: '/homepage/cat_card_vegetables.webp',
-    keywords: ['vegetable', 'vagitable', 'verdura', 'carrot', 'tomato', 'tomate', 'broccoli', 'brocoli', 'pepper', 'crisp'],
-  },
-  {
-    id: 'Dairy',
-    label: 'Dairy',
-    image: '/homepage/cat_card_dairy.webp',
-    keywords: ['dairy', 'milk', 'cheese', 'butter', 'yogurt', 'valencia'],
-  },
-  {
-    id: 'Organic',
-    label: 'Organic',
-    image: '/homepage/cat_card_organic.webp',
-    keywords: ['organic', 'bio', 'natural', 'fresh', 'golden', 'wheat', 'grain'],
-  },
-  {
-    id: 'Others',
-    label: 'Others',
-    href: '/shop',
-    image: '/homepage/cat_card_others.webp',
-    keywords: ['other', 'pack', 'sale', 'box', 'sweet'],
-  },
+// Offline fallback category cards used only if the backend category endpoint returns empty
+const FALLBACK_CATEGORY_CARDS = [
+  { id: 'Fruits', label: 'Fruits', image: '/homepage/cat_card_fruits.webp', fallbackImage: '/homepage/cat_card_fruits.webp' },
+  { id: 'Vegetables', label: 'Vegetables', image: '/homepage/cat_card_vegetables.webp', fallbackImage: '/homepage/cat_card_vegetables.webp' },
+  { id: 'Dairy', label: 'Dairy', image: '/homepage/cat_card_dairy.webp', fallbackImage: '/homepage/cat_card_dairy.webp' },
+  { id: 'Organic', label: 'Organic', image: '/homepage/cat_card_organic.webp', fallbackImage: '/homepage/cat_card_organic.webp' },
+  { id: 'Others', label: 'Others', href: '/shop', image: '/homepage/cat_card_others.webp', fallbackImage: '/homepage/cat_card_others.webp' },
 ]
 
 // 20 balanced showcase templates so Default ('All') and every Category filter ('Fruits', 'Vegetables', 'Dairy', 'Organic') render crisp dedicated items
@@ -68,21 +47,22 @@ const SHOWCASE_TEMPLATES = [
   { name: 'Country Glass Milk', price: 1.60, oldPrice: 2.20, badge: 'Class A', unit: 'L', category: 'Dairy', image: '/homepage/cat_card_dairy.webp' },
 ]
 
-function renderCategoryCardContent(item) {
+function CategoryCardContent({ item }) {
+  const [imgFailed, setImgFailed] = useState(false)
+  const resolvedSrc = imgFailed || !item.image ? (item.fallbackImage || '/homepage/cat_card_others.webp') : item.image
+
   return (
     <>
       {/* Top Photo Container (Behind Integrated White Wave Footer) */}
       <div className="relative z-0 w-full aspect-[16/10] overflow-hidden bg-[#EFF7F1]">
         <Image
-          src={item.image}
+          src={resolvedSrc}
           alt={item.label}
           fill
-          preload
-          loading="eager"
-          fetchPriority="high"
           decoding="async"
           unoptimized
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+          onError={() => setImgFailed(true)}
           className="object-cover transform-gpu will-change-transform transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.08]"
         />
       </div>
@@ -100,11 +80,18 @@ function renderCategoryCardContent(item) {
             fill="#FFFFFF"
           />
         </svg>
-        <div className="flex items-center gap-1.5">
-          <span className="font-bold text-[14px] sm:text-[14.5px] text-[#085041] leading-tight">
-            {item.label}
-          </span>
-          <ArrowRight className="w-3.5 h-3.5 text-[#085041] transition-transform duration-300 ease-out group-hover:translate-x-1" />
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="font-bold text-[14px] sm:text-[14.5px] text-[#085041] leading-tight truncate">
+              {item.label}
+            </span>
+            <ArrowRight className="w-3.5 h-3.5 shrink-0 text-[#085041] transition-transform duration-300 ease-out group-hover:translate-x-1" />
+          </div>
+          {typeof item.totalProducts === 'number' && (
+            <span className="shrink-0 rounded-full bg-[#EFF7F1] px-2 py-0.5 text-[10.5px] font-semibold text-[#3C6653]">
+              {item.totalProducts}
+            </span>
+          )}
         </div>
       </div>
     </>
@@ -184,37 +171,60 @@ export default function ProductGrid({
     return [...enriched, ...extras]
   }, [initialProducts])
 
+  const backendCategoryCards = useMemo(() => {
+    if (!Array.isArray(categories) || categories.length === 0) {
+      return FALLBACK_CATEGORY_CARDS
+    }
+
+    const mapped = categories
+      .filter((c) => {
+        const name = typeof c === 'string' ? c : c?.name
+        return Boolean(name) && name !== 'All' && name !== 'On Sale'
+      })
+      .map((c) => {
+        const obj = typeof c === 'object' && c !== null ? c : { name: c }
+        const fallbackImage = pickCategoryFallbackImage(obj)
+        return {
+          id: obj.name,
+          label: obj.name,
+          slug: obj.slug || '',
+          categoryId: obj.id ?? null,
+          totalProducts: typeof obj.total_products === 'number' ? obj.total_products : null,
+          image: obj.image_url || obj.image || fallbackImage,
+          fallbackImage,
+          rawCategory: obj,
+        }
+      })
+
+    if (mapped.length === 0) return FALLBACK_CATEGORY_CARDS
+    if (mapped.length < 3) {
+      return [
+        ...mapped,
+        {
+          id: '__browse_all__',
+          label: 'All Produce',
+          href: '/shop',
+          image: '/homepage/cat_card_others.webp',
+          fallbackImage: '/homepage/cat_card_others.webp',
+        },
+      ]
+    }
+    return mapped
+  }, [categories])
+
   const filtered = useMemo(() => {
     if (active === 'All') return sourceProducts
     if (active === 'On Sale') {
-      const saleItems = sourceProducts.filter((p) => p.onSale)
-      return saleItems.length > 0 ? saleItems : sourceProducts.slice(0, itemsPerPage)
+      return sourceProducts.filter((p) => p.onSale)
     }
 
-    const activeLower = active.toLowerCase()
-    const stripItem = CATEGORY_CARDS.find((item) => item.id === active)
-    if (stripItem) {
-      const matched = sourceProducts.filter((p) => {
-        if (p.isShowcaseTemplate) {
-          return (p.showcaseCategory || '').toLowerCase() === activeLower
-        }
-        const cat = (p.category || '').toLowerCase()
-        const subCat = (p.sub_category?.name || p.subCategory?.name || '').toLowerCase()
-        const name = (p.displayName || p.name || '').toLowerCase()
-        if (cat === activeLower || subCat === activeLower) return true
-        // Avoid false catch-all match when DB category is compound ("Fruits and Vagitable")
-        const isCompoundCategory =
-          cat.includes('fruit') && (cat.includes('vegetable') || cat.includes('vagitable'))
-        return stripItem.keywords.some(
-          (kw) => name.includes(kw) || subCat.includes(kw) || (!isCompoundCategory && cat.includes(kw))
-        )
-      })
-      return matched.length > 0 ? matched : sourceProducts.slice(0, itemsPerPage)
-    }
+    const activeCard = backendCategoryCards.find((card) => card.id === active)
+    const targetCategory = activeCard?.rawCategory || active
 
-    const byCat = sourceProducts.filter((p) => p.category === active)
-    return byCat.length > 0 ? byCat : sourceProducts.slice(0, itemsPerPage)
-  }, [sourceProducts, active])
+    return sourceProducts.filter(
+      (p) => !p.isShowcaseTemplate && doesProductMatchCategory(p, targetCategory)
+    )
+  }, [sourceProducts, active, backendCategoryCards])
 
   // Display 5 crisp cards in a balanced 5-column showcase row matching the mockup
   const showcaseProducts = filtered.slice(0, itemsPerPage)
@@ -256,19 +266,22 @@ export default function ProductGrid({
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 sm:gap-4">
-          {CATEGORY_CARDS.map((item, idx) => {
+          {backendCategoryCards.map((item, idx) => {
             const isSelected = active === item.id
-            const spanLastOnMobile = idx === CATEGORY_CARDS.length - 1 ? 'col-span-2 sm:col-span-1' : ''
+            const spanLastOnMobile =
+              backendCategoryCards.length % 2 === 1 && idx === backendCategoryCards.length - 1
+                ? 'col-span-2 sm:col-span-1'
+                : ''
             const cardClasses = `group isolate flex flex-col rounded-[14px] overflow-hidden bg-white text-left cursor-pointer transition-colors duration-300 ease-out ${
               isSelected
-                ? 'border-[1.5px] border-[#085041]'
+                ? 'border-[1.5px] border-[#085041] ring-2 ring-[#085041]/15'
                 : 'border border-[#DCE8DF] hover:border-[#9EC4AA]'
             } ${spanLastOnMobile}`
 
             if (item.href) {
               return (
                 <Link key={item.id} href={item.href} className={`${cardClasses} no-underline`}>
-                  {renderCategoryCardContent(item)}
+                  <CategoryCardContent item={item} />
                 </Link>
               )
             }
@@ -280,7 +293,7 @@ export default function ProductGrid({
                 onClick={() => handleSelectCategory(item.id)}
                 className={cardClasses}
               >
-                {renderCategoryCardContent(item)}
+                <CategoryCardContent item={item} />
               </button>
             )
           })}
@@ -365,21 +378,42 @@ export default function ProductGrid({
           </div>
 
           {/* 5 Product Cards Grid (Smoothly fades on category change) */}
-          <div
-            key={active}
-            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 sm:gap-4 [animation:gridFadeIn_240ms_ease-out]"
-          >
-            {showcaseProducts.map((p, idx) => (
-              <ProductCard
-                key={p.id}
-                product={p}
-                index={idx}
-                variant="showcase"
-                notified={!!notified[p.id]}
-                onNotify={() => setNotified((n) => ({ ...n, [p.id]: true }))}
-              />
-            ))}
-          </div>
+          {showcaseProducts.length === 0 ? (
+            <div className="rounded-[18px] border border-dashed border-[#BED7C5] bg-white/80 py-10 px-6 text-center">
+              <p
+                className="text-lg font-bold text-[#085041] mb-1.5"
+                style={{ fontFamily: 'var(--font-newsreader), Georgia, serif' }}
+              >
+                No products available in &ldquo;{active}&rdquo; yet
+              </p>
+              <p className="text-sm text-[#4F6D60] mb-4">
+                Select another backend category above or browse the full store catalog.
+              </p>
+              <button
+                type="button"
+                onClick={() => setManualActive('All')}
+                className="inline-flex items-center gap-1.5 rounded-full bg-[#085041] hover:bg-[#053A2E] text-white text-xs font-semibold px-4 py-2 transition-colors cursor-pointer"
+              >
+                Show All Products
+              </button>
+            </div>
+          ) : (
+            <div
+              key={active}
+              className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 sm:gap-4 [animation:gridFadeIn_240ms_ease-out]"
+            >
+              {showcaseProducts.map((p, idx) => (
+                <ProductCard
+                  key={p.id}
+                  product={p}
+                  index={idx}
+                  variant="showcase"
+                  notified={!!notified[p.id]}
+                  onNotify={() => setNotified((n) => ({ ...n, [p.id]: true }))}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

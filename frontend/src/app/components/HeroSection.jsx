@@ -179,9 +179,7 @@ export default function HeroSection({ hero }) {
             alt="Wooden crate overflowing with fresh organic produce on a farm table"
             fill
             preload
-            loading="eager"
-            fetchPriority="high"
-            decoding="sync"
+            decoding="async"
             unoptimized
             sizes="100vw"
             className="object-cover object-right"
@@ -294,7 +292,7 @@ export default function HeroSection({ hero }) {
                 fill
                 loading="eager"
                 fetchPriority="high"
-                decoding="sync"
+                decoding="async"
                 unoptimized
                 sizes="100vw"
                 className="object-cover object-[86%_center]"

@@ -183,11 +183,47 @@ function normalizeProduct(p) {
 
     const images = [image, ...additionalImages]
 
-    // ✅ category সবসময় string হবে, কখনো object না
+    // ✅ category সবসময় string হবে, তবে backend metadata (id/slug/sub_category parent) সংরক্ষণ করবো
+    const categoryObj = typeof p.category === 'object' && p.category !== null ? p.category : null
+    const subCategoryObj = typeof p.sub_category === 'object' && p.sub_category !== null ? p.sub_category : null
+
     const categoryName =
-        (typeof p.category === 'string' ? p.category : p.category?.name) ||
-        p.sub_category?.category?.name ||
-        p.sub_category?.category_name ||
+        (typeof p.category === 'string' ? p.category : categoryObj?.name) ||
+        subCategoryObj?.category?.name ||
+        subCategoryObj?.category_name ||
+        p.sub_category_name ||
+        null
+
+    const categoryId =
+        categoryObj?.id ??
+        (typeof p.category === 'number' ? p.category : null) ??
+        subCategoryObj?.category?.id ??
+        (typeof subCategoryObj?.category === 'number' ? subCategoryObj.category : null) ??
+        null
+
+    const categorySlug =
+        categoryObj?.slug ||
+        p.category_slug ||
+        subCategoryObj?.category?.slug ||
+        null
+
+    const subCategoryCategoryId =
+        subCategoryObj?.category?.id ??
+        (typeof subCategoryObj?.category === 'number' ? subCategoryObj.category : null) ??
+        null
+
+    const subCategoryCategoryName =
+        subCategoryObj?.category?.name ||
+        subCategoryObj?.category_name ||
+        null
+
+    const subCategoryCategorySlug =
+        subCategoryObj?.category?.slug ||
+        null
+
+    const subCategoryName =
+        subCategoryObj?.name ||
+        (typeof p.sub_category === 'string' ? p.sub_category : null) ||
         p.sub_category_name ||
         null
 
@@ -199,6 +235,12 @@ function normalizeProduct(p) {
         slug: p.slug || '',
         name: p.name || '',
         category: categoryName, // ✅ এখন সবসময় string
+        categoryId,
+        categorySlug,
+        subCategoryName,
+        subCategoryCategoryId,
+        subCategoryCategoryName,
+        subCategoryCategorySlug,
         price: effectivePrice,
         oldPrice,
         wholesalePrice: p.wholesale_price ? Number(p.wholesale_price) : null,
@@ -364,7 +406,24 @@ export async function getCategories() {
 export async function getCategoryObjects() {
     try {
         const data = await apiFetch(`${CATEGORY_ENDPOINT}/`)
-        return toArray(data)
+        return toArray(data).map(cat => {
+            const resolvedImage = buildImageUrl(cat.image_url || cat.image) || null
+            return {
+                ...cat,
+                image: resolvedImage,
+                image_url: resolvedImage,
+                subcategories: Array.isArray(cat.subcategories)
+                    ? cat.subcategories.map(sub => {
+                        const subImg = buildImageUrl(sub.image_url || sub.image) || null
+                        return {
+                            ...sub,
+                            image: subImg,
+                            image_url: subImg,
+                        }
+                    })
+                    : [],
+            }
+        })
     } catch (error) {
         console.warn(`[getCategoryObjects] Error fetching categories: ${error.message}`)
         return []

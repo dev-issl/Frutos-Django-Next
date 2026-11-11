@@ -16,6 +16,7 @@ import LiveChatWidget       from '@/app/components/livechat/LiveChatWidget'
 import { getSiteConfig }    from '@/lib/api_site_config'
 import NextTopLoader        from 'nextjs-toploader'
 import FaviconUpdater       from '@/app/components/FaviconUpdater'
+import DeferredMaterialSymbols from '@/app/components/DeferredMaterialSymbols'
 
 //  force-dynamic সরিয়ে দাও — tag revalidation-এর সাথে conflict করে
 // export const dynamic = 'force-dynamic'   ← এটা DELETE করো
@@ -60,10 +61,6 @@ export default async function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
-          rel="stylesheet"
-        />
         <style>{`
           html, body, #__next {
             background: #EFF9F2 !important;
@@ -81,6 +78,7 @@ export default async function RootLayout({ children }) {
         }}
       >
         <FaviconUpdater />
+        <DeferredMaterialSymbols />
         <NextTopLoader color="#57A12A" height={2} showSpinner={false} />
         <Providers>
           <AuthProvider>

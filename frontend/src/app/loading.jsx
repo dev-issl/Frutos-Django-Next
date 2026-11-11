@@ -1,46 +1,11 @@
-// src/app/loading.jsx
+import HeroSection from '@/app/components/HeroSection'
+import HomeContentSkeleton from '@/app/components/HomeContentSkeleton'
 
-export default function HomeLoading() {
+export default function Loading() {
   return (
-    <div
-      style={{ background: '#ffffff', minHeight: '100vh', width: '100%' }}
-      className="flex flex-col items-center justify-center gap-5"
-    >
-      {/* Spinner */}
-      <div className="relative w-16 h-16">
-        <div
-          className="absolute inset-0 rounded-full border-4 animate-spin"
-          style={{
-            borderColor: '#e8eee8',
-            borderTopColor: '#00694c',
-            animationDuration: '0.75s',
-          }}
-        />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span
-            className="material-symbols-outlined text-2xl"
-            style={{
-              color: '#00694c',
-              fontVariationSettings: "'FILL' 1",
-            }}
-          >
-            storefront
-          </span>
-        </div>
-      </div>
-
-      {/* Text */}
-      <div className="text-center space-y-1">
-        <p
-          className="text-xl italic"
-          style={{ fontFamily: '"Newsreader", Georgia, serif', color: '#151e13' }}
-        >
-          Welcome to the market…
-        </p>
-        <p className="text-sm" style={{ color: '#6d7a73' }}>
-          Fetching fresh produce for you
-        </p>
-      </div>
+    <div style={{ backgroundColor: '#EFF9F2', minHeight: '100vh' }}>
+      <HeroSection />
+      <HomeContentSkeleton />
     </div>
   )
 }

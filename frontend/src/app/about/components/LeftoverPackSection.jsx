@@ -1,30 +1,65 @@
+import Image from 'next/image'
 import Link from 'next/link'
+import { ArrowRight, Sprout } from 'lucide-react'
 
 export default function LeftoverPackSection() {
   return (
-    <section className="about-section-pad" style={{ background: '#00694c' }}>
-      <div style={{ maxWidth: '900px', margin: '0 auto', textAlign: 'center' }}>
-        <div style={{ width: '52px', height: '52px', borderRadius: '14px', background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 18px' }}>
-          <svg width="26" height="26" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M17 8C8 10 5.9 16.17 3.82 19.3A10 10 0 0 0 19 5c-1-1-2-1.71-2-1.71V8z"/>
-            <path d="M3.82 19.3C4 18 5 13 9 11"/>
-          </svg>
+    <section className="py-6 sm:py-8 bg-[#EFF6EA]">
+      <div className="max-w-[1160px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="rounded-[14px] sm:rounded-[16px] bg-[#10422D] text-white overflow-hidden shadow-[0_14px_34px_rgba(11,53,35,0.16)] flex flex-col md:flex-row items-stretch md:items-center">
+          {/* Left editorial hands-and-sprout image smoothly melting into dark green banner */}
+          <div className="relative w-full md:w-[270px] lg:w-[300px] h-[145px] md:h-[132px] shrink-0 overflow-hidden">
+            <Image
+              src="/about/leftover-sprout.webp"
+              alt="Cupped hands holding soil with a young green sprout"
+              fill
+              decoding="async"
+              unoptimized
+              sizes="(max-width: 768px) 100vw, 300px"
+              className="object-cover object-center"
+            />
+            <div
+              aria-hidden="true"
+              className="hidden md:block absolute inset-0"
+              style={{
+                background:
+                  'linear-gradient(90deg, rgba(16,66,45,0) 48%, rgba(16,66,45,0.85) 84%, #10422D 100%)',
+              }}
+            />
+          </div>
+
+          <div
+            aria-hidden="true"
+            className="hidden md:block w-px h-14 bg-white/15 shrink-0"
+          />
+
+          {/* Middle Copy */}
+          <div className="flex-1 px-5 py-5 md:py-4 md:px-7">
+            <div className="flex items-center gap-2 mb-1.5">
+              <Sprout className="w-5 h-5 text-[#9FD5A7] shrink-0" strokeWidth={2} />
+              <h2
+                className="text-[20px] sm:text-[23px] font-semibold text-white leading-tight tracking-[-0.01em]"
+                style={{ fontFamily: 'var(--font-newsreader), Georgia, serif' }}
+              >
+                The Leftover Pack programme
+              </h2>
+            </div>
+            <p className="text-[12px] sm:text-[12.5px] text-white/80 leading-[1.55] max-w-[520px]">
+              Turn the rescued produce into a shared opportunity — and help reduce food waste while supporting local communities.
+            </p>
+          </div>
+
+          {/* Right Pill Action */}
+          <div className="px-5 pb-5 md:pb-0 md:pr-7 shrink-0 flex justify-start md:justify-end">
+            <Link
+              href="/shop"
+              className="inline-flex items-center gap-2 rounded-full bg-[#F4F8EF] hover:bg-white text-[#10422D] text-[12.5px] font-semibold px-6 py-2.5 shadow-xs transition-colors no-underline whitespace-nowrap"
+            >
+              <span>Learn More</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
         </div>
-        <h2 className="about-h2" style={{ fontFamily: '"Playfair Display", Georgia, serif', fontWeight: 700, color: '#fff', lineHeight: 1.2, marginBottom: '16px' }}>
-          The Leftover Pack programme
-        </h2>
-        <p style={{ fontSize: '15px', color: 'rgba(255,255,255,0.75)', lineHeight: 1.8, maxWidth: '620px', margin: '0 auto 32px' }}>
-          Every day, perfectly good produce goes unsold. Our Leftover Pack bundles these items at a reduced price — saving food from waste, saving you money, and supporting farmers who grew it. It's one of our proudest initiatives.
-        </p>
-        <Link href="/shop" style={{
-          display: 'inline-flex', alignItems: 'center', gap: '8px',
-          padding: '13px 24px', borderRadius: '12px', fontWeight: 700,
-          fontSize: '14px', color: '#00694c', textDecoration: 'none',
-          background: '#fff',
-        }}>
-          See stores with Leftover Pack
-          <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-        </Link>
       </div>
     </section>
   )

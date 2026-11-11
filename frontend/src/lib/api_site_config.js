@@ -1,3 +1,5 @@
+import { cache } from 'react'
+
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api').replace(/\/$/, '')
 
 const FALLBACK_CONFIG = {
@@ -31,14 +33,21 @@ const FALLBACK_CONFIG = {
     payment_methods: [],
 }
 
-export async function getSiteConfig() {
+/**
+ * Fetches site configuration deduplicated per render via React cache() and
+ * cached for 60s so RootLayout never blocks page or hero streaming.
+ */
+export const getSiteConfig = cache(async function getSiteConfig() {
     const candidates = [
         `${API_BASE}/website/site-config/`,
     ]
 
     for (const url of candidates) {
         try {
-            const res = await fetch(url, { cache: 'no-store' })
+            const res = await fetch(url, {
+                next: { revalidate: 60, tags: ['site-config'] },
+                signal: AbortSignal.timeout(1500),
+            })
             if (!res.ok) {
                 // don't spam console.error for expected 404s — try next candidate
                 console.debug(`[getSiteConfig] ${res.status} from ${url}`)
@@ -46,7 +55,6 @@ export async function getSiteConfig() {
             }
 
             const data = await res.json()
-            console.log('[getSiteConfig] Loaded from API ✓', url)
             return data
 
         } catch (err) {
@@ -58,4 +66,4 @@ export async function getSiteConfig() {
 
     // No endpoint succeeded — return fallback silently
     return FALLBACK_CONFIG
-}
+})

@@ -98,7 +98,14 @@ function WishlistButton({ product }) {
 }
 
 // ── Main ProductCard ──────────────────────────────────────────────────────────
-export default function ProductCard({ product, index, notified, onNotify, variant = 'default' }) {
+export default function ProductCard({
+  product,
+  index,
+  notified,
+  onNotify,
+  variant = 'default',
+  layout = 'grid',
+}) {
   const [isNavigating, setIsNavigating] = useState(false)
   const [imgError, setImgError] = useState(false)
   const [added, setAdded] = useState(false)
@@ -110,6 +117,7 @@ export default function ProductCard({ product, index, notified, onNotify, varian
     name,
     displayName,
     badge,
+    variant: productVariant,
     unit,
     price,
     displayPrice: customDisplayPrice,
@@ -118,11 +126,16 @@ export default function ProductCard({ product, index, notified, onNotify, varian
     minWholesaleQty = 1,
     inStock = true,
     image,
+    shortDesc,
+    description,
   } = product
 
   const shownTitle = displayName || name
   const fallbackImg = useMemo(() => pickFallbackImage(product, index), [product, index])
-  const isPlaceholder = !image || image.includes('placehold.co')
+  const isPlaceholder =
+    !image ||
+    image.includes('placehold.co') ||
+    /\/media\/products\/thumbnails\/(test\.jpg|product_\d+\.png)$/i.test(image)
   const resolvedImage = imgError || isPlaceholder ? fallbackImg : image
 
   const isUnlimited = Boolean(
@@ -139,7 +152,8 @@ export default function ProductCard({ product, index, notified, onNotify, varian
   const unitLabel = unit ? unit.replace(/^\/\s*/, '') : 'kg'
 
   const idx = typeof index === 'number' && index >= 0 ? index : 0
-  const tagLabel = badge || (isShowcase ? SHOWCASE_BADGES[idx % SHOWCASE_BADGES.length].label : 'Fresh')
+  const tagLabel =
+    badge || productVariant || (isShowcase ? SHOWCASE_BADGES[idx % SHOWCASE_BADGES.length].label : 'Fresh')
   const tagStyle = resolveTagStyle(tagLabel)
 
   function handleAddToCart(e) {
@@ -162,6 +176,122 @@ export default function ProductCard({ product, index, notified, onNotify, varian
     addItem({ ...product, name: shownTitle, image: resolvedImage }, displayPrice, finalQty)
     setAdded(true)
     setTimeout(() => setAdded(false), 1400)
+  }
+
+  // ── Horizontal List Variant (Unified Double-Arch Botanical Styling) ─────────
+  if (layout === 'list') {
+    return (
+      <Link
+        href={'/products/' + slug}
+        className="block group w-full min-w-0 no-underline"
+        onClick={() => setIsNavigating(true)}
+      >
+        <div
+          className={`isolate flex flex-col sm:flex-row gap-4 rounded-t-[28px] rounded-b-[14px] bg-white p-3 border border-[#D8E7DC] shadow-[0_2px_10px_-4px_rgba(8,80,65,0.03)] [will-change:translate,transform] transition-[translate,scale,transform,border-color,box-shadow] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 hover:border-[#7DB290] hover:shadow-[0_14px_28px_-10px_rgba(8,80,65,0.14)] ${
+            isNavigating ? 'opacity-65 scale-[0.99]' : ''
+          }`}
+        >
+          <div
+            className="relative w-full sm:w-52 aspect-[4/3] sm:aspect-auto sm:min-h-[146px] rounded-t-[20px] rounded-b-[10px] overflow-hidden border border-[#EBF3ED] group-hover:border-[#CFE2D4] transition-colors duration-500 shrink-0 [isolation:isolate] [transform:translateZ(0)]"
+            style={{ backgroundColor: '#F6FAF7' }}
+          >
+            <Image
+              src={resolvedImage}
+              alt={shownTitle}
+              fill
+              unoptimized
+              sizes="(max-width: 640px) 100vw, 220px"
+              onError={() => setImgError(true)}
+              className="object-cover transform-gpu [will-change:scale,transform] transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.07]"
+            />
+            <div
+              className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#085041]/[0.07] via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
+              aria-hidden="true"
+            />
+            <WishlistButton product={product} />
+            {!effectiveInStock && (
+              <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] flex items-center justify-center">
+                <span className="bg-white text-[#085041] text-[10.5px] font-semibold px-3 py-0.5 rounded-full border border-[#DCE8DF]">
+                  OUT OF STOCK
+                </span>
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-col flex-1 min-w-0 px-1 py-0.5 justify-between">
+            <div>
+              <h3
+                className="text-[18px] font-bold text-[#085041] group-hover:text-[#0C6850] transition-colors duration-300 truncate mb-1"
+                style={{ fontFamily: 'var(--font-newsreader), "Playfair Display", Georgia, serif' }}
+              >
+                {shownTitle}
+              </h3>
+
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <span
+                  className="inline-block rounded-full px-2.5 py-[2px] text-[10.5px] font-semibold leading-tight tracking-[0.01em]"
+                  style={{ backgroundColor: tagStyle.bg, color: tagStyle.color }}
+                >
+                  {tagLabel}
+                </span>
+                <span className="text-[11px] font-medium text-[#6B8A7E] whitespace-nowrap">
+                  /{unitLabel}
+                </span>
+              </div>
+
+              {(shortDesc || description) && (
+                <p className="text-[12.5px] text-[#5B7063] line-clamp-2 leading-relaxed">
+                  {shortDesc || description}
+                </p>
+              )}
+            </div>
+
+            <div
+              className="mt-3 pt-2.5 border-t border-[#EBF3EC] flex items-center justify-between gap-3"
+              onClick={(e) => e.preventDefault()}
+            >
+              <div className="flex flex-col min-w-0">
+                <span
+                  className="font-bold leading-none whitespace-nowrap"
+                  style={{ fontSize: '16px', color: '#D96F1A' }}
+                >
+                  &euro;{displayPrice.toFixed(2)}
+                </span>
+                {oldPrice && Number(oldPrice) > displayPrice && (
+                  <span className="text-[11px] text-[#96AEA3] line-through leading-none mt-1 whitespace-nowrap">
+                    &euro;{Number(oldPrice).toFixed(2)}
+                  </span>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={handleAddToCart}
+                className={`rounded-full inline-flex items-center justify-center gap-1.5 text-white font-semibold cursor-pointer border-none whitespace-nowrap shrink-0 px-3.5 py-[8px] text-[12px] shadow-[0_0_0_0_rgba(8,80,65,0)] transition-[background-color,scale,transform,box-shadow] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.96] ${
+                  added
+                    ? 'bg-[#3D7F1B]'
+                    : 'bg-[#085041] hover:bg-[#053A2E] hover:shadow-[0_4px_12px_-2px_rgba(8,80,65,0.22)]'
+                }`}
+              >
+                {added ? (
+                  <>
+                    <Check className="w-3 h-3 shrink-0" strokeWidth={2.5} />
+                    <span>Added</span>
+                  </>
+                ) : effectiveInStock ? (
+                  <>
+                    <ShoppingBag className="w-3 h-3 shrink-0" strokeWidth={2.1} />
+                    <span>Add to Cart</span>
+                  </>
+                ) : (
+                  <span>{notified ? 'Notified ✓' : 'Notify Me'}</span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Link>
+    )
   }
 
   return (
@@ -263,7 +393,7 @@ export default function ProductCard({ product, index, notified, onNotify, varian
             <button
               type="button"
               onClick={handleAddToCart}
-              className={`rounded-full inline-flex items-center justify-center gap-1.5 text-white font-semibold cursor-pointer border-none whitespace-nowrap shrink-0 px-3 sm:px-3.5 py-[7px] text-[11.5px] shadow-[0_0_0_0_rgba(8,80,65,0)] transition-[background-color,scale,transform,box-shadow] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.96] ${
+              className={`rounded-full inline-flex items-center justify-center gap-1.5 text-white font-semibold cursor-pointer border-none whitespace-nowrap shrink-0 px-2.5 xl:px-3.5 py-[7px] text-[11px] xl:text-[11.5px] shadow-[0_0_0_0_rgba(8,80,65,0)] transition-[background-color,scale,transform,box-shadow] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.96] ${
                 added
                   ? 'bg-[#3D7F1B]'
                   : 'bg-[#085041] hover:bg-[#053A2E] hover:shadow-[0_4px_12px_-2px_rgba(8,80,65,0.22)]'
@@ -276,7 +406,10 @@ export default function ProductCard({ product, index, notified, onNotify, varian
                 </>
               ) : effectiveInStock ? (
                 <>
-                  <ShoppingBag className="hidden xl:inline-block w-3 h-3 shrink-0" strokeWidth={2.1} />
+                  <ShoppingBag
+                    className="hidden xl:inline-block w-3 h-3 shrink-0"
+                    strokeWidth={2.1}
+                  />
                   <span>Add to Cart</span>
                 </>
               ) : (

@@ -1,32 +1,32 @@
-export default function ValuesSection({ values }) {
+import SectionHeader from './SectionHeader'
+
+export default function ValuesSection({ values = [] }) {
   return (
-    <section className="about-section-pad" style={{ background: '#f2fdea' }}>
-      <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: '44px' }}>
-          <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#00694c', display: 'block', marginBottom: '10px' }}>
-            What we stand for
-          </span>
-          <h2 className="about-h2" style={{ fontFamily: '"Playfair Display", Georgia, serif', fontWeight: 700, color: '#151e13', lineHeight: 1.2 }}>
-            Our values
-          </h2>
-        </div>
-        <div className="about-values-grid">
+    <section className="relative py-8 sm:py-11 overflow-hidden bg-[#F2F5EC]">
+      {/* Subtle pale sage-green wave peeking softly at upper-right behind header */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none select-none absolute -top-12 right-0 w-72 sm:w-96 h-24 rounded-bl-[100%] bg-[#DCE8D4]/55"
+      />
+
+      <div className="relative z-10 max-w-[1160px] mx-auto px-4 sm:px-6 lg:px-8">
+        <SectionHeader eyebrow="OUR VALUES" title="Our values" className="mb-6 sm:mb-7" />
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
           {values.map((v, i) => (
-            <div key={i} style={{
-              background: '#fff', borderRadius: '16px', padding: '28px 20px',
-              border: '1px solid rgba(188,202,193,0.2)',
-            }}>
-              <div style={{
-                width: '52px', height: '52px', borderRadius: '14px',
-                background: '#E7F1DF', display: 'flex', alignItems: 'center',
-                justifyContent: 'center', marginBottom: '18px',
-              }}>
+            <div
+              key={i}
+              className="bg-[#F6F7EE] rounded-[13px] border border-[#E2EBDC] hover:border-[#C2D6BD] transition-colors px-5 py-4"
+            >
+              <div className="w-[40px] h-[40px] rounded-full bg-[#D5E6CE] border-[1.4px] border-[#3F7350] flex items-center justify-center mb-3">
                 {v.icon}
               </div>
-              <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#151e13', marginBottom: '10px', lineHeight: 1.3 }}>
+              <h3 className="text-[15.5px] font-bold tracking-[-0.015em] text-[#113C28] mb-1 leading-snug">
                 {v.title}
               </h3>
-              <p style={{ fontSize: '13px', color: '#6D7A73', lineHeight: 1.7 }}>{v.body}</p>
+              <p className="text-[12.5px] text-[#50685B] leading-[1.42]">
+                {v.body}
+              </p>
             </div>
           ))}
         </div>
