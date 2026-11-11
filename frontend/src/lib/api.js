@@ -357,59 +357,104 @@ export async function deleteWholesaleOrder(accessToken, orderNumber) {
 
 export const WHOLESALE_FALLBACK = {
     hero_section: {
+        eyebrow: "100% Fresh & Organic",
         headline: "Premium produce,",
         headline_em: "built for your business.",
-        subtitle: "El Árbol supplies restaurants, hotels, caterers, and retailers across Spain with directly sourced produce — harvested to order, delivered within 48 hours.",
-        trust_text: "Trusted by 200+ food businesses · Minimum order from €400/month",
+        subtitle: "Partner with us for the freshest local produce, reliable delivery, and exceptional quality — from farm to your store.",
         badge_stat: "48h",
-        badge_label: "DELIVERY",
-        bottom_badge_title: "Harvested to order",
-        bottom_badge_subtitle: "From 40+ certified farms across Spain",
-        trust_badges: [
-            { label: "Fine Dining", order: 1 },
-            { label: "Hotel Groups", order: 2 },
-            { label: "Retailers", order: 3 }
-        ]
+        badge_label: "Delivery",
+        primary_cta_text: "Explore Our Products",
+        primary_cta_href: "/shop",
+        secondary_cta_text: "Find a Store",
+        secondary_cta_href: "/stores",
     },
     hero_image: null,
-    hero_image_url_final: "https://images.unsplash.com/photo-1595858641571-55dbfb37e201?auto=format&fit=crop&q=80",
+    hero_image_url_final: "/wholesale/hero-basket.webp",
     stats: [
-        { value: "200+", label: "Business Partners", sub: "Restaurants, hotels & retailers", icon_name: "Building2" },
-        { value: "48h", label: "Harvest to Delivery", sub: "Maximum freshness guaranteed", icon_name: "Truck" },
-        { value: "99.1%", label: "Order Accuracy", sub: "Rigorous quality control", icon_name: "CheckCircle2" }
+        { value: "48h", label: "Fresh Delivery", sub: "To Your Door", icon_name: "Leaf" },
+        { value: "40+", label: "Local Stores", sub: "Nationwide", icon_name: "Store" },
+        { value: "€0", label: "Delivery Fee", sub: "On First Order", icon_name: "Handshake" },
+        { value: "98%", label: "Customer Satisfaction", sub: "", icon_name: "ShieldCheck" },
     ],
     benefits: [
-        { title: "Guaranteed Freshness", body: "Produce is harvested only after your order is confirmed.", icon_name: "Leaf" },
-        { title: "Direct from Farms", body: "We work directly with growers to ensure fair prices.", icon_name: "Tractor" },
-        { title: "Flexible Ordering", body: "Order via our B2B platform, email, or WhatsApp.", icon_name: "Phone" }
+        { title: "Organic & Healthy", body: "100% natural and chemical-free produce.", icon_name: "Leaf" },
+        { title: "Transparent Supply", body: "Full traceability from farm to shelf.", icon_name: "Handshake" },
+        { title: "Premium Quality", body: "Only the best for your business.", icon_name: "Award" },
+        { title: "Reliable Delivery", body: "On-time delivery, every time.", icon_name: "Truck" },
+        { title: "Dedicated Support", body: "We're here to help, always.", icon_name: "Headset" },
+        { title: "Grow Together", body: "Your success is our priority.", icon_name: "TrendingUp" },
     ],
     categories: [
-        { title: "Fresh Vegetables", items: "Tomatoes, peppers, courgettes", badge: "Year-round", badge_bg_color: "#E7F1DF", badge_text_color: "#00694c", icon_name: "Carrot", icon_bg_color: "#EDFAF2" },
-        { title: "Seasonal Fruits", items: "Citrus, stone fruits, berries", badge: "Seasonal", badge_bg_color: "#FEF3C7", badge_text_color: "#92400E", icon_name: "Apple", icon_bg_color: "#FFFBEB" },
-        { title: "Artisan Dairy", items: "Cheeses, butter, milk", badge: "Limited", badge_bg_color: "#E0E7FF", badge_text_color: "#3730A3", icon_name: "Milk", icon_bg_color: "#EEF2FF" }
+        { title: "Fresh Produce", image_url: "/wholesale/cat-produce.webp", icon_name: "Apple", href: "/shop" },
+        { title: "Leafy Greens", image_url: "/wholesale/cat-greens.webp", icon_name: "Sprout", href: "/shop" },
+        { title: "Berries", image_url: "/wholesale/cat-berries.webp", icon_name: "Cherry", href: "/shop" },
+        { title: "Citrus Fruits", image_url: "/wholesale/cat-citrus.webp", icon_name: "Sun", href: "/shop" },
+        { title: "Root Vegetables", image_url: "/wholesale/cat-roots.webp", icon_name: "Wheat", href: "/shop" },
     ],
     steps: [
-        { number: "01", title: "Apply for an Account", body: "Fill out the application form with your business details.", icon_name: "FileText" },
-        { number: "02", title: "Get Approved", body: "Our team will review and approve your account within 24h.", icon_name: "CheckSquare" },
-        { number: "03", title: "Start Ordering", body: "Access wholesale pricing and place your first order.", icon_name: "ShoppingCart" }
+        { number: "1", title: "Apply for an account", body: "", icon_name: "ShoppingCart" },
+        { number: "2", title: "Receive approval", body: "", icon_name: "PackageCheck" },
+        { number: "3", title: "Get fresh produce delivered", body: "", icon_name: "Truck" },
     ],
-    guarantee: {
-        title: "No long-term commitment required",
-        subtitle: "Rolling monthly arrangement. Upgrade or pause anytime.",
-        checks: [
-            { text: "No setup fees", order: 1 },
-            { text: "Cancel anytime", order: 2 },
-            { text: "Dedicated support", order: 3 }
-        ]
-    }
+    guarantee: null,
 };
+
+function hasUntouchedWholesaleHero(hero) {
+    if (!hero || typeof hero !== 'object') return true;
+    return Boolean(
+        !hero.headline ||
+        hero.title_main === 'Supply your business with' ||
+        hero.subtitle?.startsWith('El Árbol supplies restaurants')
+    );
+}
 
 export async function getWholesalePageContent() {
     try {
-        const data = await apiFetch('/wholesale/page-content/')
-        if (!data || Object.keys(data).length === 0) return WHOLESALE_FALLBACK;
-        if (Array.isArray(data)) return data[0] || WHOLESALE_FALLBACK;
-        return data;
+        const data = await apiFetch('/wholesale/page-content/', {
+            cache: 'force-cache',
+            next: { revalidate: 60 },
+            signal: AbortSignal.timeout(1500),
+        });
+        const record = Array.isArray(data) ? data[0] : data;
+        if (!record || Object.keys(record).length === 0) return WHOLESALE_FALLBACK;
+
+        const stats = Array.isArray(record.stats) ? record.stats : [];
+        const hasLegacyStats =
+            stats.length === 0 ||
+            (stats.length === 3 && (stats[0]?.label === 'Farm to Kitchen' || stats[0]?.label === 'Business Partners'));
+
+        const benefits = Array.isArray(record.benefits) ? record.benefits : [];
+        const hasLegacyBenefits =
+            benefits.length === 0 ||
+            benefits[0]?.title === 'Consistent Quality' ||
+            benefits[0]?.title === 'Guaranteed Freshness';
+
+        const categories = Array.isArray(record.categories) ? record.categories : [];
+        const hasLegacyCategories =
+            categories.length === 0 ||
+            categories.some((c) => c?.title === 'Dairy & Eggs' || c?.title === 'Fresh Vegetables');
+
+        const steps = Array.isArray(record.steps) ? record.steps : [];
+        const hasLegacySteps =
+            steps.length === 0 ||
+            steps.some((s) => s?.title === 'Apply online' || s?.title === 'Start Ordering');
+
+        const heroUrl =
+            record.hero_image_url_final && !String(record.hero_image_url_final).includes('unsplash.com')
+                ? record.hero_image_url_final
+                : WHOLESALE_FALLBACK.hero_image_url_final;
+
+        return {
+            ...record,
+            hero_section: hasUntouchedWholesaleHero(record.hero_section)
+                ? { ...WHOLESALE_FALLBACK.hero_section, badge_stat: record.hero_section?.badge_stat || WHOLESALE_FALLBACK.hero_section.badge_stat }
+                : record.hero_section,
+            hero_image_url_final: heroUrl,
+            stats: hasLegacyStats ? WHOLESALE_FALLBACK.stats : stats,
+            benefits: hasLegacyBenefits ? WHOLESALE_FALLBACK.benefits : benefits,
+            categories: hasLegacyCategories ? WHOLESALE_FALLBACK.categories : categories,
+            steps: hasLegacySteps ? WHOLESALE_FALLBACK.steps : steps,
+        };
     } catch (err) {
         console.warn('[api] getWholesalePageContent error, using fallback:', err.message)
         return WHOLESALE_FALLBACK

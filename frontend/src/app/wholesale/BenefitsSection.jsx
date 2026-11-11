@@ -1,113 +1,155 @@
-import React from 'react';
-import * as LucideIcons from 'lucide-react';
+import DynamicIcon from '@/app/components/DynamicIcon'
+import WholesaleSectionHeader from './WholesaleSectionHeader'
+
+function LeafValueIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="w-[22px] h-[22px]">
+      <path
+        d="M19 4.5C12.5 5 7.5 8.5 5.5 15c4.5-.5 8.8-2.8 11.4-7 .9-1.3 1.6-2.4 2.1-3.5Z"
+        stroke="currentColor"
+        strokeWidth="1.65"
+        strokeLinejoin="round"
+      />
+      <path d="M5 19c2.4-3 6-6.2 11.2-9.6" stroke="currentColor" strokeWidth="1.55" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function HandshakeValueIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="w-[22px] h-[22px]">
+      <path
+        d="M3 11.5 6.8 8a2.5 2.5 0 0 1 3.4-.1l1.2 1a1.5 1.5 0 0 0 1.9 0l1-.8a2.5 2.5 0 0 1 3.4.1l3.3 3.3"
+        stroke="currentColor"
+        strokeWidth="1.65"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M5.8 14.3 9.3 17.3a2.2 2.2 0 0 0 2.9 0l5.4-4.5"
+        stroke="currentColor"
+        strokeWidth="1.65"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path d="m8 16 1.4-1.2M10.4 17.5l1.5-1.3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function AwardRibbonValueIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="w-[22px] h-[22px]">
+      <circle cx="12" cy="9.5" r="5" stroke="currentColor" strokeWidth="1.65" />
+      <circle cx="12" cy="9.5" r="2.1" stroke="currentColor" strokeWidth="1.45" />
+      <path d="M9.5 14v6l2.5-1.6 2.5 1.6v-6" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function TruckValueIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="w-[22px] h-[22px]">
+      <path d="M3 7h11v8.5H3V7Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+      <path d="M14 10h4l3 3v2.5h-7V10Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+      <circle cx="7" cy="17.2" r="1.8" stroke="currentColor" strokeWidth="1.55" />
+      <circle cx="17.5" cy="17.2" r="1.8" stroke="currentColor" strokeWidth="1.55" />
+    </svg>
+  )
+}
+
+function HeadsetValueIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="w-[22px] h-[22px]">
+      <path d="M4.5 14v-2a7.5 7.5 0 0 1 15 0v2" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" />
+      <rect x="3" y="12" width="3.5" height="5.5" rx="1.4" stroke="currentColor" strokeWidth="1.6" />
+      <rect x="17.5" y="12" width="3.5" height="5.5" rx="1.4" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M19 17.5c0 1.8-1.4 3-3.5 3h-2" stroke="currentColor" strokeWidth="1.55" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function GrowthChartValueIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="w-[22px] h-[22px]">
+      <path d="M5 19v-3.5M10 19v-6.5M15 19v-5M20 19V11" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" />
+      <path
+        d="m4.5 11.5 5-4 4 2.5 5.5-5.5M15.8 4.5H19v3.2"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+const VALUE_ICON_MAP = {
+  leaf: LeafValueIcon,
+  handshake: HandshakeValueIcon,
+  award: AwardRibbonValueIcon,
+  truck: TruckValueIcon,
+  headset: HeadsetValueIcon,
+  trendingup: GrowthChartValueIcon,
+}
+
+const INDEX_PRESETS = [
+  LeafValueIcon,
+  HandshakeValueIcon,
+  AwardRibbonValueIcon,
+  TruckValueIcon,
+  HeadsetValueIcon,
+  GrowthChartValueIcon,
+]
 
 export default function BenefitsSection({ data = [] }) {
-  // Safe default if data is empty
-  const benefits = data.length > 0 ? data : [
-    {
-      icon_name: 'Leaf',
-      title: 'Guaranteed Freshness',
-      body: 'Every order is harvested within 24 hours of dispatch. Our cold-chain logistics deliver produce at peak quality — every single time.',
-    },
-    {
-      icon_name: 'Clock',
-      title: 'Flexible Ordering Windows',
-      body: 'Order daily, weekly, or on a custom schedule. Cut-off is 10 PM for next-morning delivery across Madrid, Barcelona, and Sevilla.',
-    },
-    {
-      icon_name: 'UserCheck',
-      title: 'Dedicated Account Manager',
-      body: 'Every wholesale account gets a named contact who knows your kitchen, your seasonal needs, and is reachable directly — no call centres.',
-    },
-    {
-      icon_name: 'TrendingDown',
-      title: 'Transparent Volume Pricing',
-      body: 'Pricing tiers based on monthly volume — the more you order, the better the rate. No hidden surcharges, no seasonal price shocks.',
-    },
-    {
-      icon_name: 'Sun',
-      title: 'Sustainability Credentials',
-      body: 'All partner farms hold regenerative agriculture certification. Full traceability documentation for menu provenance and ESG reporting.',
-    },
-    {
-      icon_name: 'Truck',
-      title: 'Nationwide Cold-Chain Delivery',
-      body: 'Refrigerated fleet covering all major Spanish cities. Temperature-monitored throughout, with live tracking on Growth and Enterprise plans.',
-    },
-  ];
+  const benefits = data.length > 0 ? data : []
+
   return (
-    <>
-      <style>{`
-        .ws-benefits-grid {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 12px;
-        }
-        .ws-benefit-card {
-          background: #F7FAF8;
-          border-radius: 14px;
-          padding: 22px 20px;
-          border: 1px solid rgba(188,202,193,0.3);
-          transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s;
-          cursor: default;
-        }
-        .ws-benefit-card:hover {
-          box-shadow: 0 6px 24px rgba(0,105,76,0.07);
-          transform: translateY(-2px);
-          border-color: rgba(0,105,76,0.18);
-        }
-        @media (max-width: 900px) {
-          .ws-benefits-grid { grid-template-columns: repeat(2, 1fr); }
-        }
-        @media (max-width: 560px) {
-          .ws-benefits-grid { grid-template-columns: 1fr; gap: 10px; }
-        }
-      `}</style>
+    <section className="relative py-7 sm:py-9">
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
+        <WholesaleSectionHeader
+          eyebrow="OUR VALUES"
+          title={
+            <>
+              Everything your operation
+              <br />
+              needs, nothing it doesn&apos;t.
+            </>
+          }
+          className="mb-7 sm:mb-8"
+        />
 
-      <section style={{ background: '#fff', padding: '56px 40px' }}>
-        <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+          {benefits.map((b, i) => {
+            const key = String(b.icon_name || '').replace(/[-_ ]+/g, '').toLowerCase()
+            const PresetIcon = VALUE_ICON_MAP[key] || INDEX_PRESETS[i % INDEX_PRESETS.length]
 
-          <div style={{ maxWidth: '520px', marginBottom: '40px' }}>
-            <span style={{ fontSize: '10.5px', fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#00694c', display: 'block', marginBottom: '10px' }}>
-              Why partner with us
-            </span>
-            <h2 style={{
-              fontFamily: '"Playfair Display", Georgia, serif',
-              fontWeight: 700, color: '#0d1f14', lineHeight: 1.18,
-              marginBottom: '12px', fontSize: 'clamp(22px, 3vw, 34px)',
-            }}>
-              Everything your operation needs, nothing it doesn't.
-            </h2>
-            {/* <p style={{ fontSize: '14px', color: '#6D7A73', lineHeight: 1.75, margin: 0 }}>
-              We built our wholesale programme by listening to chefs and buyers. Every feature exists because someone asked for it.
-            </p> */}
-          </div>
-
-          <div className="ws-benefits-grid">
-            {benefits.map((b, i) => (
-              <div key={i} className="ws-benefit-card">
-                <div style={{
-                  width: '42px', height: '42px', borderRadius: '11px',
-                  background: 'linear-gradient(135deg, #E7F5EB 0%, #D8EEE2 100%)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  marginBottom: '14px', border: '1px solid rgba(0,105,76,0.08)',
-                  color: '#00694c'
-                }}>
-                  {(() => {
-                    const Icon = LucideIcons[b.icon_name] || LucideIcons.Circle;
-                    return <Icon size={20} strokeWidth={1.7} />;
-                  })()}
+            return (
+              <div
+                key={i}
+                className="bg-[#FAFBF7] rounded-[14px] ws-card-shadow border border-transparent hover:border-[#CFE0CB] transition-colors px-5 py-4 sm:py-[18px] flex items-center gap-4"
+              >
+                <div className="w-[46px] h-[46px] rounded-full bg-[#E1EFE0] flex items-center justify-center shrink-0 text-[#1F5C3F]">
+                  {PresetIcon ? (
+                    <PresetIcon />
+                  ) : (
+                    <DynamicIcon name={b.icon_name} size={21} className="text-[#1F5C3F]" fallbackName="Leaf" />
+                  )}
                 </div>
-                <h3 style={{ fontSize: '13px', fontWeight: 700, color: '#0d1f14', marginBottom: '7px', lineHeight: 1.35 }}>
-                  {b.title}
-                </h3>
-                <p style={{ fontSize: '12.5px', color: '#6D7A73', lineHeight: 1.7, margin: 0 }}>{b.body}</p>
+                <div className="min-w-0">
+                  <h3 className="text-[15px] sm:text-[15.5px] font-semibold tracking-[-0.01em] text-[#133D29] leading-snug">
+                    {b.title}
+                  </h3>
+                  <p className="text-[12px] text-[#66786D] leading-[1.42] mt-0.5">
+                    {b.body}
+                  </p>
+                </div>
               </div>
-            ))}
-          </div>
-
+            )
+          })}
         </div>
-      </section>
-    </>
+      </div>
+    </section>
   )
 }
