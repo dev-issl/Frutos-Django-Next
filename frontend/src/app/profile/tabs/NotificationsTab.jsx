@@ -3,7 +3,7 @@
 // import StatusBadge from '../components/StatusBadge'
 // import ConfirmModal from '../components/ConfirmModal'
 
-// const API_BASE = process.env.NEXT_PUBLIC_API_URL
+// const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'
 // const fmt = (n) => Number(n || 0).toFixed(2)
 
 // const NOTIF_ICON_COLORS = {
@@ -375,7 +375,7 @@ function DeleteNotifsModal({ count, onConfirm, onClose, deleting }) {
   )
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'
 const fmt = (n) => Number(n || 0).toFixed(2)
 
 const NOTIF_ICON_COLORS = {

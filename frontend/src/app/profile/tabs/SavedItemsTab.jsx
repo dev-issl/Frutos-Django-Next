@@ -4,11 +4,11 @@ import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useWishlist } from '@/app/context/WishlistContext'
-import { useSession } from 'next-auth/react'
+import { useSafeSession } from '@/lib/useSafeSession'
 import { slugify } from '@/app/lib/slugify'
 import AddToCartButton from '@/app/components/AddToCartButton'
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'
 
 // ── Skeleton loader ───────────────────────────────────────────────────────────
 function SkeletonCard() {
@@ -337,7 +337,7 @@ function EmptyState() {
 // ── Main component ────────────────────────────────────────────────────────────
 export default function SavedItemsTab({ authFetch, initialWishlist = null }) {
   const { items, hydrate, remove, clearAll, loaded } = useWishlist()
-  const { data: session } = useSession()
+  const { data: session } = useSafeSession()
   const isWholesaleUser = !!session?.user?.accessToken
 
   // Server-fetched data দিয়ে WishlistContext hydrate করো (একবারই চলে)

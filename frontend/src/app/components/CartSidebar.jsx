@@ -215,7 +215,7 @@ import { useRouter } from 'next/navigation'
 import { useCart } from '@/app/context/CartContext'
 import toast from 'react-hot-toast'
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'
 
 function calcDeliveryFee(config, subtotal) {
   if (!config || !config.is_active || config.charge_type === 'free') return 0

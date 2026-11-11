@@ -2,7 +2,7 @@
 import NextAuth from 'next-auth'
 import Credentials from 'next-auth/providers/credentials'
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api').replace(/\/$/, '')
 const WHOLESALE_BASE = API_BASE + '/wholesale'
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
@@ -186,7 +186,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
 
     // secret: process.env.NEXTAUTH_SECRET,
-    secret: process.env.AUTH_SECRET,
+    secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || 'elarbol_auth_secret_2026_super_secret_key',
 })
 
 let isRefreshing = false;

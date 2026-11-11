@@ -38,6 +38,7 @@ const manrope = Manrope({
 export async function generateMetadata() {
   const siteConfig = await getSiteConfig();
   return {
+    metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
     title: siteConfig?.meta_title || 'El Árbol',
     description: siteConfig?.meta_description || 'Artisan produce, delivered with care.',
     keywords: siteConfig?.meta_keywords || 'El Árbol, artisan, produce',
@@ -65,8 +66,8 @@ export default async function RootLayout({ children }) {
         />
         <style>{`
           html, body, #__next {
-            background: #ffffff !important;
-            color: #151e13 !important;
+            background: #EFF9F2 !important;
+            color: #0D2C23 !important;
           }
         `}</style>
       </head>
@@ -74,13 +75,13 @@ export default async function RootLayout({ children }) {
         className={`${newsreader.variable} ${manrope.variable}`}
         style={{
           fontFamily: '"Manrope", sans-serif',
-          background: '#ffffff',
-          color:      '#151e13',
+          background: '#EFF9F2',
+          color:      '#0D2C23',
           minHeight:  '100vh',
         }}
       >
         <FaviconUpdater />
-        <NextTopLoader color="#00694C" height={2} showSpinner={false} />
+        <NextTopLoader color="#57A12A" height={2} showSpinner={false} />
         <Providers>
           <AuthProvider>
             <WishlistProvider>
@@ -90,7 +91,7 @@ export default async function RootLayout({ children }) {
                   navbarLogoUrl={siteConfig?.navbar_logo_url || ''}
                   brandName={siteConfig?.brand_name || 'El Árbol'}
                 />
-                <main style={{ background: '#ffffff', minHeight: '100vh' }} className="md:pb-0">
+                <main style={{ background: '#EFF9F2', minHeight: '100vh' }} className="md:pb-0">
                   {children}
                 </main>
                 <FloatingCart />

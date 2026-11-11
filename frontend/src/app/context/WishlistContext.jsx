@@ -3,7 +3,7 @@
 import { createContext, useContext, useState, useCallback, useRef } from 'react'
 import { useAuth } from '@/app/context/AuthContext'
 
-const API_BASE = (process.env.NEXT_PUBLIC_API_URL).replace(/\/$/, '')
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api').replace(/\/$/, '')
 
 const WishlistContext = createContext(null)
 
@@ -127,7 +127,7 @@ function normalizeProduct(p) {
   
   let image = p.thumbnail || p.thumbnail_url || p.image_url || p.image || null;
   if (image && !image.startsWith('http') && !image.startsWith('data:')) {
-    const base = (process.env.NEXT_PUBLIC_API_URL).replace(/\/$/, '');
+    const base = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api').replace(/\/$/, '');
     const mediaBase = base.replace('/api', '');
     const clean = image.replace(/^\/+/, '');
     image = `${mediaBase}/${clean}`;

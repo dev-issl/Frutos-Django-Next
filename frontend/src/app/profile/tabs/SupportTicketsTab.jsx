@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Plus, X, Upload, MessageSquare, Clock, CheckCircle2, AlertCircle, Loader2, ArrowLeft, Send, MoreVertical, ChevronDown, Smile, Paperclip, ZoomIn, Download, User, Tag, XCircle } from 'lucide-react'
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'
 
 const CATEGORY_CHOICES = [
   { value: 'GENERAL', label: 'General Inquiry' },
@@ -431,7 +431,7 @@ const EMOJI_LIST = [
 const getFullUrl = (url) => {
   if (!url) return '';
   if (url.startsWith('http') || url.startsWith('blob:') || url.startsWith('data:')) return url;
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL.replace(/\/api\/?$/, '');
+  const baseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api').replace(/\/api\/?$/, '');
   return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
 };
 
@@ -505,7 +505,7 @@ function TicketChat({ ticket: initialTicket, authFetch, onBack, getStatusBadge, 
   
   useEffect(() => {
     const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const apiHost = new URL(process.env.NEXT_PUBLIC_API_URL).host;
+    const apiHost = new URL(process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api').host;
     const wsUrl = `${wsProtocol}//${apiHost}/ws/chat/ticket/${ticket.id}/`;
     
     const socket = new WebSocket(wsUrl);

@@ -5,7 +5,7 @@ import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import ProductCard from '@/app/components/ProductCard'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-import { useSession } from 'next-auth/react'
+import { useSafeSession } from '@/lib/useSafeSession'
 import { useAuth } from '@/app/context/AuthContext'
 import { getFrutasCategoryName, checkIsInternalWholesale } from '@/lib/categoryHelper'
 
@@ -140,7 +140,7 @@ export default function ProductListingClient({
   const [products, setProducts] = useState(initialProducts)
   const [cats, setCats] = useState(categories)
 
-  const { data: session } = useSession()
+  const { data: session } = useSafeSession()
   const { user } = useAuth()
   const isInternalWholesale = initialIsInternalWholesale || checkIsInternalWholesale(session, user)
 

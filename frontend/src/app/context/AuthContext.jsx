@@ -4,7 +4,7 @@
 import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react'
 import { signOut } from 'next-auth/react'
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api').replace(/\/$/, '')
 
 const AuthContext = createContext(null)
 

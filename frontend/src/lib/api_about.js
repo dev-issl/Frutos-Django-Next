@@ -5,7 +5,7 @@
  * Icons are defined separately in aboutIcons.jsx
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api').replace(/\/$/, '')
 
 // ── Fallback data (used when backend is unreachable) ──────────────────────────
 

@@ -1,7 +1,7 @@
 'use client'
 import { useState, useRef } from 'react'
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'
 
 const inputClass = "w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#00694C] focus:ring-1 focus:ring-[#00694C] outline-none transition-all text-sm bg-gray-50/50 text-[#151e13] placeholder-gray-400";
 

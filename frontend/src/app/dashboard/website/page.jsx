@@ -845,7 +845,11 @@ function NavbarConfigForm() {
       if (typeof window !== 'undefined') {
         const logo = data.chat_logo_url?.value || data.navbar_logo_url?.value;
         window.dispatchEvent(new CustomEvent('site_settings_updated', {
-          detail: { chat_logo_url: logo, navbar_logo_url: data.navbar_logo_url?.value }
+          detail: {
+            chat_logo_url: logo,
+            navbar_logo_url: data.navbar_logo_url?.value,
+            brand_name: data.brand_name?.value,
+          }
         }));
       }
       fetchData();

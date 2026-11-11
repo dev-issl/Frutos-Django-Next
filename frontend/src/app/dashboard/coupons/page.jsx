@@ -163,7 +163,7 @@ function CouponViewModal({ open, item, type, onClose }) {
 }
 
 /* ─── Coupon Form ────────────────────────────────────────────── */
-const API_BASE = process.env.NEXT_PUBLIC_API_URL;
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api';
 
 function CouponForm({ initial = {}, onSubmit, submitLabel = "Save" }) {
   // Derive initial applicable_products IDs from applicable_products_data or applicable_products

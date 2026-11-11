@@ -5,7 +5,7 @@
 // import Link from 'next/link'
 // import StatusBadge from '../components/StatusBadge'
 
-// const API_BASE = process.env.NEXT_PUBLIC_API_URL
+// const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'
 // const fmt = (n) => Number(n || 0).toFixed(2)
 
 // const FULFILLMENT_ICONS = {
@@ -174,7 +174,7 @@ import Link from 'next/link'
 import { toast } from 'react-hot-toast'
 import StatusBadge from '../components/StatusBadge'
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'
 const fmt = (n) => Number(n || 0).toFixed(2)
 
 const FULFILLMENT_ICONS = {

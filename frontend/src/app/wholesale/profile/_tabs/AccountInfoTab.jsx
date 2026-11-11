@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
-import { useSession } from 'next-auth/react'
+import { useSafeSession } from '@/lib/useSafeSession'
 import { 
   Camera, Building2, Phone, Mail, FileText, MapPin, 
   Briefcase, BarChart, Store, ArrowRightLeft, X, Check, Loader2, CreditCard
@@ -32,7 +32,7 @@ export default function AccountInfoTab({
   onProfileUpdate
 }) {
   const fileInputRef = useRef(null)
-  const { update: updateSession } = useSession()
+  const { update: updateSession } = useSafeSession()
 
   const [showStoreModal, setShowStoreModal] = useState(false)
   const [storeList, setStoreList] = useState([])

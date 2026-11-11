@@ -4,7 +4,8 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { useSession, signOut } from 'next-auth/react'
+import { signOut } from 'next-auth/react'
+import { useSafeSession } from '@/lib/useSafeSession'
 import { useCart } from '@/app/context/CartContext'
 import { useAuth } from '@/app/context/AuthContext'
 import CheckoutProgress from './CheckoutProgress'
@@ -13,7 +14,7 @@ import PaymentSection   from './PaymentSection'
 import OrderSidebar     from './OrderSidebar'
 import { checkIsInternalWholesale } from '@/lib/categoryHelper'
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'
 
 function toArray(data) {
   if (Array.isArray(data)) return data
@@ -49,7 +50,7 @@ function normalizeCartItem(item) {
 
 export default function CheckoutShell({ deliveryDates, deliverySlots, initialUserData, deliveryConfig }) {
   const router = useRouter()
-  const { data: session, status } = useSession()
+  const { data: session, status } = useSafeSession()
 
   const {
     items, subtotal, clearCart,

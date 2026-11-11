@@ -1,7 +1,7 @@
 
 
 'use client'
-import { useSession } from 'next-auth/react'
+import { useSafeSession } from '@/lib/useSafeSession'
 import { useState, useRef, useMemo, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -396,7 +396,7 @@ function RelatedProducts({ related }) {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function ProductDetailClient({ product: initialProduct, related }) {
-  const { data: session } = useSession()
+  const { data: session } = useSafeSession()
   const { getAccess } = useAuth()
   const isApprovedWholesale = session?.user?.isApproved === true
 

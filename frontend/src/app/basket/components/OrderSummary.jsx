@@ -5,7 +5,7 @@
 // import { useRouter } from 'next/navigation'
 // import { useCart } from '@/app/context/CartContext'   // ← NEW
 
-// const API_BASE = process.env.NEXT_PUBLIC_API_URL
+// const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'
 
 // export default function OrderSummary({ subtotal, items = [], isApprovedWholesale = false }) {
 //   const router = useRouter()
@@ -348,7 +348,7 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCart } from '@/app/context/CartContext'
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'
 
 export default function OrderSummary({
   subtotal,

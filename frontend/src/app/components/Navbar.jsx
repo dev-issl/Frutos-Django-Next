@@ -1,41 +1,50 @@
-
 'use client'
 // src/app/components/Navbar.jsx
 import Image from 'next/image'
-import { useSession } from 'next-auth/react'
-import { newsreader } from '@/app/components/fonts'
+import { useSafeSession } from '@/lib/useSafeSession'
 import Link from 'next/link'
 import { useState, useRef, useEffect } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
+import {
+  Home,
+  MapPin,
+  Store,
+  Users,
+  Package,
+  ChevronDown,
+  Search,
+  Bell,
+  ShoppingBag,
+  LogIn,
+  X,
+  Menu,
+} from 'lucide-react'
 import { useCart } from '@/app/context/CartContext'
 import { useAuth } from '@/app/context/AuthContext'
 import AuthModal from '@/app/components/AuthModal'
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api').replace(/\/$/, '')
+const MEDIA_BASE = API_BASE.replace(/\/api$/, '')
 
-const navLinks = [
-  { label: 'Shop',      href: '/shop'      },
-  // { label: 'Recipes',   href: '/recipes'   },
-  { label: 'Store',     href: '/stores'    },
-  { label: 'About',     href: '/about'     },
-  { label: 'Wholesale', href: '/wholesale' },
-]
-
-function PineTree() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="#00694C">
-      <polygon points="12,2 5.5,10.5 8.5,10.5 3,18 21,18 15.5,10.5 18.5,10.5" />
-      <rect x="10.5" y="18" width="3" height="3.5" rx="0.4" />
-    </svg>
-  )
+function resolveLogoUrl(url) {
+  if (!url) return '/el-erbol-logo.png'
+  if (url.startsWith('/media/')) return `${MEDIA_BASE}${url}`
+  return url
 }
 
-// ── Profile Menu 
+const navLinks = [
+  { label: 'Home',         href: '/',          Icon: Home },
+  { label: 'Find a Store', href: '/stores',    Icon: MapPin },
+  { label: 'Our Shop',     href: '/shop',      Icon: Store },
+  { label: 'About Us',     href: '/about',     Icon: Users },
+  { label: 'Wholesale',    href: '/wholesale', Icon: Package },
+]
 
-function ProfileMenu({ user, logout, isMobile = false }) {
+// ── Profile Menu ─────────────────────────────────────────────────────────────
+function ProfileMenu({ user, logout }) {
   const [open, setOpen] = useState(false)
-  const menuRef         = useRef(null)
-  const router          = useRouter()
+  const menuRef = useRef(null)
+  const router = useRouter()
 
   useEffect(() => {
     function handler(e) {
@@ -45,10 +54,12 @@ function ProfileMenu({ user, logout, isMobile = false }) {
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
-  const avatarUrl   = user?.profile?.resolvedAvatar || ''
-  const initials    = ((user?.firstName?.[0] || '') + (user?.lastName?.[0] || '')).toUpperCase()
-                      || user?.email?.[0]?.toUpperCase() || '?'
-  const displayName = user?.fullName || user?.firstName || user?.email || 'Account'
+  const avatarUrl = user?.profile?.resolvedAvatar || ''
+  const initials =
+    ((user?.firstName?.[0] || '') + (user?.lastName?.[0] || '')).toUpperCase() ||
+    user?.email?.[0]?.toUpperCase() ||
+    '?'
+  const displayName = user?.fullName || user?.firstName || user?.email || 'My Account'
 
   async function handleLogout() {
     setOpen(false)
@@ -57,76 +68,69 @@ function ProfileMenu({ user, logout, isMobile = false }) {
   }
 
   const menuItems = [
-    { label: 'My Profile',  icon: 'person',          href: '/profile'          },
+    { label: 'My Profile',  icon: 'person',          href: '/profile' },
     { label: 'My Orders',   icon: 'receipt_long',    href: '/profile?tab=orders' },
     { label: 'Saved Items', icon: 'favorite_border', href: '/profile?tab=saved' },
     { label: 'Settings',    icon: 'settings',        href: '/profile?tab=settings' },
   ]
 
   return (
-    <div ref={menuRef} style={{ position: 'relative' }}>
+    <div ref={menuRef} className="relative">
       <button
-        onClick={() => setOpen(v => !v)}
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="inline-flex items-center gap-2 rounded-full text-white font-semibold transition-all duration-200 hover:brightness-110 active:scale-[0.98] cursor-pointer border-none whitespace-nowrap"
         style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: open ? '#ECF7E4' : 'transparent',
-          border: `1.5px solid ${open ? '#00694C' : '#BCCAC1'}`,
-          borderRadius: '50%',
-          padding: '2px',
-          cursor: 'pointer',
-          transition: 'background .15s, border-color .15s',
+          background: 'linear-gradient(135deg, #0F4E31 0%, #0B3C25 100%)',
+          fontSize: '12.5px',
+          padding: '6px 13px 6px 7px',
         }}
       >
-        <div style={{
-          width: '32px', height: '32px', borderRadius: '50%',
-          background: avatarUrl ? 'transparent' : '#1D9E75',
-          overflow: 'hidden',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          flexShrink: 0,
-        }}>
-          {avatarUrl
-            ? <Image src={avatarUrl} alt={displayName} width={40} height={40} style={{ objectFit: 'cover' }} />
-            : <span style={{ fontSize: '12px', fontWeight: 700, color: 'white', lineHeight: 1 }}>{initials}</span>
-          }
+        <div className="w-6 h-6 rounded-full bg-white/20 overflow-hidden flex items-center justify-center shrink-0">
+          {avatarUrl ? (
+            <Image src={avatarUrl} alt={displayName} width={28} height={28} className="object-cover" />
+          ) : (
+            <span className="text-[10.5px] font-bold text-white leading-none">{initials}</span>
+          )}
         </div>
+        <span className="truncate max-w-[92px]">{displayName.split(' ')[0]}</span>
+        <ChevronDown
+          className={`w-3.5 h-3.5 text-white/90 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+        />
       </button>
 
       {open && (
-        <div style={{
-          position: 'absolute', top: 'calc(100% + 10px)', right: 0,
-          width: '220px', background: 'white',
-          borderRadius: '16px',
-          boxShadow: '0 12px 40px rgba(8,28,20,.14), 0 2px 8px rgba(0,0,0,.06)',
-          border: '1px solid rgba(188,202,193,.4)',
-          overflow: 'hidden', zIndex: 100,
-          animation: 'profileDropIn .18s ease',
-        }}>
-          <div style={{ padding: '14px 16px 12px', borderBottom: '1px solid #ECF7E4' }}>
-            <p style={{ fontSize: '13.5px', fontWeight: 600, color: '#151E13', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {displayName}
-            </p>
-            <p style={{ fontSize: '12px', color: '#6D7A73', margin: '2px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {user?.email}
-            </p>
+        <div
+          className="absolute right-0 top-[calc(100%+12px)] w-[224px] bg-[#FAFCF9] rounded-2xl border border-[#C8DEC8] overflow-hidden z-50"
+          style={{
+            boxShadow: '0 14px 40px rgba(12, 68, 41, 0.16), 0 2px 8px rgba(0, 0, 0, 0.05)',
+          }}
+        >
+          <div className="px-4 py-3 border-b border-[#E0ECE0]">
+            <p className="text-[13.5px] font-semibold text-[#0C4429] truncate m-0">{displayName}</p>
+            <p className="text-[12px] text-[#4B6A5F] truncate mt-0.5 mb-0">{user?.email}</p>
           </div>
-          <div style={{ padding: '6px 0' }}>
+          <div className="py-1.5">
             {menuItems.map(({ label, icon, href }) => (
-              <Link key={href} href={href} onClick={() => setOpen(false)}
-                style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 16px', fontSize: '13.5px', color: '#2D3A35', textDecoration: 'none', transition: 'background .12s' }}
-                onMouseEnter={e => e.currentTarget.style.background = '#F5FAF7'}
-                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#6D7A73' }}>{icon}</span>
-                {label}
+              <Link
+                key={href}
+                href={href}
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-2.5 px-4 py-2 text-[13px] text-[#123027] no-underline hover:bg-[#EAF5EE] transition-colors"
+              >
+                <span className="material-symbols-outlined text-[18px] text-[#0C4429]">{icon}</span>
+                <span>{label}</span>
               </Link>
             ))}
           </div>
-          <div style={{ borderTop: '1px solid #ECF7E4', padding: '6px 0' }}>
-            <button onClick={handleLogout}
-              style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 16px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '13.5px', color: '#C84040', textAlign: 'left', transition: 'background .12s' }}
-              onMouseEnter={e => e.currentTarget.style.background = '#FFF5F5'}
-              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>logout</span>
-              Log Out
+          <div className="border-t border-[#E0ECE0] py-1.5">
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="w-full flex items-center gap-2.5 px-4 py-2 bg-transparent border-none cursor-pointer text-[13px] text-[#C84040] text-left hover:bg-[#FFF5F5] transition-colors"
+            >
+              <span className="material-symbols-outlined text-[18px]">logout</span>
+              <span>Log Out</span>
             </button>
           </div>
         </div>
@@ -135,125 +139,213 @@ function ProfileMenu({ user, logout, isMobile = false }) {
   )
 }
 
-// ── Main Navbar 
-
-export default function Navbar({ navbarLogoUrl = '', brandName = 'El Árbol' }) {
+// ── Main Navbar ──────────────────────────────────────────────────────────────
+export default function Navbar({ navbarLogoUrl = '', brandName = 'El Árbol', navbarTagline = '' }) {
   const { user, isAuthenticated, logout, authFetch } = useAuth()
-  const { data: session } = useSession()
-    // Wholesale user detect করুন
-  const isWholesaleUser = !!session?.user?.accessToken
-  const isInternalWholesale = isWholesaleUser && (
-    !session?.user?.userType || 
-    session?.user?.userType === 'WHOLESALER' || 
-    session?.user?.user_type === 'WHOLESALER' ||
-    session?.user?.userType === 'internal'
-  )
-  const wholesaleName = session?.user?.businessName 
-  || session?.user?.contactName 
-  || session?.user?.name 
-  || 'Wholesale'
+  const { data: session } = useSafeSession()
 
+  const [liveBranding, setLiveBranding] = useState(null)
+  const [failedLogoSrc, setFailedLogoSrc] = useState(null)
+
+  const isWholesaleUser = !!session?.user?.accessToken
+  const isInternalWholesale =
+    isWholesaleUser &&
+    (!session?.user?.userType ||
+      session?.user?.userType === 'WHOLESALER' ||
+      session?.user?.user_type === 'WHOLESALER' ||
+      session?.user?.userType === 'internal')
+
+  const wholesaleName =
+    session?.user?.businessName ||
+    session?.user?.contactName ||
+    session?.user?.name ||
+    'Wholesale'
   const wholesaleInitial = wholesaleName[0].toUpperCase()
 
-  const [open,             setOpen]             = useState(false)
-  const [authOpen,         setAuthOpen]         = useState(false)
-  const [authMode,         setAuthMode]         = useState('login')
-  const [query,            setQuery]            = useState('')
-  const [showDropdown,     setShowDropdown]     = useState(false)
-  const [activeIndex,      setActiveIndex]      = useState(-1)
-  const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
-  const [allProducts,      setAllProducts]      = useState([])
-  const [unreadCount,      setUnreadCount]      = useState(0)   // ← notification badge
+  const [scrolled, setScrolled]                   = useState(false)
+  const [open, setOpen]                           = useState(false)
+  const [authOpen, setAuthOpen]                   = useState(false)
+  const [authMode, setAuthMode]                   = useState('login')
+  const [query, setQuery]                         = useState('')
+  const [desktopSearchOpen, setDesktopSearchOpen] = useState(false)
+  const [showDropdown, setShowDropdown]           = useState(false)
+  const [activeIndex, setActiveIndex]             = useState(-1)
+  const [mobileSearchOpen, setMobileSearchOpen]   = useState(false)
+  const [allProducts, setAllProducts]             = useState([])
+  const [unreadCount, setUnreadCount]             = useState(0)
 
-  // Fetch products
-useEffect(() => {
-  const base = (process.env.NEXT_PUBLIC_API_URL).replace(/\/$/, '')
-  const mediaBase = base.replace('/api', '')
-
-  fetch(`${base}/products/products/`)
-    .then(r => { if (!r.ok) throw new Error(); return r.json() })
-    .then(data => {
-      const arr = Array.isArray(data) ? data : (data.results || [])
-      setAllProducts(arr.map(p => {
-
-        // ✅ FIX: /media/ double হওয়া বন্ধ করা
-        let image = p.thumbnail || p.thumbnail_url || p.image_url || p.image || null
-        if (image && !image.startsWith('http')) {
-          const clean = image.replace(/^\/+/, '') // leading slash সরাও
-          image = `${mediaBase}/${clean}`          // mediaBase + /media/products/...
-        }
-        const PLACEHOLDER = 'https://placehold.co/400x400/ECF7E4/00694C?text=No+Image'
-
-        // ✅ Price fix
-        const originalPrice = Number(p.price || 0)
-        const discountPrice = p.discount_price != null ? Number(p.discount_price) : null
-        const displayPrice  = (discountPrice && discountPrice < originalPrice) ? discountPrice : originalPrice
-        const onSale        = discountPrice != null && discountPrice < originalPrice
-
-        // ✅ Category normalize
-        const category = typeof p.category === 'object' && p.category !== null
-          ? p.category.name
-          : (p.sub_category?.category?.name || p.category || '')
-
-        return {
-          ...p,
-          image: image || PLACEHOLDER,
-          price: displayPrice,
-          oldPrice: onSale ? originalPrice : null,
-          onSale,
-          category,
-          slug: p.slug || null,
-        }
-      }))
-    })
-    .catch(() => {})
-}, [])
-  // ── Fetch unread notification count when authenticated ──────────────────
+  // Sync brand logo & name dynamically with backend site-config
   useEffect(() => {
-    if (!isAuthenticated && (!isWholesaleUser || isInternalWholesale)) { setUnreadCount(0); return }
+    let active = true
+    const propsKey = `${navbarLogoUrl || ''}|${brandName || ''}`
+
+    async function loadSiteBranding() {
+      try {
+        const res = await fetch(`${API_BASE}/website/site-config/?t=${Date.now()}`, { cache: 'no-store' })
+        if (!res.ok) return
+        const data = await res.json()
+        if (!active || !data) return
+        setLiveBranding({
+          forPropsKey: propsKey,
+          navbarLogoUrl: data.navbar_logo_url || data.logo_url || '',
+          brandName: data.brand_name || '',
+          navbarTagline: data.navbar_tagline || '',
+        })
+      } catch {
+        /* fallback to SSR props */
+      }
+    }
+
+    loadSiteBranding()
+
+    const handleSettingsUpdate = (e) => {
+      const detailLogo = e?.detail?.navbar_logo_url || e?.detail?.logo_url
+      const detailName = e?.detail?.brand_name
+      if (detailLogo || detailName) {
+        setLiveBranding((prev) => ({
+          forPropsKey: propsKey,
+          navbarLogoUrl: detailLogo ?? prev?.navbarLogoUrl ?? navbarLogoUrl,
+          brandName: detailName ?? prev?.brandName ?? brandName,
+          navbarTagline: e?.detail?.navbar_tagline ?? prev?.navbarTagline ?? navbarTagline,
+        }))
+      }
+      loadSiteBranding()
+    }
+
+    window.addEventListener('site_settings_updated', handleSettingsUpdate)
+    return () => {
+      active = false
+      window.removeEventListener('site_settings_updated', handleSettingsUpdate)
+    }
+  }, [navbarLogoUrl, brandName, navbarTagline])
+
+  const currentPropsKey = `${navbarLogoUrl || ''}|${brandName || ''}`
+  const activeLive = liveBranding?.forPropsKey === currentPropsKey ? liveBranding : null
+  const activeBrandName = activeLive?.brandName || brandName || 'El Árbol'
+  const activeTagline = activeLive?.navbarTagline || navbarTagline || 'Fresh. Local. Together.'
+  const resolvedLogo = resolveLogoUrl(activeLive?.navbarLogoUrl || navbarLogoUrl || '/el-erbol-logo.png')
+  const showImageLogo = Boolean(resolvedLogo) && failedLogoSrc !== resolvedLogo
+
+  // Sticky floating pill scroll transition with hysteresis to prevent bounce
+  useEffect(() => {
+    const onScroll = () => {
+      const y = window.scrollY
+      setScrolled((prev) => {
+        if (!prev && y > 36) return true
+        if (prev && y < 12) return false
+        return prev
+      })
+    }
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  // Fetch products for live search autocomplete
+  useEffect(() => {
+    const base = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api').replace(/\/$/, '')
+    const mediaBase = base.replace('/api', '')
+
+    fetch(`${base}/products/products/`)
+      .then((r) => {
+        if (!r.ok) throw new Error()
+        return r.json()
+      })
+      .then((data) => {
+        const arr = Array.isArray(data) ? data : data.results || []
+        setAllProducts(
+          arr.map((p) => {
+            let image = p.thumbnail || p.thumbnail_url || p.image_url || p.image || null
+            if (image && !image.startsWith('http')) {
+              const clean = image.replace(/^\/+/, '')
+              image = `${mediaBase}/${clean}`
+            }
+            const PLACEHOLDER = '/homepage/prod_apple.jpg'
+            const originalPrice = Number(p.price || 0)
+            const discountPrice = p.discount_price != null ? Number(p.discount_price) : null
+            const displayPrice =
+              discountPrice && discountPrice < originalPrice ? discountPrice : originalPrice
+            const onSale = discountPrice != null && discountPrice < originalPrice
+            const category =
+              typeof p.category === 'object' && p.category !== null
+                ? p.category.name
+                : p.sub_category?.category?.name || p.category || ''
+
+            return {
+              ...p,
+              image: image || PLACEHOLDER,
+              price: displayPrice,
+              oldPrice: onSale ? originalPrice : null,
+              onSale,
+              category,
+              slug: p.slug || null,
+            }
+          })
+        )
+      })
+      .catch(() => {})
+  }, [])
+
+  // Fetch unread notification count when authenticated
+  const canViewNotifications = isAuthenticated || (isWholesaleUser && !isInternalWholesale)
+  const displayUnreadCount = canViewNotifications ? unreadCount : 0
+
+  useEffect(() => {
+    if (!canViewNotifications) return
 
     async function fetchCount() {
       try {
-        let res;
+        let res
         if (isAuthenticated) {
           res = await authFetch(`${API_BASE}/auth/notifications/unread-count/`)
         } else if (isWholesaleUser && session?.user?.accessToken) {
           res = await fetch(`${API_BASE}/wholesale/notifications/unread-count/`, {
-            headers: { Authorization: `Bearer ${session.user.accessToken}` }
+            headers: { Authorization: `Bearer ${session.user.accessToken}` },
           })
         }
-        
+
         if (res?.ok) {
           const data = await res.json()
           setUnreadCount(data.unread_count ?? data.unreadCount ?? 0)
         }
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
 
     fetchCount()
-    // Poll every 10 seconds so badge stays fresh
     const interval = setInterval(fetchCount, 10_000)
     return () => clearInterval(interval)
-  }, [isAuthenticated, isWholesaleUser, session])
+  }, [canViewNotifications, isAuthenticated, isWholesaleUser, session, authFetch])
 
-  const filtered = query.trim().length > 0
-    ? allProducts.filter(p =>
-        p.name?.toLowerCase().includes(query.toLowerCase()) ||
-        p.category?.toLowerCase().includes(query.toLowerCase()) ||
-        p.origin?.toLowerCase().includes(query.toLowerCase())
-      ).slice(0, 6)
-    : []
+  const filtered =
+    query.trim().length > 0
+      ? allProducts
+          .filter(
+            (p) =>
+              p.name?.toLowerCase().includes(query.toLowerCase()) ||
+              p.category?.toLowerCase().includes(query.toLowerCase()) ||
+              p.origin?.toLowerCase().includes(query.toLowerCase())
+          )
+          .slice(0, 6)
+      : []
 
   const { totalItems, setSidebarOpen } = useCart()
   const pathname = usePathname()
-  const router   = useRouter()
+  const router = useRouter()
 
-  const inputRef       = useRef(null)
+  const inputRef = useRef(null)
   const mobileInputRef = useRef(null)
-  const dropdownRef    = useRef(null)
+  const searchWrapperRef = useRef(null)
 
-  const openLogin  = () => { setAuthMode('login');  setAuthOpen(true) }
-  const openSignup = () => { setAuthMode('signup'); setAuthOpen(true) }
+  const openLogin = () => {
+    setAuthMode('login')
+    setAuthOpen(true)
+  }
+  const openSignup = () => {
+    setAuthMode('signup')
+    setAuthOpen(true)
+  }
 
   function isActive(href) {
     if (href === '/') return pathname === '/'
@@ -262,8 +354,10 @@ useEffect(() => {
 
   useEffect(() => {
     function handleClickOutside(e) {
-      if (!dropdownRef.current?.contains(e.target) && !inputRef.current?.contains(e.target) && !mobileInputRef.current?.contains(e.target)) {
-        setShowDropdown(false); setActiveIndex(-1)
+      if (!searchWrapperRef.current?.contains(e.target) && !mobileInputRef.current?.contains(e.target)) {
+        setShowDropdown(false)
+        setDesktopSearchOpen(false)
+        setActiveIndex(-1)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -271,33 +365,83 @@ useEffect(() => {
   }, [])
 
   useEffect(() => {
+    if (desktopSearchOpen) {
+      setTimeout(() => inputRef.current?.focus(), 40)
+    }
+  }, [desktopSearchOpen])
+
+  useEffect(() => {
     if (mobileSearchOpen) {
       setTimeout(() => mobileInputRef.current?.focus(), 50)
-    } else {
-      setQuery(''); setShowDropdown(false); setActiveIndex(-1)
     }
   }, [mobileSearchOpen])
 
-  function handleInputChange(e) { setQuery(e.target.value); setShowDropdown(true); setActiveIndex(-1) }
+  function toggleMobileSearch() {
+    setMobileSearchOpen((prev) => {
+      if (prev) {
+        setQuery('')
+        setShowDropdown(false)
+        setActiveIndex(-1)
+      }
+      return !prev
+    })
+    setOpen(false)
+  }
+
+  function handleInputChange(e) {
+    setQuery(e.target.value)
+    setShowDropdown(true)
+    setActiveIndex(-1)
+  }
 
   function handleKeyDown(e) {
-    if (!showDropdown || !filtered.length) return
-    if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIndex(i => Math.min(i + 1, filtered.length - 1)) }
-    else if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIndex(i => Math.max(i - 1, -1)) }
-    else if (e.key === 'Enter' && activeIndex >= 0) { e.preventDefault(); navigateToProduct(filtered[activeIndex]) }
-    else if (e.key === 'Escape') { setShowDropdown(false); setActiveIndex(-1); setMobileSearchOpen(false) }
+    if (e.key === 'Escape') {
+      setShowDropdown(false)
+      setDesktopSearchOpen(false)
+      setActiveIndex(-1)
+      setMobileSearchOpen(false)
+      return
+    }
+    if (!showDropdown || !filtered.length) {
+      if (e.key === 'Enter' && query.trim()) {
+        e.preventDefault()
+        router.push(`/shop?q=${encodeURIComponent(query.trim())}`)
+        setDesktopSearchOpen(false)
+        setMobileSearchOpen(false)
+        setShowDropdown(false)
+      }
+      return
+    }
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setActiveIndex((i) => Math.min(i + 1, filtered.length - 1))
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setActiveIndex((i) => Math.max(i - 1, -1))
+    } else if (e.key === 'Enter' && activeIndex >= 0) {
+      e.preventDefault()
+      navigateToProduct(filtered[activeIndex])
+    }
   }
 
   function navigateToProduct(product) {
-    setQuery(''); setShowDropdown(false); setActiveIndex(-1); setMobileSearchOpen(false)
-    const slug = product.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+    setQuery('')
+    setShowDropdown(false)
+    setDesktopSearchOpen(false)
+    setActiveIndex(-1)
+    setMobileSearchOpen(false)
+    const slug =
+      product.slug ||
+      product.name
+        .toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9-]/g, '')
     router.push(`/products/${slug}`)
   }
 
-
   async function handleBellClick() {
     if (isAuthenticated || isWholesaleUser) {
-      setUnreadCount(0)  
+      setUnreadCount(0)
       try {
         if (isAuthenticated) {
           await authFetch(`${API_BASE}/auth/notifications/mark-read/`, {
@@ -308,384 +452,530 @@ useEffect(() => {
         } else if (isWholesaleUser && session?.user?.accessToken) {
           await fetch(`${API_BASE}/wholesale/notifications/mark-read/`, {
             method: 'POST',
-            headers: { 
+            headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${session.user.accessToken}`
+              Authorization: `Bearer ${session.user.accessToken}`,
             },
             body: JSON.stringify({ all: true }),
           })
         }
-      } catch { /* ignore */ }
-      
+      } catch {
+        /* ignore */
+      }
+
       if (isWholesaleUser) {
         router.push('/wholesale/profile?tab=notifications')
       } else {
         router.push('/profile?tab=notifications')
       }
-    } 
+    } else {
+      openLogin()
+    }
   }
+
+  const transitionEase = '420ms cubic-bezier(0.22, 1, 0.36, 1)'
 
   return (
     <>
-      <header className="sticky top-0 z-50 bg-[#FAFAF8] backdrop-blur-sm border-b border-[#BCCAC1]/35">
-        <nav className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-10 h-[60px] flex items-center justify-between md:justify-start md:gap-6">
-
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-[4px] shrink-0 mr-2 md:mr-0">
-              <Image
-                  src={navbarLogoUrl || '/el-erbol-logo.png'}
-                  alt={`${brandName} logo`}
-                  width={45}
-                  height={50}
-                  priority
-                  className="object-contain w-[35px] md:w-[45px] h-auto"
-                  style={{ height: 'auto' }}
-              />
-              <span className="text-[18px] md:text-[22px]" style={{
-                  fontFamily: '"Playfair Display", Georgia, serif',
-                  fontWeight: 700,
-                  letterSpacing: '-0.01em',
-                  color: '#085041'
-              }}>
-                  {brandName}
-              </span>
-          </Link>
-
-          {/* Desktop nav links */}
-          <ul className={`${newsreader.className} hidden md:flex items-center gap-4 lg:gap-7`}>
-            {navLinks.map(({ label, href }) => {
-              const active = isActive(href)
-              return (
-                <li key={label}>
-                  <Link href={href}
-                    style={{ fontSize: '16px', lineHeight: '20px', fontWeight: active ? 600 : 400, color: active ? '#085041' : '#475569', borderBottom: active ? '2px solid #1D9E75' : '2px solid transparent', paddingBottom: '2px', transition: 'color 0.15s, border-color 0.15s' }}
-                    className="hover:text-[#151E13] whitespace-nowrap">
-                    {label}
-                  </Link>
-                </li>
-              )
-            })}
-          </ul>
-
-          {/* Desktop right */}
-          <div className="hidden md:flex items-center gap-[4px] lg:gap-[8px] ml-auto">
-
-            {/* Search */}
-            <div className="relative hidden lg:block">
-              <label className="flex items-center gap-[7px] bg-[#ECF7E4] rounded-full px-[14px] py-[8px] w-[215px] cursor-text">
-                <svg width="14" height="14" fill="none" stroke="#6D7A73" strokeWidth="2" viewBox="0 0 24 24">
-                  <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-                </svg>
-                <input ref={inputRef} type="text" placeholder="Search fresh produce..."
-                  value={query} onChange={handleInputChange}
-                  onFocus={() => query.trim() && setShowDropdown(true)}
-                  onKeyDown={handleKeyDown}
-                  className="bg-transparent outline-none w-full placeholder:text-[#6D7A73]"
-                  style={{ fontSize: '13px', color: '#6D7A73', border: 'none' }} />
-                {query && (
-                  <button onClick={() => { setQuery(''); setShowDropdown(false); inputRef.current?.focus() }}
-                    className="flex-shrink-0 text-[#6D7A73] hover:text-[#3D4943] transition-colors" style={{ lineHeight: 1 }}>
-                    <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                      <path d="M18 6 6 18M6 6l12 12"/>
-                    </svg>
-                  </button>
-                )}
-              </label>
-
-              {showDropdown && query.trim().length > 0 && (
-                <div ref={dropdownRef}
-                  className="absolute left-0 top-[calc(100%+8px)] w-[280px] bg-white rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-[#BCCAC1]/40 overflow-hidden z-50"
-                  style={{ animation: 'dropdownFadeIn 0.15s ease' }}>
-                  {filtered.length > 0 ? (
-                    <>
-                      <p className="px-4 pt-3 pb-1.5 text-[11px] font-semibold tracking-widest text-[#6D7A73] uppercase">Products</p>
-                      <ul>
-                        {filtered.map((product, idx) => (
-                          <li key={product.id}>
-                            <button onMouseEnter={() => setActiveIndex(idx)} onMouseLeave={() => setActiveIndex(-1)}
-                              onClick={() => navigateToProduct(product)}
-                              className="w-full text-left flex items-center gap-3 px-4 py-2.5 transition-colors cursor-pointer"
-                              style={{ backgroundColor: activeIndex === idx ? '#F0FAF5' : 'transparent' }}>
-                              <div className="w-9 h-9 rounded-lg overflow-hidden flex-shrink-0 bg-[#ECF7E4]">
-                                <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-[13.5px] font-medium text-[#151E13] truncate" style={{ lineHeight: '18px' }}>
-                                  {highlightMatch(product.name, query)}
-                                </p>
-                                <p className="text-[11.5px] text-[#6D7A73]" style={{ lineHeight: '16px' }}>
-                                  {product.category} · {product.origin}
-                                </p>
-                              </div>
-                          <div className="flex flex-col items-end flex-shrink-0">
-                            <span className="text-[13px] font-semibold text-[#00694C]">
-                              €{product.price.toFixed(2)}
-                            </span>
-                            {product.oldPrice && (
-                              <span className="text-[11px] text-[#9CA3AF] line-through">
-                                €{product.oldPrice.toFixed(2)}
-                              </span>
-                            )}
-                          </div>                            </button>
-                          </li>
-                        ))}
-                      </ul>
-                      <div className="border-t border-[#BCCAC1]/30 px-4 py-2.5">
-                        <button onClick={() => { router.push(`/shop?q=${encodeURIComponent(query)}`); setShowDropdown(false) }}
-                          className="text-[12px] text-[#1D9E75] font-medium hover:text-[#085041] transition-colors cursor-pointer bg-transparent border-none p-0">
-                          See all results for "{query}" →
-                        </button>
-                      </div>
-                    </>
+      {/* Fixed-height sticky track prevents any layout jump while inner bar smoothly morphs into a floating pill */}
+      <header className="sticky top-0 z-50 w-full h-[66px] md:h-[70px] pointer-events-none">
+        <div
+          className="w-full flex justify-center items-start pointer-events-none"
+          style={{
+            transform: scrolled ? 'translateY(12px)' : 'translateY(0px)',
+            transition: `transform ${transitionEase}`,
+          }}
+        >
+          <nav
+            className="mx-auto pointer-events-auto relative"
+            style={{
+              width: scrolled ? 'min(1140px, calc(100% - 24px))' : '100%',
+              height: scrolled ? '60px' : '70px',
+              borderRadius: scrolled ? '9999px' : '0px',
+              backgroundColor: scrolled ? 'rgba(249, 250, 244, 0.94)' : 'rgba(250, 250, 246, 0.96)',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
+              borderWidth: '1.5px',
+              borderStyle: 'solid',
+              borderColor: scrolled ? '#B6CEB7' : 'transparent transparent #DCE8DF transparent',
+              boxShadow: scrolled
+                ? '0 12px 32px -6px rgba(12, 68, 41, 0.14), 0 3px 10px rgba(12, 68, 41, 0.06)'
+                : 'none',
+              transition: `width ${transitionEase}, height ${transitionEase}, border-radius ${transitionEase}, background-color 320ms ease, border-color 320ms ease, box-shadow 420ms ease`,
+            }}
+          >
+            <div
+              className="w-full max-w-[1320px] mx-auto h-full flex items-center justify-between gap-2 lg:gap-3"
+              style={{
+                paddingInline: scrolled ? '18px' : '24px',
+                transition: `padding-inline ${transitionEase}`,
+              }}
+            >
+              {/* ── Left Brand Logo + Name + Tagline (Integrated with Backend Site Config) ── */}
+              <Link href="/" className="flex items-center gap-2.5 shrink-0 no-underline group">
+                <div className="h-9 md:h-[38px] min-w-[36px] max-w-[100px] rounded-full flex items-center justify-center shrink-0 overflow-hidden transition-transform duration-200 group-hover:scale-[1.03]">
+                  {showImageLogo ? (
+                    <Image
+                      src={resolvedLogo}
+                      alt={`${activeBrandName} logo`}
+                      width={38}
+                      height={38}
+                      unoptimized
+                      onError={() => setFailedLogoSrc(resolvedLogo)}
+                      style={{ width: 'auto', height: '100%', maxWidth: '100px' }}
+                      className="object-contain"
+                    />
                   ) : (
-                    <div className="px-4 py-5 text-center">
-                      <p className="text-[13px] text-[#6D7A73]">No products found for <span className="font-medium text-[#151E13]">"{query}"</span></p>
+                    <svg width="38" height="38" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <defs>
+                        <linearGradient id="brandCircleGrad" x1="4" y1="6" x2="36" y2="34" gradientUnits="userSpaceOnUse">
+                          <stop offset="0%" stopColor="#F5FAF1" />
+                          <stop offset="65%" stopColor="#E1F0DC" />
+                          <stop offset="100%" stopColor="#BFE0B5" />
+                        </linearGradient>
+                      </defs>
+                      <circle cx="20" cy="20" r="18.2" fill="url(#brandCircleGrad)" stroke="#3D7838" strokeWidth="1.5" />
+                      <circle cx="20" cy="20" r="15.4" stroke="#FFFFFF" strokeWidth="0.9" strokeOpacity="0.85" />
+                      <path
+                        d="M19.3 26.2C12.4 25.4 9.6 20.1 10.6 14.3C16.2 15.1 19.1 19.8 19.3 26.2Z"
+                        fill="#0C4429"
+                        stroke="#093620"
+                        strokeWidth="1.1"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M20.2 25.5C20.2 19.2 23.4 13.8 29.2 13.2C29.8 19.2 26.6 24.4 20.2 25.5Z"
+                        fill="#357A38"
+                        stroke="#093620"
+                        strokeWidth="1.1"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M19.8 22.5V31M18.8 24.8L13.5 18.6M20.6 24.1L25.8 17.8"
+                        stroke="#FFFFFF"
+                        strokeWidth="1.15"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  )}
+                </div>
+                <div className="flex flex-col">
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-newsreader), "Playfair Display", Georgia, serif',
+                      fontSize: '18px',
+                      fontWeight: 700,
+                      color: '#0C4429',
+                      lineHeight: 1.05,
+                      letterSpacing: '-0.01em',
+                    }}
+                  >
+                    {activeBrandName}
+                  </span>
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-newsreader), "Playfair Display", Georgia, serif',
+                      fontSize: '10px',
+                      fontStyle: 'italic',
+                      color: '#346148',
+                      lineHeight: 1.2,
+                    }}
+                  >
+                    {activeTagline}
+                  </span>
+                </div>
+              </Link>
+
+              {/* Hairline Divider */}
+              <span className="hidden xl:block h-5 w-px bg-[#DCE6DA] shrink-0" aria-hidden="true" />
+
+              {/* ── Center Desktop Navigation Links with Icons & Dividers ── */}
+              <ul className="hidden md:flex items-center gap-0.5 lg:gap-1 xl:gap-1.5 m-0 p-0 list-none">
+                {navLinks.map(({ label, href, Icon, hasChevron }, idx) => {
+                  const active = isActive(href)
+                  return (
+                    <li key={label} className="flex items-center gap-0.5 xl:gap-1.5">
+                      <Link
+                        href={href}
+                        className={`inline-flex items-center gap-1.5 rounded-full whitespace-nowrap no-underline transition-all duration-200 ${
+                          active
+                            ? 'bg-[#0C4429] text-white font-semibold px-3.5 py-1.5 shadow-[0_2px_8px_rgba(12,68,41,0.2)]'
+                            : 'text-[#1E4431] hover:text-[#0C4429] hover:bg-[#E7F1E4]/85 font-medium px-2.5 lg:px-3 py-1.5'
+                        }`}
+                        style={{ fontSize: '13px' }}
+                      >
+                        <Icon
+                          className={`hidden lg:block w-[14px] h-[14px] shrink-0 ${
+                            active ? 'text-white' : 'text-[#1E4431]'
+                          }`}
+                          strokeWidth={1.9}
+                        />
+                        <span>{label}</span>
+                        {hasChevron && (
+                          <ChevronDown
+                            className={`w-3.5 h-3.5 shrink-0 ${active ? 'text-white/90' : 'text-[#315843]'}`}
+                            strokeWidth={2}
+                          />
+                        )}
+                      </Link>
+                      {idx < navLinks.length - 1 && (
+                        <span className="hidden xl:block h-4 w-px bg-[#E3EBE0] shrink-0" aria-hidden="true" />
+                      )}
+                    </li>
+                  )
+                })}
+              </ul>
+
+              {/* Hairline Divider */}
+              <span className="hidden xl:block h-5 w-px bg-[#DCE6DA] shrink-0" aria-hidden="true" />
+
+              {/* ── Right Actions (Search Circle Popover, Bell, Cart, My Account Pill) ── */}
+              <div className="hidden md:flex items-center gap-1.5 lg:gap-2 shrink-0">
+                {/* Expandable Circular Search Button & Popover */}
+                <div ref={searchWrapperRef} className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setDesktopSearchOpen((v) => !v)}
+                    aria-label="Search produce"
+                    className={`w-9 h-9 flex items-center justify-center rounded-full transition-all duration-200 cursor-pointer border-none ${
+                      desktopSearchOpen
+                        ? 'bg-[#0C4429] text-white'
+                        : 'bg-[#E5EFE2] text-[#0C4429] hover:bg-[#D7E6D4]'
+                    }`}
+                  >
+                    <Search className="w-4 h-4" strokeWidth={2.1} />
+                  </button>
+
+                  {desktopSearchOpen && (
+                    <div
+                      className="absolute right-0 top-[calc(100%+12px)] w-[310px] bg-[#FAFCF9] rounded-2xl border border-[#C6DBC6] overflow-hidden z-50"
+                      style={{
+                        boxShadow: '0 14px 40px rgba(12, 68, 41, 0.16), 0 2px 8px rgba(0, 0, 0, 0.05)',
+                      }}
+                    >
+                      <div className="p-2.5 border-b border-[#E3EDE2]">
+                        <div className="flex items-center gap-2 rounded-full bg-[#EFF6ED] border border-[#D1E2CE] px-3.5 py-2">
+                          <Search className="w-3.5 h-3.5 text-[#3F6351] shrink-0" strokeWidth={2} />
+                          <input
+                            ref={inputRef}
+                            type="text"
+                            placeholder="Search fresh produce..."
+                            value={query}
+                            onChange={handleInputChange}
+                            onFocus={() => query.trim() && setShowDropdown(true)}
+                            onKeyDown={handleKeyDown}
+                            className="bg-transparent outline-none w-full text-[13px] text-[#0D2C23] placeholder:text-[#58786C] border-none"
+                          />
+                          {query && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setQuery('')
+                                setShowDropdown(false)
+                                inputRef.current?.focus()
+                              }}
+                              aria-label="Clear search"
+                              className="text-[#4D6E62] hover:text-[#0C4429] bg-transparent border-none p-0 cursor-pointer shrink-0"
+                            >
+                              <X className="w-3.5 h-3.5" strokeWidth={2.3} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {showDropdown && query.trim().length > 0 && (
+                        <div>
+                          {filtered.length > 0 ? (
+                            <>
+                              <p className="px-4 pt-2.5 pb-1 text-[10.5px] font-semibold tracking-widest text-[#4D6E62] uppercase m-0">
+                                Products
+                              </p>
+                              <ul className="m-0 p-0 list-none max-h-[270px] overflow-y-auto">
+                                {filtered.map((product, idx) => (
+                                  <li key={product.id}>
+                                    <button
+                                      type="button"
+                                      onMouseEnter={() => setActiveIndex(idx)}
+                                      onMouseLeave={() => setActiveIndex(-1)}
+                                      onClick={() => navigateToProduct(product)}
+                                      className={`w-full text-left flex items-center gap-3 px-4 py-2 transition-colors cursor-pointer border-none ${
+                                        activeIndex === idx ? 'bg-[#EAF5EE]' : 'bg-transparent'
+                                      }`}
+                                    >
+                                      <div className="w-9 h-9 rounded-lg overflow-hidden shrink-0 bg-white border border-[#E5EDE4]">
+                                        <Image
+                                          src={product.image}
+                                          alt={product.name}
+                                          width={36}
+                                          height={36}
+                                          unoptimized
+                                          className="w-full h-full object-cover"
+                                        />
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <p className="text-[13px] font-medium text-[#0D2C23] truncate m-0">
+                                          {highlightMatch(product.name, query)}
+                                        </p>
+                                        <p className="text-[11px] text-[#4D6E62] m-0">{product.category}</p>
+                                      </div>
+                                      <span className="text-[12.5px] font-semibold text-[#0C4429]">
+                                        €{product.price.toFixed(2)}
+                                      </span>
+                                    </button>
+                                  </li>
+                                ))}
+                              </ul>
+                              <div className="border-t border-[#E3EDE2] px-4 py-2">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    router.push(`/shop?q=${encodeURIComponent(query)}`)
+                                    setShowDropdown(false)
+                                    setDesktopSearchOpen(false)
+                                  }}
+                                  className="text-[12px] text-[#0C4429] font-semibold hover:underline bg-transparent border-none p-0 cursor-pointer"
+                                >
+                                  See all results for &quot;{query}&quot; →
+                                </button>
+                              </div>
+                            </>
+                          ) : (
+                            <div className="px-4 py-5 text-center">
+                              <p className="text-[12.5px] text-[#4D6E62] m-0">
+                                No products found for{' '}
+                                <span className="font-semibold text-[#0C4429]">&quot;{query}&quot;</span>
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
-              )}
-            </div>
 
-            {/* Tablet Search Icon */}
-            <button onClick={() => { setMobileSearchOpen(v => !v); setOpen(false) }}
-              className="hidden md:flex lg:hidden w-9 h-9 items-center justify-center rounded-full transition-colors"
-              style={{ backgroundColor: mobileSearchOpen ? '#ECF7E4' : 'transparent' }} aria-label="Search">
-              {mobileSearchOpen
-                ? <svg width="17" height="17" fill="none" stroke="#151E13" strokeWidth="2.2" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
-                : <svg width="19" height="19" fill="none" stroke="#151E13" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-              }
-            </button>
-
-            {/* Tablet Cart Icon */}
-            <button onClick={() => setSidebarOpen(true)}
-              className="hidden md:flex lg:hidden w-9 cursor-pointer h-9 items-center justify-center rounded-full hover:bg-[#BCCAC1]/25 transition-colors relative">
-              <svg width="19" height="19" fill="none" stroke="#3D4943" strokeWidth="1.75" viewBox="0 0 24 24">
-                <path d="M5 8h14l-1.5 11H6.5L5 8z"/>
-                <path d="M9 8V6a3 3 0 1 1 6 0v2"/>
-              </svg>
-              {totalItems > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 min-w-[17px] h-[17px] px-[3px] bg-[#00694C] text-white rounded-full flex items-center justify-center"
-                  style={{ fontSize: '10px', fontWeight: 700, lineHeight: 1 }}>
-                  {totalItems > 99 ? '99+' : totalItems}
-                </span>
-              )}
-            </button>
-
-            {/* ── Bell with unread badge ── */}
-            {!isInternalWholesale && (
-              <button onClick={handleBellClick}
-                className="w-9 cursor-pointer h-9 flex items-center justify-center rounded-full hover:bg-[#BCCAC1]/25 transition-colors relative">
-                <svg width="19" height="19" fill="none" stroke="#3D4943" strokeWidth="1.75" viewBox="0 0 24 24">
-                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                  <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-                </svg>
-                {unreadCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 min-w-[17px] h-[17px] px-[3px] bg-[#C84040] text-white rounded-full flex items-center justify-center"
-                    style={{ fontSize: '10px', fontWeight: 700, lineHeight: 1 }}>
-                    {unreadCount > 99 ? '99+' : unreadCount}
-                  </span>
+                {/* Notification Bell */}
+                {!isInternalWholesale && (
+                  <button
+                    type="button"
+                    onClick={handleBellClick}
+                    aria-label="Notifications"
+                    className="w-8 h-8 flex items-center justify-center rounded-full text-[#0C4429] hover:bg-[#E5EFE2] transition-colors relative cursor-pointer bg-transparent border-none"
+                  >
+                    <Bell className="w-[17px] h-[17px]" strokeWidth={1.9} />
+                    {displayUnreadCount > 0 && (
+                      <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] px-1 bg-[#C84040] text-white rounded-full flex items-center justify-center text-[9.5px] font-bold leading-none">
+                        {displayUnreadCount > 99 ? '99+' : displayUnreadCount}
+                      </span>
+                    )}
+                  </button>
                 )}
-              </button>
-            )}
 
-
-
-            {/* Auth */}
-            {isAuthenticated ? (
-                  <div className="ml-3">
-                    <ProfileMenu user={user} logout={logout} />
-                  </div>
-                ) : isWholesaleUser ? (
-                  <Link href="/wholesale/profile" className="ml-3 flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#00694C]/40 hover:bg-[#ECF7E4] transition-colors" style={{ textDecoration: 'none' }}>
-                    <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#00694C', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <span style={{ fontSize: '11px', fontWeight: 700, color: 'white' }}>{wholesaleInitial}</span>
-                    </div>
-                    <span style={{ fontSize: '13px', fontWeight: 500, color: '#085041', maxWidth: '80px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {wholesaleName.split(' ')[0]}
+                {/* Cart Button */}
+                <button
+                  type="button"
+                  onClick={() => setSidebarOpen(true)}
+                  aria-label="Shopping Cart"
+                  className="w-8 h-8 flex items-center justify-center rounded-full text-[#0C4429] hover:bg-[#E5EFE2] transition-colors relative cursor-pointer bg-transparent border-none"
+                >
+                  <ShoppingBag className="w-[17px] h-[17px]" strokeWidth={1.9} />
+                  {totalItems > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] px-1 bg-[#4F9A28] text-white rounded-full flex items-center justify-center text-[9.5px] font-bold leading-none">
+                      {totalItems > 99 ? '99+' : totalItems}
                     </span>
+                  )}
+                </button>
+
+                {/* Auth / My Account Dark Green Pill */}
+                {isAuthenticated ? (
+                  <ProfileMenu user={user} logout={logout} />
+                ) : isWholesaleUser ? (
+                  <Link
+                    href="/wholesale/profile"
+                    className="inline-flex items-center gap-2 rounded-full text-white font-semibold hover:brightness-110 transition-all duration-200 no-underline whitespace-nowrap"
+                    style={{
+                      background: 'linear-gradient(135deg, #0F4E31 0%, #0B3C25 100%)',
+                      fontSize: '12.5px',
+                      padding: '6.5px 14px 6.5px 8px',
+                    }}
+                  >
+                    <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-[10px] font-bold">
+                      {wholesaleInitial}
+                    </span>
+                    <span className="truncate max-w-[85px]">{wholesaleName.split(' ')[0]}</span>
+                    <ChevronDown className="w-3.5 h-3.5 text-white/90" />
                   </Link>
                 ) : (
-                  <>
-                    <button onClick={openLogin} style={{ fontSize: '13.5px', fontWeight: 500, color: '#00694C', whiteSpace: 'nowrap' }}
-                      className="ml-2 lg:ml-5 px-3 py-1.5 rounded-lg border border-[#00694C]/40 hover:text-[#151E13] transition-colors bg-transparent cursor-pointer">
-                      Log In
-                    </button>
-                    <button onClick={openSignup}
-                      className="bg-[#00694C] px-3.5 py-2 text-white rounded-lg hover:bg-[#085041] transition-colors border-none cursor-pointer"
-                      style={{ fontSize: '13.5px', fontWeight: 600 }}>
-                      Sign Up
-                    </button>
-                  </>
+                  <button
+                    type="button"
+                    onClick={openLogin}
+                    className="inline-flex items-center gap-1.5 rounded-full text-white font-semibold transition-all duration-200 hover:brightness-110 active:scale-[0.98] cursor-pointer border-none whitespace-nowrap"
+                    style={{
+                      background: 'linear-gradient(135deg, #0F4E31 0%, #0B3C25 100%)',
+                      fontSize: '12.5px',
+                      padding: '8px 16px',
+                      boxShadow: '0 2px 6px rgba(11, 60, 37, 0.18)',
+                    }}
+                  >
+                    <LogIn className="w-3.5 h-3.5 text-white shrink-0" strokeWidth={2.2} />
+                    <span>Sign In</span>
+                  </button>
                 )}
-          </div>
+              </div>
 
-          {/* Mobile right */}
-          <div className="flex md:hidden items-center gap-1 ml-auto">
-            <button onClick={() => { setMobileSearchOpen(v => !v); setOpen(false) }}
-              className="w-9 h-9 flex items-center justify-center rounded-full transition-colors"
-              style={{ backgroundColor: mobileSearchOpen ? '#ECF7E4' : 'transparent' }} aria-label="Search">
-              {mobileSearchOpen
-                ? <svg width="17" height="17" fill="none" stroke="#151E13" strokeWidth="2.2" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
-                : <svg width="19" height="19" fill="none" stroke="#151E13" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-              }
-            </button>
-
-            {/* Mobile Cart Icon */}
-            <button onClick={() => setSidebarOpen(true)} className="w-9 h-9 flex items-center justify-center relative cursor-pointer">
-              <svg width="19" height="19" fill="none" stroke="#151E13" strokeWidth="1.75" viewBox="0 0 24 24">
-                <path d="M5 8h14l-1.5 11H6.5L5 8z"/>
-                <path d="M9 8V6a3 3 0 1 1 6 0v2"/>
-              </svg>
-              {totalItems > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 min-w-[15px] h-[15px] px-[3px] bg-[#00694C] text-white rounded-full flex items-center justify-center"
-                  style={{ fontSize: '9px', fontWeight: 700, lineHeight: 1 }}>
-                  {totalItems > 99 ? '99+' : totalItems}
-                </span>
-              )}
-            </button>
-
-            {/* Mobile bell with badge */}
-            <button onClick={handleBellClick} className="w-9 h-9 flex items-center justify-center relative">
-              <svg width="19" height="19" fill="none" stroke="#151E13" strokeWidth="1.75" viewBox="0 0 24 24">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-              </svg>
-              {unreadCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 min-w-[15px] h-[15px] px-[3px] bg-[#C84040] text-white rounded-full flex items-center justify-center"
-                  style={{ fontSize: '9px', fontWeight: 700, lineHeight: 1 }}>
-                  {unreadCount > 99 ? '99+' : unreadCount}
-                </span>
-              )}
-            </button>
-
-
-
-            {isAuthenticated && (
-                <div className="flex items-center mr-1">
-                  <ProfileMenu user={user} logout={logout} isMobile />
-                </div>
-            )}
-            
-            {!isAuthenticated && isWholesaleUser && (
-                <Link href="/wholesale/profile"
-                  style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#00694C', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: '4px' }}>
-                  <span style={{ fontSize: '13px', fontWeight: 700, color: 'white' }}>{wholesaleInitial}</span>
-                </Link>
-            )}
-
-            <button onClick={() => { setOpen(!open); setMobileSearchOpen(false) }}
-              className="w-9 h-9 flex items-center justify-center" aria-label="Menu">
-              <svg width="19" height="19" fill="none" stroke="#151E13" strokeWidth="2" viewBox="0 0 24 24">
-                {open ? <path d="M18 6 6 18M6 6l12 12"/> : <path d="M4 6h16M4 12h16M4 18h16"/>}
-              </svg>
-            </button>
-          </div>
-        </nav>
-
-        {/* Mobile Search */}
-        {mobileSearchOpen && (
-          <div className="lg:hidden bg-[#FAFAF8] border-t border-[#BCCAC1]/35 px-4 py-3"
-            style={{ animation: 'dropdownFadeIn 0.15s ease' }}>
-            <div className="flex items-center gap-2 bg-[#ECF7E4] rounded-full px-4 py-2.5">
-              <svg width="15" height="15" fill="none" stroke="#6D7A73" strokeWidth="2" viewBox="0 0 24 24">
-                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-              </svg>
-              <input ref={mobileInputRef} type="text" placeholder="Search fresh produce..."
-                value={query} onChange={handleInputChange} onKeyDown={handleKeyDown}
-                className="bg-transparent outline-none flex-1 placeholder:text-[#6D7A73]"
-                style={{ fontSize: '14px', color: '#151E13', border: 'none' }} />
-              {query && (
-                <button onClick={() => { setQuery(''); setShowDropdown(false); mobileInputRef.current?.focus() }} className="text-[#6D7A73] flex-shrink-0">
-                  <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              {/* ── Mobile Right Controls ── */}
+              <div className="flex md:hidden items-center gap-1 ml-auto">
+                <button
+                  type="button"
+                  onClick={toggleMobileSearch}
+                  className="w-9 h-9 flex items-center justify-center rounded-full bg-[#E5EFE2] text-[#0C4429] border-none cursor-pointer"
+                  aria-label="Search"
+                >
+                  <Search className="w-4 h-4" strokeWidth={2} />
                 </button>
-              )}
+
+                <button
+                  type="button"
+                  onClick={() => setSidebarOpen(true)}
+                  className="w-9 h-9 flex items-center justify-center rounded-full text-[#0C4429] relative bg-transparent border-none cursor-pointer"
+                  aria-label="Cart"
+                >
+                  <ShoppingBag className="w-[18px] h-[18px]" strokeWidth={1.9} />
+                  {totalItems > 0 && (
+                    <span className="absolute top-0.5 right-0.5 min-w-[15px] h-[15px] px-[3px] bg-[#4F9A28] text-white rounded-full flex items-center justify-center text-[9px] font-bold leading-none">
+                      {totalItems > 99 ? '99+' : totalItems}
+                    </span>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpen(!open)
+                    setMobileSearchOpen(false)
+                  }}
+                  className="w-9 h-9 flex items-center justify-center text-[#0C4429] bg-transparent border-none cursor-pointer"
+                  aria-label="Menu"
+                >
+                  {open ? <X className="w-5 h-5" strokeWidth={2} /> : <Menu className="w-5 h-5" strokeWidth={2} />}
+                </button>
+              </div>
             </div>
-            {showDropdown && query.trim().length > 0 && (
-              <div ref={dropdownRef} className="mt-2 bg-white rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-[#BCCAC1]/40 overflow-hidden"
-                style={{ animation: 'dropdownFadeIn 0.15s ease' }}>
-                {filtered.length > 0 ? (
-                  <>
-                    <p className="px-4 pt-3 pb-1.5 text-[11px] font-semibold tracking-widest text-[#6D7A73] uppercase">Products</p>
-                    <ul>
-                      {filtered.map((product, idx) => (
-                        <li key={product.id}>
-                          <button onClick={() => navigateToProduct(product)}
-                            className="w-full text-left flex items-center gap-3 px-4 py-3 transition-colors active:bg-[#F0FAF5]"
-                            style={{ backgroundColor: activeIndex === idx ? '#F0FAF5' : 'transparent' }}>
-                            <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-[#ECF7E4]">
-                              <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-[14px] font-medium text-[#151E13] truncate">{highlightMatch(product.name, query)}</p>
-                              <p className="text-[12px] text-[#6D7A73]">{product.category} · {product.origin}</p>
-                            </div>
-                              <div className="flex flex-col items-end flex-shrink-0">
-                                <span className="text-[13.5px] font-semibold text-[#00694C]">
-                                  €{product.price.toFixed(2)}
-                                </span>
-                                {product.oldPrice && (
-                                  <span className="text-[11px] text-[#9CA3AF] line-through">
-                                    €{product.oldPrice.toFixed(2)}
-                                  </span>
-                                )}
-                              </div>                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                    <div className="border-t border-[#BCCAC1]/30 px-4 py-3">
-                      <button onClick={() => { router.push(`/shop?q=${encodeURIComponent(query)}`); setShowDropdown(false); setMobileSearchOpen(false) }}
-                        className="text-[13px] text-[#1D9E75] font-medium bg-transparent border-none p-0 cursor-pointer">
-                        See all results for "{query}" →
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <div className="px-4 py-5 text-center">
-                    <p className="text-[13px] text-[#6D7A73]">No products found for <span className="font-medium text-[#151E13]">"{query}"</span></p>
-                  </div>
+
+            {/* Mobile Search Dropdown Strip */}
+            {mobileSearchOpen && (
+              <div className="md:hidden absolute left-0 right-0 top-[calc(100%+8px)] mx-2 bg-[#FAFCF9] border border-[#C6DBC6] rounded-2xl p-3 shadow-lg z-50">
+                <div className="flex items-center gap-2 bg-[#EFF6ED] border border-[#D1E2CE] rounded-full px-3.5 py-2">
+                  <Search className="w-4 h-4 text-[#3F6351] shrink-0" strokeWidth={2} />
+                  <input
+                    ref={mobileInputRef}
+                    type="text"
+                    placeholder="Search fresh produce.."
+                    value={query}
+                    onChange={handleInputChange}
+                    onKeyDown={handleKeyDown}
+                    className="bg-transparent outline-none flex-1 text-[13.5px] text-[#0D2C23] placeholder:text-[#58786C] border-none"
+                  />
+                  {query && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setQuery('')
+                        setShowDropdown(false)
+                        mobileInputRef.current?.focus()
+                      }}
+                      className="text-[#4D6E62] bg-transparent border-none p-0 cursor-pointer"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+                {query.trim().length > 0 && filtered.length > 0 && (
+                  <ul className="m-0 pt-2 p-0 list-none max-h-[220px] overflow-y-auto divide-y divide-[#EDF4EB]">
+                    {filtered.map((product) => (
+                      <li key={product.id}>
+                        <button
+                          type="button"
+                          onClick={() => navigateToProduct(product)}
+                          className="w-full text-left flex items-center gap-2.5 px-2 py-2 bg-transparent border-none cursor-pointer"
+                        >
+                          <Image
+                            src={product.image}
+                            alt={product.name}
+                            width={32}
+                            height={32}
+                            unoptimized
+                            className="w-8 h-8 rounded-md object-cover shrink-0"
+                          />
+                          <span className="flex-1 text-[13px] font-medium text-[#0D2C23] truncate">
+                            {highlightMatch(product.name, query)}
+                          </span>
+                          <span className="text-[12px] font-semibold text-[#0C4429]">
+                            €{product.price.toFixed(2)}
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
                 )}
               </div>
             )}
-          </div>
-        )}
+          </nav>
+        </div>
       </header>
 
-      {/* Mobile drawer */}
+      {/* Mobile Navigation Drawer */}
       {open && (
-        <div className="fixed inset-0 top-[60px] bg-[#F5F5E8] z-40 px-6 pt-8 pb-10 flex flex-col md:hidden overflow-y-auto">
-          {navLinks.map(({ label, href }) => {
+        <div className="fixed inset-0 pt-[84px] bg-[#EFF9F2] z-40 px-6 pb-10 flex flex-col md:hidden overflow-y-auto">
+          {navLinks.map(({ label, href, Icon }) => {
             const active = isActive(href)
             return (
-              <Link key={label} href={href} onClick={() => setOpen(false)}
-                className="border-b border-[#BCCAC1]/40 py-4 flex items-center justify-between"
-                style={{ fontFamily: '"Playfair Display", Georgia, serif', fontSize: '1.5rem', fontWeight: 600, color: active ? '#00694C' : '#151E13' }}>
-                {label}
-                {active && <span className="w-2 h-2 rounded-full bg-[#1D9E75]" />}
+              <Link
+                key={label}
+                href={href}
+                onClick={() => setOpen(false)}
+                className="border-b border-[#CFE0D5] py-3.5 flex items-center justify-between no-underline"
+                style={{
+                  fontFamily: 'var(--font-newsreader), "Playfair Display", Georgia, serif',
+                  fontSize: '1.25rem',
+                  fontWeight: 600,
+                  color: active ? '#0C4429' : '#1E3F34',
+                }}
+              >
+                <span className="inline-flex items-center gap-2.5">
+                  <Icon className="w-[18px] h-[18px]" strokeWidth={1.85} />
+                  <span>{label}</span>
+                </span>
+                {active && <span className="w-2.5 h-2.5 rounded-full bg-[#357A38]" />}
               </Link>
             )
           })}
-          
+
           {!isAuthenticated && !isWholesaleUser && (
-            <div className="flex gap-3 mt-7">
-              <button onClick={() => { setOpen(false); openLogin() }}
-                className="flex-1 text-center border border-[#151E13] rounded-full bg-transparent cursor-pointer"
-                style={{ fontSize: '14px', fontWeight: 500, color: '#151E13', padding: '11px 0' }}>
-                Log In
+            <div className="flex gap-3 mt-6">
+              <button
+                type="button"
+                onClick={() => {
+                  setOpen(false)
+                  openLogin()
+                }}
+                className="flex-1 text-center border border-[#0C4429] rounded-full bg-transparent cursor-pointer text-[13.5px] font-semibold text-[#0C4429] py-2.5"
+              >
+                Sign In
               </button>
-              <button onClick={() => { setOpen(false); openSignup() }}
-                className="flex-1 text-center bg-[#00694C] text-white rounded-full border-none cursor-pointer"
-                style={{ fontSize: '14px', fontWeight: 500, padding: '11px 0' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setOpen(false)
+                  openSignup()
+                }}
+                className="flex-1 text-center bg-[#0C4429] text-white rounded-full border-none cursor-pointer text-[13.5px] font-semibold py-2.5"
+              >
                 Sign Up
               </button>
             </div>
           )}
         </div>
       )}
-
-      <style jsx global>{`
-        @keyframes dropdownFadeIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes profileDropIn  { from{opacity:0;transform:translateY(-8px) scale(.97)} to{opacity:1;transform:translateY(0) scale(1)} }
-      `}</style>
 
       <AuthModal isOpen={authOpen} onClose={() => setAuthOpen(false)} defaultMode={authMode} />
     </>
@@ -699,7 +989,7 @@ function highlightMatch(text, query) {
   return (
     <>
       {text.slice(0, idx)}
-      <mark style={{ background: '#D1FAE5', color: '#085041', borderRadius: '2px', padding: '0 1px' }}>
+      <mark style={{ background: '#D7EED9', color: '#0C4429', borderRadius: '2px', padding: '0 1px' }}>
         {text.slice(idx, idx + query.length)}
       </mark>
       {text.slice(idx + query.length)}

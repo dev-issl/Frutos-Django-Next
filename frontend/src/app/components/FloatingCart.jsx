@@ -16,6 +16,7 @@ export default function FloatingCart() {
     return () => clearTimeout(timer)
   }, [totalItems])
 
+  if (totalItems === 0) return null
   if (pathname?.startsWith('/dashboard') || pathname?.startsWith('/wholesale/profile') || pathname?.startsWith('/staff')) return null
 
   return (
@@ -51,10 +52,10 @@ export default function FloatingCart() {
           }
         }
         .cart-container {
-          background: #00694C;
+          background: #085041;
           border-radius: 8px;
           overflow: hidden;
-          box-shadow: 3px 3px 0px #1D9E75;
+          box-shadow: 3px 3px 0px #57A12A;
           cursor: pointer;
           display: flex;
           flex-direction: column;

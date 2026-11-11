@@ -1,6 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     output: "standalone",
+    env: {
+        NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api',
+        NEXT_PUBLIC_WS_URL: process.env.NEXT_PUBLIC_WS_URL || '127.0.0.1:8000',
+        NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
+        NEXT_PUBLIC_REVALIDATE_SECRET: process.env.NEXT_PUBLIC_REVALIDATE_SECRET || 'elarbol_secret_2026',
+    },
     experimental: {
         staleTimes: {
             dynamic: 0,

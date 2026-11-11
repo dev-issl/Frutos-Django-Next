@@ -3,7 +3,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'
 const inputCls = {
   width: '100%', padding: '9px 12px', border: '1.5px solid #e0e8e0',
   borderRadius: '8px', background: '#fafaf8', color: '#151e13',

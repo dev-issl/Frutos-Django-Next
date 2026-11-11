@@ -1,10 +1,8 @@
-
-
 import HeroSection        from '@/app/components/HeroSection'
 import ProductGrid        from '@/app/components/ProductGrid'
 import LeftoverPackBanner from '@/app/components/LeftoverPackBanner'
-import WeekendBox         from '@/app/components/WeekendBox'
 import HowItWorks         from '@/app/components/HowItWorks'
+import WhyChooseSection   from '@/app/components/WhyChooseSection'
 import OffersSection      from '@/app/components/OffersSection'
 
 import { getProducts, getCategories, getOffers } from '@/lib/api_product'
@@ -20,46 +18,43 @@ export default async function HomePage() {
   const session = await auth()
   const token = session?.user?.accessToken
 
-  // Fetch all data in parallel
+  // Fetch all data in parallel for optimal server performance
   const [products, categories, homepageData, offers] = await Promise.all([
     getProducts({ token }),
     getCategories(),
     getHomepageData(),
-    getOffers().catch(() => []), // fallback in case API isn't ready
+    getOffers().catch(() => []),
   ])
 
   const { hero, feature_cards, how_it_works, steps, leftover_banner } = homepageData
 
-  // Attach JSX icons (must happen in a .jsx file)
   const featureCards = normalizeFeatureCards(feature_cards)
   const normalizedSteps = normalizeSteps(steps)
-
   const isInternalWholesale = checkIsInternalWholesale(session)
 
   return (
-    <>
+    <div style={{ backgroundColor: '#EFF9F2', minHeight: '100vh' }}>
       <HeroSection
         hero={hero}
         featureCards={featureCards}
       />
 
-      <div className='bg-[var(--section-color)]'>
-        <OffersSection offers={offers} />
-        <ProductGrid
-          initialProducts={products}
-          categories={categories}
-          isInternalWholesaleUser={isInternalWholesale}
-        />
-        <WeekendBox />
-        <LeftoverPackBanner banner={leftover_banner} />
-      </div>
+      <ProductGrid
+        initialProducts={products}
+        categories={categories}
+        isInternalWholesaleUser={isInternalWholesale}
+      />
 
-      <div style={{ backgroundColor: '#f9fcf6' }}>
-        <HowItWorks
-          heading={how_it_works.heading}
-          steps={normalizedSteps}
-        />
-      </div>
-    </>
+      <OffersSection offers={offers} />
+
+      <HowItWorks
+        heading={how_it_works?.heading}
+        steps={normalizedSteps}
+      />
+
+      <LeftoverPackBanner banner={leftover_banner} />
+
+      <WhyChooseSection />
+    </div>
   )
 }

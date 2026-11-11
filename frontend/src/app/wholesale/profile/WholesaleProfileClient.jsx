@@ -3,7 +3,8 @@
 'use client'
 // src/app/wholesale/profile/WholesaleProfileClient.jsx
 import { useState, useEffect } from 'react'
-import { signOut, useSession } from 'next-auth/react'
+import { signOut } from 'next-auth/react'
+import { useSafeSession } from '@/lib/useSafeSession'
 import { useRouter, useSearchParams } from 'next/navigation'
 
 import {
@@ -22,7 +23,7 @@ import WholesaleSupportTicketsTab from './_tabs/WholesaleSupportTicketsTab'
 export default function WholesaleProfileClient({ initialProfile, initialNotifications, initialOrders, accessToken }) {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { update: updateSession } = useSession()
+  const { update: updateSession } = useSafeSession()
 
   const [profile,       setProfile]       = useState(initialProfile)
   const [notifications, setNotifications] = useState(initialNotifications)

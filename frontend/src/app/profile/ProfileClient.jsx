@@ -150,7 +150,7 @@ import SavedItemsTab    from './tabs/SavedItemsTab'
 import TrackingTab      from './tabs/TrackingTab'
 import SupportTicketsTab from './tabs/SupportTicketsTab'
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'
 
 const TABS = [
   { id: 'profile',       label: 'My Profile',       icon: 'person'          },

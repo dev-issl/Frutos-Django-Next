@@ -61,7 +61,7 @@ export default function AdminNotificationListener() {
         }
       }
 
-      const apiBase = process.env.NEXT_PUBLIC_API_URL;
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api';
       const url = `${apiBase}/auth/notifications/stream/?context=dashboard&token=${token}`;
       es = new EventSource(url);
 

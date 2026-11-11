@@ -65,7 +65,7 @@ export default function StaffOrderNotificationListener() {
         }
       }
 
-      const apiBase = process.env.NEXT_PUBLIC_API_URL;
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api';
       // Use context=dashboard so we receive admin_alert + out_of_stock types
       const url = `${apiBase}/auth/notifications/stream/?context=dashboard&token=${token}`;
       es = new EventSource(url);

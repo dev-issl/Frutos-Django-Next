@@ -14,7 +14,7 @@
 //   description: 'Complete your order.',
 // }
 
-// const API_BASE = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL
+// const API_BASE = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'
 
 // async function fetchRegularUserData() {
 //   const cookieStore = await cookies()
@@ -138,7 +138,7 @@ export const metadata = {
   description: 'Complete your order.',
 }
 
-const API_BASE = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL
+const API_BASE = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'
 
 async function fetchRegularUserData() {
   const cookieStore = await cookies()

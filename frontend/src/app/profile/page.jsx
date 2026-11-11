@@ -2,7 +2,7 @@
 import { cookies } from 'next/headers'
 import ProfileClient from './ProfileClient'
 
-const API_BASE = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL
+const API_BASE = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'
 
 export const metadata = { title: 'My Account — El Árbol' }
 

@@ -1,150 +1,198 @@
-// import Image from "next/image";
-// import Link from "next/link";
-
-// export default function LeftoverPackBanner() {
-//   return (
-//     // On mobile this is hidden — WeekendBox.jsx handles the mobile banner
-//     <section className="hidden md:block max-w-[1100px] mx-auto px-6 lg:px-10 py-4 pb-14 md:pb-16 bg-[var(--section-color)]">
-//       <div
-//         className="rounded-2xl overflow-hidden grid md:grid-cols-2 min-h-[300px] md:min-h-[350px]"
-//       >
-//         {/* ── Text side ── */}
-//         <div
-//           className="flex flex-col justify-center px-8 md:px-14 py-12 md:py-14"
-//           style={{
-//             backgroundColor: '#174D3A',
-//             backgroundImage: `
-//               linear-gradient(rgba(255,255,255,0.07) 1px, transparent 1px),
-//               linear-gradient(90deg, rgba(255,255,255,0.07) 1px, transparent 1px)
-//             `,
-//             backgroundSize: '48px 48px',
-//           }}
-//         >
-//           <h2
-//             style={{
-//               fontFamily: '"Playfair Display", Georgia, serif',
-//               fontSize: 'clamp(1.9rem, 3vw, 2.7rem)',
-//               fontWeight: 700,
-//               color: '#ffffff',
-//               lineHeight: 1.15,
-//               marginBottom: '1rem',
-//             }}
-//           >
-//             Leftover Pack&nbsp;—<br />Save food, save&nbsp;money
-//           </h2>
-
-//           <p
-//             style={{
-//               color: 'rgba(255,255,255,0.65)',
-//               fontSize: '14px',
-//               lineHeight: 1.65,
-//               marginBottom: '2rem',
-//               maxWidth: '340px',
-//             }}
-//           >
-//             Get a curated selection of seasonal surplus at 40% off.
-//             Perfectly good produce that deserves a home.
-//           </p>
-
-//           <Link
-//             href="/stores"
-//             style={{
-//               alignSelf: 'flex-start',
-//               display: 'inline-block',
-//               background: '#9B4F1A',
-//               color: '#ffffff',
-//               fontWeight: 700,
-//               fontSize: '14px',
-//               padding: '14px 30px',
-//               borderRadius: '8px',
-//               textDecoration: 'none',
-//               letterSpacing: '0.01em',
-//             }}
-//           >
-//             Get Your Pack
-//           </Link>
-//         </div>
-
-//         {/* ── Image side ── */}
-//         <div className="relative">
-//           <Image
-//             src="https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&auto=format&fit=crop"
-//             alt="Fresh produce grocery bag"
-//             className="w-full h-full object-cover"
-//             width={800} 
-//             height={600}
-//             priority
-//           />
-//         </div>
-//       </div>
-//     </section>
-//   )
-// }
-
-
 import Image from "next/image"
 import Link from "next/link"
+import { ArrowRight } from "lucide-react"
 
 export default function LeftoverPackBanner({ banner }) {
-  return (
-    // On mobile this is hidden — WeekendBox.jsx handles the mobile banner
-    <section className="hidden md:block max-w-[1100px] mx-auto px-6 lg:px-10 py-4 pb-14 md:pb-16 bg-[var(--section-color)]">
-      <div className="rounded-2xl overflow-hidden grid md:grid-cols-2 min-h-[300px] md:min-h-[350px]">
+  const ctaHref = banner?.cta_href || "/about"
 
-        {/* ── Text side ── */}
-        <div
-          className="flex flex-col justify-center px-8 md:px-14 py-12 md:py-14"
-          style={{
-            backgroundColor: '#174D3A',
-            backgroundImage: `
-              linear-gradient(rgba(255,255,255,0.07) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(255,255,255,0.07) 1px, transparent 1px)
-            `,
-            backgroundSize: '48px 48px',
-          }}
-        >
+  return (
+    <section
+      className="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8 pt-5 md:pt-7 pb-10 md:pb-12"
+      style={{ backgroundColor: "#EFF9F2" }}
+    >
+      <div
+        className="relative rounded-[20px] overflow-hidden flex flex-col md:flex-row md:items-stretch min-h-[215px]"
+        style={{
+          backgroundColor: "#085041",
+          backgroundImage:
+            "linear-gradient(100deg, #085041 0%, #085041 42%, #0A5E4D 72%, #0E6E59 100%)",
+          boxShadow: "0 8px 26px rgba(8, 80, 65, 0.18)",
+        }}
+      >
+        {/* ── Desktop Farm Image with Curved S-Wave Transition ── */}
+        <div className="hidden md:block relative md:w-[31%] lg:w-[34%] xl:w-[35%] shrink-0 overflow-hidden select-none">
+          <Image
+            src="/homepage/impact_farm.jpg"
+            alt="Sustainable local farming fields"
+            fill
+            sizes="(max-width: 1024px) 34vw, 460px"
+            className="object-cover object-left scale-[1.12] origin-left"
+          />
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 100 100"
+            preserveAspectRatio="none"
+            className="pointer-events-none absolute -top-[1px] -right-[1px] h-[calc(100%+2px)] w-[52px] lg:w-[66px]"
+          >
+            <path
+              d="M 88 0 C 30 22, 8 58, 34 100 L 102 100 L 102 0 Z"
+              fill="#085041"
+            />
+          </svg>
+        </div>
+
+        {/* ── Mobile Farm Image (<768px) ── */}
+        <div className="md:hidden relative h-[185px] sm:h-[210px] w-full overflow-hidden select-none">
+          <Image
+            src="/homepage/impact_farm.jpg"
+            alt="Sustainable local farming fields"
+            fill
+            sizes="100vw"
+            className="object-cover object-left scale-[1.15] origin-left"
+          />
+        </div>
+
+        {/* ── Center Column: Our Impact Content ── */}
+        <div className="relative z-10 flex-1 flex flex-col justify-center px-6 sm:px-8 md:pl-8 md:pr-6 lg:pl-12 lg:pr-10 xl:pl-14 xl:pr-12 py-6 md:py-7">
+          <span
+            className="uppercase tracking-[0.16em] font-semibold mb-1.5"
+            style={{ fontSize: "11px", color: "rgba(255,255,255,0.8)" }}
+          >
+            OUR IMPACT
+          </span>
+
           <h2
             style={{
-              fontFamily: '"Playfair Display", Georgia, serif',
-              fontSize: 'clamp(1.9rem, 3vw, 2.7rem)',
-              fontWeight: 700, color: '#ffffff',
-              lineHeight: 1.15, marginBottom: '1rem',
+              fontFamily: 'var(--font-newsreader), "Playfair Display", Georgia, serif',
+              fontSize: "clamp(1.4rem, 2.2vw, 1.85rem)",
+              fontWeight: 700,
+              color: "#FFFFFF",
+              lineHeight: 1.16,
+              marginBottom: "10px",
             }}
           >
-            {banner.heading}
+            Reducing Food Waste,
+            <br />
+            Building a Greener Future
           </h2>
+
           <p
             style={{
-              color: 'rgba(255,255,255,0.65)', fontSize: '14px',
-              lineHeight: 1.65, marginBottom: '2rem', maxWidth: '340px',
+              color: "rgba(255,255,255,0.82)",
+              fontSize: "12.5px",
+              lineHeight: 1.52,
+              marginBottom: "16px",
+              maxWidth: "375px",
             }}
           >
-            {banner.description}
+            Together, we can reduce food waste and support sustainable farming for a healthier planet.
           </p>
+
           <Link
-            href={banner.cta_href}
+            href={ctaHref}
+            className="self-start inline-flex items-center gap-1.5 rounded-full font-semibold transition-all duration-200 hover:bg-white active:scale-[0.98]"
             style={{
-              alignSelf: 'flex-start', display: 'inline-block',
-              background: '#9B4F1A', color: '#ffffff',
-              fontWeight: 700, fontSize: '14px',
-              padding: '14px 30px', borderRadius: '8px',
-              textDecoration: 'none', letterSpacing: '0.01em',
+              backgroundColor: "#EFF9F2",
+              color: "#085041",
+              fontSize: "12.5px",
+              padding: "8px 20px",
             }}
           >
-            {banner.cta_text}
+            <span>Learn More</span>
+            <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
 
-        {/* ── Image side ── */}
-        <div className="relative">
-          <Image
-            src={banner.image_url}
-            alt="Fresh produce grocery bag"
-            className="w-full h-full object-cover"
-            width={800}
-            height={600}
-            priority
-          />
+        {/* ── Right Column: 3 Vertical Impact Stats ── */}
+        <div
+          className="relative z-10 md:w-[225px] lg:w-[265px] xl:w-[295px] shrink-0 flex flex-col justify-center gap-4 px-6 sm:px-8 md:px-7 lg:px-9 py-5 md:py-6 border-t md:border-t-0 md:border-l my-0 md:my-5"
+          style={{ borderColor: "rgba(255,255,255,0.16)" }}
+        >
+          {/* Stat 1: 50+ Local Farms */}
+          <div className="flex items-center gap-3.5">
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 text-[#D8E2D5]">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 22V11" />
+                <path d="M12 15C8.5 15 6 12.5 6 8.5C9.5 8.5 12 11 12 15Z" />
+                <path d="M12 13C15.5 13 18 10.5 18 6.5C14.5 6.5 12 9 12 13Z" />
+              </svg>
+            </div>
+            <div>
+              <p
+                style={{
+                  fontFamily: 'var(--font-newsreader), "Playfair Display", Georgia, serif',
+                  fontSize: "20px",
+                  fontWeight: 700,
+                  color: "#FFFFFF",
+                  lineHeight: 1.08,
+                }}
+              >
+                50+
+              </p>
+              <p style={{ fontSize: "11.5px", color: "rgba(255,255,255,0.8)", marginTop: "1px" }}>
+                Local Farms
+              </p>
+            </div>
+          </div>
+
+          {/* Stat 2: 10K+ Happy Customers */}
+          <div className="flex items-center gap-3.5">
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 text-[#D8E2D5]">
+              <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 10h14l-1.5 9h-11L5 10z" />
+                <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+                <line x1="9" y1="14" x2="9" y2="16" />
+                <line x1="12" y1="14" x2="12" y2="16" />
+                <line x1="15" y1="14" x2="15" y2="16" />
+              </svg>
+            </div>
+            <div>
+              <p
+                style={{
+                  fontFamily: 'var(--font-newsreader), "Playfair Display", Georgia, serif',
+                  fontSize: "20px",
+                  fontWeight: 700,
+                  color: "#FFFFFF",
+                  lineHeight: 1.08,
+                }}
+              >
+                10K+
+              </p>
+              <p style={{ fontSize: "11.5px", color: "rgba(255,255,255,0.8)", marginTop: "1px" }}>
+                Happy Customers
+              </p>
+            </div>
+          </div>
+
+          {/* Stat 3: 100% Organic Produce */}
+          <div className="flex items-center gap-3.5">
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 text-[#D8E2D5]">
+              <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M7 19H4.815a1.83 1.83 0 0 1-1.57-.881 1.785 1.785 0 0 1-.004-1.784L7.196 9.5" />
+                <path d="M11 19h8.203a1.83 1.83 0 0 0 1.556-.89 1.784 1.784 0 0 0 0-1.775l-1.226-2.12" />
+                <path d="m14 16-3 3 3 3" />
+                <path d="M8.293 13.596 7.196 9.5 3.1 10.598" />
+                <path d="m9.344 5.811 1.093-1.892A1.83 1.83 0 0 1 11.985 3a1.784 1.784 0 0 1 1.546.888l3.943 6.843" />
+                <path d="m13.378 9.633 4.096 1.098 1.097-4.096" />
+              </svg>
+            </div>
+            <div>
+              <p
+                style={{
+                  fontFamily: 'var(--font-newsreader), "Playfair Display", Georgia, serif',
+                  fontSize: "20px",
+                  fontWeight: 700,
+                  color: "#FFFFFF",
+                  lineHeight: 1.08,
+                }}
+              >
+                100%
+              </p>
+              <p style={{ fontSize: "11.5px", color: "rgba(255,255,255,0.8)", marginTop: "1px" }}>
+                Organic Produce
+              </p>
+            </div>
+          </div>
         </div>
 
       </div>
