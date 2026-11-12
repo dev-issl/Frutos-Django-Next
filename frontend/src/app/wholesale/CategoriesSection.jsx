@@ -1,5 +1,9 @@
+'use client'
+
+import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import ProductCard from '@/app/components/ProductCard'
 import WholesaleSectionHeader from './WholesaleSectionHeader'
 
 const CATEGORY_FALLBACK_IMAGES = [
@@ -10,8 +14,68 @@ const CATEGORY_FALLBACK_IMAGES = [
   '/wholesale/cat-roots.webp',
 ]
 
-export default function CategoriesSection({ data = [] }) {
-  const categories = data.length > 0 ? data : []
+function isMissingImage(src) {
+  return !src || typeof src !== 'string' || src.includes('placehold.co')
+}
+
+function FallbackCategoryCard({ item, index }) {
+  const [imgFailed, setImgFailed] = useState(false)
+  const fallbackSrc = CATEGORY_FALLBACK_IMAGES[index % CATEGORY_FALLBACK_IMAGES.length]
+  const useFallback = imgFailed || isMissingImage(item?.image_url)
+  const imgSrc = useFallback ? fallbackSrc : item.image_url
+
+  return (
+    <Link
+      href={item.href || '/shop'}
+      className="group bg-[#FAFBF7] rounded-[16px] ws-card-shadow border border-transparent hover:border-[#CBE0C5] transition-colors overflow-hidden flex flex-col no-underline"
+    >
+      <div className="relative w-full aspect-[144/88] bg-[#FAFBF7] overflow-hidden">
+        <Image
+          src={imgSrc}
+          alt={item.title || 'Category'}
+          fill
+          decoding="async"
+          unoptimized
+          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+          onError={() => setImgFailed(true)}
+          className="object-cover object-center group-hover:scale-[1.03] transition-transform duration-300"
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-4"
+          style={{
+            background: 'linear-gradient(180deg, rgba(250,251,247,0) 0%, #FAFBF7 100%)',
+          }}
+        />
+      </div>
+
+      <div className="px-3.5 py-2.5 sm:py-3 bg-[#FAFBF7] flex items-center justify-between gap-2 flex-1">
+        <h3 className="text-[13px] font-medium text-[#163B28] leading-tight truncate group-hover:text-[#0C462B] transition-colors">
+          {item.title}
+        </h3>
+        <span
+          aria-hidden="true"
+          className="w-[26px] h-[26px] rounded-full bg-[#E6EFE2] text-[#286144] group-hover:bg-[#0C462B] group-hover:text-white transition-colors flex items-center justify-center shrink-0"
+        >
+          <svg viewBox="0 0 16 16" fill="none" className="w-3.5 h-3.5">
+            <path
+              d="M3.5 8h9m0 0L9.2 4.8M12.5 8 9.2 11.2"
+              stroke="currentColor"
+              strokeWidth="1.45"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </span>
+      </div>
+    </Link>
+  )
+}
+
+export default function CategoriesSection({ products = [], data = [] }) {
+  const [notified, setNotified] = useState({})
+  const hasLiveProducts = Array.isArray(products) && products.length > 0
+  const items = hasLiveProducts ? products : data.length > 0 ? data : []
 
   return (
     <section className="relative pt-6 sm:pt-8 pb-9 sm:pb-11 overflow-hidden">
@@ -53,58 +117,23 @@ export default function CategoriesSection({ data = [] }) {
           </Link>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-5">
-          {categories.map((c, i) => {
-            const imgSrc = c.image_url || CATEGORY_FALLBACK_IMAGES[i % CATEGORY_FALLBACK_IMAGES.length]
-            const href = c.href || '/shop'
-
-            return (
-              <Link
-                key={i}
-                href={href}
-                className="group bg-[#FAFBF7] rounded-[16px] ws-card-shadow border border-transparent hover:border-[#CBE0C5] transition-colors overflow-hidden flex flex-col"
-              >
-                <div className="relative w-full aspect-[144/88] bg-[#FAFBF7] overflow-hidden">
-                  <Image
-                    src={imgSrc}
-                    alt={c.title}
-                    fill
-                    decoding="async"
-                    unoptimized
-                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-                    className="object-cover object-center group-hover:scale-[1.03] transition-transform duration-300"
-                  />
-                  <div
-                    aria-hidden="true"
-                    className="pointer-events-none absolute inset-x-0 bottom-0 h-4"
-                    style={{
-                      background: 'linear-gradient(180deg, rgba(250,251,247,0) 0%, #FAFBF7 100%)',
-                    }}
-                  />
-                </div>
-
-                <div className="px-3.5 py-2.5 sm:py-3 bg-[#FAFBF7] flex items-center justify-between gap-2 flex-1">
-                  <h3 className="text-[13px] font-medium text-[#163B28] leading-tight truncate">
-                    {c.title}
-                  </h3>
-                  <span
-                    aria-hidden="true"
-                    className="w-[26px] h-[26px] rounded-full bg-[#E6EFE2] text-[#286144] group-hover:bg-[#0C462B] group-hover:text-white transition-colors flex items-center justify-center shrink-0"
-                  >
-                    <svg viewBox="0 0 16 16" fill="none" className="w-3.5 h-3.5">
-                      <path
-                        d="M3.5 8h9m0 0L9.2 4.8M12.5 8 9.2 11.2"
-                        stroke="currentColor"
-                        strokeWidth="1.45"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </span>
-                </div>
-              </Link>
-            )
-          })}
+        <div className="grid grid-cols-1 min-[360px]:grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 sm:gap-4">
+          {hasLiveProducts
+            ? items.map((product, i) => (
+                <ProductCard
+                  key={product.id || product.slug || i}
+                  product={product}
+                  index={i}
+                  variant="showcase"
+                  notified={!!notified[product.id]}
+                  onNotify={() =>
+                    setNotified((prev) => ({ ...prev, [product.id]: true }))
+                  }
+                />
+              ))
+            : items.map((item, i) => (
+                <FallbackCategoryCard key={i} item={item} index={i} />
+              ))}
         </div>
       </div>
     </section>

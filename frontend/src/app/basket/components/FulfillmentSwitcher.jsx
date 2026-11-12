@@ -1,80 +1,45 @@
-
-
 'use client'
-// src/app/basket/components/FulfillmentSwitcher.jsx
 
-// import { useState, useEffect } from 'react'
-// import { getDeliveryOption, getNearestStore } from '@/lib/api'
-
+import { Truck, Store, Clock, MapPin, PackageCheck, AlertCircle } from 'lucide-react'
 import { isStoreOpen } from '@/lib/stores-api'
 
 const MODES = [
-  { id: 'delivery', label: 'Home Delivery'   },
-  { id: 'collect',  label: 'Click & Collect' },
+  { id: 'delivery', label: 'Home Delivery' },
+  { id: 'collect', label: 'Click & Collect' },
 ]
-
-// ── Skeleton ───────────────────────────────────────────────────────────────────
-
-function PanelSkeleton() {
-  return (
-    <div
-      className="mt-4 p-4 rounded-xl animate-pulse"
-      style={{ background: '#f5f9f5', border: '1px solid #d4ede5', minHeight: 76 }}
-    />
-  )
-}
-
-// ── Inline error ───────────────────────────────────────────────────────────────
 
 function InlineError({ message }) {
   return (
-    <div
-      className="mt-4 p-3 rounded-xl text-xs flex items-center gap-2"
-      style={{ background: '#fff5f5', border: '1px solid #fecaca', color: '#b91c1c' }}
-    >
-      <span className="material-symbols-outlined text-[16px]">error</span>
+    <div className="mt-3 p-3 rounded-xl text-xs flex items-center gap-2 bg-[#FFF5F5] border border-[#FECACA] text-[#B91C1C]">
+      <AlertCircle className="w-4 h-4 shrink-0" />
       {message}
     </div>
   )
 }
 
-// ── Delivery panel ─────────────────────────────────────────────────────────────
-
 function DeliveryPanel({ data, error }) {
   if (error) return <InlineError message={error} />
 
-  const isFree    = !data || !data.is_active || data.charge_type === 'free'
-  const fee       = isFree ? 0 : Number(data.flat_fee)
-  const isThresh  = data?.charge_type === 'threshold'
+  const isFree = !data || !data.is_active || data.charge_type === 'free'
+  const fee = isFree ? 0 : Number(data.flat_fee)
+  const isThresh = data?.charge_type === 'threshold'
   const threshold = isThresh ? Number(data.free_threshold) : null
 
   return (
-    <div
-      className="mt-4 p-4 rounded-xl flex items-start gap-3"
-      style={{ background: '#f5f9f5', border: '1px solid #d4ede5' }}
-    >
-      <span
-        className="material-symbols-outlined mt-0.5 flex-shrink-0"
-        style={{ color: '#00694c', fontSize: '20px', fontVariationSettings: "'FILL' 1" }}
-      >
-        local_shipping
-      </span>
+    <div className="mt-3 p-3.5 rounded-[14px] flex items-center gap-3 bg-[#EDF2E6] border border-[#DDE6D0]">
+      <div className="w-9 h-9 rounded-full bg-white border border-[#D4E0C8] flex items-center justify-center shrink-0">
+        <Truck className="w-4 h-4 text-[#0B462B]" />
+      </div>
       <div>
-        <p className="font-semibold text-sm" style={{ color: '#151e13' }}>
-          Home delivery
-        </p>
+        <p className="font-semibold text-[13.5px] text-[#142D1E]">Home Delivery</p>
         {isFree || fee === 0 ? (
-          <p className="text-xs mt-1 font-medium" style={{ color: '#00694c' }}>
-            Free delivery
-          </p>
+          <p className="text-[12px] font-medium text-[#1D5C38]">Free farm-fresh doorstep delivery</p>
         ) : (
-          <p className="text-xs mt-1 font-medium" style={{ color: '#00694c' }}>
+          <p className="text-[12px] font-medium text-[#1D5C38]">
             Delivery charge: €{fee.toFixed(2)}
-            {isThresh && threshold && (
-              <span style={{ color: '#6d7a73' }}>
-                {' '}(free over €{threshold.toFixed(2)})
-              </span>
-            )}
+            {isThresh && threshold ? (
+              <span className="text-[#566A5D]"> (free over €{threshold.toFixed(2)})</span>
+            ) : null}
           </p>
         )}
       </div>
@@ -82,56 +47,37 @@ function DeliveryPanel({ data, error }) {
   )
 }
 
-// ── Collect panel ──────────────────────────────────────────────────────────────
-
 function CollectPanel({ data, error }) {
   if (error) return <InlineError message={error} />
 
-  const distanceText = data?.distance_km != null
-    ? `${data.distance_km} km away`
-    : null
-
-  const readyMins  = data?.collect_ready_minutes ?? 120
-  const readyLabel = readyMins >= 60
-    ? `≈ ${readyMins / 60} hour${readyMins / 60 !== 1 ? 's' : ''}`
-    : `≈ ${readyMins} min`
-
+  const distanceText = data?.distance_km != null ? `${data.distance_km} km away` : null
+  const readyMins = data?.collect_ready_minutes ?? 120
+  const readyLabel =
+    readyMins >= 60
+      ? `≈ ${readyMins / 60} hour${readyMins / 60 !== 1 ? 's' : ''}`
+      : `≈ ${readyMins} min`
   const isOpen = data ? isStoreOpen(data) : false
 
   return (
-    <div
-      className="mt-4 rounded-xl overflow-hidden"
-      style={{ border: '1px solid #d4ede5' }}
-    >
-      {/* Store header */}
-      <div
-        className="px-4 py-3 flex items-center gap-3"
-        style={{ background: '#f5f9f5', borderBottom: '1px solid #d4ede5' }}
-      >
-        <span
-          className="material-symbols-outlined flex-shrink-0"
-          style={{ color: '#00694c', fontSize: '20px', fontVariationSettings: "'FILL' 1" }}
-        >
-          store
-        </span>
-
+    <div className="mt-3 rounded-[14px] overflow-hidden border border-[#DCE4D3] bg-white">
+      <div className="px-4 py-3 flex items-center gap-3 bg-[#EDF2E6] border-b border-[#DCE4D3]">
+        <Store className="w-5 h-5 text-[#0B462B] shrink-0" />
         <div className="min-w-0">
-          <p className="font-semibold text-sm truncate" style={{ color: '#151e13' }}>
-            {data ? `${data.name} — ${data.address}` : '—'}
+          <p className="font-semibold text-[13.5px] truncate text-[#142D1E]">
+            {data ? `${data.name} — ${data.address}` : 'Nearest El Árbol Store'}
           </p>
-          <p className="text-xs" style={{ color: '#6d7a73' }}>
+          <p className="text-[12px] text-[#586A5F]">
             {data ? data.city : ''}
             {distanceText ? ` · ${distanceText}` : ''}
           </p>
         </div>
-
         {data && (
           <span
-            className="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0"
+            className="ml-auto text-[10px] font-bold px-2.5 py-0.5 rounded-full shrink-0"
             style={
               isOpen
-                ? { background: '#d4ede5', color: '#095041' }
-                : { background: '#fde8e8', color: '#9b1c1c' }
+                ? { background: '#DCEFD3', color: '#195A36' }
+                : { background: '#FDE8E8', color: '#9B1C1C' }
             }
           >
             {isOpen ? 'OPEN' : 'CLOSED'}
@@ -139,103 +85,84 @@ function CollectPanel({ data, error }) {
         )}
       </div>
 
-      {/* Hours — uses the single `hours` display string from stores.Store */}
       {data?.hours && (
-
-        <div
-          className="px-4 py-3 flex items-center gap-2"
-          style={{ borderBottom: '1px solid #d4ede5' }}
-        >
-          <span
-            className="material-symbols-outlined text-[16px] flex-shrink-0"
-            style={{ color: '#6d7a73' }}
-          >
-            schedule
-          </span>
-          <span className="text-xs" style={{ color: '#6d7a73' }}>
-            Opening hours:{' '}
-            <span className="font-medium" style={{ color: '#151e13' }}>
-              {data.hours}
-            </span>
+        <div className="px-4 py-2.5 flex items-center gap-2 border-b border-[#EEF2E8]">
+          <Clock className="w-4 h-4 text-[#586A5F] shrink-0" />
+          <span className="text-xs text-[#586A5F]">
+            Opening hours: <span className="font-semibold text-[#14261B]">{data.hours}</span>
           </span>
           {data.map_link && (
             <a
               href={data.map_link}
               target="_blank"
               rel="noopener noreferrer"
-              className="ml-auto text-[11px] font-semibold flex items-center gap-1 flex-shrink-0"
-              style={{ color: '#00694c' }}
+              className="ml-auto text-[11.5px] font-semibold flex items-center gap-1 shrink-0 text-[#0B462B] hover:underline"
             >
-              <span className="material-symbols-outlined text-[14px]">map</span>
+              <MapPin className="w-3.5 h-3.5" />
               Directions
             </a>
           )}
         </div>
       )}
 
-      {/* Ready-in banner */}
-      <div
-        className="px-4 py-3 flex items-center gap-2"
-        style={{ background: '#edf7f2' }}
-      >
-        <span
-          className="material-symbols-outlined text-[18px] flex-shrink-0"
-          style={{ color: '#00694c' }}
-        >
-          inventory_2
-        </span>
-        <p className="text-xs" style={{ color: '#3d4943' }}>
+      <div className="px-4 py-2.5 flex items-center gap-2 bg-[#F5F8F0]">
+        <PackageCheck className="w-4 h-4 text-[#0B462B] shrink-0" />
+        <p className="text-xs text-[#3D4E42]">
           Your order will be ready for collection in{' '}
-          <span className="font-bold" style={{ color: '#00694c' }}>{readyLabel}</span>.
-          {data?.sms_notification && ' We\'ll send you an SMS when it\'s ready.'}
+          <span className="font-bold text-[#0B462B]">{readyLabel}</span>.
+          {data?.sms_notification ? " We'll send you an SMS when it's ready." : ''}
         </p>
       </div>
     </div>
   )
 }
 
-// ── Main export ────────────────────────────────────────────────────────────────
-
-// ── Main export ────────────────────────────────────────────────────────────────
-
 export default function FulfillmentSwitcher({
   fulfillment,
   setFulfillment,
-  initialDelivery = null,  
-  initialStore    = null,   
+  initialDelivery = null,
+  initialStore = null,
 }) {
   const deliveryError = !initialDelivery ? 'Could not load delivery info.' : null
-  const storeError    = !initialStore    ? 'Could not load store info.'    : null
+  const storeError = !initialStore ? 'Could not load store info.' : null
 
   return (
-    <div className="mb-8 md:mb-10">
-      {/* Pills */}
-      <div className="inline-flex p-1 rounded-xl" style={{ background: '#f0f4f0' }}>
-        {MODES.map(mode => {
-          const active = fulfillment === mode.id
-          return (
-            <button
-              key={mode.id}
-              onClick={() => setFulfillment(mode.id)}
-              className="px-4 md:px-6 py-2 rounded-lg text-sm font-semibold transition-all cursor-pointer"
-              style={{
-                background: active ? '#ffffff' : 'transparent',
-                color:      active ? '#00694c' : '#3d4943',
-                boxShadow:  active ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {mode.label}
-            </button>
-          )
-        })}
+    <div className="rounded-[20px] bg-[#FAFBF6] border border-[#E2E6DA] p-4 sm:p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <span
+          className="text-[17px] font-bold text-[#142D1E]"
+          style={{ fontFamily: 'var(--font-newsreader), Georgia, serif' }}
+        >
+          Fulfillment Option
+        </span>
+        <div className="inline-flex p-1 rounded-full bg-[#EAEFE2] border border-[#DCE4D3]">
+          {MODES.map((mode) => {
+            const active = fulfillment === mode.id
+            return (
+              <button
+                key={mode.id}
+                type="button"
+                onClick={() => setFulfillment(mode.id)}
+                className="px-3.5 sm:px-4 py-1.5 rounded-full text-[12.5px] font-semibold transition-all duration-200 cursor-pointer whitespace-nowrap"
+                style={{
+                  background: active ? '#0B462B' : 'transparent',
+                  color: active ? '#FFFFFF' : '#354A3B',
+                }}
+              >
+                {mode.label}
+              </button>
+            )
+          })}
+        </div>
       </div>
 
-      {fulfillment === 'delivery' ? (
-        <DeliveryPanel data={initialDelivery} error={deliveryError} />
-      ) : (
-        <CollectPanel data={initialStore} error={storeError} />
-      )}
+      <div key={fulfillment} className="basket-fade-slide">
+        {fulfillment === 'delivery' ? (
+          <DeliveryPanel data={initialDelivery} error={deliveryError} />
+        ) : (
+          <CollectPanel data={initialStore} error={storeError} />
+        )}
+      </div>
     </div>
   )
 }

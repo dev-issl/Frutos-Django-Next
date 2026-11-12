@@ -8,11 +8,12 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework import status
 
+from rest_framework.views import APIView
 from orders.models import Order
-from .models import Product, Category, SubCategory, Color, Brand, Size, DisplayUnit, ProductSpecification, ProductAdditionalImage, Review, Offer, ProductStoreStock
+from .models import Product, ProductDetailSettings, Category, SubCategory, Color, Brand, Size, DisplayUnit, ProductSpecification, ProductAdditionalImage, Review, Offer, ProductStoreStock
 from django.db.models import Count, ProtectedError, Prefetch, Q
 from .serializers import (
-    ProductSerializer, ProductWriteSerializer,
+    ProductSerializer, ProductWriteSerializer, ProductDetailSettingsSerializer,
     CategorySerializer, SubCategorySerializer,
     ColorSerializer, BrandSerializer, SizeSerializer, DisplayUnitSerializer,
     ReviewSerializer, ReviewCreateSerializer,
@@ -160,7 +161,10 @@ class ProductViewSet(viewsets.ModelViewSet):
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context.update({"request": self.request})
+        context.update({
+            "request": self.request,
+            "include_detail_defaults": getattr(self, "action", None) == "retrieve",
+        })
         return context
 
     def _get_user_type(self, user):
@@ -220,6 +224,8 @@ class ProductViewSet(viewsets.ModelViewSet):
         if variants_list and len(variants_list) > 0:
             created_products = []
             thumbnail_file = request.FILES.get('thumbnail')
+            promo_card_image_file = request.FILES.get('promo_card_image')
+            farm_story_image_file = request.FILES.get('farm_story_image')
             additional_image_files = request.FILES.getlist('additional_images')
             specs_json = request.data.get('specifications_json')
 
@@ -227,8 +233,10 @@ class ProductViewSet(viewsets.ModelViewSet):
                 item_data = request.data.copy()
                 if 'variants_json' in item_data:
                     del item_data['variants_json']
-                if idx > 0 and 'thumbnail' in item_data:
-                    del item_data['thumbnail']
+                if idx > 0:
+                    for file_key in ('thumbnail', 'promo_card_image', 'farm_story_image'):
+                        if file_key in item_data:
+                            del item_data[file_key]
 
                 v_name = (v_data.get('variant') or v_data.get('name') or '').strip()
                 item_data['variant'] = v_name
@@ -284,14 +292,31 @@ class ProductViewSet(viewsets.ModelViewSet):
                 self.perform_create(serializer)
                 p = serializer.instance
 
-                # Thumbnail assignment (reusing file uploaded on first)
+                # Thumbnail / highlight card / farm story image assignment (reusing file uploaded on first)
+                updated_img_fields = []
                 if thumbnail_file:
                     if idx == 0:
                         p.thumbnail = thumbnail_file
-                        p.save(update_fields=['thumbnail'])
+                        updated_img_fields.append('thumbnail')
                     elif created_products and created_products[0].thumbnail:
                         p.thumbnail = created_products[0].thumbnail.name
-                        p.save(update_fields=['thumbnail'])
+                        updated_img_fields.append('thumbnail')
+                if promo_card_image_file:
+                    if idx == 0:
+                        p.promo_card_image = promo_card_image_file
+                        updated_img_fields.append('promo_card_image')
+                    elif created_products and created_products[0].promo_card_image:
+                        p.promo_card_image = created_products[0].promo_card_image.name
+                        updated_img_fields.append('promo_card_image')
+                if farm_story_image_file:
+                    if idx == 0:
+                        p.farm_story_image = farm_story_image_file
+                        updated_img_fields.append('farm_story_image')
+                    elif created_products and created_products[0].farm_story_image:
+                        p.farm_story_image = created_products[0].farm_story_image.name
+                        updated_img_fields.append('farm_story_image')
+                if updated_img_fields:
+                    p.save(update_fields=updated_img_fields)
 
                 # Auto-assign product to staff's store
                 if getattr(request.user, 'user_type', '') == 'STAFF':
@@ -424,7 +449,18 @@ class ProductViewSet(viewsets.ModelViewSet):
 
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+
+        # Track explicit image clears ('', 'null', 'None', None) without failing DRF ImageField file validation
+        raw_data = request.data.copy() if hasattr(request.data, 'copy') else dict(request.data)
+        cleared_image_fields = []
+        for img_field in ('thumbnail', 'promo_card_image', 'farm_story_image'):
+            if img_field in raw_data and img_field not in request.FILES:
+                val = raw_data.get(img_field)
+                if val in (None, '', 'null', 'None'):
+                    cleared_image_fields.append(img_field)
+                    raw_data.pop(img_field, None)
+
+        serializer = self.get_serializer(instance, data=raw_data, partial=partial)
         serializer.is_valid(raise_exception=True)
         serializer.save(updated_by=user)
 
@@ -469,10 +505,11 @@ class ProductViewSet(viewsets.ModelViewSet):
         for img in new_images:
             ProductAdditionalImage.objects.create(product=product, image=img)
 
-        # Handle thumbnail removal (explicit null)
-        if 'thumbnail' in request.data and request.data['thumbnail'] in (None, '', 'null', 'None'):
-            product.thumbnail = None
-            product.save(update_fields=['thumbnail'])
+        # Handle explicit image removal
+        if cleared_image_fields:
+            for img_field in cleared_image_fields:
+                setattr(product, img_field, None)
+            product.save(update_fields=cleared_image_fields)
 
         # Return the full read serializer
         product.refresh_from_db()
@@ -599,7 +636,10 @@ class CategoryViewSet(viewsets.ModelViewSet):
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context.update({"request": self.request})
+        context.update({
+            "request": self.request,
+            "include_detail_defaults": getattr(self, "action", None) == "retrieve",
+        })
         return context
 
 class SubCategoryViewSet(viewsets.ModelViewSet):
@@ -926,4 +966,64 @@ class OfferViewSet(viewsets.ModelViewSet):
         if self.action == 'retrieve':
             return OfferDetailSerializer
         return OfferSerializer
+
+
+class ProductDetailSettingsView(APIView):
+    """Singleton GET/PATCH endpoint for global Product Detail page defaults."""
+
+    def get_permissions(self):
+        if self.request.method in permissions.SAFE_METHODS:
+            return [permissions.AllowAny()]
+        return [permissions.IsAuthenticated()]
+
+    def _is_admin(self, user):
+        return bool(
+            user
+            and user.is_authenticated
+            and (getattr(user, 'is_superuser', False) or getattr(user, 'user_type', '').upper() == 'ADMIN')
+        )
+
+    def get(self, request):
+        obj = ProductDetailSettings.get_solo()
+        serializer = ProductDetailSettingsSerializer(obj, context={'request': request})
+        return Response(serializer.data)
+
+    def _update(self, request, partial=True):
+        if not self._is_admin(request.user):
+            return Response(
+                {'detail': 'Only administrators can update default product page sections.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        obj = ProductDetailSettings.get_solo()
+        raw_data = request.data.copy() if hasattr(request.data, 'copy') else dict(request.data)
+        cleared_image_fields = []
+        for img_field in ('promo_card_image', 'farm_story_image'):
+            if img_field in raw_data and img_field not in request.FILES:
+                val = raw_data.get(img_field)
+                if val in (None, '', 'null', 'None'):
+                    cleared_image_fields.append(img_field)
+                    raw_data.pop(img_field, None)
+
+        serializer = ProductDetailSettingsSerializer(
+            obj, data=raw_data, partial=partial, context={'request': request}
+        )
+        serializer.is_valid(raise_exception=True)
+        updated_obj = serializer.save()
+
+        if cleared_image_fields:
+            for img_field in cleared_image_fields:
+                setattr(updated_obj, img_field, None)
+            updated_obj.save(update_fields=cleared_image_fields)
+            updated_obj.refresh_from_db()
+
+        return Response(
+            ProductDetailSettingsSerializer(updated_obj, context={'request': request}).data
+        )
+
+    def patch(self, request):
+        return self._update(request, partial=True)
+
+    def put(self, request):
+        return self._update(request, partial=False)
+
 

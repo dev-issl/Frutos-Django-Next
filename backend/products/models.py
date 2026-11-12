@@ -282,6 +282,27 @@ class Product(models.Model):
     badge = models.CharField(max_length=100, blank=True, null=True, help_text='Promo label (NEW, ORGANIC)')
     badge_color = models.CharField(max_length=200, blank=True, null=True, help_text='Tailwind CSS classes or hex for badge')
     variant = models.CharField(max_length=100, blank=True, null=True, help_text='Product quality or variant (e.g., C, B)')
+
+    # Dynamic Product Details Page Content & Per-Product Overrides
+    short_description = models.TextField(blank=True, default='', help_text="Short provenance or summary shown under product rating")
+    nutritional_info = models.TextField(blank=True, default='', help_text="JSON rows or line-separated key:value nutrition metrics")
+    nutrition_serving_size = models.CharField(max_length=100, blank=True, default='per 100g', help_text="Serving label shown under Nutritional Information")
+    highlights = models.JSONField(default=list, blank=True, help_text="Checkmark bullet list shown in About This Product")
+    trust_badges = models.JSONField(default=list, blank=True, help_text="Optional override for 3 hero trust badges [{icon, text}]")
+    promo_card_title = models.CharField(max_length=255, blank=True, default='', help_text="Optional custom title for the farm highlight card")
+    promo_card_image = models.ImageField(upload_to='products/promo/', blank=True, null=True, help_text="Optional custom image for the farm highlight card")
+    shipping_info_title = models.CharField(max_length=255, blank=True, default='', help_text="Optional custom heading for Shipping Info tab")
+    shipping_info = models.TextField(blank=True, default='', help_text="Optional custom content for Shipping Info tab")
+    return_policy_title = models.CharField(max_length=255, blank=True, default='', help_text="Optional custom heading for Return Policy tab")
+    return_policy = models.TextField(blank=True, default='', help_text="Optional custom content for Return Policy tab")
+    farm_story_eyebrow = models.CharField(max_length=120, blank=True, default='', help_text="Optional eyebrow label for Farm Story section")
+    farm_story_title = models.CharField(max_length=255, blank=True, default='', help_text="Optional title for Farm Story section")
+    farm_story_description = models.TextField(blank=True, default='', help_text="Optional description for Farm Story section")
+    farm_story_cta_text = models.CharField(max_length=80, blank=True, default='', help_text="Optional button text for Farm Story section")
+    farm_story_cta_url = models.CharField(max_length=255, blank=True, default='', help_text="Optional button link for Farm Story section")
+    farm_story_image = models.ImageField(upload_to='products/farm_story/', blank=True, null=True, help_text="Optional custom farmer/farm image")
+    farm_story_stats = models.JSONField(default=list, blank=True, help_text="Optional stats override [{icon, value, label}]")
+
     colors = models.ManyToManyField(Color, blank=True, related_name='products')
     sizes = models.ManyToManyField(Size, blank=True, related_name='products')
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
@@ -482,4 +503,71 @@ class ProductStoreStock(models.Model):
 
     def __str__(self):
         return f"{self.product.name} at {self.store.name}: {self.stock}"
+
+
+def default_product_trust_badges():
+    return [
+        {"icon": "leaf", "text": "100% Organic & Fresh"},
+        {"icon": "truck", "text": "Fast Local Delivery"},
+        {"icon": "shield", "text": "Secure Payment 100% Safe"},
+    ]
+
+
+def default_product_highlights():
+    return [
+        "Harvested at peak freshness",
+        "Rich in natural vitamins and minerals",
+        "100% sustainably cultivated",
+    ]
+
+
+def default_farm_story_stats():
+    return [
+        {"icon": "leaf", "value": "120+", "label": "Local Farmers"},
+        {"icon": "sprout", "value": "500+", "label": "Acres of Farms"},
+        {"icon": "recycle", "value": "100%", "label": "Organic"},
+    ]
+
+
+class ProductDetailSettings(models.Model):
+    """Singleton default content for storefront product detail page sections."""
+    default_trust_badges = models.JSONField(default=default_product_trust_badges, blank=True)
+    default_highlights = models.JSONField(default=default_product_highlights, blank=True)
+    promo_card_title = models.CharField(max_length=255, default='From Our Farms to Your Table')
+    promo_card_image = models.ImageField(upload_to='products/defaults/', blank=True, null=True)
+    farm_story_eyebrow = models.CharField(max_length=120, default='OUR FARM STORY')
+    farm_story_title = models.CharField(max_length=255, default='Growing Goodness Together')
+    farm_story_description = models.TextField(
+        default='At El Árbol, we work hand in hand with local farmers to bring you the freshest produce while supporting sustainable farming practices.'
+    )
+    farm_story_cta_text = models.CharField(max_length=80, default='Learn More')
+    farm_story_cta_url = models.CharField(max_length=255, default='/about')
+    farm_story_image = models.ImageField(upload_to='products/defaults/', blank=True, null=True)
+    farm_story_stats = models.JSONField(default=default_farm_story_stats, blank=True)
+    shipping_info_title = models.CharField(max_length=255, default='Farm-to-Doorstep Delivery')
+    shipping_info = models.TextField(
+        default='Orders are hand-packed each morning in breathable eco-friendly crates and delivered chilled within your chosen time window. Same-day or next-day delivery slots are selectable directly at checkout.'
+    )
+    return_policy_title = models.CharField(max_length=255, default='100% Freshness Guarantee')
+    return_policy = models.TextField(
+        default='If any produce does not arrive in crisp, farm-fresh condition, reach out within 24 hours of delivery with a photo and we will promptly replace or refund the affected items.'
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Product Detail Page Defaults"
+        verbose_name_plural = "Product Detail Page Defaults"
+
+    def __str__(self):
+        return "Product Detail Page Defaults"
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def get_solo(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+
 

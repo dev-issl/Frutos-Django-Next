@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import { ArrowRight } from 'lucide-react'
 import { useSafeSession } from '@/lib/useSafeSession'
 import { useAuth } from '@/app/context/AuthContext'
@@ -47,14 +47,78 @@ const SHOWCASE_TEMPLATES = [
   { name: 'Country Glass Milk', price: 1.60, oldPrice: 2.20, badge: 'Class A', unit: 'L', category: 'Dairy', image: '/homepage/cat_card_dairy.webp' },
 ]
 
+function CategoryMedallionIcon({ label = '' }) {
+  const norm = label
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+
+  if (
+    norm.includes('droguer') ||
+    norm.includes('pharm') ||
+    norm.includes('health') ||
+    norm.includes('care') ||
+    norm.includes('hygiene')
+  ) {
+    return (
+      <svg viewBox="0 0 28 28" className="w-[17px] h-[17px] sm:w-[19px] sm:h-[19px] text-[#356F3E]" fill="currentColor" aria-hidden="true">
+        <rect x="10.5" y="4" width="7" height="20" rx="1.6" />
+        <rect x="4" y="10.5" width="20" height="7" rx="1.6" />
+      </svg>
+    )
+  }
+
+  if (
+    norm.includes('aliment') ||
+    norm.includes('wheat') ||
+    norm.includes('grain') ||
+    norm.includes('bak') ||
+    norm.includes('all') ||
+    norm.includes('other')
+  ) {
+    return (
+      <svg viewBox="0 0 28 28" className="w-[18px] h-[18px] sm:w-[20px] sm:h-[20px] text-[#285F36]" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M10.5 23.5c0-6 2.5-12 7.5-17.5" />
+        <path d="M7.5 23.5c-.8-5-.2-10 3-14.5" />
+        <path d="M14.5 14.5c2.2 0 4.2-1.1 4.8-3-2-.6-4.1.4-4.8 3Z" fill="currentColor" fillOpacity="0.18" />
+        <path d="M12.5 18c2.2 0 4.2-1.1 4.8-3-2-.6-4.1.4-4.8 3Z" fill="currentColor" fillOpacity="0.18" />
+        <path d="M16.2 10.8c1.9 0 3.5-1 4-2.6-1.7-.5-3.4.3-4 2.6Z" fill="currentColor" fillOpacity="0.18" />
+        <path d="M11 11.5c0-2.1-1.3-3.9-3.1-4.3-.4 1.9.7 3.8 3.1 4.3Z" fill="currentColor" fillOpacity="0.18" />
+        <path d="M9.6 15.6c0-2.1-1.3-3.9-3.1-4.3-.4 1.9.7 3.8 3.1 4.3Z" fill="currentColor" fillOpacity="0.18" />
+      </svg>
+    )
+  }
+
+  // Default botanical leaf icon (matching Frutas y Verduras / Organic / Fresh Produce)
+  return (
+    <svg viewBox="0 0 28 28" className="w-[17px] h-[17px] sm:w-[19px] sm:h-[19px] text-[#2D6938]" fill="none" aria-hidden="true">
+      <path
+        d="M21 5.5C13.8 5.8 8.2 10.6 7.5 18.8c6.8-.4 12.2-5 13.5-13.3Z"
+        fill="currentColor"
+        fillOpacity="0.88"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M6 22.5c2.5-3.2 7.2-8.2 12.8-13.2M11 15.8h4.2M13.2 12.2l3.4-.2"
+        stroke="#FAF9F2"
+        strokeWidth="1.35"
+        strokeLinecap="round"
+      />
+      <path d="M5.8 22.8l2.5-2.6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  )
+}
+
 function CategoryCardContent({ item }) {
   const [imgFailed, setImgFailed] = useState(false)
   const resolvedSrc = imgFailed || !item.image ? (item.fallbackImage || '/homepage/cat_card_others.webp') : item.image
 
   return (
-    <>
-      {/* Top Photo Container (Behind Integrated White Wave Footer) */}
-      <div className="relative z-0 w-full aspect-[16/10] overflow-hidden bg-[#EFF7F1]">
+    <div className="relative flex flex-col w-full rounded-[11px] sm:rounded-[12px] overflow-hidden bg-[#FAF9F2]">
+      {/* Top Photo Zone + Sculpted Left Accent Shoulder */}
+      <div className="relative z-0 w-full aspect-[16/10] overflow-hidden bg-[#EEF5EA]">
         <Image
           src={resolvedSrc}
           alt={item.label}
@@ -63,38 +127,51 @@ function CategoryCardContent({ item }) {
           unoptimized
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
           onError={() => setImgFailed(true)}
-          className="object-cover transform-gpu will-change-transform transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.08]"
+          className="object-cover transform-gpu will-change-transform transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.06]"
         />
-      </div>
 
-      {/* Seamless White Footer Label + Attached Wave Overlapping Seam */}
-      <div className="relative z-10 w-full bg-white px-3.5 pt-0.5 pb-2.5 sm:px-4 sm:pb-3">
+        {/* Subtle Dark Forest-Green Curved Accent Behind Upper-Left of Medallion */}
         <svg
-          viewBox="0 0 400 32"
-          preserveAspectRatio="none"
-          className="absolute bottom-[calc(100%-3px)] -left-[1px] w-[calc(100%+2px)] h-[24px] pointer-events-none block"
+          viewBox="0 0 110 58"
+          className="pointer-events-none absolute -bottom-[1px] left-0 w-[56px] sm:w-[62px] h-[28px] sm:h-[32px] z-10"
           aria-hidden="true"
         >
-          <path
-            d="M0,20 C120,24 235,5 400,17 L400,32 L0,32 Z"
-            fill="#FFFFFF"
-          />
+          <path d="M0,58 L0,6 C34,6 64,26 78,58 Z" fill="#195937" />
         </svg>
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-1.5 min-w-0">
-            <span className="font-bold text-[14px] sm:text-[14.5px] text-[#085041] leading-tight truncate">
-              {item.label}
-            </span>
-            <ArrowRight className="w-3.5 h-3.5 shrink-0 text-[#085041] transition-transform duration-300 ease-out group-hover:translate-x-1" />
-          </div>
-          {typeof item.totalProducts === 'number' && (
-            <span className="shrink-0 rounded-full bg-[#EFF7F1] px-2 py-0.5 text-[10.5px] font-semibold text-[#3C6653]">
-              {item.totalProducts}
-            </span>
-          )}
-        </div>
+
+        {/* Cream Arch Seam Along Bottom Edge of Photo */}
+        <svg
+          viewBox="0 0 400 26"
+          preserveAspectRatio="none"
+          className="pointer-events-none absolute -bottom-[1px] left-0 w-full h-[14px] sm:h-[16px] z-10"
+          aria-hidden="true"
+        >
+          <path d="M0,26 L0,18 C54,3 92,16 124,22 L400,22 L400,26 Z" fill="#FAF9F2" />
+        </svg>
       </div>
-    </>
+
+      {/* Cream Footer Bar with Overlapping Circular Medallion, Centered Uppercase Serif Title & Dark Green Arrow */}
+      <div className="relative z-20 w-full bg-[#FAF9F2] min-h-[38px] sm:min-h-[42px] pl-[46px] sm:pl-[52px] pr-2 sm:pr-2.5 py-1.5 flex items-center justify-between gap-1.5">
+        {/* Overlapping White Circular Medallion */}
+        <div className="absolute left-[8px] sm:left-[10px] -top-[14px] sm:-top-[16px] w-[34px] h-[34px] sm:w-[38px] sm:h-[38px] rounded-full bg-white border-[1.5px] border-[#C5CD8C] shadow-[0_2px_8px_rgba(11,55,33,0.12)] flex items-center justify-center transition-transform duration-300 ease-out group-hover:scale-[1.04]">
+          <CategoryMedallionIcon label={item.label} />
+        </div>
+
+        <span
+          className="font-semibold uppercase text-[10px] sm:text-[10.5px] lg:text-[11px] tracking-[0.02em] text-[#113D26] leading-tight text-center flex-1 min-w-0 line-clamp-2"
+          style={{ fontFamily: 'var(--font-newsreader), "Playfair Display", Georgia, serif' }}
+        >
+          {item.label}
+        </span>
+
+        <span
+          aria-hidden="true"
+          className="w-[22px] h-[22px] sm:w-[24px] sm:h-[24px] rounded-full bg-[#094326] group-hover:bg-[#05331C] text-white flex items-center justify-center shrink-0 transition-all duration-300 ease-out group-hover:translate-x-0.5"
+        >
+          <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" strokeWidth={2.2} />
+        </span>
+      </div>
+    </div>
   )
 }
 
@@ -111,6 +188,7 @@ export default function ProductGrid({
   const frutasCat = useMemo(() => getFrutasCategoryName(categories), [categories])
   const [manualActive, setManualActive] = useState(null)
   const [notified, setNotified] = useState({})
+  const productsSectionRef = useRef(null)
 
   const active =
     manualActive !== null
@@ -234,11 +312,19 @@ export default function ProductGrid({
       const current = prev !== null ? prev : active
       return current === catId && catId !== 'All' ? 'All' : catId
     })
+    if (typeof window !== 'undefined') {
+      window.requestAnimationFrame(() => {
+        productsSectionRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+        })
+      })
+    }
   }
 
   return (
     <div style={{ backgroundColor: '#EFF9F2' }}>
-      {/* ── Explore Our Categories (Centered Header + 5 Photo Wave Cards) ── */}
+      {/* ── Explore Our Categories (Centered Header + 5-Per-Row Compact Medallion Wave Cards) ── */}
       <section className="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8 pt-9 sm:pt-11 pb-7 sm:pb-9">
         <div className="text-center mb-6 sm:mb-7">
           <div className="flex items-center justify-center gap-3 mb-1.5">
@@ -265,18 +351,14 @@ export default function ProductGrid({
           </h2>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 sm:gap-4">
-          {backendCategoryCards.map((item, idx) => {
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-3.5 lg:gap-4">
+          {backendCategoryCards.map((item) => {
             const isSelected = active === item.id
-            const spanLastOnMobile =
-              backendCategoryCards.length % 2 === 1 && idx === backendCategoryCards.length - 1
-                ? 'col-span-2 sm:col-span-1'
-                : ''
-            const cardClasses = `group isolate flex flex-col rounded-[14px] overflow-hidden bg-white text-left cursor-pointer transition-colors duration-300 ease-out ${
+            const cardClasses = `group isolate block w-full rounded-[15px] sm:rounded-[17px] bg-white p-[5px] sm:p-[6px] text-left cursor-pointer transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#085041] ${
               isSelected
-                ? 'border-[1.5px] border-[#085041] ring-2 ring-[#085041]/15'
-                : 'border border-[#DCE8DF] hover:border-[#9EC4AA]'
-            } ${spanLastOnMobile}`
+                ? 'border-[1.5px] border-[#085041] ring-2 ring-[#085041]/20 shadow-[0_10px_22px_-8px_rgba(12,68,41,0.22)]'
+                : 'border border-[#DCE8DD] shadow-[0_5px_14px_-6px_rgba(12,68,41,0.11)] hover:border-[#7DB290] hover:shadow-[0_10px_20px_-8px_rgba(12,68,41,0.16)]'
+            }`
 
             if (item.href) {
               return (
@@ -290,6 +372,7 @@ export default function ProductGrid({
               <button
                 key={item.id}
                 type="button"
+                aria-pressed={isSelected}
                 onClick={() => handleSelectCategory(item.id)}
                 className={cardClasses}
               >
@@ -301,7 +384,11 @@ export default function ProductGrid({
       </section>
 
       {/* ── Popular Products (Bestsellers + 5-Column Showcase Cards) ── */}
-      <section className="relative w-full overflow-hidden">
+      <section
+        id="popular-products"
+        ref={productsSectionRef}
+        className="relative w-full overflow-hidden scroll-mt-24"
+      >
         {/* Soft Organic Botanical Wave Accent Behind Popular Products */}
         <svg
           viewBox="0 0 1440 260"

@@ -569,3 +569,9 @@ class OfferAdmin(admin.ModelAdmin):
 class DisplayUnitAdmin(admin.ModelAdmin):
     list_display = ('name', 'abbreviation', 'created_at')
     search_fields = ('name', 'abbreviation')
+
+
+@admin.register(ProductDetailSettings)
+class ProductDetailSettingsAdmin(admin.ModelAdmin):
+    list_display = ('promo_card_title', 'farm_story_title', 'shipping_info_title', 'updated_at')
+

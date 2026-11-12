@@ -265,6 +265,42 @@ function normalizeProduct(p) {
         userCanReview: p.user_can_review || { can_review: false, message: "" },
         description: p.description || '',
         shortDesc: p.short_description || p.shortDesc || '',
+        nutritionalInfo: p.nutritional_info || p.nutritionalInfo || '',
+        nutritionServingSize: p.nutrition_serving_size || p.nutritionServingSize || 'per 100g',
+        highlights: Array.isArray(p.highlights) ? p.highlights : [],
+        trustBadges: Array.isArray(p.trust_badges)
+            ? p.trust_badges
+            : (Array.isArray(p.trustBadges) ? p.trustBadges : []),
+        promoCardTitle: p.promo_card_title || p.promoCardTitle || '',
+        promoCardImage: buildImageUrl(p.promo_card_image_url || p.promo_card_image || p.promoCardImage || null),
+        shippingInfoTitle: p.shipping_info_title || p.shippingInfoTitle || '',
+        shippingInfo: p.shipping_info || p.shippingInfo || '',
+        returnPolicyTitle: p.return_policy_title || p.returnPolicyTitle || '',
+        returnPolicy: p.return_policy || p.returnPolicy || '',
+        farmStoryEyebrow: p.farm_story_eyebrow || p.farmStoryEyebrow || '',
+        farmStoryTitle: p.farm_story_title || p.farmStoryTitle || '',
+        farmStoryDescription: p.farm_story_description || p.farmStoryDescription || '',
+        farmStoryCtaText: p.farm_story_cta_text || p.farmStoryCtaText || '',
+        farmStoryCtaUrl: p.farm_story_cta_url || p.farmStoryCtaUrl || '',
+        farmStoryImage: buildImageUrl(p.farm_story_image_url || p.farm_story_image || p.farmStoryImage || null),
+        farmStoryStats: Array.isArray(p.farm_story_stats)
+            ? p.farm_story_stats
+            : (Array.isArray(p.farmStoryStats) ? p.farmStoryStats : []),
+        detailDefaults: (p.detail_defaults || p.detailDefaults)
+            ? {
+                ...(p.detail_defaults || p.detailDefaults),
+                promo_card_image_url: buildImageUrl(
+                    (p.detail_defaults || p.detailDefaults).promo_card_image_url
+                    || (p.detail_defaults || p.detailDefaults).promo_card_image
+                    || null
+                ),
+                farm_story_image_url: buildImageUrl(
+                    (p.detail_defaults || p.detailDefaults).farm_story_image_url
+                    || (p.detail_defaults || p.detailDefaults).farm_story_image
+                    || null
+                ),
+            }
+            : null,
         keyFeatures: p.key_features || p.keyFeatures || '',
         bestUsedFor: p.best_used_for || p.bestUsedFor || '',
         notes: p.notes || '',
@@ -277,13 +313,12 @@ function normalizeProduct(p) {
 
 // ─── Products ─────────────────────────────────────────────────────────────────
 
-export async function getProducts({ category, search, inStock, token } = {}) {
+export async function getProducts({ category, search, inStock, token, pageSize = 1000, fetchAll = true } = {}) {
     const params = new URLSearchParams()
     if (category && category !== 'All') params.set('category', category)
     if (search) params.set('search', search)
     if (inStock !== undefined) params.set('in_stock', inStock)
-    // Request a large page_size to get all products in one shot
-    params.set('page_size', '1000')
+    params.set('page_size', String(pageSize))
 
     const query = `?${params.toString()}`
     const cleanBase = API_BASE.endsWith('/') ? API_BASE.slice(0, -1) : API_BASE
@@ -314,7 +349,7 @@ export async function getProducts({ category, search, inStock, token } = {}) {
                     if (!res2.ok) throw new Error('API error ' + res2.status)
                     const data2 = await res2.json()
                     allResults = allResults.concat(Array.isArray(data2) ? data2 : (data2.results || []))
-                    nextUrl = data2.next || null
+                    nextUrl = fetchAll ? (data2.next || null) : null
                     continue
                 }
                 throw new Error('API error ' + res.status + ' for ' + nextUrl)
@@ -329,7 +364,7 @@ export async function getProducts({ category, search, inStock, token } = {}) {
             } else if (data && Array.isArray(data.results)) {
                 // Paginated DRF response
                 allResults = allResults.concat(data.results)
-                nextUrl = data.next || null
+                nextUrl = fetchAll ? (data.next || null) : null
             } else {
                 break
             }
@@ -363,7 +398,9 @@ export async function getProductById(id) {
 
 // ✅ FIX: slug endpoint — Django-এ by_slug action থাকতে হবে (নিচে দেখো)
 export async function getProductBySlug(slug, options = {}) {
-    const fetchOptions = { next: { tags: ['products'] } }
+    const fetchOptions = options.noStore
+        ? { cache: 'no-store' }
+        : { next: { tags: ['products'] } }
     if (options.token) {
         fetchOptions.headers = {
             'Authorization': `Bearer ${options.token}`

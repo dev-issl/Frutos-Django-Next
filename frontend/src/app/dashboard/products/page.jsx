@@ -7,7 +7,7 @@
 import { useState } from "react";
 import {
   Plus, Eye, Pencil, Trash2, X, Upload,
-  Loader2, ChevronDown, ChevronUp, Image as ImageIcon,
+  Loader2, ChevronDown, ChevronUp, Image as ImageIcon, SlidersHorizontal,
 } from "lucide-react";
 import Container from "@/app/dashboard/_components/Container";
 import DataTable from "@/app/dashboard/_components/DataTable";
@@ -30,6 +30,7 @@ const PAGE_SIZE = 20;
 import ProductForm from "@/app/dashboard/_components/ProductForm";
 
 import ProductView from "@/app/dashboard/_components/ProductView";
+import ProductDetailDefaultsModal from "@/app/dashboard/_components/ProductDetailDefaultsModal";
 
 // ── Main Page ──────────────────────────────────────────────────
 export default function ProductsPage() {
@@ -65,6 +66,7 @@ export default function ProductsPage() {
   const [editItem, setEditItem] = useState(null);
   const [viewItem, setViewItem] = useState(null);
   const [deleteItem, setDeleteItem] = useState(null);
+  const [defaultsOpen, setDefaultsOpen] = useState(false);
 
   const handleCreate = async (payload) => { await create(payload); setCreateOpen(false); };
   const handleEdit = async (payload) => { await update(editItem.slug || editItem.id, payload); setEditItem(null); };
@@ -109,9 +111,18 @@ export default function ProductsPage() {
       title="Products"
       description="Manage your product catalog"
       actions={
-        <button style={{ cursor: 'pointer' }} onClick={() => setCreateOpen(true)} className="db-btn-primary">
-          <Plus size={15} /> Add Product
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            style={{ cursor: 'pointer' }}
+            onClick={() => setDefaultsOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-sm transition-colors"
+          >
+            <SlidersHorizontal size={14} className="text-[#00694C]" /> Details Page Defaults
+          </button>
+          <button style={{ cursor: 'pointer' }} onClick={() => setCreateOpen(true)} className="db-btn-primary">
+            <Plus size={15} /> Add Product
+          </button>
+        </div>
       }
     >
       <DataTable
@@ -183,6 +194,8 @@ export default function ProductsPage() {
         title="Delete Product"
         message={`Are you sure you want to delete "${deleteItem?.name}"? This cannot be undone.`}
       />
+
+      <ProductDetailDefaultsModal open={defaultsOpen} onClose={() => setDefaultsOpen(false)} />
     </Container>
   );
 }

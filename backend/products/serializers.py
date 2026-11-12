@@ -1,10 +1,78 @@
 # products/serializers.py
+import json
 from rest_framework import serializers
 from django.db.models import Q
 from .models import *
 from shops.serializers import ShopSerializer
 from orders.models import OrderItem
 from stores.models import Store
+
+
+class FlexibleJSONListField(serializers.JSONField):
+    """Accepts native lists or JSON-encoded list strings from FormData."""
+
+    def to_internal_value(self, data):
+        if data in (None, '', 'null', 'None'):
+            return []
+        if isinstance(data, str):
+            try:
+                parsed = json.loads(data)
+            except Exception as exc:
+                raise serializers.ValidationError("Invalid JSON format.") from exc
+            if parsed is None:
+                return []
+            if not isinstance(parsed, list):
+                raise serializers.ValidationError("Expected a JSON array.")
+            return parsed
+        return super().to_internal_value(data)
+
+
+class ProductDetailSettingsSerializer(serializers.ModelSerializer):
+    promo_card_image_url = serializers.SerializerMethodField()
+    farm_story_image_url = serializers.SerializerMethodField()
+    default_trust_badges = FlexibleJSONListField(required=False)
+    default_highlights = FlexibleJSONListField(required=False)
+    farm_story_stats = FlexibleJSONListField(required=False)
+
+    class Meta:
+        model = ProductDetailSettings
+        fields = [
+            'id',
+            'default_trust_badges',
+            'default_highlights',
+            'promo_card_title',
+            'promo_card_image',
+            'promo_card_image_url',
+            'farm_story_eyebrow',
+            'farm_story_title',
+            'farm_story_description',
+            'farm_story_cta_text',
+            'farm_story_cta_url',
+            'farm_story_image',
+            'farm_story_image_url',
+            'farm_story_stats',
+            'shipping_info_title',
+            'shipping_info',
+            'return_policy_title',
+            'return_policy',
+            'updated_at',
+        ]
+        extra_kwargs = {
+            'promo_card_image': {'allow_null': True, 'required': False},
+            'farm_story_image': {'allow_null': True, 'required': False},
+        }
+
+    def _build_url(self, image_field):
+        if image_field and hasattr(image_field, 'url'):
+            request = self.context.get('request')
+            return request.build_absolute_uri(image_field.url) if request else image_field.url
+        return None
+
+    def get_promo_card_image_url(self, obj):
+        return self._build_url(obj.promo_card_image)
+
+    def get_farm_story_image_url(self, obj):
+        return self._build_url(obj.farm_story_image)
 
 class ProductStoreSerializer(serializers.ModelSerializer):
     class Meta:
@@ -247,11 +315,21 @@ class ProductSerializer(serializers.ModelSerializer):
     created_by_role = serializers.CharField(source='created_by.user_type', read_only=True)
     updated_by_role = serializers.CharField(source='updated_by.user_type', read_only=True)
     variants = serializers.SerializerMethodField()
+    promo_card_image_url = serializers.SerializerMethodField()
+    farm_story_image_url = serializers.SerializerMethodField()
+    detail_defaults = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
         fields = [
-            'id', 'shop', 'stores', 'brand', 'name', 'slug', 'description', 'category', 'sub_category', 'shipping_category',
+            'id', 'shop', 'stores', 'brand', 'name', 'slug', 'description', 'short_description',
+            'nutritional_info', 'nutrition_serving_size', 'highlights', 'trust_badges',
+            'promo_card_title', 'promo_card_image_url',
+            'shipping_info_title', 'shipping_info', 'return_policy_title', 'return_policy',
+            'farm_story_eyebrow', 'farm_story_title', 'farm_story_description',
+            'farm_story_cta_text', 'farm_story_cta_url', 'farm_story_image_url', 'farm_story_stats',
+            'detail_defaults',
+            'category', 'sub_category', 'shipping_category',
             'price', 'discount_price', 'wholesale_price', 'wholesale_discount_price', 'restaurant_price', 'restaurant_discount_price', 
             'minimum_purchase', 'restaurant_minimum_purchase', 'tax_rate', 'stock', 'wholesale_stock', 'restaurant_stock',
             'is_unlimited_stock', 'is_unlimited_wholesale_stock', 'is_unlimited_restaurant_stock', 'is_active',
@@ -263,6 +341,31 @@ class ProductSerializer(serializers.ModelSerializer):
             'created_at', 'updated_at', 'created_by_name', 'updated_by_name',
             'created_by_role', 'updated_by_role'
         ]
+
+    def _build_image_url(self, image_field):
+        request = self.context.get('request')
+        if image_field and hasattr(image_field, 'url'):
+            if request:
+                return request.build_absolute_uri(image_field.url)
+            return image_field.url
+        return None
+
+    def get_promo_card_image_url(self, obj):
+        return self._build_image_url(obj.promo_card_image)
+
+    def get_farm_story_image_url(self, obj):
+        return self._build_image_url(obj.farm_story_image)
+
+    def get_detail_defaults(self, obj):
+        if not self.context.get('include_detail_defaults'):
+            return None
+        cached = self.context.get('_cached_detail_defaults')
+        if cached is not None:
+            return cached
+        solo = ProductDetailSettings.get_solo()
+        data = ProductDetailSettingsSerializer(solo, context=self.context).data
+        self.context['_cached_detail_defaults'] = data
+        return data
 
     def get_variants(self, obj):
         if not obj.name:
@@ -521,6 +624,9 @@ class ProductSerializer(serializers.ModelSerializer):
             data.pop('is_unlimited_wholesale_stock', None)
             data.pop('is_unlimited_restaurant_stock', None)
         
+        if not self.context.get('include_detail_defaults'):
+            data.pop('detail_defaults', None)
+
         return data
 
 
@@ -533,6 +639,22 @@ class ProductWriteSerializer(serializers.ModelSerializer):
     # Explicit declarations so DRF uses CharField (not ModelField) for
     # CKEditor5Field — ModelField does not accept allow_blank.
     description = serializers.CharField(required=False, allow_blank=True, default='')
+    short_description = serializers.CharField(required=False, allow_blank=True, default='')
+    nutritional_info = serializers.CharField(required=False, allow_blank=True, default='')
+    nutrition_serving_size = serializers.CharField(required=False, allow_blank=True, default='per 100g')
+    highlights = FlexibleJSONListField(required=False)
+    trust_badges = FlexibleJSONListField(required=False)
+    promo_card_title = serializers.CharField(required=False, allow_blank=True, default='')
+    shipping_info_title = serializers.CharField(required=False, allow_blank=True, default='')
+    shipping_info = serializers.CharField(required=False, allow_blank=True, default='')
+    return_policy_title = serializers.CharField(required=False, allow_blank=True, default='')
+    return_policy = serializers.CharField(required=False, allow_blank=True, default='')
+    farm_story_eyebrow = serializers.CharField(required=False, allow_blank=True, default='')
+    farm_story_title = serializers.CharField(required=False, allow_blank=True, default='')
+    farm_story_description = serializers.CharField(required=False, allow_blank=True, default='')
+    farm_story_cta_text = serializers.CharField(required=False, allow_blank=True, default='')
+    farm_story_cta_url = serializers.CharField(required=False, allow_blank=True, default='')
+    farm_story_stats = FlexibleJSONListField(required=False)
     # Explicit slug to strip UniqueValidator on updates and allow blank.
     slug = serializers.SlugField(required=False, allow_blank=True, max_length=50, validators=[])
 
@@ -540,6 +662,13 @@ class ProductWriteSerializer(serializers.ModelSerializer):
         model = Product
         fields = [
             'shop', 'stores', 'brand', 'name', 'slug', 'description',
+            'short_description', 'nutritional_info', 'nutrition_serving_size',
+            'highlights', 'trust_badges',
+            'promo_card_title', 'promo_card_image',
+            'shipping_info_title', 'shipping_info',
+            'return_policy_title', 'return_policy',
+            'farm_story_eyebrow', 'farm_story_title', 'farm_story_description',
+            'farm_story_cta_text', 'farm_story_cta_url', 'farm_story_image', 'farm_story_stats',
             'category', 'sub_category', 'shipping_category',
             'price', 'discount_price', 'wholesale_price', 'wholesale_discount_price',
             'restaurant_price', 'restaurant_discount_price',
@@ -558,6 +687,8 @@ class ProductWriteSerializer(serializers.ModelSerializer):
             'sub_category':            {'allow_null': True, 'required': False},
             'shipping_category':       {'allow_null': True, 'required': False},
             'thumbnail':               {'allow_null': True, 'required': False},
+            'promo_card_image':        {'allow_null': True, 'required': False},
+            'farm_story_image':        {'allow_null': True, 'required': False},
             'discount_price':          {'allow_null': True, 'required': False},
             'wholesale_price':         {'allow_null': True, 'required': False},
             'wholesale_discount_price':{'allow_null': True, 'required': False},

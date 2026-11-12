@@ -1,5 +1,7 @@
 import { Suspense } from 'react'
+import { auth } from '@/auth'
 import { getWholesalePageContent, WHOLESALE_FALLBACK } from '@/lib/api'
+import { getProducts } from '@/lib/api_product'
 import WholesaleStyles from './wholesaleStyle'
 import HeroSection from './HeroSection'
 import StatesSection from './StatesSection'
@@ -8,7 +10,7 @@ import CategoriesSection from './CategoriesSection'
 import HowItWorksSection from './HowItWorksSection'
 import WholesaleModalHost from './WholesaleModalHost'
 
-export const revalidate = 60
+export const dynamic = 'force-dynamic'
 
 export const metadata = {
   title: 'Wholesale | El Árbol',
@@ -28,7 +30,14 @@ function WholesaleBelowHeroFallback() {
 }
 
 async function WholesaleAsyncSections() {
-  const content = await getWholesalePageContent()
+  const session = await auth()
+  const token = session?.user?.accessToken
+
+  const [content, products] = await Promise.all([
+    getWholesalePageContent().catch(() => WHOLESALE_FALLBACK),
+    getProducts({ token, pageSize: 10, fetchAll: false }).catch(() => []),
+  ])
+
   const {
     stats = WHOLESALE_FALLBACK.stats,
     benefits = WHOLESALE_FALLBACK.benefits,
@@ -36,11 +45,15 @@ async function WholesaleAsyncSections() {
     steps = WHOLESALE_FALLBACK.steps,
   } = content ?? {}
 
+  const supplyProducts = Array.isArray(products)
+    ? products.filter((p) => p && p.isActive !== false).slice(0, 5)
+    : []
+
   return (
     <>
       <StatesSection data={stats} />
       <BenefitsSection data={benefits} />
-      <CategoriesSection data={categories} />
+      <CategoriesSection products={supplyProducts} data={categories} />
       <HowItWorksSection data={steps} />
     </>
   )

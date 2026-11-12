@@ -2,17 +2,45 @@
 
 import React from "react";
 
-export default function ProductView({ item, stores }) {
-  if (!item) return null;
+function parseNutritionRows(raw) {
+  if (!raw) return [];
+  if (Array.isArray(raw)) {
+    return raw.filter(r => r && r.label && r.value);
+  }
+  const text = String(raw).trim();
+  if (!text) return [];
+  if (text.startsWith("[")) {
+    try {
+      const parsed = JSON.parse(text);
+      if (Array.isArray(parsed)) {
+        return parsed.filter(r => r && r.label && r.value);
+      }
+    } catch {
+      // Fallback to line parsing
+    }
+  }
+  const rows = [];
+  for (const line of text.split(/\r?\n/)) {
+    const idx = line.indexOf(":");
+    if (idx === -1) continue;
+    const label = line.slice(0, idx).trim();
+    const value = line.slice(idx + 1).trim();
+    if (label && value) rows.push({ label, value });
+  }
+  return rows;
+}
 
-  const InfoBlock = ({ label, value }) => (
+function InfoBlock({ label, value }) {
+  return (
     <div className="flex flex-col">
       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">{label}</span>
       <span className="text-sm font-semibold text-slate-800">{value || "N/A"}</span>
     </div>
   );
+}
 
-  const Section = ({ title, children, className = "", icon }) => (
+function Section({ title, children, className = "", icon }) {
+  return (
     <div className={`bg-white rounded-2xl border border-slate-100 p-5 shadow-sm ${className}`}>
       <h4 className="text-sm font-bold text-slate-800 border-b border-slate-100 pb-3 mb-4 flex items-center gap-2">
         {icon && <span className="text-indigo-500">{icon}</span>}
@@ -21,14 +49,20 @@ export default function ProductView({ item, stores }) {
       {children}
     </div>
   );
+}
 
-  const StatusBadge = ({ active }) => (
+function StatusBadge({ active }) {
+  return (
     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase ${active ? "bg-emerald-50 text-emerald-600 border border-emerald-200" : "bg-rose-50 text-rose-600 border border-rose-200"
       }`}>
       <span className={`w-1.5 h-1.5 rounded-full ${active ? "bg-emerald-500" : "bg-rose-500"}`}></span>
       {active ? "Active" : "Inactive"}
     </span>
   );
+}
+
+export default function ProductView({ item, stores }) {
+  if (!item) return null;
 
   return (
     <div className="space-y-6 pb-2">
@@ -122,18 +156,133 @@ export default function ProductView({ item, stores }) {
             </div>
           </Section>
 
+          {item.short_description && item.short_description.trim() !== "" && (
+             <Section title="Short Description (Hero Summary)">
+               <p className="text-sm text-slate-700 leading-relaxed">{item.short_description}</p>
+             </Section>
+          )}
+
           {item.description && item.description.trim() !== "" && (
              <Section title="Description">
                <div className="prose prose-sm max-w-none text-slate-600" dangerouslySetInnerHTML={{ __html: item.description }} />
              </Section>
           )}
 
-          {item.nutritional_info && (
-            <Section title="Nutritional Information">
-              <div className="bg-[#00694C] rounded-xl p-5 shadow-inner">
-                <pre className="font-mono text-xs text-emerald-400 whitespace-pre-wrap leading-relaxed">
-                  {item.nutritional_info}
-                </pre>
+          {Array.isArray(item.highlights) && item.highlights.length > 0 && (
+             <Section title="Product Highlights">
+               <ul className="space-y-2 text-sm text-slate-700">
+                 {item.highlights.map((h, i) => (
+                   <li key={i} className="flex items-start gap-2">
+                     <span className="mt-1.5 w-2 h-2 rounded-full bg-emerald-600 shrink-0" />
+                     <span>{h}</span>
+                   </li>
+                 ))}
+               </ul>
+             </Section>
+          )}
+
+          {(() => {
+            const parsedNutrition = parseNutritionRows(item.nutritional_info);
+            if (!item.nutritional_info || parsedNutrition.length === 0 && !String(item.nutritional_info).trim()) return null;
+            return (
+              <Section title={`Nutritional Information (${item.nutrition_serving_size || "per 100g"})`}>
+                {parsedNutrition.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {parsedNutrition.map((row, idx) => (
+                      <div key={idx} className="flex items-center justify-between bg-emerald-50/70 border border-emerald-100 rounded-xl px-3.5 py-2.5">
+                        <span className="text-xs font-semibold text-slate-600">{row.label}</span>
+                        <span className="text-xs font-bold text-[#00694C]">{row.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="bg-[#00694C] rounded-xl p-5 shadow-inner">
+                    <pre className="font-mono text-xs text-emerald-400 whitespace-pre-wrap leading-relaxed">
+                      {item.nutritional_info}
+                    </pre>
+                  </div>
+                )}
+              </Section>
+            );
+          })()}
+
+          {(
+            item.trust_badges?.length > 0 ||
+            item.promo_card_title ||
+            item.promo_card_image_url ||
+            item.shipping_info_title ||
+            item.shipping_info ||
+            item.return_policy_title ||
+            item.return_policy ||
+            item.farm_story_title ||
+            item.farm_story_description ||
+            item.farm_story_image_url ||
+            item.farm_story_stats?.length > 0
+          ) && (
+            <Section title="Details Page & Story Overrides">
+              <div className="space-y-4 text-xs text-slate-700">
+                {item.trust_badges?.length > 0 && (
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Hero Trust Badges</p>
+                    <div className="flex flex-wrap gap-2">
+                      {item.trust_badges.map((b, i) => (
+                        <span key={i} className="px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 font-semibold text-[#00694C]">
+                          {b.text}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {(item.promo_card_title || item.promo_card_image_url) && (
+                  <div className="flex items-center gap-3">
+                    {item.promo_card_image_url && (
+                      <img src={item.promo_card_image_url} alt="Promo card" className="w-16 h-12 rounded-lg object-cover border border-slate-200" />
+                    )}
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Promo Card Title</p>
+                      <p className="font-semibold text-slate-800">{item.promo_card_title || "Default Title"}</p>
+                    </div>
+                  </div>
+                )}
+                {(item.shipping_info_title || item.shipping_info) && (
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Shipping Info Override</p>
+                    <p className="font-semibold text-slate-800">{item.shipping_info_title || "Shipping Info"}</p>
+                    {item.shipping_info && <p className="text-slate-600 mt-0.5 whitespace-pre-line">{item.shipping_info}</p>}
+                  </div>
+                )}
+                {(item.return_policy_title || item.return_policy) && (
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Return Policy Override</p>
+                    <p className="font-semibold text-slate-800">{item.return_policy_title || "Return Policy"}</p>
+                    {item.return_policy && <p className="text-slate-600 mt-0.5 whitespace-pre-line">{item.return_policy}</p>}
+                  </div>
+                )}
+                {(item.farm_story_title || item.farm_story_description || item.farm_story_image_url || item.farm_story_stats?.length > 0) && (
+                  <div className="space-y-1.5">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Farm Story Override</p>
+                    <div className="flex items-start gap-3">
+                      {item.farm_story_image_url && (
+                        <img src={item.farm_story_image_url} alt="Farm story" className="w-16 h-12 rounded-lg object-cover border border-slate-200 shrink-0" />
+                      )}
+                      <div>
+                        <p className="font-semibold text-slate-800">
+                          {item.farm_story_eyebrow ? `${item.farm_story_eyebrow} — ` : ""}{item.farm_story_title || "Farm Story"}
+                        </p>
+                        {item.farm_story_description && <p className="text-slate-600 mt-0.5">{item.farm_story_description}</p>}
+                        {item.farm_story_stats?.length > 0 && (
+                          <div className="flex flex-wrap gap-3 mt-1.5">
+                            {item.farm_story_stats.map((st, idx) => (
+                              <span key={idx} className="font-semibold text-[#00694C]">
+                                {st.value} {st.label}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </Section>
           )}

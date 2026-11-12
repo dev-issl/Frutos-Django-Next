@@ -41,5 +41,9 @@ export default async function ProductPage({ params }) {
     notFound()
   }
 
+  if (!product) {
+    notFound()
+  }
+
   return <ProductDetailClient product={product} related={product.related ?? []} session={session} />
 }

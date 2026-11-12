@@ -1,321 +1,95 @@
-// 'use client'
-// // src/app/checkout/components/DeliverySection.jsx
-
-// import { useState } from 'react'
-
-// const INPUT_STYLE = {
-//   background: '#f8faf8', border: '1px solid #e8eee8', color: '#151e13',
-//   width: '100%', height: '44px', padding: '0 16px',
-//   borderRadius: '8px', fontSize: '14px', outline: 'none',
-// }
-
-// function onFocus(e) { e.target.style.borderColor = '#00694c' }
-// function onBlur(e)  { e.target.style.borderColor = '#e8eee8' }
-
-// export default function DeliverySection({
-//   form, setForm,
-//   selectedDate, setSelectedDate,
-//   selectedSlot, setSelectedSlot,
-//   deliveryDates,
-//   deliverySlots,
-//   prefilled       = false,
-//   savedAddresses  = [],
-//   onApplyAddress  = () => {},
-// }) {
-//   const [showAddressPicker, setShowAddressPicker] = useState(false)
-
-//   function handleAddressSelect(e) {
-//     const id = e.target.value
-//     if (!id) return
-//     const addr = savedAddresses.find(a => String(a.id) === id)
-//     if (addr) {
-//       onApplyAddress(addr)
-//       setShowAddressPicker(false)
-//     }
-//   }
-
-//   return (
-//     <section
-//       className="p-6 md:p-8 rounded-xl"
-//       style={{ background: '#fff', border: '1px solid #eaeaea', boxShadow: '0 1px 8px rgba(0,0,0,0.04)' }}
-//     >
-//       {/* ── Heading ── */}
-//       <div className="flex items-start justify-between gap-4 mb-6 md:mb-8 flex-wrap">
-//         <div className="flex items-center gap-3 flex-wrap">
-//           <h2
-//             className="text-2xl md:text-3xl italic"
-//             style={{ fontFamily: '"Newsreader", Georgia, serif', color: '#151e13' }}
-//           >
-//             Delivery Address
-//           </h2>
-//           <span
-//             className="italic text-sm"
-//             style={{ fontFamily: '"Newsreader", Georgia, serif', color: '#8a9e93', opacity: 0.7 }}
-//           >
-//             — provenance for the path
-//           </span>
-//         </div>
-
-//         {/* ── "Filled from profile" badge ── */}
-//         {prefilled && (
-//           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full flex-shrink-0"
-//             style={{ background: '#edf7f2', border: '1px solid #b3e5d0' }}>
-//             <span className="material-symbols-outlined"
-//               style={{ fontSize: '14px', color: '#00694c', fontVariationSettings: "'FILL' 1" }}>
-//               person_check
-//             </span>
-//             <span className="text-[11px] font-bold" style={{ color: '#00694c' }}>
-//               Filled from your profile
-//             </span>
-//           </div>
-//         )}
-//       </div>
-
-//       {/* ── Saved address switcher ── */}
-//       {savedAddresses.length > 0 && (
-//         <div className="mb-6 p-4 rounded-xl flex items-center justify-between gap-4 flex-wrap"
-//           style={{ background: '#f5fbf7', border: '1px dashed #b3e5d0' }}>
-//           <div className="flex items-center gap-2 min-w-0">
-//             <span className="material-symbols-outlined text-base flex-shrink-0" style={{ color: '#00694c' }}>
-//               location_on
-//             </span>
-//             <p className="text-sm truncate" style={{ color: '#3d4943' }}>
-//               {savedAddresses.length === 1
-//                 ? `Using: ${savedAddresses[0].label} — ${savedAddresses[0].street}`
-//                 : `${savedAddresses.length} saved addresses`}
-//             </p>
-//           </div>
-
-//           {savedAddresses.length > 1 ? (
-//             <div className="relative flex-shrink-0">
-//               <select
-//                 onChange={handleAddressSelect}
-//                 defaultValue=""
-//                 className="cursor-pointer appearance-none pr-8 pl-3 py-1.5 rounded-lg text-xs font-bold"
-//                 style={{
-//                   background: '#fff', border: '1.5px solid #00694c',
-//                   color: '#00694c', outline: 'none',
-//                 }}
-//               >
-//                 <option value="" disabled>Switch address</option>
-//                 {savedAddresses.map(addr => (
-//                   <option key={addr.id} value={String(addr.id)}>
-//                     {addr.label} — {addr.street}, {addr.city}
-//                   </option>
-//                 ))}
-//               </select>
-//               <span
-//                 className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"
-//                 style={{ fontSize: '14px', color: '#00694c' }}>
-//                 expand_more
-//               </span>
-//             </div>
-//           ) : (
-//             <span className="text-[11px] font-bold px-2 py-1 rounded-full"
-//               style={{ background: '#d4ede5', color: '#00694c' }}>
-//               Default
-//             </span>
-//           )}
-//         </div>
-//       )}
-
-//       {/* ── Address fields ── */}
-//       <div className="grid grid-cols-2 gap-4 md:gap-6">
-//         <Field label="Full Name *" colSpan={2}>
-//           <input
-//             type="text" placeholder="Julian Vane"
-//             value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
-//             style={INPUT_STYLE} onFocus={onFocus} onBlur={onBlur}
-//           />
-//         </Field>
-
-//         <Field label="Street Address *" colSpan={2}>
-//           <input
-//             type="text" placeholder="142 High Meadow Road"
-//             value={form.street} onChange={e => setForm({ ...form, street: e.target.value })}
-//             style={INPUT_STYLE} onFocus={onFocus} onBlur={onBlur}
-//           />
-//         </Field>
-
-//         <Field label="City *" colSpan={1}>
-//           <input
-//             type="text" placeholder="Dublin"
-//             value={form.city} onChange={e => setForm({ ...form, city: e.target.value })}
-//             style={INPUT_STYLE} onFocus={onFocus} onBlur={onBlur}
-//           />
-//         </Field>
-
-//         <Field label="Postcode *" colSpan={1}>
-//           <input
-//             type="text" placeholder="D01 F5P2"
-//             value={form.postcode} onChange={e => setForm({ ...form, postcode: e.target.value })}
-//             style={INPUT_STYLE} onFocus={onFocus} onBlur={onBlur}
-//           />
-//         </Field>
-
-//         <Field label="Phone Number" colSpan={2}>
-//           <input
-//             type="tel" placeholder="+44 7700 900077"
-//             value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })}
-//             style={INPUT_STYLE} onFocus={onFocus} onBlur={onBlur}
-//           />
-//         </Field>
-//       </div>
-
-//       {/* ── Delivery Window ── */}
-//       <div className="mt-8 md:mt-12">
-//         <h3 className="text-[10px] uppercase tracking-widest font-bold mb-5" style={{ color: '#00694c' }}>
-//           Delivery Window
-//         </h3>
-
-//         {deliveryDates.length > 0 ? (
-//           <div className="flex gap-3 mb-5 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
-//             {deliveryDates.map((d, i) => {
-//               const active = selectedDate === i
-//               return (
-//                 <button key={d.date} onClick={() => setSelectedDate(i)}
-//                   className="px-5 md:px-6 py-3 rounded-full text-sm flex-shrink-0 font-bold transition-all cursor-pointer"
-//                   style={{
-//                     background: active ? '#d4ede5' : '#f0f4f0',
-//                     color:      active ? '#095041' : '#3d4943',
-//                     border:     active ? '1.5px solid #95d4bc' : '1.5px solid transparent',
-//                   }}>
-//                   {d.label === 'Today' ? `Today, ${d.full}` : `${d.short}, ${d.full}`}
-//                 </button>
-//               )
-//             })}
-//           </div>
-//         ) : (
-//           <p className="text-sm mb-5" style={{ color: '#6d7a73' }}>No delivery dates available.</p>
-//         )}
-
-//         {deliverySlots.length > 0 ? (
-//           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-//             {deliverySlots.map(slot => {
-//               const active = selectedSlot === String(slot.id)
-//               return (
-//                 <button key={slot.id} disabled={!slot.is_available}
-//                   onClick={() => slot.is_available && setSelectedSlot(String(slot.id))}
-//                   className="p-3 md:p-4 rounded-xl text-center transition-all"
-//                   style={{
-//                     border:     active ? '2px solid #00694c' : '1.5px solid #e8eee8',
-//                     background: active ? 'rgba(0,105,76,0.05)' : '#fff',
-//                     opacity:    slot.is_available ? 1 : 0.4,
-//                     cursor:     slot.is_available ? 'pointer' : 'not-allowed',
-//                   }}>
-//                   <span className="block text-[10px] mb-1" style={{ color: active ? 'rgba(0,105,76,0.7)' : '#6d7a73' }}>
-//                     {slot.label}
-//                   </span>
-//                   <span className="block font-bold text-xs md:text-sm" style={{ color: active ? '#00694c' : '#151e13' }}>
-//                     {slot.time}
-//                   </span>
-//                 </button>
-//               )
-//             })}
-//           </div>
-//         ) : (
-//           <p className="text-sm" style={{ color: '#6d7a73' }}>No time slots configured yet.</p>
-//         )}
-//       </div>
-//     </section>
-//   )
-// }
-
-// function Field({ label, colSpan, children }) {
-//   return (
-//     <div className={`col-span-${colSpan}`}>
-//       <label className="block text-[10px] uppercase tracking-widest font-bold mb-2" style={{ color: '#6d7a73' }}>
-//         {label}
-//       </label>
-//       {children}
-//     </div>
-//   )
-// }
-
-
 'use client'
-// src/app/checkout/components/DeliverySection.jsx
 
 import { useState } from 'react'
+import Image from 'next/image'
+import { MapPin, Check, Bookmark, UserCheck, CalendarClock, ChevronDown } from 'lucide-react'
 
-const INPUT_STYLE = {
-  background: '#f8faf8', border: '1px solid #e8eee8', color: '#151e13',
-  width: '100%', height: '44px', padding: '0 16px',
-  borderRadius: '8px', fontSize: '14px', outline: 'none',
-}
-
-function onFocus(e) { e.target.style.borderColor = '#00694c' }
-function onBlur(e)  { e.target.style.borderColor = '#e8eee8' }
+const INPUT_CLASS =
+  'w-full h-[42px] px-4 rounded-full text-[13.5px] bg-[#FAFBF6] border border-[#DDE2D5] text-[#14261B] placeholder:text-[#8E9B92] outline-none transition-colors focus:border-[#0B462B] focus:bg-white'
 
 export default function DeliverySection({
-  form, setForm,
-  selectedDate, setSelectedDate,
-  selectedSlot, setSelectedSlot,
+  form,
+  setForm,
+  selectedDate,
+  setSelectedDate,
+  selectedSlot,
+  setSelectedSlot,
   deliveryDates,
   deliverySlots,
-  prefilled       = false,
-  savedAddresses  = [],
-  onApplyAddress  = () => {},
-  isAuthenticated = false,   // ✅ নতুন prop — CheckoutShell থেকে আসবে
+  prefilled = false,
+  savedAddresses = [],
+  onApplyAddress = () => {},
+  isAuthenticated = false,
   isInternalWholesale = false,
+  onSaveAddress = null,
 }) {
-  const [showAddressPicker, setShowAddressPicker] = useState(false)
+  const [addressSavedNotice, setAddressSavedNotice] = useState(false)
 
   function handleAddressSelect(e) {
     const id = e.target.value
     if (!id) return
-    const addr = savedAddresses.find(a => String(a.id) === id)
+    const addr = savedAddresses.find((a) => String(a.id) === id)
     if (addr) {
       onApplyAddress(addr)
-      setShowAddressPicker(false)
     }
   }
 
+  async function handleSaveAddressClick() {
+    if (onSaveAddress) {
+      await onSaveAddress()
+    }
+    setAddressSavedNotice(true)
+    setTimeout(() => setAddressSavedNotice(false), 2500)
+  }
+
   return (
-    <section
-      className="p-6 md:p-8 rounded-xl"
-      style={{ background: '#fff', border: '1px solid #eaeaea', boxShadow: '0 1px 8px rgba(0,0,0,0.04)' }}
-    >
-      {/* ── Heading ── */}
-      <div className="flex items-start justify-between gap-4 mb-6 md:mb-8 flex-wrap">
-        <div className="flex items-center gap-3 flex-wrap">
-          <h2
-            className="text-2xl md:text-3xl italic"
-            style={{ fontFamily: '"Newsreader", Georgia, serif', color: '#151e13' }}
+    <section className="relative overflow-hidden rounded-[22px] bg-white border border-[#E2E6DA] shadow-[0_10px_30px_-12px_rgba(18,45,28,0.1)] p-6 sm:p-7">
+      {/* Bottom-right subtle botanical leaves accent */}
+      <div
+        className="pointer-events-none absolute -bottom-3 -right-3 w-44 h-36 opacity-80 rotate-180 z-0"
+        style={{
+          backgroundImage: 'url(/ui/botanical-leaves-tr.jpg)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'top right',
+          mixBlendMode: 'multiply',
+        }}
+        aria-hidden="true"
+      />
+
+      {/* Card Heading */}
+      <div className="relative z-10 flex items-start justify-between gap-4 mb-5 flex-wrap">
+        <div>
+          <div className="flex items-center gap-2.5">
+            <MapPin className="w-5 h-5 text-[#0B462B]" />
+            <h2
+              className="text-[22px] font-bold text-[#142D1E]"
+              style={{ fontFamily: 'var(--font-newsreader), Georgia, serif' }}
+            >
+              Delivery Address
+            </h2>
+          </div>
+          <p
+            className="text-[13.5px] italic text-[#4E6455] mt-0.5 pl-7"
+            style={{ fontFamily: 'var(--font-newsreader), Georgia, serif' }}
           >
-            Delivery Address
-          </h2>
-          <span
-            className="italic text-sm"
-            style={{ fontFamily: '"Newsreader", Georgia, serif', color: '#8a9e93', opacity: 0.7 }}
-          >
-            — provenance for the path
-          </span>
+            Enter your delivery address
+          </p>
         </div>
 
         {prefilled && (
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full flex-shrink-0"
-            style={{ background: '#edf7f2', border: '1px solid #b3e5d0' }}>
-            <span className="material-symbols-outlined"
-              style={{ fontSize: '14px', color: '#00694c', fontVariationSettings: "'FILL' 1" }}>
-              person_check
-            </span>
-            <span className="text-[11px] font-bold" style={{ color: '#00694c' }}>
-              Filled from your profile
-            </span>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E5F2DE] border border-[#CFE4C4] text-[#1A5D38] text-[11.5px] font-semibold">
+            <UserCheck className="w-3.5 h-3.5" />
+            <span>Filled from profile</span>
           </div>
         )}
       </div>
 
-      {/* ── Saved address switcher ── */}
+      {/* Saved Address Switcher */}
       {savedAddresses.length > 0 && (
-        <div className="mb-6 p-4 rounded-xl flex items-center justify-between gap-4 flex-wrap"
-          style={{ background: '#f5fbf7', border: '1px dashed #b3e5d0' }}>
+        <div className="relative z-10 mb-5 p-3.5 rounded-[14px] flex items-center justify-between gap-3 flex-wrap bg-[#F2F6EB] border border-dashed border-[#C7D8BC]">
           <div className="flex items-center gap-2 min-w-0">
-            <span className="material-symbols-outlined text-base flex-shrink-0" style={{ color: '#00694c' }}>
-              location_on
-            </span>
-            <p className="text-sm truncate" style={{ color: '#3d4943' }}>
+            <MapPin className="w-4 h-4 text-[#0B462B] shrink-0" />
+            <p className="text-[13px] truncate text-[#33483A]">
               {savedAddresses.length === 1
                 ? `Using: ${savedAddresses[0].label} — ${savedAddresses[0].street}`
                 : `${savedAddresses.length} saved addresses`}
@@ -323,148 +97,242 @@ export default function DeliverySection({
           </div>
 
           {savedAddresses.length > 1 ? (
-            <div className="relative flex-shrink-0">
+            <div className="relative shrink-0">
               <select
                 onChange={handleAddressSelect}
                 defaultValue=""
-                className="cursor-pointer appearance-none pr-8 pl-3 py-1.5 rounded-lg text-xs font-bold"
-                style={{
-                  background: '#fff', border: '1.5px solid #00694c',
-                  color: '#00694c', outline: 'none',
-                }}
+                className="cursor-pointer appearance-none pr-8 pl-3.5 py-1.5 rounded-full text-xs font-semibold bg-white border border-[#0B462B] text-[#0B462B] outline-none"
               >
-                <option value="" disabled>Switch address</option>
-                {savedAddresses.map(addr => (
+                <option value="" disabled>
+                  Switch address
+                </option>
+                {savedAddresses.map((addr) => (
                   <option key={addr.id} value={String(addr.id)}>
                     {addr.label} — {addr.street}, {addr.city}
                   </option>
                 ))}
               </select>
-              <span
-                className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"
-                style={{ fontSize: '14px', color: '#00694c' }}>
-                expand_more
-              </span>
+              <ChevronDown className="w-3.5 h-3.5 text-[#0B462B] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
           ) : (
-            <span className="text-[11px] font-bold px-2 py-1 rounded-full"
-              style={{ background: '#d4ede5', color: '#00694c' }}>
+            <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#DCEFD3] text-[#1A5D38]">
               Default
             </span>
           )}
         </div>
       )}
 
-      {/* ── Address fields ── */}
-      <div className="grid grid-cols-2 gap-4 md:gap-6">
-        <Field label="Full Name *" colSpan={2}>
-          <input
-            type="text" placeholder="Julian Vane"
-            value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
-            style={INPUT_STYLE} onFocus={onFocus} onBlur={onBlur}
-          />
-        </Field>
+      {/* 2-Column Split: Form Left + Map & "We Deliver To" Right */}
+      <div className="relative z-10 grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+        {/* Left Form Inputs */}
+        <div className="md:col-span-7 space-y-3.5">
+          <div>
+            <label className="block text-[12px] font-semibold text-[#2E4234] mb-1.5">
+              Full Name <span className="text-[#0B462B]">*</span>
+            </label>
+            <input
+              type="text"
+              placeholder="John Doe"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              className={INPUT_CLASS}
+            />
+          </div>
 
-        {/* ✅ নতুন: Email field — Full Name-এর ঠিক নিচে, Street-এর আগে */}
-        <Field label="Email Address *" colSpan={2}>
-          <input
-            type="email" placeholder="your@email.com"
-            value={form.email}
-            onChange={e => setForm({ ...form, email: e.target.value })}
-            readOnly={isAuthenticated && !!form.email}
+          <div>
+            <label className="block text-[12px] font-semibold text-[#2E4234] mb-1.5">
+              Email Address <span className="text-[#0B462B]">*</span>
+            </label>
+            <input
+              type="email"
+              placeholder="you@example.com"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              readOnly={isAuthenticated && !!form.email}
+              className={`${INPUT_CLASS} ${
+                isAuthenticated && form.email ? 'bg-[#EFF3EA] cursor-not-allowed' : ''
+              }`}
+            />
+            {!isAuthenticated && (
+              <p className="text-[11px] mt-1 text-[#5E7164]">Order confirmation will be sent here.</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-[12px] font-semibold text-[#2E4234] mb-1.5">
+              Street Address <span className="text-[#0B462B]">*</span>
+            </label>
+            <input
+              type="text"
+              placeholder="123 Green Park Street"
+              value={form.street}
+              onChange={(e) => setForm({ ...form, street: e.target.value })}
+              className={INPUT_CLASS}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[12px] font-semibold text-[#2E4234] mb-1.5">
+                City <span className="text-[#0B462B]">*</span>
+              </label>
+              <input
+                type="text"
+                placeholder="Madrid"
+                value={form.city}
+                onChange={(e) => setForm({ ...form, city: e.target.value })}
+                className={INPUT_CLASS}
+              />
+            </div>
+
+            <div>
+              <label className="block text-[12px] font-semibold text-[#2E4234] mb-1.5">
+                Postcode <span className="text-[#0B462B]">*</span>
+              </label>
+              <input
+                type="text"
+                placeholder="28014"
+                value={form.postcode}
+                onChange={(e) => setForm({ ...form, postcode: e.target.value })}
+                className={INPUT_CLASS}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-[12px] font-semibold text-[#2E4234] mb-1.5">
+              Phone Number <span className="text-[#0B462B]">*</span>
+            </label>
+            <input
+              type="tel"
+              placeholder="+34 600 123 456"
+              value={form.phone}
+              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              className={INPUT_CLASS}
+            />
+          </div>
+
+          <div className="pt-1 flex items-center gap-3 flex-wrap">
+            <button
+              type="button"
+              onClick={handleSaveAddressClick}
+              className="inline-flex items-center gap-2 px-5 py-2 rounded-full border border-[#1E5638] bg-white hover:bg-[#ECF2E5] active:scale-[0.98] text-[#144229] text-[13px] font-semibold transition-all cursor-pointer"
+            >
+              <Bookmark className="w-3.5 h-3.5" />
+              <span>Save Address</span>
+            </button>
+            {addressSavedNotice && (
+              <span className="text-[12px] font-semibold text-[#1A5D38] flex items-center gap-1">
+                <Check className="w-3.5 h-3.5" />
+                Address ready for delivery
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Right Column: Seamless Isometric Map + "We Deliver To" Panel */}
+        <div className="md:col-span-5 space-y-3.5">
+          <div
+            className="relative aspect-[16/10] w-full overflow-hidden bg-white"
             style={{
-              ...INPUT_STYLE,
-              background: isAuthenticated && form.email ? '#f0f4f0' : '#f8faf8',
+              WebkitMaskImage:
+                'radial-gradient(ellipse 92% 88% at 50% 50%, #000 58%, rgba(0,0,0,0.45) 82%, transparent 100%)',
+              maskImage:
+                'radial-gradient(ellipse 92% 88% at 50% 50%, #000 58%, rgba(0,0,0,0.45) 82%, transparent 100%)',
             }}
-            onFocus={isAuthenticated && form.email ? undefined : onFocus}
-            onBlur={isAuthenticated && form.email ? undefined : onBlur}
-          />
-          {!isAuthenticated && (
-            <p className="text-[11px] mt-1" style={{ color: '#6d7a73' }}>
-              Order confirmation will be sent here.
-            </p>
-          )}
-        </Field>
+          >
+            <Image
+              src="/ui/delivery-map-card.jpg"
+              alt="Delivery coverage area map"
+              fill
+              sizes="(max-width: 768px) 100vw, 290px"
+              className="object-cover"
+            />
+          </div>
 
-        <Field label="Street Address *" colSpan={2}>
-          <input
-            type="text" placeholder="142 High Meadow Road"
-            value={form.street} onChange={e => setForm({ ...form, street: e.target.value })}
-            style={INPUT_STYLE} onFocus={onFocus} onBlur={onBlur}
-          />
-        </Field>
-
-        <Field label="City *" colSpan={1}>
-          <input
-            type="text" placeholder="Dublin"
-            value={form.city} onChange={e => setForm({ ...form, city: e.target.value })}
-            style={INPUT_STYLE} onFocus={onFocus} onBlur={onBlur}
-          />
-        </Field>
-
-        <Field label="Postcode *" colSpan={1}>
-          <input
-            type="text" placeholder="D01 F5P2"
-            value={form.postcode} onChange={e => setForm({ ...form, postcode: e.target.value })}
-            style={INPUT_STYLE} onFocus={onFocus} onBlur={onBlur}
-          />
-        </Field>
-
-        <Field label="Phone Number" colSpan={2}>
-          <input
-            type="tel" placeholder="+44 7700 900077"
-            value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })}
-            style={INPUT_STYLE} onFocus={onFocus} onBlur={onBlur}
-          />
-        </Field>
+          <div className="rounded-[16px] bg-[#ECF1E4] border border-[#DCE5D1] p-4 space-y-2.5">
+            <h3 className="text-[14.5px] font-bold text-[#142D1E]">We Deliver To</h3>
+            <ul className="space-y-2 text-[12.5px] text-[#2F4636]">
+              <li className="flex items-center gap-2">
+                <Check className="w-3.5 h-3.5 text-[#1B5E38] shrink-0" />
+                <span>{form.city ? `${form.city} & Surrounding Areas` : 'All Local & Surrounding Areas'}</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <Check className="w-3.5 h-3.5 text-[#1B5E38] shrink-0" />
+                <span>Fresh Delivery Guarantee</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <Check className="w-3.5 h-3.5 text-[#1B5E38] shrink-0" />
+                <span>On-Time Delivery</span>
+              </li>
+            </ul>
+          </div>
+        </div>
       </div>
 
-      {/* ── Delivery Window (Hidden for internal wholesale) ── */}
+      {/* Delivery Window Picker */}
       {!isInternalWholesale && (
-        <div className="mt-8 md:mt-12">
-          <h3 className="text-[10px] uppercase tracking-widest font-bold mb-5" style={{ color: '#00694c' }}>
-            Delivery Window
-          </h3>
+        <div className="relative z-10 mt-7 pt-6 border-t border-[#E8ECE2]">
+          <div className="flex items-center gap-2 mb-4">
+            <CalendarClock className="w-4 h-4 text-[#0B462B]" />
+            <h3 className="text-[12px] uppercase tracking-[0.16em] font-bold text-[#0B462B]">
+              Delivery Window
+            </h3>
+          </div>
 
           {deliveryDates.length > 0 ? (
-            <div className="flex gap-3 mb-5 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+            <div className="flex gap-2.5 mb-4 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
               {deliveryDates.map((d, i) => {
                 const active = selectedDate === i
                 return (
-                  <button key={d.date} onClick={() => setSelectedDate(i)}
-                    className="px-5 md:px-6 py-3 rounded-full text-sm flex-shrink-0 font-bold transition-all cursor-pointer"
+                  <button
+                    key={d.date}
+                    type="button"
+                    onClick={() => setSelectedDate(i)}
+                    className="px-4 py-2 rounded-full text-[13px] shrink-0 font-semibold transition-all cursor-pointer border"
                     style={{
-                      background: active ? '#d4ede5' : '#f0f4f0',
-                      color:      active ? '#095041' : '#3d4943',
-                      border:     active ? '1.5px solid #95d4bc' : '1.5px solid transparent',
-                    }}>
+                      background: active ? '#0B462B' : '#F3F5EC',
+                      color: active ? '#FFFFFF' : '#2C4233',
+                      borderColor: active ? '#0B462B' : '#DCE3D2',
+                    }}
+                  >
                     {d.label === 'Today' ? `Today, ${d.full}` : `${d.short}, ${d.full}`}
                   </button>
                 )
               })}
             </div>
           ) : (
-            <p className="text-sm mb-5" style={{ color: '#6d7a73' }}>No delivery dates available.</p>
+            <p className="text-sm mb-4 text-[#5A6D61]">No delivery dates available.</p>
           )}
 
           {deliverySlots.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {deliverySlots.map(slot => {
+            <div className="grid grid-cols-1 min-[400px]:grid-cols-2 sm:grid-cols-4 gap-2.5">
+              {deliverySlots.map((slot) => {
                 const active = selectedSlot === String(slot.id)
                 return (
-                  <button key={slot.id} disabled={!slot.is_available}
+                  <button
+                    key={slot.id}
+                    type="button"
+                    disabled={!slot.is_available}
                     onClick={() => slot.is_available && setSelectedSlot(String(slot.id))}
-                    className="p-3 md:p-4 rounded-xl text-center transition-all"
+                    className="p-3 rounded-[14px] text-center transition-all border"
                     style={{
-                      border:     active ? '2px solid #00694c' : '1.5px solid #e8eee8',
-                      background: active ? 'rgba(0,105,76,0.05)' : '#fff',
-                      opacity:    slot.is_available ? 1 : 0.4,
-                      cursor:     slot.is_available ? 'pointer' : 'not-allowed',
-                    }}>
-                    <span className="block text-[10px] mb-1" style={{ color: active ? 'rgba(0,105,76,0.7)' : '#6d7a73' }}>
+                      borderColor: active ? '#0B462B' : '#E2E7DA',
+                      background: active ? '#E8F1E1' : '#FAFBF6',
+                      opacity: slot.is_available ? 1 : 0.45,
+                      cursor: slot.is_available ? 'pointer' : 'not-allowed',
+                    }}
+                  >
+                    <span
+                      className="block text-[10.5px] font-medium mb-0.5"
+                      style={{ color: active ? '#1D5C38' : '#65786C' }}
+                    >
                       {slot.label}
                     </span>
-                    <span className="block font-bold text-xs md:text-sm" style={{ color: active ? '#00694c' : '#151e13' }}>
+                    <span
+                      className="block font-bold text-[12.5px]"
+                      style={{ color: active ? '#0B462B' : '#14261B' }}
+                    >
                       {slot.time}
                     </span>
                   </button>
@@ -472,21 +340,10 @@ export default function DeliverySection({
               })}
             </div>
           ) : (
-            <p className="text-sm" style={{ color: '#6d7a73' }}>No time slots configured yet.</p>
+            <p className="text-sm text-[#5A6D61]">No time slots configured yet.</p>
           )}
         </div>
       )}
     </section>
-  )
-}
-
-function Field({ label, colSpan, children }) {
-  return (
-    <div className={`col-span-${colSpan}`}>
-      <label className="block text-[10px] uppercase tracking-widest font-bold mb-2" style={{ color: '#6d7a73' }}>
-        {label}
-      </label>
-      {children}
-    </div>
   )
 }

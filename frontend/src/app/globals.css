@@ -110,3 +110,24 @@ body {
     transform: translateY(0);
   }
 }
+
+@keyframes basketFadeSlide {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.basket-fade-slide {
+  animation: basketFadeSlide 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .basket-fade-slide {
+    animation: none;
+  }
+}

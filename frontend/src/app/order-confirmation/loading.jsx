@@ -3,16 +3,15 @@
 export default function OrderConfirmationLoading() {
   return (
     <div
-      style={{ background: '#ffffff', minHeight: '100vh', width: '100%' }}
+      style={{ background: '#F6F6EC', minHeight: '100vh', width: '100%' }}
       className="flex flex-col items-center justify-center gap-5"
     >
-      {/* Spinner */}
       <div className="relative w-16 h-16">
         <div
           className="absolute inset-0 rounded-full border-4 animate-spin"
           style={{
-            borderColor: '#e8eee8',
-            borderTopColor: '#00694c',
+            borderColor: '#DCE5D3',
+            borderTopColor: '#0B462B',
             animationDuration: '0.75s',
           }}
         />
@@ -20,7 +19,7 @@ export default function OrderConfirmationLoading() {
           <span
             className="material-symbols-outlined text-2xl"
             style={{
-              color: '#00694c',
+              color: '#0B462B',
               fontVariationSettings: "'FILL' 1",
             }}
           >
@@ -29,15 +28,14 @@ export default function OrderConfirmationLoading() {
         </div>
       </div>
 
-      {/* Text */}
       <div className="text-center space-y-1">
         <p
           className="text-xl italic"
-          style={{ fontFamily: '"Newsreader", Georgia, serif', color: '#151e13' }}
+          style={{ fontFamily: 'var(--font-newsreader), Georgia, serif', color: '#14261B' }}
         >
           Confirming your order…
         </p>
-        <p className="text-sm" style={{ color: '#6d7a73' }}>
+        <p className="text-sm" style={{ color: '#586A5F' }}>
           Almost there, thank you for your patience
         </p>
       </div>

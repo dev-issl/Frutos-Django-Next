@@ -1,695 +1,303 @@
-// 'use client'
-// // src/app/basket/_components/OrderSummary.jsx
-
-// import { useState, useTransition } from 'react'
-// import { useRouter } from 'next/navigation'
-// import { useCart } from '@/app/context/CartContext'   // ← NEW
-
-// const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'
-
-// export default function OrderSummary({ subtotal, items = [], isApprovedWholesale = false }) {
-//   const router = useRouter()
-//   const [isPending, startTransition] = useTransition()
-
-//   // ── Promo state — CartContext থেকে (চেকআউটেও persist করে) ──────────────
-//   const {
-//     promoState, setPromoState,
-//     promoDiscount, discountedSubtotal,
-//   } = useCart()                                       // ← NEW
-
-//   // ── Local UI state (শুধু এই component-এর জন্য) ──────────────────────────
-//   const [promoCode,    setPromoCode]    = useState('')
-//   const [promoLoading, setPromoLoading] = useState(false)
-//   const [promoError,   setPromoError]   = useState('')
-
-//   // ── Wholesale min-qty popup ───────────────────────────────────────────────
-//   const [popup, setPopup] = useState(false)
-
-//   const violatingItems = isApprovedWholesale
-//     ? items.filter(item => item.wholesalePrice && item.qty < (item.minWholesaleQty || 1))
-//     : []
-
-//   // finalTotal এখন CartContext এর discountedSubtotal ─────────────────────────
-//   const finalTotal = discountedSubtotal                // ← CHANGED
-
-//   // ── Apply promo code ──────────────────────────────────────────────────────
-//   async function handleApplyPromo() {
-//     const trimmed = promoCode.trim()
-//     if (!trimmed) return
-
-//     setPromoLoading(true)
-//     setPromoError('')
-//     setPromoState(null)                                // ← CartContext reset
-
-//     try {
-//       const res = await fetch(`${API_BASE}/products/promo/validate/`, {
-//         method:  'POST',
-//         headers: { 'Content-Type': 'application/json' },
-//         body:    JSON.stringify({
-//           code:        trimmed,
-//           product_ids: items.map(i => i.id),
-//         }),
-//       })
-//       const data = await res.json()
-
-//       if (data.valid) {
-//         // discount_amount হিসাব করে CartContext-এ save করি
-//         const discount = items.reduce((sum, item) => {
-//           if (!data.applicable_product_ids.includes(item.id)) return sum
-//           const price = item.effectivePrice ?? item.price
-//           return sum + price * item.qty * (data.discount_percent / 100)
-//         }, 0)
-
-//         setPromoState({                                // ← CartContext update
-//           code:                   trimmed.toUpperCase(),
-//           discount_percent:       data.discount_percent,
-//           applicable_product_ids: data.applicable_product_ids,
-//           discount_amount:        discount,
-//           message:                data.message,
-//         })
-//       } else {
-//         setPromoError(data.message || 'Invalid promo code.')
-//       }
-//     } catch {
-//       setPromoError('Could not validate code. Please try again.')
-//     } finally {
-//       setPromoLoading(false)
-//     }
-//   }
-
-//   function handleRemovePromo() {
-//     setPromoState(null)                                // ← CartContext reset
-//     setPromoCode('')
-//     setPromoError('')
-//   }
-
-//   // ── Checkout ──────────────────────────────────────────────────────────────
-//   function handleCheckout() {
-//     if (violatingItems.length > 0) {
-//       setPopup(true)
-//     } else {
-//       startTransition(() => router.push('/checkout'))
-//     }
-//   }
-
-//   return (
-//     <>
-//       <div className="lg:sticky lg:top-24 space-y-4">
-//         <div
-//           className="p-6 md:p-8 rounded-2xl space-y-6 md:space-y-8"
-//           style={{ background: '#f8fbf8', border: '1px solid #e8eee8' }}
-//         >
-//           <h2
-//             className="text-2xl md:text-3xl font-light italic"
-//             style={{ fontFamily: '"Newsreader", Georgia, serif', color: '#151e13' }}
-//           >
-//             Order Summary
-//           </h2>
-
-//           {/* ── Price breakdown ─────────────────────────────────────────── */}
-//           <div className="space-y-3">
-//             <div className="flex justify-between text-sm" style={{ color: '#3d4943' }}>
-//               <span>Subtotal</span>
-//               <span>€{subtotal.toFixed(2)}</span>
-//             </div>
-
-//             {/* Promo discount row */}
-//             {promoState && promoDiscount > 0 && (
-//               <div className="flex justify-between text-sm items-center">
-//                 <span style={{ color: '#00694c' }}>
-//                   Promo ({promoState.discount_percent}% off)
-//                 </span>
-//                 <span className="font-bold" style={{ color: '#00694c' }}>
-//                   −€{promoDiscount.toFixed(2)}
-//                 </span>
-//               </div>
-//             )}
-
-//             <div className="flex justify-between text-sm items-center" style={{ color: '#3d4943' }}>
-//               <span>Delivery</span>
-//               <div className="flex items-center gap-2">
-//                 <span
-//                   className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full font-bold"
-//                   style={{ background: '#d4ede5', color: '#095041' }}
-//                 >
-//                   Free
-//                 </span>
-//                 <span className="font-bold" style={{ color: '#00694c' }}>€0.00</span>
-//               </div>
-//             </div>
-
-//             <div
-//               className="pt-4 mt-2 flex justify-between items-end"
-//               style={{ borderTop: '1px solid #e8eee8' }}
-//             >
-//               <span className="font-bold uppercase tracking-tight" style={{ color: '#151e13' }}>
-//                 Total
-//               </span>
-//               <div className="text-right">
-//                 {promoState && promoDiscount > 0 && (
-//                   <p className="text-sm line-through" style={{ color: '#bccac1' }}>
-//                     €{subtotal.toFixed(2)}
-//                   </p>
-//                 )}
-//                 <p
-//                   className="text-3xl font-bold"
-//                   style={{
-//                     fontFamily: '"Newsreader", Georgia, serif',
-//                     color: promoState ? '#00694c' : '#855000',
-//                   }}
-//                 >
-//                   €{finalTotal.toFixed(2)}
-//                 </p>
-//                 <p className="text-[10px] uppercase tracking-widest mt-1" style={{ color: '#6d7a73' }}>
-//                   VAT included
-//                 </p>
-//               </div>
-//             </div>
-//           </div>
-
-//           {/* ── Promo code ──────────────────────────────────────────────── */}
-//           <div className="space-y-2">
-//             <label
-//               className="text-[10px] uppercase tracking-widest font-bold"
-//               style={{ color: '#6d7a73' }}
-//             >
-//               Promo Code
-//             </label>
-
-//             {promoState ? (
-//               <div
-//                 className="flex items-center justify-between rounded-lg px-4 py-3"
-//                 style={{ background: '#edf7f2', border: '1px solid #d4ede5' }}
-//               >
-//                 <div className="flex items-center gap-2">
-//                   <span
-//                     className="material-symbols-outlined text-[18px]"
-//                     style={{ color: '#00694c', fontVariationSettings: "'FILL' 1" }}
-//                   >
-//                     check_circle
-//                   </span>
-//                   <div>
-//                     <p className="text-sm font-bold" style={{ color: '#00694c' }}>
-//                       {promoState.code}
-//                     </p>
-//                     <p className="text-xs" style={{ color: '#3d4943' }}>
-//                       {promoState.message}
-//                     </p>
-//                   </div>
-//                 </div>
-//                 <button
-//                   onClick={handleRemovePromo}
-//                   className="text-xs font-bold cursor-pointer"
-//                   style={{ color: '#ba1a1a' }}
-//                 >
-//                   Remove
-//                 </button>
-//               </div>
-//             ) : (
-//               <>
-//                 <div className="flex gap-2">
-//                   <input
-//                     type="text"
-//                     value={promoCode}
-//                     onChange={e => { setPromoCode(e.target.value); setPromoError('') }}
-//                     onKeyDown={e => e.key === 'Enter' && handleApplyPromo()}
-//                     placeholder="Enter code"
-//                     className="flex-grow rounded-lg px-4 py-3 text-sm border outline-none transition-all focus:ring-2 focus:ring-[#00694c]/20"
-//                     style={{ background: '#ffffff', borderColor: promoError ? '#fca5a5' : '#e0e6e0', color: '#151e13' }}
-//                   />
-//                   <button
-//                     onClick={handleApplyPromo}
-//                     disabled={promoLoading || !promoCode.trim()}
-//                     className="px-4 py-2 cursor-pointer rounded-lg text-sm font-bold transition-colors"
-//                     style={{
-//                       background: promoLoading ? '#6d7a73' : '#151e13',
-//                       color: '#ffffff',
-//                       opacity: (!promoCode.trim()) ? 0.5 : 1,
-//                     }}
-//                   >
-//                     {promoLoading ? '...' : 'Apply'}
-//                   </button>
-//                 </div>
-//                 {promoError && (
-//                   <p className="text-xs flex items-center gap-1" style={{ color: '#ba1a1a' }}>
-//                     <span className="material-symbols-outlined text-[14px]">error</span>
-//                     {promoError}
-//                   </p>
-//                 )}
-//               </>
-//             )}
-//           </div>
-
-//           {/* ── Checkout CTA ─────────────────────────────────────────────── */}
-//           <button
-//             onClick={handleCheckout}
-//             disabled={isPending}
-//             className="w-full cursor-pointer flex items-center justify-center gap-3 py-4 md:py-5 rounded-lg font-bold text-white transition-all hover:brightness-105 active:scale-[0.98]"
-//             style={{
-//               background: 'linear-gradient(135deg, #00694c 0%, #008560 100%)',
-//               boxShadow:  '0 8px 24px -4px rgba(0,105,76,0.25)',
-//             }}
-//           >
-//             Proceed to Checkout
-//             <span className="material-symbols-outlined">arrow_forward</span>
-//           </button>
-
-//           <div className="flex justify-center items-center gap-6 pt-2" style={{ opacity: 0.4 }}>
-//             <span className="material-symbols-outlined text-3xl" style={{ color: '#151e13' }}>credit_card</span>
-//             <span className="material-symbols-outlined text-3xl" style={{ color: '#151e13' }}>verified_user</span>
-//             <span className="material-symbols-outlined text-3xl" style={{ color: '#151e13' }}>payments</span>
-//           </div>
-//         </div>
-//       </div>
-
-//       {/* ── Wholesale min-qty popup ──────────────────────────────────────── */}
-//       {popup && (
-//         <div
-//           className="fixed inset-0 z-40"
-//           style={{ background: 'rgba(0,0,0,0.35)' }}
-//           onClick={() => setPopup(false)}
-//         />
-//       )}
-
-//       <div
-//         className="fixed left-0 right-0 bottom-0 z-50 transition-transform duration-300 ease-out"
-//         style={{ transform: popup ? 'translateY(0)' : 'translateY(110%)' }}
-//       >
-//         <div
-//           className="mx-auto max-w-lg rounded-t-3xl px-6 pt-6 pb-10"
-//           style={{ background: '#ffffff', boxShadow: '0 -8px 40px rgba(0,0,0,0.15)' }}
-//         >
-//           <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{ background: '#dde8dd' }} />
-
-//           <div className="flex items-start gap-4 mb-5">
-//             <div
-//               className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
-//               style={{ background: '#FFF3CD' }}
-//             >
-//               <span
-//                 className="material-symbols-outlined"
-//                 style={{ color: '#B45309', fontSize: '22px', fontVariationSettings: "'FILL' 1" }}
-//               >
-//                 warning
-//               </span>
-//             </div>
-//             <div>
-//               <h3 className="text-lg font-bold" style={{ color: '#151e13' }}>
-//                 Minimum Quantity Required
-//               </h3>
-//               <p className="text-sm mt-1" style={{ color: '#6d7a73' }}>
-//                 Update the quantities below to continue.
-//               </p>
-//             </div>
-//           </div>
-
-//           <div className="space-y-3 mb-6">
-//             {violatingItems.map(item => (
-//               <div
-//                 key={item.id}
-//                 className="flex items-center justify-between rounded-xl px-4 py-3"
-//                 style={{ background: '#FFF8EE', border: '1px solid #FFE4B2' }}
-//               >
-//                 <div>
-//                   <p className="text-sm font-bold" style={{ color: '#151e13' }}>{item.name}</p>
-//                   <p className="text-xs mt-0.5" style={{ color: '#B45309' }}>
-//                     You have {item.qty} — minimum is{' '}
-//                     <span className="font-bold">{item.minWholesaleQty}</span>
-//                   </p>
-//                 </div>
-//                 <span
-//                   className="text-xs font-bold px-3 py-1 rounded-full flex-shrink-0"
-//                   style={{ background: '#FFE4B2', color: '#92400E' }}
-//                 >
-//                   +{item.minWholesaleQty - item.qty} needed
-//                 </span>
-//               </div>
-//             ))}
-//           </div>
-
-//           <button
-//             onClick={() => setPopup(false)}
-//             className="w-full py-4 rounded-xl text-sm font-bold cursor-pointer transition-all hover:brightness-105 text-white"
-//             style={{ background: 'linear-gradient(135deg, #00694c 0%, #008560 100%)' }}
-//           >
-//             Update My Cart
-//           </button>
-//         </div>
-//       </div>
-//     </>
-//   )
-// }
-
-
 'use client'
-// src/app/basket/components/OrderSummary.jsx
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import {
+  ClipboardList,
+  Lock,
+  ArrowRight,
+  ArrowLeft,
+  Truck,
+  Leaf,
+  ShieldCheck,
+  AlertTriangle,
+} from 'lucide-react'
 import { useCart } from '@/app/context/CartContext'
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'
 
 export default function OrderSummary({
   subtotal,
-  deliveryFee   = 0,        // ← BasketShell থেকে calculated
-  deliveryConfig = null,    // ← DB config (charge_type, flat_fee, free_threshold)
-  grandTotal,               // ← subtotal + deliveryFee
+  deliveryConfig = null,
+  deliveryFee = null,
   items = [],
   isApprovedWholesale = false,
 }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
 
-  const {
-    promoState, setPromoState,
-    promoDiscount, discountedSubtotal,
-  } = useCart()
+  const { promoState, promoDiscount, discountedSubtotal } = useCart()
+  const [popup, setPopup] = useState(false)
 
-  const [promoCode,    setPromoCode]    = useState('')
-  const [promoLoading, setPromoLoading] = useState(false)
-  const [promoError,   setPromoError]   = useState('')
-  const [popup,        setPopup]        = useState(false)
+  const violatingItems = items.filter((item) => {
+    const isUnlimited = Boolean(
+      item.is_unlimited_stock ||
+        item.isUnlimitedStock ||
+        item.is_unlimited_wholesale_stock ||
+        item.is_unlimited_restaurant_stock
+    )
+    const rawMin = parseInt(item.minimum_purchase, 10) || parseInt(item.minWholesaleQty, 10) || 1
+    const stock = isUnlimited
+      ? Infinity
+      : item.stock !== undefined && item.stock !== null
+        ? Number(item.stock)
+        : item.wholesale_stock !== undefined && item.wholesale_stock !== null
+          ? Number(item.wholesale_stock)
+          : item.restaurant_stock !== undefined && item.restaurant_stock !== null
+            ? Number(item.restaurant_stock)
+            : Infinity
+    const minReq = stock > 0 && stock < Infinity ? Math.min(rawMin, stock) : rawMin
+    return item.qty < minReq
+  })
 
-  const violatingItems = isApprovedWholesale
-    ? items.filter(item => item.wholesalePrice && item.qty < (item.minWholesaleQty || 1))
-    : []
-
-  // ── Delivery after promo applied ──────────────────────────────────────────
-  // promoDiscount apply হলে discountedSubtotal-এর উপর delivery recalculate করি
   const effectiveSubtotal = promoState ? discountedSubtotal : subtotal
-  const effectiveDelivery = calcDeliveryFee(deliveryConfig, effectiveSubtotal)
-  const finalTotal        = effectiveSubtotal + effectiveDelivery
+  const effectiveDelivery =
+    deliveryFee !== null && deliveryFee !== undefined
+      ? Number(deliveryFee)
+      : calcDeliveryFee(deliveryConfig, effectiveSubtotal)
+  const finalTotal = effectiveSubtotal + effectiveDelivery
 
-  // ── Delivery badge text ───────────────────────────────────────────────────
-  const deliveryLabel = getDeliveryLabel(deliveryConfig, effectiveSubtotal, effectiveDelivery)
-
-  // ── Apply promo ────────────────────────────────────────────────────────────
-  async function handleApplyPromo() {
-    const trimmed = promoCode.trim()
-    if (!trimmed) return
-    setPromoLoading(true)
-    setPromoError('')
-    setPromoState(null)
-    try {
-      // Build quantities map for min_quantity validation
-      const quantities = {}
-      items.forEach(i => { quantities[String(i.id)] = i.qty })
-
-      const res = await fetch(`${API_BASE}/orders/coupons/validate/`, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({
-          code:        trimmed,
-          product_ids: items.map(i => String(i.id)),
-          quantities,
-          cart_total:  subtotal,
-        }),
-      })
-      const data = await res.json()
-      if (data.valid) {
-        const applicableIds = data.applicable_product_ids || items.map(i => String(i.id))
-
-        // Calculate discount client-side (handles both FLAT and PERCENT)
-        let discount
-        if (data.discount_type === 'FLAT') {
-          discount = Number(data.discount_amount)
-        } else {
-          discount = items.reduce((sum, item) => {
-            if (!applicableIds.includes(String(item.id))) return sum
-            const price = item.effectivePrice ?? item.price
-            return sum + price * item.qty * (Number(data.discount_percent) / 100)
-          }, 0)
-        }
-
-        setPromoState({
-          code:                   trimmed.toUpperCase(),
-          discount_percent:       Number(data.discount_percent),
-          discount_type:          data.discount_type,
-          applicable_product_ids: applicableIds,
-          flat_discount_amount:   data.discount_type === 'FLAT' ? Number(data.discount_amount) : 0,
-          discount_amount:        discount,
-          min_quantity_required:  data.coupon?.min_quantity_required || 1,
-          message:                data.message,
-        })
-      } else {
-        setPromoError(data.message || 'Invalid promo code.')
-      }
-    } catch {
-      setPromoError('Could not validate code. Please try again.')
-    } finally {
-      setPromoLoading(false)
-    }
-  }
-
-  function handleRemovePromo() {
-    setPromoState(null)
-    setPromoCode('')
-    setPromoError('')
-  }
+  const hasFreeThreshold =
+    deliveryConfig?.charge_type === 'threshold' && Number(deliveryConfig?.free_threshold) > 0
 
   function handleCheckout() {
-    if (violatingItems.length > 0) setPopup(true)
-    else startTransition(() => router.push('/checkout'))
+    if (violatingItems.length > 0 && isApprovedWholesale !== undefined) {
+      setPopup(true)
+    } else {
+      startTransition(() => router.push('/checkout'))
+    }
   }
 
   return (
     <>
       <div className="lg:sticky lg:top-24 space-y-4">
-        <div
-          className="p-6 md:p-8 rounded-2xl space-y-6 md:space-y-8"
-          style={{ background: '#f8fbf8', border: '1px solid #e8eee8' }}
-        >
-          <h2
-            className="text-2xl md:text-3xl font-light italic"
-            style={{ fontFamily: '"Newsreader", Georgia, serif', color: '#151e13' }}
+        {/* Order Summary Card */}
+        <div className="rounded-[22px] overflow-hidden bg-white border border-[#DDE4D4]">
+          {/* Forest Green Top Header */}
+          <div
+            className="px-5 sm:px-6 py-4 flex items-center gap-3"
+            style={{ background: 'linear-gradient(135deg, #0B462B 0%, #155838 100%)' }}
           >
-            Order Summary
-          </h2>
+            <ClipboardList className="w-5 h-5 text-white/95 shrink-0" />
+            <h2
+              className="text-[21px] sm:text-[22px] font-bold text-white leading-none"
+              style={{ fontFamily: 'var(--font-newsreader), Georgia, serif' }}
+            >
+              Order Summary
+            </h2>
+          </div>
 
-          {/* ── Price breakdown ─────────────────────────────────────────── */}
-          <div className="space-y-3">
-            <div className="flex justify-between text-sm" style={{ color: '#3d4943' }}>
-              <span>Subtotal</span>
-              <span>€{subtotal.toFixed(2)}</span>
-            </div>
-
-            {/* Promo row */}
-            {promoState && promoDiscount > 0 && (
-              <div className="flex justify-between text-sm items-center">
-                <span style={{ color: '#00694c' }}>
-                  Promo ({promoState.discount_type === 'FLAT'
-                    ? `€${Number(promoState.flat_discount_amount || 0).toFixed(2)} off`
-                    : `${promoState.discount_percent}% off`})
-                </span>
-                <span className="font-bold" style={{ color: '#00694c' }}>
-                  −€{promoDiscount.toFixed(2)}
-                </span>
+          <div className="p-5 sm:p-6 space-y-4">
+            {/* Subtotal / Promo / Delivery rows */}
+            <div className="space-y-3">
+              <div className="flex justify-between items-center text-[14.5px]">
+                <span className="font-semibold text-[#17281E]">Subtotal</span>
+                <span className="font-bold text-[16px] text-[#17281E]">€{subtotal.toFixed(2)}</span>
               </div>
-            )}
-            {/* Promo invalid warning — qty dropped below minimum */}
-            {promoState && promoDiscount === 0 && (() => {
-              const appIds = promoState.applicable_product_ids || []
-              const hasRestriction = appIds.length > 0
-              const qualQty = items.filter(i => !hasRestriction || appIds.includes(String(i.id))).reduce((s, i) => s + i.qty, 0)
-              const need = (promoState.min_quantity_required || 1) - qualQty
-              const msg = need > 0
-                ? `Add ${need} more item(s)${hasRestriction ? ' of the applicable products' : ''} to activate ${promoState.code}`
-                : `${promoState.code} doesn't apply to any items in your cart`
-              return (
-                <div className="flex items-center gap-1 text-xs" style={{ color: '#ba1a1a' }}>
-                  <span className="material-symbols-outlined text-[14px]">warning</span>
-                  <span>{msg}</span>
-                </div>
-              )
-            })()}
 
-            {/* ── Delivery row ────────────────────────────────────────────── */}
-            <div className="flex justify-between text-sm items-center" style={{ color: '#3d4943' }}>
-              <span>Delivery</span>
-              <div className="flex items-center gap-2">
+              {promoState && promoDiscount > 0 && (
+                <div className="flex justify-between items-center text-[13.5px]">
+                  <span className="text-[#195E38] font-medium">
+                    Promo ({promoState.discount_type === 'FLAT'
+                      ? `€${Number(promoState.flat_discount_amount || 0).toFixed(2)} off`
+                      : `${promoState.discount_percent}% off`})
+                  </span>
+                  <span className="font-bold text-[#195E38]">−€{promoDiscount.toFixed(2)}</span>
+                </div>
+              )}
+
+              {promoState &&
+                promoDiscount === 0 &&
+                (() => {
+                  const appIds = promoState.applicable_product_ids || []
+                  const hasRestriction = appIds.length > 0
+                  const qualQty = items
+                    .filter((i) => !hasRestriction || appIds.includes(String(i.id)))
+                    .reduce((s, i) => s + i.qty, 0)
+                  const need = (promoState.min_quantity_required || 1) - qualQty
+                  const msg =
+                    need > 0
+                      ? `Add ${need} more item(s) to activate ${promoState.code}`
+                      : `${promoState.code} doesn't apply to cart items`
+                  return (
+                    <div className="flex items-center gap-1.5 text-xs text-[#BA1A1A] bg-[#FEF2F2] px-3 py-1.5 rounded-lg">
+                      <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                      <span>{msg}</span>
+                    </div>
+                  )
+                })()}
+
+              <div className="flex justify-between items-center text-[14.5px]">
+                <span className="font-semibold text-[#17281E]">Delivery</span>
                 {effectiveDelivery === 0 ? (
-                  <>
-                    <span
-                      className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full font-bold"
-                      style={{ background: '#d4ede5', color: '#095041' }}
-                    >
-                      Free
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10.5px] uppercase tracking-wider px-2.5 py-0.5 rounded-full font-extrabold bg-[#DCEFD3] text-[#1A5D38]">
+                      FREE
                     </span>
-                    <span className="font-bold" style={{ color: '#00694c' }}>€0.00</span>
-                  </>
+                    <span className="font-bold text-[15px] text-[#14261B]">€0.00</span>
+                  </div>
                 ) : (
-                  <span className="font-bold" style={{ color: '#151e13' }}>
+                  <span className="font-bold text-[15px] text-[#14261B]">
                     €{effectiveDelivery.toFixed(2)}
                   </span>
                 )}
               </div>
+
+              {deliveryConfig?.charge_type === 'threshold' && effectiveDelivery > 0 && (
+                <p className="text-[11.5px] italic text-[#566A5D]">
+                  Spend €{Math.max(0, Number(deliveryConfig.free_threshold) - effectiveSubtotal).toFixed(2)} more for free delivery
+                </p>
+              )}
             </div>
 
-            {/* Threshold hint — "spend €X more for free delivery" */}
-            {deliveryConfig?.charge_type === 'threshold' && effectiveDelivery > 0 && (
-              <p className="text-[11px] italic" style={{ color: '#6d7a73' }}>
-                Spend €{(Number(deliveryConfig.free_threshold) - effectiveSubtotal).toFixed(2)} more for free delivery
-              </p>
-            )}
-
-            <div
-              className="pt-4 mt-2 flex justify-between items-end"
-              style={{ borderTop: '1px solid #e8eee8' }}
-            >
-              <span className="font-bold uppercase tracking-tight" style={{ color: '#151e13' }}>
-                Total
-              </span>
+            {/* Total Row */}
+            <div className="pt-4 border-t border-[#E6EBE0] flex items-end justify-between">
+              <span className="text-[18px] font-bold text-[#14261B]">Total</span>
               <div className="text-right">
                 {promoState && promoDiscount > 0 && (
-                  <p className="text-sm line-through" style={{ color: '#bccac1' }}>
+                  <p className="text-xs line-through text-[#98A49B]">
                     €{(subtotal + effectiveDelivery).toFixed(2)}
                   </p>
                 )}
                 <p
-                  className="text-3xl font-bold"
-                  style={{
-                    fontFamily: '"Newsreader", Georgia, serif',
-                    color: promoState ? '#00694c' : '#855000',
-                  }}
+                  className="text-[30px] font-bold leading-none"
+                  style={{ fontFamily: 'var(--font-newsreader), Georgia, serif', color: '#0E4228' }}
                 >
                   €{finalTotal.toFixed(2)}
                 </p>
-                <p className="text-[10px] uppercase tracking-widest mt-1" style={{ color: '#6d7a73' }}>
-                  VAT included
+                <p className="text-[11px] text-[#566A5D] mt-1">(VAT Included)</p>
+              </div>
+            </div>
+
+            {/* Free Delivery Sage Highlight Box */}
+            <div className="rounded-[14px] bg-[#EDF2E5] border border-[#DCE5D1] px-4 py-3 flex items-center gap-3">
+              <Truck className="w-5 h-5 text-[#1B5B38] shrink-0" />
+              <div>
+                <p className="text-[13.5px] font-bold text-[#142D1E] leading-tight">
+                  {effectiveDelivery === 0 ? 'Free Delivery' : 'Local Fresh Delivery'}
+                </p>
+                <p className="text-[11.5px] text-[#55685C]">
+                  {hasFreeThreshold
+                    ? `on orders over €${Number(deliveryConfig.free_threshold).toFixed(0)}`
+                    : 'Direct from our partner farms'}
                 </p>
               </div>
             </div>
-          </div>
 
-          {/* ── Promo code ────────────────────────────────────────────────── */}
-          <div className="space-y-2">
-            <label className="text-[10px] uppercase tracking-widest font-bold" style={{ color: '#6d7a73' }}>
-              Promo Code
-            </label>
-
-            {promoState ? (
-              <div
-                className="flex items-center justify-between rounded-lg px-4 py-3"
-                style={{ background: '#edf7f2', border: '1px solid #d4ede5' }}
+            {/* Primary & Secondary CTAs */}
+            <div className="space-y-2.5 pt-1">
+              <button
+                type="button"
+                onClick={handleCheckout}
+                disabled={isPending}
+                className="w-full cursor-pointer flex items-center justify-center gap-2.5 py-3.5 rounded-full font-semibold text-white text-[15px] transition-all duration-200 hover:brightness-110 active:scale-[0.985] disabled:opacity-60"
+                style={{
+                  background: 'linear-gradient(135deg, #0B462B 0%, #155B3A 100%)',
+                }}
               >
-                <div className="flex items-center gap-2">
-                  <span
-                    className="material-symbols-outlined text-[18px]"
-                    style={{ color: '#00694c', fontVariationSettings: "'FILL' 1" }}
-                  >
-                    check_circle
-                  </span>
-                  <div>
-                    <p className="text-sm font-bold" style={{ color: '#00694c' }}>{promoState.code}</p>
-                    <p className="text-xs" style={{ color: '#3d4943' }}>{promoState.message}</p>
-                  </div>
-                </div>
-                <button onClick={handleRemovePromo} className="text-xs font-bold cursor-pointer" style={{ color: '#ba1a1a' }}>
-                  Remove
-                </button>
-              </div>
-            ) : (
-              <>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={promoCode}
-                    onChange={e => { setPromoCode(e.target.value); setPromoError('') }}
-                    onKeyDown={e => e.key === 'Enter' && handleApplyPromo()}
-                    placeholder="Enter code"
-                    className="flex-grow rounded-lg px-4 py-3 text-sm border outline-none transition-all focus:ring-2 focus:ring-[#00694c]/20"
-                    style={{ background: '#ffffff', borderColor: promoError ? '#fca5a5' : '#e0e6e0', color: '#151e13' }}
-                  />
-                  <button
-                    onClick={handleApplyPromo}
-                    disabled={promoLoading || !promoCode.trim()}
-                    className="px-4 py-2 cursor-pointer rounded-lg text-sm font-bold transition-colors"
-                    style={{
-                      background: promoLoading ? '#6d7a73' : '#151e13',
-                      color: '#ffffff',
-                      opacity: !promoCode.trim() ? 0.5 : 1,
-                    }}
-                  >
-                    {promoLoading ? '...' : 'Apply'}
-                  </button>
-                </div>
-                {promoError && (
-                  <p className="text-xs flex items-center gap-1" style={{ color: '#ba1a1a' }}>
-                    <span className="material-symbols-outlined text-[14px]">error</span>
-                    {promoError}
-                  </p>
-                )}
-              </>
-            )}
+                <Lock className="w-4 h-4" />
+                <span>{isPending ? 'Preparing Checkout…' : 'Proceed to Checkout'}</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+
+              <Link
+                href="/shop"
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-full font-semibold text-[14px] bg-white text-[#173924] border border-[#CFD8C8] hover:bg-[#F3F6EE] transition-colors no-underline hover:no-underline"
+              >
+                <ArrowLeft className="w-4 h-4 text-[#1C5536]" />
+                <span>Continue Shopping</span>
+              </Link>
+            </div>
           </div>
+        </div>
 
-          {/* ── Checkout CTA ──────────────────────────────────────────────── */}
-          <button
-            onClick={handleCheckout}
-            disabled={isPending}
-            className="w-full cursor-pointer flex items-center justify-center gap-3 py-4 md:py-5 rounded-lg font-bold text-white transition-all hover:brightness-105 active:scale-[0.98]"
-            style={{
-              background: 'linear-gradient(135deg, #00694c 0%, #008560 100%)',
-              boxShadow:  '0 8px 24px -4px rgba(0,105,76,0.25)',
-            }}
-          >
-            Proceed to Checkout
-            <span className="material-symbols-outlined">arrow_forward</span>
-          </button>
-
-          <div className="flex justify-center items-center gap-6 pt-2" style={{ opacity: 0.4 }}>
-            <span className="material-symbols-outlined text-3xl" style={{ color: '#151e13' }}>credit_card</span>
-            <span className="material-symbols-outlined text-3xl" style={{ color: '#151e13' }}>verified_user</span>
-            <span className="material-symbols-outlined text-3xl" style={{ color: '#151e13' }}>payments</span>
+        {/* 3-Column Trust Badges Box */}
+        <div className="rounded-[20px] bg-[#EAEFE1] border border-[#DCE4D2] px-3 py-4 grid grid-cols-3 divide-x divide-[#D3DDD0] text-center">
+          <div className="flex flex-col items-center gap-1.5 px-1.5 sm:px-2">
+            <div className="w-9 h-9 rounded-full bg-white border border-[#DCE4D2] flex items-center justify-center text-[#1B5C39]">
+              <Leaf className="w-4 h-4" />
+            </div>
+            <span className="text-[11px] sm:text-[11.5px] font-medium leading-tight text-[#213B2B]">
+              100% Organic &amp; Fresh
+            </span>
+          </div>
+          <div className="flex flex-col items-center gap-1.5 px-1.5 sm:px-2">
+            <div className="w-9 h-9 rounded-full bg-white border border-[#DCE4D2] flex items-center justify-center text-[#1B5C39]">
+              <Truck className="w-4 h-4" />
+            </div>
+            <span className="text-[11px] sm:text-[11.5px] font-medium leading-tight text-[#213B2B]">
+              Fast Delivery Service
+            </span>
+          </div>
+          <div className="flex flex-col items-center gap-1.5 px-1.5 sm:px-2">
+            <div className="w-9 h-9 rounded-full bg-white border border-[#DCE4D2] flex items-center justify-center text-[#1B5C39]">
+              <ShieldCheck className="w-4 h-4" />
+            </div>
+            <span className="text-[11px] sm:text-[11.5px] font-medium leading-tight text-[#213B2B]">
+              Secure Payment
+            </span>
           </div>
         </div>
       </div>
 
-      {/* ── Wholesale popup ────────────────────────────────────────────────── */}
+      {/* Wholesale min-qty warning sheet */}
       {popup && (
-        <div className="fixed inset-0 z-40" style={{ background: 'rgba(0,0,0,0.35)' }} onClick={() => setPopup(false)} />
+        <div
+          className="fixed inset-0 z-40 bg-black/35 backdrop-blur-[2px]"
+          onClick={() => setPopup(false)}
+        />
       )}
       <div
-        className="fixed left-0 right-0 top-0 z-50 transition-transform duration-300 ease-out"
-        style={{ transform: popup ? 'translateY(0)' : 'translateY(-110%)' }}
+        className="fixed left-0 right-0 bottom-0 z-50 transition-transform duration-300 ease-out"
+        style={{ transform: popup ? 'translateY(0)' : 'translateY(110%)' }}
       >
-        <div className="mx-auto max-w-lg rounded-b-3xl px-6 pt-10 pb-6" style={{ background: '#ffffff', boxShadow: '0 8px 40px rgba(0,0,0,0.15)' }}>
+        <div className="mx-auto max-w-lg rounded-t-3xl px-6 pt-6 pb-9 bg-[#FAFBF6] border-t border-x border-[#DCE4D3]">
+          <div className="w-10 h-1 rounded-full mx-auto mb-5 bg-[#D4DEC9]" />
           <div className="flex items-start gap-4 mb-5">
-            <div className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: '#FFF3CD' }}>
-              <span className="material-symbols-outlined" style={{ color: '#B45309', fontSize: '22px', fontVariationSettings: "'FILL' 1" }}>warning</span>
+            <div className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 bg-[#FFF3CD]">
+              <AlertTriangle className="w-5 h-5 text-[#B45309]" />
             </div>
             <div>
-              <h3 className="text-lg font-bold" style={{ color: '#151e13' }}>Minimum Quantity Required</h3>
-              <p className="text-sm mt-1" style={{ color: '#6d7a73' }}>Update the quantities below to continue.</p>
+              <h3
+                className="text-lg font-bold text-[#14261B]"
+                style={{ fontFamily: 'var(--font-newsreader), Georgia, serif' }}
+              >
+                Minimum Quantity Required
+              </h3>
+              <p className="text-sm mt-1 text-[#566A5D]">Update the quantities below to continue.</p>
             </div>
           </div>
           <div className="space-y-3 mb-6">
-            {violatingItems.map(item => (
-              <div key={item.id} className="flex items-center justify-between rounded-xl px-4 py-3" style={{ background: '#FFF8EE', border: '1px solid #FFE4B2' }}>
-                <div>
-                  <p className="text-sm font-bold" style={{ color: '#151e13' }}>{item.name}</p>
-                  <p className="text-xs mt-0.5" style={{ color: '#B45309' }}>
-                    You have {item.qty} — minimum is <span className="font-bold">{item.minWholesaleQty}</span>
-                  </p>
+            {violatingItems.map((item) => {
+              const rawMin = parseInt(item.minimum_purchase, 10) || parseInt(item.minWholesaleQty, 10) || 1
+              return (
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between rounded-xl px-4 py-3 bg-[#FFF8EE] border border-[#FFE4B2]"
+                >
+                  <div>
+                    <p className="text-sm font-bold text-[#14261B]">{item.name}</p>
+                    <p className="text-xs mt-0.5 text-[#B45309]">
+                      You have {item.qty} — minimum is <span className="font-bold">{rawMin}</span>
+                    </p>
+                  </div>
+                  <span className="text-xs font-bold px-3 py-1 rounded-full flex-shrink-0 bg-[#FFE4B2] text-[#92400E]">
+                    +{Math.max(1, rawMin - item.qty)} needed
+                  </span>
                 </div>
-                <span className="text-xs font-bold px-3 py-1 rounded-full flex-shrink-0" style={{ background: '#FFE4B2', color: '#92400E' }}>
-                  +{item.minWholesaleQty - item.qty} needed
-                </span>
-              </div>
-            ))}
+              )
+            })}
           </div>
-          <button onClick={() => setPopup(false)} className="w-full py-4 rounded-xl text-sm font-bold cursor-pointer text-white mb-2" style={{ background: 'linear-gradient(135deg, #00694c 0%, #008560 100%)' }}>
+          <button
+            onClick={() => setPopup(false)}
+            className="w-full py-3.5 rounded-full text-sm font-bold cursor-pointer text-white bg-[#0B462B] hover:bg-[#083821] transition-colors"
+          >
             Update My Cart
           </button>
-          <div className="w-10 h-1 rounded-full mx-auto mt-4" style={{ background: '#dde8dd' }} />
         </div>
       </div>
     </>
   )
 }
-
-// ── Helpers ──────────────────────────────────────────────────────────────────
 
 function calcDeliveryFee(config, subtotal) {
   if (!config || !config.is_active || config.charge_type === 'free') return 0
@@ -698,13 +306,4 @@ function calcDeliveryFee(config, subtotal) {
     return subtotal >= Number(config.free_threshold) ? 0 : Number(config.flat_fee)
   }
   return 0
-}
-
-function getDeliveryLabel(config, subtotal, fee) {
-  if (!config || !config.is_active || config.charge_type === 'free') return 'Free'
-  if (config.charge_type === 'flat') return fee === 0 ? 'Free' : `€${Number(config.flat_fee).toFixed(2)}`
-  if (config.charge_type === 'threshold') {
-    return subtotal >= Number(config.free_threshold) ? 'Free' : `€${Number(config.flat_fee).toFixed(2)}`
-  }
-  return 'Free'
 }

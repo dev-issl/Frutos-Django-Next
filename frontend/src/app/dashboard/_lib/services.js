@@ -665,3 +665,8 @@ export const announcementsService = {
     create: (formData) => api.post("/api/staff/announcements/", formData),
     delete: (id) => api.delete(`/api/staff/announcements/${id}/`),
 };
+
+export const productDetailSettingsService = {
+    get: () => api.get("/api/products/detail-settings/"),
+    update: (data) => api.patch("/api/products/detail-settings/", data),
+};

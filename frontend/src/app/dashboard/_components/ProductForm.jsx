@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, X, Upload, Loader2, ChevronDown, ChevronUp, Layers, Trash2 } from "lucide-react";
+import { Plus, X, Upload, Loader2, ChevronDown, ChevronUp, Layers, Trash2, Sparkles } from "lucide-react";
 import SearchableSelect from "@/app/dashboard/_components/SearchableSelect";
 import { colorsService, sizesService } from "@/app/dashboard/_lib/services";
 
@@ -12,7 +12,92 @@ const TABS = [
   { id: "variants",    label: "Variants" },
   { id: "media",       label: "Media" },
   { id: "specs",       label: "Specifications" },
+  { id: "sections",    label: "Details Page & Story" },
 ];
+
+const BADGE_ICON_OPTIONS = [
+  { value: "leaf", label: "Leaf / Organic" },
+  { value: "truck", label: "Truck / Delivery" },
+  { value: "shield", label: "Shield / Secure" },
+  { value: "sprout", label: "Sprout / Farm" },
+  { value: "award", label: "Award / Quality" },
+  { value: "recycle", label: "Recycle / Eco" },
+  { value: "heart", label: "Heart / Care" },
+  { value: "clock", label: "Clock / Fast" },
+];
+
+const NUTRITION_ICON_OPTIONS = [
+  { value: "leaf", label: "Leaf" },
+  { value: "flame", label: "Flame (Calories)" },
+  { value: "apple", label: "Apple / Carbs" },
+  { value: "sprout", label: "Sprout / Protein" },
+  { value: "heart", label: "Heart / Fat" },
+  { value: "shield", label: "Shield / Vitamins" },
+];
+
+function inferNutritionIcon(label = "") {
+  const k = label.toLowerCase();
+  if (k.includes("calor") || k.includes("energy") || k.includes("kcal")) return "flame";
+  if (k.includes("carb") || k.includes("sugar")) return "apple";
+  if (k.includes("protein")) return "sprout";
+  if (k.includes("fat")) return "heart";
+  if (k.includes("vitamin") || k.includes("mineral")) return "shield";
+  return "leaf";
+}
+
+function parseInitialNutrition(raw) {
+  if (!raw) return [];
+  if (Array.isArray(raw)) {
+    return raw
+      .filter(r => r && (r.label || r.value))
+      .map(r => ({
+        label: String(r.label || ""),
+        value: String(r.value || ""),
+        icon: r.icon || inferNutritionIcon(r.label),
+      }));
+  }
+  const text = String(raw).trim();
+  if (!text) return [];
+  if (text.startsWith("[")) {
+    try {
+      const parsed = JSON.parse(text);
+      if (Array.isArray(parsed)) {
+        return parsed
+          .filter(r => r && (r.label || r.value))
+          .map(r => ({
+            label: String(r.label || ""),
+            value: String(r.value || ""),
+            icon: r.icon || inferNutritionIcon(r.label),
+          }));
+      }
+    } catch {
+      // Fall back to line-based parsing
+    }
+  }
+  const rows = [];
+  for (const line of text.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    const idx = trimmed.indexOf(":");
+    if (idx === -1) continue;
+    const label = trimmed.slice(0, idx).trim();
+    const value = trimmed.slice(idx + 1).trim();
+    if (!label || !value) continue;
+    rows.push({ label, value, icon: inferNutritionIcon(label) });
+  }
+  return rows;
+}
+
+function serializeNutritionRows(rows) {
+  const valid = (rows || [])
+    .map(r => ({
+      label: String(r?.label || "").trim(),
+      value: String(r?.value || "").trim(),
+      icon: r?.icon || inferNutritionIcon(r?.label),
+    }))
+    .filter(r => r.label && r.value);
+  return valid.length > 0 ? JSON.stringify(valid) : "";
+}
 
 
 
@@ -25,7 +110,12 @@ export default function ProductForm({
   categories, brands, colors: propColors, sizes: propSizes, subcategories, stores, productClasses, displayUnits = [],
 }) {
   const [form, setForm] = useState({
-    name: "", slug: "", description: "", nutritional_info: "",
+    name: "", slug: "", description: "", short_description: "",
+    nutritional_info: "", nutrition_serving_size: "per 100g",
+    promo_card_title: "", shipping_info_title: "", shipping_info: "",
+    return_policy_title: "", return_policy: "",
+    farm_story_eyebrow: "", farm_story_title: "", farm_story_description: "",
+    farm_story_cta_text: "", farm_story_cta_url: "",
     origin: "", unit: "", wholesale_unit: "", badge: "", badge_color: "", variant: "",
     price: "", discount_price: "", wholesale_price: "", wholesale_discount_price: "",
     restaurant_price: "", restaurant_discount_price: "", restaurant_unit: "", restaurant_minimum_purchase: "",
@@ -38,6 +128,19 @@ export default function ProductForm({
     shop: "", stores: [], brand: "", category: "", sub_category: "", shipping_category: "",
     colors: [], sizes: [],
     ...initialValues,
+    short_description:      initialValues?.short_description      || "",
+    nutritional_info:       initialValues?.nutritional_info       || "",
+    nutrition_serving_size: initialValues?.nutrition_serving_size || "per 100g",
+    promo_card_title:       initialValues?.promo_card_title       || "",
+    shipping_info_title:    initialValues?.shipping_info_title    || "",
+    shipping_info:          initialValues?.shipping_info          || "",
+    return_policy_title:    initialValues?.return_policy_title    || "",
+    return_policy:          initialValues?.return_policy          || "",
+    farm_story_eyebrow:     initialValues?.farm_story_eyebrow     || "",
+    farm_story_title:       initialValues?.farm_story_title       || "",
+    farm_story_description: initialValues?.farm_story_description || "",
+    farm_story_cta_text:    initialValues?.farm_story_cta_text    || "",
+    farm_story_cta_url:     initialValues?.farm_story_cta_url     || "",
     shop:              initialValues?.shop?.id               || initialValues?.shop               || "",
     stores:            initialValues?.stores?.map(s => s.id || s) || stores?.map(s => s.id)       || [],
     brand:             initialValues?.brand?.id              || initialValues?.brand              || "",
@@ -50,6 +153,28 @@ export default function ProductForm({
   });
 
   const [specs,            setSpecs]            = useState(initialValues?.specifications || []);
+  const [highlights,       setHighlights]       = useState(
+    Array.isArray(initialValues?.highlights) ? initialValues.highlights : []
+  );
+  const [nutritionRows,    setNutritionRows]    = useState(
+    () => parseInitialNutrition(initialValues?.nutritional_info)
+  );
+  const [trustBadges,      setTrustBadges]      = useState(
+    Array.isArray(initialValues?.trust_badges) ? initialValues.trust_badges : []
+  );
+  const [farmStoryStats,   setFarmStoryStats]   = useState(
+    Array.isArray(initialValues?.farm_story_stats) ? initialValues.farm_story_stats : []
+  );
+  const [promoImageFile,    setPromoImageFile]    = useState(null);
+  const [promoImagePreview, setPromoImagePreview] = useState(
+    initialValues?.promo_card_image_url || initialValues?.promo_card_image || ""
+  );
+  const [promoImageRemoved, setPromoImageRemoved] = useState(false);
+  const [farmStoryImageFile,    setFarmStoryImageFile]    = useState(null);
+  const [farmStoryImagePreview, setFarmStoryImagePreview] = useState(
+    initialValues?.farm_story_image_url || initialValues?.farm_story_image || ""
+  );
+  const [farmStoryImageRemoved, setFarmStoryImageRemoved] = useState(false);
   const [thumbnail,        setThumbnail]        = useState(null);
   const [thumbnailPreview, setThumbnailPreview] = useState(initialValues?.thumbnail_url || "");
   const [thumbnailRemoved, setThumbnailRemoved] = useState(false);
@@ -203,11 +328,38 @@ export default function ProductForm({
 
     setSubmitting(true);
     try {
+      const cleanHighlights = highlights.map(h => String(h || "").trim()).filter(Boolean);
+      const cleanTrustBadges = trustBadges
+        .map(b => ({ icon: b?.icon || "leaf", text: String(b?.text || "").trim() }))
+        .filter(b => b.text);
+      const cleanFarmStats = farmStoryStats
+        .map(s => ({
+          icon: s?.icon || "sprout",
+          value: String(s?.value || "").trim(),
+          label: String(s?.label || "").trim(),
+        }))
+        .filter(s => s.value || s.label);
+
       const payload = {
         name:                     form.name,
         slug:                     form.slug || undefined,
         description:              form.description || "",
-        nutritional_info:         form.nutritional_info || "",
+        short_description:        form.short_description || "",
+        nutritional_info:         serializeNutritionRows(nutritionRows),
+        nutrition_serving_size:   form.nutrition_serving_size || "per 100g",
+        highlights:               cleanHighlights,
+        trust_badges:             cleanTrustBadges,
+        promo_card_title:         form.promo_card_title || "",
+        shipping_info_title:      form.shipping_info_title || "",
+        shipping_info:            form.shipping_info || "",
+        return_policy_title:      form.return_policy_title || "",
+        return_policy:            form.return_policy || "",
+        farm_story_eyebrow:       form.farm_story_eyebrow || "",
+        farm_story_title:         form.farm_story_title || "",
+        farm_story_description:   form.farm_story_description || "",
+        farm_story_cta_text:      form.farm_story_cta_text || "",
+        farm_story_cta_url:       form.farm_story_cta_url || "",
+        farm_story_stats:         cleanFarmStats,
         origin:                   form.origin || "",
         unit:                     (variants.length > 0 && variants[0].unit) ? variants[0].unit : (form.unit || ""),
         wholesale_unit:           (variants.length > 0 && variants[0].wholesale_unit) ? variants[0].wholesale_unit : (form.wholesale_unit || ""),
@@ -245,23 +397,32 @@ export default function ProductForm({
         sizes:                    form.sizes,
       };
 
-      if (variants.length > 0) {
-        payload.variants_json = JSON.stringify(variants);
-      }
-
-      const needsFormData = thumbnail || additionalImages.length > 0 || removeImageIds.length > 0 || thumbnailRemoved;
+      const jsonArrayKeys = new Set(["highlights", "trust_badges", "farm_story_stats"]);
+      const needsFormData = Boolean(
+        thumbnail || thumbnailRemoved || additionalImages.length > 0 || removeImageIds.length > 0
+        || promoImageFile || promoImageRemoved || farmStoryImageFile || farmStoryImageRemoved
+      );
       if (needsFormData) {
         const fd = new FormData();
         Object.entries(payload).forEach(([k, v]) => {
           if (v === null || v === undefined) return;
-          if (Array.isArray(v)) { v.forEach(item => fd.append(k, item)); }
-          else { fd.append(k, v); }
+          if (jsonArrayKeys.has(k)) {
+            fd.append(k, JSON.stringify(v));
+          } else if (Array.isArray(v)) {
+            v.forEach(item => fd.append(k, item));
+          } else {
+            fd.append(k, v);
+          }
         });
         if (variants.length > 0) {
           fd.append("variants_json", JSON.stringify(variants));
         }
-        if (thumbnail)              fd.append("thumbnail", thumbnail);
+        if (thumbnail) fd.append("thumbnail", thumbnail);
         if (thumbnailRemoved && !thumbnail) fd.append("thumbnail", "");
+        if (promoImageFile) fd.append("promo_card_image", promoImageFile);
+        if (promoImageRemoved && !promoImageFile) fd.append("promo_card_image", "");
+        if (farmStoryImageFile) fd.append("farm_story_image", farmStoryImageFile);
+        if (farmStoryImageRemoved && !farmStoryImageFile) fd.append("farm_story_image", "");
         additionalImages.forEach(f => fd.append("additional_images", f));
         removeImageIds.forEach(id  => fd.append("remove_image_ids", id));
         const validSpecs = specs.filter(s => s.name && s.value);
@@ -410,18 +571,152 @@ export default function ProductForm({
       {activeTab === "description" && (
         <div className="space-y-6">
           <div>
+            <label className={labelCls}>Short Description (Hero Summary)</label>
+            <textarea
+              value={form.short_description || ""}
+              onChange={e => handleChange("short_description", e.target.value)}
+              rows={2}
+              className={`${inputCls} resize-y`}
+              placeholder="Concise 1-2 sentence summary shown below the title & star rating..."
+            />
+            <p className="text-xs text-slate-400 mt-1">
+              Displayed right underneath the product title on the product details page.
+            </p>
+          </div>
+
+          <div className="pt-4 border-t border-slate-100">
             <label className={labelCls}>Product Description</label>
             <textarea value={form.description} onChange={e => handleChange("description", e.target.value)}
-              rows={12} className={`${inputCls} resize-y`} placeholder="Full product description... HTML supported." />
+              rows={8} className={`${inputCls} resize-y`} placeholder="Full product description... HTML supported." />
             <p className="text-xs text-slate-400 mt-1">Basic HTML tags are supported (bold, italic, lists etc.).</p>
           </div>
-          <div className="pt-4 border-t border-slate-100">
-            <label className={labelCls}>Nutritional Information</label>
-            <textarea value={form.nutritional_info || ""}
-              onChange={e => handleChange("nutritional_info", e.target.value)}
-              rows={10} className={`${inputCls} resize-y font-mono text-xs`}
-              placeholder={"Per 100g:\nCalories: 52 kcal\nProtein: 0.3 g\nCarbohydrates: 14 g\nFat: 0.2 g\nFiber: 2.4 g\nSugar: 10 g"} />
-            <p className="text-xs text-slate-400 mt-1">Shown on the Nutritional Info tab on the product page.</p>
+
+          <div className="pt-4 border-t border-slate-100 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-sm font-semibold text-slate-700">Product Highlights (About This Product Bullets)</h4>
+                <p className="text-xs text-slate-400">Leave empty to inherit global defaults from Details Page Defaults.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setHighlights(prev => [...prev, ""])}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" /> Add Highlight
+              </button>
+            </div>
+            {highlights.length > 0 ? (
+              <div className="space-y-2">
+                {highlights.map((item, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <input
+                      value={item}
+                      onChange={e => setHighlights(prev => prev.map((v, i) => (i === idx ? e.target.value : v)))}
+                      placeholder="e.g., Rich in vitamins A and C"
+                      className={`${inputCls} text-xs`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setHighlights(prev => prev.filter((_, i) => i !== idx))}
+                      className="text-red-400 hover:text-red-600 flex-shrink-0 cursor-pointer"
+                      aria-label="Remove highlight"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-slate-400 bg-slate-50 border border-dashed border-slate-200 rounded-lg px-3 py-2.5">
+                No per-product highlights set — catalog defaults will be shown on the storefront.
+              </p>
+            )}
+          </div>
+
+          <div className="pt-4 border-t border-slate-100 space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h4 className="text-sm font-semibold text-slate-700">Nutritional Information</h4>
+                <p className="text-xs text-slate-400">Shown in the Nutritional Information card and Nutrition Info tab. Leave empty if not applicable.</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (nutritionRows.length === 0) {
+                      setNutritionRows([
+                        { label: "Calories", value: "52 kcal", icon: "flame" },
+                        { label: "Carbohydrates", value: "14 g", icon: "apple" },
+                        { label: "Protein", value: "0.3 g", icon: "sprout" },
+                        { label: "Fat", value: "0.2 g", icon: "heart" },
+                        { label: "Fiber", value: "2.4 g", icon: "leaf" },
+                      ]);
+                    }
+                  }}
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 cursor-pointer"
+                >
+                  <Sparkles className="w-3.5 h-3.5" /> Sample Macros
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setNutritionRows(prev => [...prev, { label: "", value: "", icon: "leaf" }])}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Add Nutrient
+                </button>
+              </div>
+            </div>
+
+            <div className="max-w-xs">
+              <label className={labelCls}>Serving Basis</label>
+              <input
+                value={form.nutrition_serving_size || ""}
+                onChange={e => handleChange("nutrition_serving_size", e.target.value)}
+                placeholder="per 100g"
+                className={`${inputCls} text-xs`}
+              />
+            </div>
+
+            <div className="space-y-2">
+              {nutritionRows.map((row, idx) => (
+                <div key={idx} className="grid grid-cols-[135px_1fr_1fr_auto] gap-2 items-center">
+                  <select
+                    value={row.icon || "leaf"}
+                    onChange={e => setNutritionRows(prev => prev.map((r, i) => (i === idx ? { ...r, icon: e.target.value } : r)))}
+                    className={`${inputCls} text-xs py-2`}
+                  >
+                    {NUTRITION_ICON_OPTIONS.map(opt => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                  <input
+                    value={row.label}
+                    onChange={e => setNutritionRows(prev => prev.map((r, i) => (i === idx ? { ...r, label: e.target.value } : r)))}
+                    placeholder="Nutrient (e.g., Calories)"
+                    className={`${inputCls} text-xs py-2`}
+                  />
+                  <input
+                    value={row.value}
+                    onChange={e => setNutritionRows(prev => prev.map((r, i) => (i === idx ? { ...r, value: e.target.value } : r)))}
+                    placeholder="Amount (e.g., 52 kcal)"
+                    className={`${inputCls} text-xs py-2`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setNutritionRows(prev => prev.filter((_, i) => i !== idx))}
+                    className="text-red-400 hover:text-red-600 cursor-pointer"
+                    aria-label="Remove nutrient"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+              {nutritionRows.length === 0 && (
+                <p className="text-xs text-slate-400 bg-slate-50 border border-dashed border-slate-200 rounded-lg px-3 py-3 text-center">
+                  No nutrition facts added yet. Click &quot;+ Add Nutrient&quot; or &quot;Sample Macros&quot;.
+                </p>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -1126,6 +1421,308 @@ export default function ProductForm({
             {specs.length === 0 && (
               <p className="text-xs text-slate-400 py-6 text-center">No specifications yet. Click &quot;+ Add Row&quot; to start.</p>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Tab: Details Page & Story ── */}
+      {activeTab === "sections" && (
+        <div className="space-y-6">
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 px-4 py-3 text-xs text-emerald-900">
+            <span className="font-bold">Optional Per-Product Overrides:</span> Leave any field, image, or list blank to automatically inherit your catalog-wide defaults from <span className="font-semibold">Products → Details Page Defaults</span>.
+          </div>
+
+          {/* 1. Hero Trust Strip */}
+          <div className="space-y-3 border border-slate-100 rounded-xl p-4 bg-slate-50/40">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-sm font-semibold text-slate-800">Hero Trust Badges</h4>
+                <p className="text-xs text-slate-400">Up to 3 badges shown beneath the Add to Cart button.</p>
+              </div>
+              <button
+                type="button"
+                disabled={trustBadges.length >= 3}
+                onClick={() => setTrustBadges(prev => [...prev, { icon: "leaf", text: "" }])}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 disabled:opacity-40 cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" /> Add Badge
+              </button>
+            </div>
+            {trustBadges.length > 0 ? (
+              <div className="space-y-2">
+                {trustBadges.map((badge, idx) => (
+                  <div key={idx} className="grid grid-cols-[160px_1fr_auto] gap-2 items-center">
+                    <select
+                      value={badge.icon || "leaf"}
+                      onChange={e => setTrustBadges(prev => prev.map((b, i) => (i === idx ? { ...b, icon: e.target.value } : b)))}
+                      className={`${inputCls} text-xs py-2`}
+                    >
+                      {BADGE_ICON_OPTIONS.map(opt => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
+                    <input
+                      value={badge.text || ""}
+                      onChange={e => setTrustBadges(prev => prev.map((b, i) => (i === idx ? { ...b, text: e.target.value } : b)))}
+                      placeholder="e.g., 100% Organic & Fresh"
+                      className={`${inputCls} text-xs py-2`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setTrustBadges(prev => prev.filter((_, i) => i !== idx))}
+                      className="text-red-400 hover:text-red-600 cursor-pointer"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-slate-400">Inheriting global default trust badges.</p>
+            )}
+          </div>
+
+          {/* 2. Promo Card ("From Our Farms to Your Table") */}
+          <div className="space-y-3 border border-slate-100 rounded-xl p-4 bg-slate-50/40">
+            <h4 className="text-sm font-semibold text-slate-800">Feature Photo Card (&quot;From Our Farms to Your Table&quot;)</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+              <div>
+                <label className={labelCls}>Overlay Card Title</label>
+                <input
+                  value={form.promo_card_title || ""}
+                  onChange={e => handleChange("promo_card_title", e.target.value)}
+                  placeholder="Leave blank for default: From Our Farms to Your Table"
+                  className={inputCls}
+                />
+              </div>
+              <div>
+                <label className={labelCls}>Card Photo</label>
+                <div className="flex items-center gap-3">
+                  {promoImagePreview && (
+                    <div className="relative">
+                      <img src={promoImagePreview} alt="Promo card"
+                        className="w-20 h-16 rounded-lg object-cover border border-slate-200" />
+                      <button
+                        type="button"
+                        onClick={() => { setPromoImageFile(null); setPromoImagePreview(""); setPromoImageRemoved(true); }}
+                        className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center cursor-pointer"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  )}
+                  <label className="flex flex-col items-center justify-center px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-gray-400">
+                    <Upload className="w-4 h-4 text-slate-400" />
+                    <span className="text-[11px] text-slate-500 mt-1">Upload photo</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={e => {
+                        const f = e.target.files?.[0];
+                        if (f) {
+                          setPromoImageFile(f);
+                          setPromoImagePreview(URL.createObjectURL(f));
+                          setPromoImageRemoved(false);
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 3. Shipping Info & Return Policy Tabs */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border border-slate-100 rounded-xl p-4 bg-slate-50/40">
+            <div className="space-y-2">
+              <h4 className="text-sm font-semibold text-slate-800">Shipping Info Tab</h4>
+              <div>
+                <label className={labelCls}>Tab Heading</label>
+                <input
+                  value={form.shipping_info_title || ""}
+                  onChange={e => handleChange("shipping_info_title", e.target.value)}
+                  placeholder="Default: Farm-to-Doorstep Delivery"
+                  className={inputCls}
+                />
+              </div>
+              <div>
+                <label className={labelCls}>Shipping Policy Details</label>
+                <textarea
+                  rows={4}
+                  value={form.shipping_info || ""}
+                  onChange={e => handleChange("shipping_info", e.target.value)}
+                  placeholder="Leave blank to inherit global Shipping Info..."
+                  className={`${inputCls} resize-y`}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <h4 className="text-sm font-semibold text-slate-800">Return Policy Tab</h4>
+              <div>
+                <label className={labelCls}>Tab Heading</label>
+                <input
+                  value={form.return_policy_title || ""}
+                  onChange={e => handleChange("return_policy_title", e.target.value)}
+                  placeholder="Default: 100% Freshness Guarantee"
+                  className={inputCls}
+                />
+              </div>
+              <div>
+                <label className={labelCls}>Return Policy Details</label>
+                <textarea
+                  rows={4}
+                  value={form.return_policy || ""}
+                  onChange={e => handleChange("return_policy", e.target.value)}
+                  placeholder="Leave blank to inherit global Return Policy..."
+                  className={`${inputCls} resize-y`}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* 4. Farm Story Banner */}
+          <div className="space-y-4 border border-slate-100 rounded-xl p-4 bg-slate-50/40">
+            <h4 className="text-sm font-semibold text-slate-800">Our Farm Story Section (&quot;Growing Goodness Together&quot;)</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label className={labelCls}>Eyebrow Label</label>
+                <input
+                  value={form.farm_story_eyebrow || ""}
+                  onChange={e => handleChange("farm_story_eyebrow", e.target.value)}
+                  placeholder="Default: OUR FARM STORY"
+                  className={inputCls}
+                />
+              </div>
+              <div>
+                <label className={labelCls}>Story Heading</label>
+                <input
+                  value={form.farm_story_title || ""}
+                  onChange={e => handleChange("farm_story_title", e.target.value)}
+                  placeholder="Default: Growing Goodness Together"
+                  className={inputCls}
+                />
+              </div>
+              <div>
+                <label className={labelCls}>Button Text</label>
+                <input
+                  value={form.farm_story_cta_text || ""}
+                  onChange={e => handleChange("farm_story_cta_text", e.target.value)}
+                  placeholder="Default: Learn More"
+                  className={inputCls}
+                />
+              </div>
+              <div>
+                <label className={labelCls}>Button Link</label>
+                <input
+                  value={form.farm_story_cta_url || ""}
+                  onChange={e => handleChange("farm_story_cta_url", e.target.value)}
+                  placeholder="Default: /about"
+                  className={inputCls}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-start">
+              <div>
+                <label className={labelCls}>Story Description</label>
+                <textarea
+                  rows={3}
+                  value={form.farm_story_description || ""}
+                  onChange={e => handleChange("farm_story_description", e.target.value)}
+                  placeholder="Leave blank to inherit global Farm Story text..."
+                  className={`${inputCls} resize-y`}
+                />
+              </div>
+              <div>
+                <label className={labelCls}>Story Photo</label>
+                <div className="flex items-center gap-3">
+                  {farmStoryImagePreview && (
+                    <div className="relative">
+                      <img src={farmStoryImagePreview} alt="Farm story"
+                        className="w-24 h-16 rounded-lg object-cover border border-slate-200" />
+                      <button
+                        type="button"
+                        onClick={() => { setFarmStoryImageFile(null); setFarmStoryImagePreview(""); setFarmStoryImageRemoved(true); }}
+                        className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center cursor-pointer"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  )}
+                  <label className="flex flex-col items-center justify-center px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-gray-400">
+                    <Upload className="w-4 h-4 text-slate-400" />
+                    <span className="text-[11px] text-slate-500 mt-1">Upload photo</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={e => {
+                        const f = e.target.files?.[0];
+                        if (f) {
+                          setFarmStoryImageFile(f);
+                          setFarmStoryImagePreview(URL.createObjectURL(f));
+                          setFarmStoryImageRemoved(false);
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2 pt-2 border-t border-slate-200/70">
+              <div className="flex items-center justify-between">
+                <label className={`${labelCls} mb-0`}>Story Stats (up to 3)</label>
+                <button
+                  type="button"
+                  disabled={farmStoryStats.length >= 3}
+                  onClick={() => setFarmStoryStats(prev => [...prev, { icon: "sprout", value: "", label: "" }])}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 disabled:opacity-40 cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Add Stat
+                </button>
+              </div>
+              {farmStoryStats.length > 0 ? (
+                <div className="space-y-2">
+                  {farmStoryStats.map((st, idx) => (
+                    <div key={idx} className="grid grid-cols-[150px_110px_1fr_auto] gap-2 items-center">
+                      <select
+                        value={st.icon || "sprout"}
+                        onChange={e => setFarmStoryStats(prev => prev.map((s, i) => (i === idx ? { ...s, icon: e.target.value } : s)))}
+                        className={`${inputCls} text-xs py-2`}
+                      >
+                        {BADGE_ICON_OPTIONS.map(opt => (
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                      </select>
+                      <input
+                        value={st.value || ""}
+                        onChange={e => setFarmStoryStats(prev => prev.map((s, i) => (i === idx ? { ...s, value: e.target.value } : s)))}
+                        placeholder="120+"
+                        className={`${inputCls} text-xs py-2`}
+                      />
+                      <input
+                        value={st.label || ""}
+                        onChange={e => setFarmStoryStats(prev => prev.map((s, i) => (i === idx ? { ...s, label: e.target.value } : s)))}
+                        placeholder="Local Farmers"
+                        className={`${inputCls} text-xs py-2`}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setFarmStoryStats(prev => prev.filter((_, i) => i !== idx))}
+                        className="text-red-400 hover:text-red-600 cursor-pointer"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-slate-400">Inheriting global default stats (e.g., 120+ Local Farmers, 500+ Acres, 100% Organic).</p>
+              )}
+            </div>
           </div>
         </div>
       )}

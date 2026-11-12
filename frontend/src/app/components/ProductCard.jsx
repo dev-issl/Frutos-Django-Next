@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Check, Heart, ShoppingBag } from 'lucide-react'
+import { Check, Heart } from 'lucide-react'
 import { slugify } from '@/app/lib/slugify'
 import { useWishlist } from '@/app/context/WishlistContext'
 import { useAuth } from '@/app/context/AuthContext'
@@ -279,10 +279,7 @@ export default function ProductCard({
                     <span>Added</span>
                   </>
                 ) : effectiveInStock ? (
-                  <>
-                    <ShoppingBag className="w-3 h-3 shrink-0" strokeWidth={2.1} />
-                    <span>Add to Cart</span>
-                  </>
+                  <span>Add to Cart</span>
                 ) : (
                   <span>{notified ? 'Notified ✓' : 'Notify Me'}</span>
                 )}
@@ -405,13 +402,7 @@ export default function ProductCard({
                   <span>Added</span>
                 </>
               ) : effectiveInStock ? (
-                <>
-                  <ShoppingBag
-                    className="hidden xl:inline-block w-3 h-3 shrink-0"
-                    strokeWidth={2.1}
-                  />
-                  <span>Add to Cart</span>
-                </>
+                <span>Add to Cart</span>
               ) : (
                 <span>{notified ? 'Notified ✓' : 'Notify Me'}</span>
               )}
