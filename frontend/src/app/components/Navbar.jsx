@@ -22,6 +22,7 @@ import {
 import { useCart } from '@/app/context/CartContext'
 import { useAuth } from '@/app/context/AuthContext'
 import AuthModal from '@/app/components/AuthModal'
+import MobileNavModal from '@/app/components/MobileNavModal'
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api').replace(/\/$/, '')
 const MEDIA_BASE = API_BASE.replace(/\/api$/, '')
@@ -140,7 +141,12 @@ function ProfileMenu({ user, logout }) {
 }
 
 // ── Main Navbar ──────────────────────────────────────────────────────────────
-export default function Navbar({ navbarLogoUrl = '', brandName = 'El Árbol', navbarTagline = '' }) {
+export default function Navbar({
+  navbarLogoUrl = '',
+  brandName = 'El Árbol',
+  navbarTagline = '',
+  socialLinks = [],
+}) {
   const { user, isAuthenticated, logout, authFetch } = useAuth()
   const { data: session } = useSafeSession()
 
@@ -192,6 +198,7 @@ export default function Navbar({ navbarLogoUrl = '', brandName = 'El Árbol', na
           navbarLogoUrl: data.navbar_logo_url || data.logo_url || '',
           brandName: data.brand_name || '',
           navbarTagline: data.navbar_tagline || '',
+          socialLinks: data.social_links || null,
         })
       } catch {
         /* fallback to SSR props */
@@ -236,8 +243,10 @@ export default function Navbar({ navbarLogoUrl = '', brandName = 'El Árbol', na
   const activeLive = liveBranding?.forPropsKey === currentPropsKey ? liveBranding : null
   const activeBrandName = activeLive?.brandName || brandName || 'El Árbol'
   const activeTagline = activeLive?.navbarTagline || navbarTagline || 'Fresh. Local. Together.'
+  const activeSocialLinks = activeLive?.socialLinks || socialLinks
   const resolvedLogo = resolveLogoUrl(activeLive?.navbarLogoUrl || navbarLogoUrl || '/el-erbol-logo.png')
   const showImageLogo = Boolean(resolvedLogo) && failedLogoSrc !== resolvedLogo
+  const closeMobileMenu = useCallback(() => setOpen(false), [])
 
   // Sticky floating pill scroll transition with hysteresis to prevent bounce
   useEffect(() => {
@@ -549,7 +558,7 @@ export default function Navbar({ navbarLogoUrl = '', brandName = 'El Árbol', na
               }}
             >
               {/* ── Left Brand Logo + Name + Tagline (Integrated with Backend Site Config) ── */}
-              <Link href="/" className="flex items-center gap-2.5 shrink-0 no-underline group">
+              <Link href="/" className="flex items-center gap-2.5 min-w-0 shrink no-underline group">
                 <div className="h-9 md:h-[38px] min-w-[36px] max-w-[100px] rounded-full flex items-center justify-center shrink-0 overflow-hidden transition-transform duration-200 group-hover:scale-[1.03]">
                   {showImageLogo ? (
                     <Image
@@ -596,8 +605,9 @@ export default function Navbar({ navbarLogoUrl = '', brandName = 'El Árbol', na
                     </svg>
                   )}
                 </div>
-                <div className="flex flex-col">
+                <div className="flex flex-col min-w-0">
                   <span
+                    className="truncate"
                     style={{
                       fontFamily: 'var(--font-newsreader), "Playfair Display", Georgia, serif',
                       fontSize: '18px',
@@ -610,6 +620,7 @@ export default function Navbar({ navbarLogoUrl = '', brandName = 'El Árbol', na
                     {activeBrandName}
                   </span>
                   <span
+                    className="truncate"
                     style={{
                       fontFamily: 'var(--font-newsreader), "Playfair Display", Georgia, serif',
                       fontSize: '10px',
@@ -860,7 +871,7 @@ export default function Navbar({ navbarLogoUrl = '', brandName = 'El Árbol', na
               </div>
 
               {/* ── Mobile Right Controls ── */}
-              <div className="flex md:hidden items-center gap-1 ml-auto">
+              <div className="flex md:hidden items-center gap-1 ml-auto shrink-0">
                 <button
                   type="button"
                   onClick={toggleMobileSearch}
@@ -960,59 +971,23 @@ export default function Navbar({ navbarLogoUrl = '', brandName = 'El Árbol', na
         </div>
       </header>
 
-      {/* Mobile Navigation Drawer */}
-      {open && (
-        <div className="fixed inset-0 pt-[84px] bg-[#EFF9F2] z-40 px-6 pb-10 flex flex-col md:hidden overflow-y-auto">
-          {navLinks.map(({ label, href, Icon }) => {
-            const active = isActive(href)
-            return (
-              <Link
-                key={label}
-                href={href}
-                onClick={() => setOpen(false)}
-                className="border-b border-[#CFE0D5] py-3.5 flex items-center justify-between no-underline"
-                style={{
-                  fontFamily: 'var(--font-newsreader), "Playfair Display", Georgia, serif',
-                  fontSize: '1.25rem',
-                  fontWeight: 600,
-                  color: active ? '#0C4429' : '#1E3F34',
-                }}
-              >
-                <span className="inline-flex items-center gap-2.5">
-                  <Icon className="w-[18px] h-[18px]" strokeWidth={1.85} />
-                  <span>{label}</span>
-                </span>
-                {active && <span className="w-2.5 h-2.5 rounded-full bg-[#357A38]" />}
-              </Link>
-            )
-          })}
-
-          {!isAuthenticated && !isWholesaleUser && (
-            <div className="flex gap-3 mt-6">
-              <button
-                type="button"
-                onClick={() => {
-                  setOpen(false)
-                  openLogin()
-                }}
-                className="flex-1 text-center border border-[#0C4429] rounded-full bg-transparent cursor-pointer text-[13.5px] font-semibold text-[#0C4429] py-2.5"
-              >
-                Sign In
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setOpen(false)
-                  openSignup()
-                }}
-                className="flex-1 text-center bg-[#0C4429] text-white rounded-full border-none cursor-pointer text-[13.5px] font-semibold py-2.5"
-              >
-                Sign Up
-              </button>
-            </div>
-          )}
-        </div>
-      )}
+      {/* Mobile Navigation Modal */}
+      <MobileNavModal
+        open={open}
+        onClose={closeMobileMenu}
+        navLinks={navLinks}
+        isActive={isActive}
+        brandName={activeBrandName}
+        tagline={activeTagline}
+        logoSrc={showImageLogo ? resolvedLogo : '/el-erbol-logo.png'}
+        isAuthenticated={isAuthenticated}
+        isWholesaleUser={isWholesaleUser}
+        wholesaleName={wholesaleName}
+        onOpenLogin={openLogin}
+        onOpenSignup={openSignup}
+        onLogout={logout}
+        socialLinks={activeSocialLinks}
+      />
 
       <AuthModal isOpen={authOpen} onClose={() => setAuthOpen(false)} defaultMode={authMode} />
     </>

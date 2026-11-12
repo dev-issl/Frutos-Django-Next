@@ -88,6 +88,8 @@ export default async function RootLayout({ children }) {
                 <NavbarWrapper
                   navbarLogoUrl={siteConfig?.navbar_logo_url || ''}
                   brandName={siteConfig?.brand_name || 'El Árbol'}
+                  navbarTagline={siteConfig?.navbar_tagline || ''}
+                  socialLinks={siteConfig?.social_links || []}
                 />
                 <main style={{ background: '#EFF9F2', minHeight: '100vh' }} className="md:pb-0">
                   {children}

@@ -261,6 +261,8 @@ function normalizeProduct(p) {
         origin: p.origin || '',
         rating: Number(p.rating || p.average_rating || 0),
         reviews: Number(p.review_count !== undefined ? p.review_count : (Array.isArray(p.reviews) ? p.reviews.length : p.reviews || 0)),
+        orderCount: Number(p.order_count ?? p.total_ordered ?? 0),
+        createdAt: p.created_at || p.createdAt || null,
         reviewsList: Array.isArray(p.reviews) ? p.reviews : [],
         userCanReview: p.user_can_review || { can_review: false, message: "" },
         description: p.description || '',
@@ -492,6 +494,65 @@ export async function submitReview(token, data) {
 
 // ─── Offers ───────────────────────────────────────────────────────────────────
 
+export function isOfferValid(offer, nowMs = Date.now()) {
+    if (!offer || offer.isActive === false) return false
+
+    if (offer.startDate) {
+        const startMs = Date.parse(offer.startDate)
+        if (Number.isNaN(startMs) || startMs > nowMs) return false
+    }
+
+    if (offer.endDate) {
+        const endMs = Date.parse(offer.endDate)
+        if (Number.isNaN(endMs) || endMs < nowMs) return false
+    }
+
+    if (!Array.isArray(offer.items) || offer.items.length === 0) return false
+    return offer.items.some((item) => item && item.productIsActive !== false && item.productInStock !== false)
+}
+
+function computeItemDiscountPct(item) {
+    const explicit = Number(item?.discountPercentage ?? item?.discount_percentage ?? 0)
+    if (Number.isFinite(explicit) && explicit > 0) {
+        return Math.round(explicit)
+    }
+    const orig = Number(item?.productPrice ?? item?.product?.price ?? 0)
+    const sale = Number(item?.offerPrice ?? item?.offer_price ?? 0)
+    if (orig > 0 && sale >= 0 && sale < orig) {
+        return Math.round(((orig - sale) / orig) * 100)
+    }
+    return 0
+}
+
+export function getOfferMaxDiscount(offer) {
+    if (!offer || !Array.isArray(offer.items)) return 0
+    let maxPct = 0
+    for (const it of offer.items) {
+        const pct = computeItemDiscountPct(it)
+        if (pct > maxPct) maxPct = pct
+    }
+    return maxPct
+}
+
+export function getOfferDiscountBadge(offer) {
+    if (!offer || !Array.isArray(offer.items) || offer.items.length === 0) {
+        return { percentage: 0, prefix: 'Special', hasDiscount: false }
+    }
+    const pcts = offer.items
+        .map(computeItemDiscountPct)
+        .filter((pct) => pct > 0)
+    if (pcts.length === 0) {
+        return { percentage: 0, prefix: 'Special', hasDiscount: false }
+    }
+    const maxPct = Math.max(...pcts)
+    const minPct = Math.min(...pcts)
+    return {
+        percentage: maxPct,
+        prefix: maxPct === minPct ? 'Flat' : 'Up to',
+        hasDiscount: true,
+    }
+}
+
 export async function getOffers() {
     try {
         const data = await apiFetch(`${BASE_ROUTE}/offers/`, { cache: 'no-store' })
@@ -504,6 +565,18 @@ export async function getOffers() {
             startDate: offer.start_date,
             endDate: offer.end_date,
             isActive: offer.is_active,
+            items: Array.isArray(offer.items)
+                ? offer.items.map(item => ({
+                    id: item.id,
+                    offerPrice: Number(item.offer_price),
+                    discountPercentage: computeItemDiscountPct(item),
+                    productId: item.product?.id ? String(item.product.id) : null,
+                    productPrice: Number(item.product?.price || 0),
+                    productName: item.product?.name || '',
+                    productIsActive: item.product?.is_active !== false,
+                    productInStock: Boolean(item.product?.is_unlimited_stock) || Number(item.product?.stock || 0) > 0,
+                }))
+                : [],
         }))
     } catch (error) {
         console.warn(`[getOffers] Error fetching offers: ${error.message}`)
@@ -525,11 +598,16 @@ export async function getOfferBySlug(slug) {
             isActive: data.is_active,
             products: data.items ? data.items.map(item => {
                 const normalized = normalizeProduct(item.product);
+                const retailPrice = Number(item.product?.price || normalized.oldPrice || normalized.price || 0);
+                const offerPrice = Number(item.offer_price);
                 return {
                     ...normalized,
-                    oldPrice: normalized.price,
-                    price: Number(item.offer_price),
-                    onSale: true, // We can optionally force this to true to highlight the offer price
+                    oldPrice: retailPrice > offerPrice ? retailPrice : null,
+                    price: offerPrice,
+                    displayPrice: offerPrice,
+                    wholesalePrice: null,
+                    discountPercentage: computeItemDiscountPct(item),
+                    onSale: true,
                 };
             }) : [],
         }

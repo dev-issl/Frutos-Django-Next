@@ -308,6 +308,7 @@ class ProductSerializer(serializers.ModelSerializer):
     thumbnail_url = serializers.SerializerMethodField()
     rating = serializers.SerializerMethodField()
     review_count = serializers.SerializerMethodField()
+    order_count = serializers.SerializerMethodField()
     user_can_review = serializers.SerializerMethodField()
 
     created_by_name = serializers.CharField(source='created_by.name', read_only=True)
@@ -336,7 +337,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'weight', 'length', 'width', 'height',  # Added physical properties for shipping
             'thumbnail_url', 'specifications', 'additional_images',
             'origin', 'unit', 'wholesale_unit', 'restaurant_unit', 'badge', 'badge_color', 'variant', 'variants',
-            'colors', 'sizes', 'reviews', 'rating', 'review_count', 'user_can_review',
+            'colors', 'sizes', 'reviews', 'rating', 'review_count', 'order_count', 'user_can_review',
             'store_stocks',
             'created_at', 'updated_at', 'created_by_name', 'updated_by_name',
             'created_by_role', 'updated_by_role'
@@ -412,6 +413,9 @@ class ProductSerializer(serializers.ModelSerializer):
 
     def get_review_count(self, obj):
         return obj.reviews.count()
+
+    def get_order_count(self, obj):
+        return int(getattr(obj, 'total_ordered', 0) or 0)
         
     def get_user_can_review(self, obj):
         request = self.context.get('request')
@@ -726,30 +730,72 @@ class WishlistSerializer(serializers.ModelSerializer):
         wishlist, created = __import__('products.models', fromlist=['Wishlist']).Wishlist.objects.get_or_create(user=user, product=product)
         return wishlist
 
-class OfferItemSerializer(serializers.ModelSerializer):
-    product = ProductSerializer(read_only=True)
-    
+class OfferProductSummarySerializer(serializers.ModelSerializer):
+    """Lightweight product payload for offer cards, offer detail grid, and dashboard selection."""
+    category = CategorySerializer(read_only=True)
+    sub_category = SubCategorySerializer(read_only=True)
+    brand = BrandSerializer(read_only=True)
+    additional_images = ProductAdditionalImageSerializer(many=True, read_only=True)
+    thumbnail_url = serializers.SerializerMethodField()
+
     class Meta:
-        model = __import__('products.models', fromlist=['OfferItem']).OfferItem
-        fields = ['id', 'product', 'offer_price']
+        model = Product
+        fields = [
+            'id', 'name', 'slug', 'price', 'discount_price', 'wholesale_price', 'minimum_purchase',
+            'stock', 'is_unlimited_stock', 'is_unlimited_wholesale_stock', 'is_unlimited_restaurant_stock',
+            'is_active', 'thumbnail_url', 'additional_images', 'badge', 'badge_color', 'variant',
+            'unit', 'short_description', 'category', 'sub_category', 'brand',
+        ]
+
+    def get_thumbnail_url(self, obj):
+        request = self.context.get('request')
+        if obj.thumbnail and hasattr(obj.thumbnail, 'url'):
+            if request:
+                return request.build_absolute_uri(obj.thumbnail.url)
+            return obj.thumbnail.url
+        return None
+
+
+class OfferItemSerializer(serializers.ModelSerializer):
+    product = OfferProductSummarySerializer(read_only=True)
+    discount_percentage = serializers.SerializerMethodField()
+
+    class Meta:
+        model = OfferItem
+        fields = ['id', 'product', 'offer_price', 'discount_percentage']
+
+    def get_discount_percentage(self, obj):
+        if obj.discount_percentage is not None:
+            return float(obj.discount_percentage)
+        try:
+            orig = float(obj.product.price or 0)
+            sale = float(obj.offer_price or 0)
+            if orig > 0 and 0 <= sale < orig:
+                return round(((orig - sale) / orig) * 100, 2)
+        except Exception:
+            pass
+        return 0.0
+
 
 class OfferSerializer(serializers.ModelSerializer):
     banner_image_url = serializers.SerializerMethodField()
-    items_data = serializers.CharField(write_only=True, required=False)
+    items_data = serializers.CharField(write_only=True, required=False, allow_blank=True)
     items = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = Offer
-        fields = ['id', 'title', 'slug', 'banner_image', 'banner_image_url', 'description', 'start_date', 'end_date', 'is_active', 'created_at', 'items_data', 'items']
+        fields = [
+            'id', 'title', 'slug', 'banner_image', 'banner_image_url', 'description',
+            'start_date', 'end_date', 'is_active', 'created_at', 'items_data', 'items',
+        ]
         extra_kwargs = {
-            'slug': {'required': False, 'allow_blank': True}
+            'slug': {'required': False, 'allow_blank': True},
+            'banner_image': {'required': False, 'allow_null': True},
         }
 
     def get_items(self, obj):
-        """Return offer items with product info (for dashboard edit form)."""
-        qs = obj.items.select_related(
-            'product', 'product__category', 'product__brand', 'product__sub_category'
-        ).prefetch_related('product__additional_images')
+        """Return offer items using the viewset prefetch cache to avoid N+1 queries."""
+        qs = obj.items.all()
         return OfferItemSerializer(qs, many=True, context=self.context).data
 
     def get_banner_image_url(self, obj):
@@ -763,7 +809,8 @@ class OfferSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         items_json = validated_data.pop('items_data', None)
         offer = super().create(validated_data)
-        self._handle_items(offer, items_json)
+        if items_json is not None:
+            self._handle_items(offer, items_json)
         return offer
 
     def update(self, instance, validated_data):
@@ -774,24 +821,85 @@ class OfferSerializer(serializers.ModelSerializer):
         return offer
 
     def _handle_items(self, offer, items_json):
-        if items_json:
-            import json
-            try:
-                items = json.loads(items_json)
-                offer.items.all().delete()
-                OfferItem = __import__('products.models', fromlist=['OfferItem']).OfferItem
-                Product = __import__('products.models', fromlist=['Product']).Product
-                
-                offer_items = []
-                for item in items:
-                    product_id = item.get('product_id') or item.get('id')
-                    offer_price = item.get('offer_price')
-                    if product_id and offer_price:
-                        product = Product.objects.get(pk=product_id)
-                        offer_items.append(OfferItem(offer=offer, product=product, offer_price=offer_price))
-                OfferItem.objects.bulk_create(offer_items)
-            except Exception as e:
-                pass
+        from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
+
+        if items_json in (None, ''):
+            return
+        try:
+            items = json.loads(items_json) if isinstance(items_json, str) else items_json
+        except Exception as exc:
+            raise serializers.ValidationError({'items_data': 'Invalid items payload.'}) from exc
+
+        if not isinstance(items, list):
+            raise serializers.ValidationError({'items_data': 'Expected a list of offer items.'})
+
+        product_ids = [item.get('product_id') or item.get('id') for item in items if isinstance(item, dict)]
+        product_ids = [pid for pid in product_ids if pid]
+        products_by_id = Product.objects.in_bulk(product_ids) if product_ids else {}
+
+        offer_items = []
+        seen_ids = set()
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            product_id = item.get('product_id') or item.get('id')
+            if not product_id or str(product_id) in seen_ids:
+                continue
+            product = products_by_id.get(product_id)
+            if not product:
+                # Handle UUID/string mismatch if in_bulk keys are UUID objects
+                for k, prod_obj in products_by_id.items():
+                    if str(k) == str(product_id):
+                        product = prod_obj
+                        break
+            if not product:
+                continue
+            seen_ids.add(str(product_id))
+
+            base_price = Decimal(str(product.price or 0))
+            raw_pct = item.get('discount_percentage')
+            raw_price = item.get('offer_price')
+
+            pct_val = None
+            if raw_pct not in (None, '', 'null'):
+                try:
+                    pct_val = Decimal(str(raw_pct))
+                    pct_val = max(Decimal('0'), min(Decimal('100'), pct_val)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+                except InvalidOperation:
+                    pct_val = None
+
+            price_val = None
+            if raw_price not in (None, '', 'null'):
+                try:
+                    price_val = max(Decimal('0'), Decimal(str(raw_price))).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+                except InvalidOperation:
+                    price_val = None
+
+            if price_val is None and pct_val is not None:
+                price_val = (base_price * (Decimal('1') - pct_val / Decimal('100'))).quantize(
+                    Decimal('0.01'), rounding=ROUND_HALF_UP
+                )
+            elif pct_val is None and price_val is not None and base_price > 0 and price_val < base_price:
+                pct_val = (((base_price - price_val) / base_price) * Decimal('100')).quantize(
+                    Decimal('0.01'), rounding=ROUND_HALF_UP
+                )
+
+            if price_val is None:
+                continue
+
+            offer_items.append(
+                OfferItem(
+                    offer=offer,
+                    product=product,
+                    offer_price=price_val,
+                    discount_percentage=pct_val,
+                )
+            )
+
+        offer.items.all().delete()
+        if offer_items:
+            OfferItem.objects.bulk_create(offer_items)
+
 
 class OfferDetailSerializer(OfferSerializer):
     items = OfferItemSerializer(many=True, read_only=True)

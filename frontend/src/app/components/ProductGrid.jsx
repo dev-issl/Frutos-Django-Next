@@ -20,7 +20,7 @@ const FALLBACK_CATEGORY_CARDS = [
   { id: 'Vegetables', label: 'Vegetables', image: '/homepage/cat_card_vegetables.webp', fallbackImage: '/homepage/cat_card_vegetables.webp' },
   { id: 'Dairy', label: 'Dairy', image: '/homepage/cat_card_dairy.webp', fallbackImage: '/homepage/cat_card_dairy.webp' },
   { id: 'Organic', label: 'Organic', image: '/homepage/cat_card_organic.webp', fallbackImage: '/homepage/cat_card_organic.webp' },
-  { id: 'Others', label: 'Others', href: '/shop', image: '/homepage/cat_card_others.webp', fallbackImage: '/homepage/cat_card_others.webp' },
+  { id: '__browse_all__', label: 'All Products', href: '/shop', image: '/homepage/cat_card_others.webp', fallbackImage: '/homepage/cat_card_others.webp' },
 ]
 
 // 20 balanced showcase templates so Default ('All') and every Category filter ('Fruits', 'Vegetables', 'Dairy', 'Organic') render crisp dedicated items
@@ -256,8 +256,9 @@ export default function ProductGrid({
 
     const mapped = categories
       .filter((c) => {
-        const name = typeof c === 'string' ? c : c?.name
-        return Boolean(name) && name !== 'All' && name !== 'On Sale'
+        const name = (typeof c === 'string' ? c : c?.name) || ''
+        const lower = name.trim().toLowerCase()
+        return Boolean(lower) && lower !== 'all' && lower !== 'on sale' && lower !== 'all products' && lower !== 'all produce'
       })
       .map((c) => {
         const obj = typeof c === 'object' && c !== null ? c : { name: c }
@@ -275,19 +276,16 @@ export default function ProductGrid({
       })
 
     if (mapped.length === 0) return FALLBACK_CATEGORY_CARDS
-    if (mapped.length < 3) {
-      return [
-        ...mapped,
-        {
-          id: '__browse_all__',
-          label: 'All Produce',
-          href: '/shop',
-          image: '/homepage/cat_card_others.webp',
-          fallbackImage: '/homepage/cat_card_others.webp',
-        },
-      ]
-    }
-    return mapped
+    return [
+      ...mapped,
+      {
+        id: '__browse_all__',
+        label: 'All Products',
+        href: '/shop',
+        image: '/homepage/cat_card_others.webp',
+        fallbackImage: '/homepage/cat_card_others.webp',
+      },
+    ]
   }, [categories])
 
   const filtered = useMemo(() => {

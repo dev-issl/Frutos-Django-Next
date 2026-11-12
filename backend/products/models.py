@@ -454,7 +454,7 @@ class CategoryMinimumOrderQuantity(models.Model):
 class Offer(models.Model):
     title = models.CharField(max_length=255, db_index=True)
     slug = models.SlugField(unique=True, max_length=255, db_index=True)
-    banner_image = models.ImageField(upload_to='offers/banners/', help_text="Banner image for the offer")
+    banner_image = models.ImageField(upload_to='offers/banners/', blank=True, null=True, help_text="Banner image for the offer")
     description = CKEditor5Field('Description', config_name='default', blank=True, null=True)
     start_date = models.DateTimeField(blank=True, null=True, help_text="Optional start date for the offer")
     end_date = models.DateTimeField(blank=True, null=True, help_text="Optional end date for the offer timer")
@@ -484,9 +484,30 @@ class OfferItem(models.Model):
     offer = models.ForeignKey(Offer, related_name='items', on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     offer_price = models.DecimalField(max_digits=10, decimal_places=2, help_text="Custom price for this product during the offer")
+    discount_percentage = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        blank=True,
+        null=True,
+        help_text="Discount percentage for this product during the offer (e.g., 30.00 for 30% OFF)"
+    )
 
     class Meta:
         unique_together = ('offer', 'product')
+
+    def save(self, *args, **kwargs):
+        from decimal import Decimal, ROUND_HALF_UP
+        base_price = self.product.price if self.product_id and self.product else None
+        if base_price and base_price > 0:
+            if self.discount_percentage is not None and (self.offer_price is None or self.offer_price == 0):
+                pct = max(Decimal('0'), min(Decimal('100'), Decimal(str(self.discount_percentage))))
+                self.offer_price = (base_price * (Decimal('1') - pct / Decimal('100'))).quantize(
+                    Decimal('0.01'), rounding=ROUND_HALF_UP
+                )
+            elif self.discount_percentage is None and self.offer_price is not None and self.offer_price < base_price:
+                pct = ((base_price - Decimal(str(self.offer_price))) / base_price) * Decimal('100')
+                self.discount_percentage = pct.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.product.name} in {self.offer.title}"

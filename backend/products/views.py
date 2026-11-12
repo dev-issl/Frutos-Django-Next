@@ -11,7 +11,8 @@ from rest_framework import status
 from rest_framework.views import APIView
 from orders.models import Order
 from .models import Product, ProductDetailSettings, Category, SubCategory, Color, Brand, Size, DisplayUnit, ProductSpecification, ProductAdditionalImage, Review, Offer, ProductStoreStock
-from django.db.models import Count, ProtectedError, Prefetch, Q
+from django.db.models import Count, ProtectedError, Prefetch, Q, Sum, Value
+from django.db.models.functions import Coalesce
 from .serializers import (
     ProductSerializer, ProductWriteSerializer, ProductDetailSettingsSerializer,
     CategorySerializer, SubCategorySerializer,
@@ -83,6 +84,11 @@ class ProductViewSet(viewsets.ModelViewSet):
             'colors', 'sizes', 'reviews__user', 'specifications',
             'additional_images', 'shipping_category__allowed_shipping_methods',
             'shipping_category__allowed_shipping_methods__shipping_tiers'
+        ).annotate(
+            total_ordered=Coalesce(
+                Sum('orderitem__quantity', filter=~Q(orderitem__order__status='CANCELLED')),
+                Value(0),
+            )
         ).order_by('-created_at')
         
         store_id = self.request.query_params.get('store')
@@ -956,6 +962,7 @@ class OfferViewSet(viewsets.ModelViewSet):
             'items__product__category',
             'items__product__brand',
             'items__product__sub_category',
+            'items__product__sub_category__category',
             'items__product__additional_images',
         ).order_by('-created_at')
         if self.request.user and self.request.user.is_authenticated and (self.request.user.is_superuser or getattr(self.request.user, 'user_type', '') == 'ADMIN'):

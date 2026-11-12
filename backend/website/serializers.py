@@ -194,6 +194,7 @@ class HomePageContentSerializer(serializers.ModelSerializer):
         model = HomePageContent
         fields = [
             'id', 'hero_section', 'how_it_works', 'steps', 'leftover_banner',
+            'featured_collections', 'testimonials', 'faqs',
             'hero_image_desktop', 'hero_image_mobile', 'leftover_banner_image',
             'hero_image_desktop_url', 'hero_image_mobile_url', 'leftover_banner_image_url'
         ]

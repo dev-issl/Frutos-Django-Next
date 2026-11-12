@@ -570,12 +570,28 @@ class HomePageContentViewSet(viewsets.ModelViewSet):
             data['leftover_banner_image'] = request.FILES['leftover_banner_image']
             
         import json
-        for field in ['hero_section', 'how_it_works', 'steps', 'leftover_banner']:
+        for field in ['hero_section', 'how_it_works', 'steps', 'leftover_banner', 'featured_collections', 'testimonials', 'faqs']:
             if field in data and isinstance(data[field], str):
                 try:
                     data[field] = json.loads(data[field])
                 except json.JSONDecodeError:
                     pass
+
+        fc = data.get('featured_collections')
+        if isinstance(fc, dict):
+            from django.core.files.storage import default_storage
+            import uuid
+            for group_key, file_prefix in [('collections', 'collection_image_'), ('promos', 'promo_image_')]:
+                items = fc.get(group_key)
+                if isinstance(items, list):
+                    for idx, item in enumerate(items):
+                        file_key = f'{file_prefix}{idx}'
+                        if file_key in request.FILES and isinstance(item, dict):
+                            image = request.FILES[file_key]
+                            ext = image.name.split('.')[-1] if '.' in image.name else 'webp'
+                            filename = f"homepage/collections/{file_prefix}{idx}_{uuid.uuid4().hex}.{ext}"
+                            saved_path = default_storage.save(filename, image)
+                            item['image_url'] = request.build_absolute_uri(default_storage.url(saved_path))
             
         partial = kwargs.pop('partial', False)
         serializer = self.get_serializer(instance, data=data, partial=partial)

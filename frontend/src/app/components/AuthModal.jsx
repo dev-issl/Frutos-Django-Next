@@ -1,48 +1,108 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
+import Image from 'next/image'
+import {
+  Mail,
+  Lock,
+  User,
+  UserCheck,
+  UserPlus,
+  ArrowRight,
+  ArrowLeft,
+  X,
+  Leaf,
+  Truck,
+  ShieldCheck,
+  Eye,
+  EyeOff,
+} from 'lucide-react'
 import { useAuth } from '@/app/context/AuthContext'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'
 
-function PineTree() {
+function BrandTreeEmblem() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="#00694C">
-      <polygon points="12,2 5.5,10.5 8.5,10.5 3,18 21,18 15.5,10.5 18.5,10.5" />
-      <rect x="10.5" y="18" width="3" height="3.5" rx="0.4" />
+    <div className="w-11 h-11 rounded-full border-[1.75px] border-[#15543A] bg-white/85 flex items-center justify-center shrink-0 shadow-xs">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path
+          d="M12 3.2C8.8 3.2 6.4 5.4 6.2 8.2C4.7 8.8 3.8 10.2 4 11.9C4.2 13.8 5.9 15 7.9 15H16.1C18.1 15 19.8 13.8 20 11.9C20.2 10.2 19.3 8.8 17.8 8.2C17.6 5.4 15.2 3.2 12 3.2Z"
+          fill="#15543A"
+        />
+        <path
+          d="M12 12.5V20.5M12 15.2L9.4 13.2M12 16.4L14.6 14.3"
+          stroke="#EFF5E8"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+        />
+        <rect x="10.8" y="15" width="2.4" height="5.5" rx="0.8" fill="#15543A" />
+      </svg>
+    </div>
+  )
+}
+
+function GoogleIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        fill="#4285F4"
+        d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.14C3.26 21.3 7.31 24 12 24z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M5.28 14.24c-.24-.72-.38-1.49-.38-2.24s.14-1.52.38-2.24V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.99-3.14z"
+      />
+      <path
+        fill="#EA4335"
+        d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.99 3.14c.95-2.85 3.6-4.96 6.72-4.96z"
+      />
     </svg>
   )
 }
 
-function EyeIcon({ show }) {
-  return show ? (
-    <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
-      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
-    </svg>
-  ) : (
-    <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
-      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
-      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
-      <line x1="1" y1="1" x2="23" y2="23"/>
+function FacebookIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="11" fill="#1877F2" />
+      <path
+        fill="#FFFFFF"
+        d="M15.12 12.82l.46-2.98h-2.86V7.91c0-.82.4-1.61 1.68-1.61h1.3V3.76s-1.18-.2-2.31-.2c-2.36 0-3.9 1.43-3.9 4.02v2.26H6.88v2.98h2.61V20.5a10.9 10.9 0 003.23 0v-7.68h2.4z"
+      />
     </svg>
   )
 }
 
-// ── Forgot Password Steps ─────────────────────────────────────────────────────
+function GitHubIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="#181717" aria-hidden="true">
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M12 1.5C6.2 1.5 1.5 6.2 1.5 12c0 4.64 3.01 8.58 7.18 9.97.52.1.71-.23.71-.5 0-.25-.01-1.08-.01-1.96-2.92.63-3.54-1.24-3.54-1.24-.48-1.21-1.17-1.53-1.17-1.53-.95-.65.07-.64.07-.64 1.05.07 1.61 1.08 1.61 1.08.94 1.61 2.46 1.14 3.06.87.09-.68.37-1.14.67-1.4-2.33-.27-4.78-1.17-4.78-5.19 0-1.15.41-2.08 1.08-2.82-.11-.27-.47-1.33.1-2.78 0 0 .88-.28 2.89 1.08a10.05 10.05 0 015.26 0c2.01-1.36 2.89-1.08 2.89-1.08.57 1.45.21 2.51.1 2.78.67.74 1.08 1.67 1.08 2.82 0 4.03-2.46 4.92-4.8 5.18.38.32.72.97.72 1.95 0 1.41-.01 2.54-.01 2.89 0 .28.19.61.72.5A10.5 10.5 0 0022.5 12c0-5.8-4.7-10.5-10.5-10.5z"
+      />
+    </svg>
+  )
+}
+
+// ── Forgot Password Steps (Preserved 100%) ───────────────────────────────────
 
 function ForgotPasswordFlow({ onBack, onSuccess }) {
-  const [step, setStep]           = useState('email')   // email → otp → password → done
-  const [email, setEmail]         = useState('')
-  const [otp, setOtp]             = useState('')
-  const [password, setPassword]   = useState('')
-  const [confirm, setConfirm]     = useState('')
-  const [showPass, setShowPass]   = useState(false)
-  const [loading, setLoading]     = useState(false)
-  const [error, setError]         = useState('')
+  const [step, setStep] = useState('email') // email → otp → password → done
+  const [email, setEmail] = useState('')
+  const [otp, setOtp] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirm, setConfirm] = useState('')
+  const [showPass, setShowPass] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
   const [resendTimer, setResendTimer] = useState(0)
 
   useEffect(() => {
     if (resendTimer > 0) {
-      const t = setTimeout(() => setResendTimer(r => r - 1), 1000)
+      const t = setTimeout(() => setResendTimer((r) => r - 1), 1000)
       return () => clearTimeout(t)
     }
   }, [resendTimer])
@@ -53,7 +113,8 @@ function ForgotPasswordFlow({ onBack, onSuccess }) {
       setError('Please enter a valid email address.')
       return
     }
-    setLoading(true); setError('')
+    setLoading(true)
+    setError('')
     try {
       const res = await fetch(`${API_BASE}/auth/password-reset/send-otp/`, {
         method: 'POST',
@@ -73,16 +134,26 @@ function ForgotPasswordFlow({ onBack, onSuccess }) {
 
   async function handleVerifyOTP(e) {
     e.preventDefault()
-    if (otp.length !== 6) { setError('Enter the 6-digit OTP.'); return }
+    if (otp.length !== 6) {
+      setError('Enter the 6-digit OTP.')
+      return
+    }
     setStep('password')
     setError('')
   }
 
   async function handleResetPassword(e) {
     e.preventDefault()
-    if (password.length < 8) { setError('Password must be at least 8 characters.'); return }
-    if (password !== confirm) { setError('Passwords do not match.'); return }
-    setLoading(true); setError('')
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters.')
+      return
+    }
+    if (password !== confirm) {
+      setError('Passwords do not match.')
+      return
+    }
+    setLoading(true)
+    setError('')
     try {
       const res = await fetch(`${API_BASE}/auth/password-reset/verify/`, {
         method: 'POST',
@@ -94,7 +165,7 @@ function ForgotPasswordFlow({ onBack, onSuccess }) {
       setStep('done')
     } catch (err) {
       setError(err.message)
-      if (err.message.includes('OTP')) setStep('otp')  // OTP error হলে back to OTP step
+      if (err.message.includes('OTP')) setStep('otp')
     } finally {
       setLoading(false)
     }
@@ -102,7 +173,8 @@ function ForgotPasswordFlow({ onBack, onSuccess }) {
 
   async function handleResend() {
     if (resendTimer > 0) return
-    setLoading(true); setError('')
+    setLoading(true)
+    setError('')
     try {
       await fetch(`${API_BASE}/auth/password-reset/send-otp/`, {
         method: 'POST',
@@ -110,45 +182,54 @@ function ForgotPasswordFlow({ onBack, onSuccess }) {
         body: JSON.stringify({ email }),
       })
       setResendTimer(60)
-    } catch {}
-    finally { setLoading(false) }
-  }
-
-  const inp = {
-    width: '100%', padding: '10px 14px', border: '1.5px solid #BCCAC1',
-    borderRadius: '10px', background: '#FAFAF8', color: '#151E13',
-    fontSize: '14px', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit',
+    } catch {
+      /* ignore */
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
-    <div>
-      {/* Back button */}
+    <div className="auth-tab-reveal">
       {step !== 'done' && (
-        <button onClick={step === 'email' ? onBack : () => { setStep('email'); setError('') }}
-          style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', cursor: 'pointer', color: '#6D7A73', fontSize: '13px', padding: '0 0 16px', fontFamily: 'inherit' }}>
-          <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-            <path d="M19 12H5M12 5l-7 7 7 7"/>
-          </svg>
-          {step === 'email' ? 'Back to login' : 'Change email'}
+        <button
+          type="button"
+          onClick={
+            step === 'email'
+              ? onBack
+              : () => {
+                  setStep('email')
+                  setError('')
+                }
+          }
+          className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[#546E61] hover:text-[#15543A] bg-transparent border-none p-0 mb-4 cursor-pointer transition-colors"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          <span>{step === 'email' ? 'Back to login' : 'Change email'}</span>
         </button>
       )}
 
       {/* Step indicator */}
       {step !== 'done' && (
-        <div style={{ display: 'flex', gap: '6px', marginBottom: '20px' }}>
+        <div className="flex gap-1.5 mb-5">
           {['email', 'otp', 'password'].map((s, i) => (
-            <div key={s} style={{
-              flex: 1, height: '3px', borderRadius: '99px',
-              background: ['email', 'otp', 'password'].indexOf(step) >= i ? '#00694C' : '#E8F0EA',
-              transition: 'background .3s',
-            }} />
+            <div
+              key={s}
+              className="flex-1 h-1 rounded-full transition-colors duration-300"
+              style={{
+                background:
+                  ['email', 'otp', 'password'].indexOf(step) >= i
+                    ? '#15543A'
+                    : '#E2ECE0',
+              }}
+            />
           ))}
         </div>
       )}
 
       {/* Error banner */}
       {error && (
-        <div style={{ background: '#FFF0F0', border: '1px solid #FFCDD2', borderRadius: '10px', padding: '10px 14px', marginBottom: '16px', fontSize: '13px', color: '#BA1A1A' }}>
+        <div className="bg-[#FFF2F2] border border-[#F7CACA] rounded-xl px-3.5 py-2.5 mb-4 text-[13px] text-[#B82828]">
           {error}
         </div>
       )}
@@ -156,22 +237,31 @@ function ForgotPasswordFlow({ onBack, onSuccess }) {
       {/* STEP 1: Email */}
       {step === 'email' && (
         <form onSubmit={handleSendOTP}>
-          <h2 style={{ fontFamily: '"Playfair Display",Georgia,serif', fontSize: '22px', fontWeight: 700, color: '#151E13', margin: '0 0 6px' }}>
+          <h2
+            className="text-[24px] font-bold text-[#143D2C] mb-1 leading-tight"
+            style={{ fontFamily: 'var(--font-newsreader), Georgia, serif' }}
+          >
             Forgot password?
           </h2>
-          <p style={{ fontSize: '13.5px', color: '#6D7A73', margin: '0 0 20px', lineHeight: 1.5 }}>
-            Enter your email and we'll send a 6-digit OTP to reset your password.
+          <p className="text-[13px] text-[#5B7266] mb-5 leading-relaxed">
+            Enter your email and we&apos;ll send a 6-digit OTP to reset your password.
           </p>
-          <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#2D3A35', marginBottom: '6px' }}>
-            Email Address
-          </label>
-          <input style={inp} type="email" placeholder="you@example.com"
-            value={email} onChange={e => { setEmail(e.target.value); setError('') }}
-            onFocus={e => e.target.style.borderColor = '#00694C'}
-            onBlur={e => e.target.style.borderColor = '#BCCAC1'} />
-          <button type="submit" disabled={loading}
-            style={{ width: '100%', marginTop: '16px', padding: '11px', background: '#00694C', color: 'white', border: 'none', borderRadius: '10px', fontSize: '14.5px', fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1, fontFamily: 'inherit' }}>
-            {loading ? 'Sending…' : 'Send OTP'}
+          <div className="relative mb-4">
+            <Mail className="w-4 h-4 text-[#4B6B5C] absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              className="auth-pill-input pl-11 pr-4"
+              type="email"
+              placeholder="Email Address *"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value)
+                setError('')
+              }}
+            />
+          </div>
+          <button type="submit" disabled={loading} className="auth-submit-btn">
+            <span>{loading ? 'Sending…' : 'Send OTP'}</span>
+            {!loading && <ArrowRight className="w-4 h-4" />}
           </button>
         </form>
       )}
@@ -179,28 +269,44 @@ function ForgotPasswordFlow({ onBack, onSuccess }) {
       {/* STEP 2: OTP */}
       {step === 'otp' && (
         <form onSubmit={handleVerifyOTP}>
-          <h2 style={{ fontFamily: '"Playfair Display",Georgia,serif', fontSize: '22px', fontWeight: 700, color: '#151E13', margin: '0 0 6px' }}>
+          <h2
+            className="text-[24px] font-bold text-[#143D2C] mb-1 leading-tight"
+            style={{ fontFamily: 'var(--font-newsreader), Georgia, serif' }}
+          >
             Check your email
           </h2>
-          <p style={{ fontSize: '13.5px', color: '#6D7A73', margin: '0 0 20px', lineHeight: 1.5 }}>
-            We sent a 6-digit code to <strong style={{ color: '#151E13' }}>{email}</strong>. It expires in 10 minutes.
+          <p className="text-[13px] text-[#5B7266] mb-5 leading-relaxed">
+            We sent a 6-digit code to <strong className="text-[#143D2C]">{email}</strong>. It expires in 10 minutes.
           </p>
-          <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#2D3A35', marginBottom: '6px' }}>
-            Enter OTP
-          </label>
-          <input style={{ ...inp, letterSpacing: '0.3em', fontSize: '20px', textAlign: 'center', fontWeight: 700 }}
-            type="text" inputMode="numeric" maxLength={6} placeholder="──────"
-            value={otp} onChange={e => { setOtp(e.target.value.replace(/\D/g, '')); setError('') }}
-            onFocus={e => e.target.style.borderColor = '#00694C'}
-            onBlur={e => e.target.style.borderColor = '#BCCAC1'} />
-          <button type="submit" disabled={loading || otp.length !== 6}
-            style={{ width: '100%', marginTop: '16px', padding: '11px', background: '#00694C', color: 'white', border: 'none', borderRadius: '10px', fontSize: '14.5px', fontWeight: 600, cursor: (loading || otp.length !== 6) ? 'not-allowed' : 'pointer', opacity: (loading || otp.length !== 6) ? 0.65 : 1, fontFamily: 'inherit' }}>
-            Verify OTP
+          <input
+            className="auth-pill-input text-center text-[20px] font-bold tracking-[0.35em] px-4 mb-4"
+            type="text"
+            inputMode="numeric"
+            maxLength={6}
+            placeholder="──────"
+            value={otp}
+            onChange={(e) => {
+              setOtp(e.target.value.replace(/\D/g, ''))
+              setError('')
+            }}
+          />
+          <button
+            type="submit"
+            disabled={loading || otp.length !== 6}
+            className="auth-submit-btn"
+          >
+            <span>Verify OTP</span>
+            <ArrowRight className="w-4 h-4" />
           </button>
-          <p style={{ fontSize: '13px', color: '#6D7A73', textAlign: 'center', marginTop: '14px' }}>
-            Didn't receive it?{' '}
-            <button type="button" onClick={handleResend} disabled={resendTimer > 0}
-              style={{ color: resendTimer > 0 ? '#BCCAC1' : '#00694C', fontWeight: 600, background: 'none', border: 'none', cursor: resendTimer > 0 ? 'default' : 'pointer', padding: 0, fontSize: '13px', fontFamily: 'inherit' }}>
+          <p className="text-[12.5px] text-[#5B7266] text-center mt-4">
+            Didn&apos;t receive it?{' '}
+            <button
+              type="button"
+              onClick={handleResend}
+              disabled={resendTimer > 0}
+              className="font-semibold bg-transparent border-none p-0 cursor-pointer"
+              style={{ color: resendTimer > 0 ? '#9EB0A6' : '#15543A' }}
+            >
               {resendTimer > 0 ? `Resend in ${resendTimer}s` : 'Resend OTP'}
             </button>
           </p>
@@ -209,60 +315,77 @@ function ForgotPasswordFlow({ onBack, onSuccess }) {
 
       {/* STEP 3: New Password */}
       {step === 'password' && (
-        <form onSubmit={handleResetPassword}>
-          <h2 style={{ fontFamily: '"Playfair Display",Georgia,serif', fontSize: '22px', fontWeight: 700, color: '#151E13', margin: '0 0 6px' }}>
-            Set new password
-          </h2>
-          <p style={{ fontSize: '13.5px', color: '#6D7A73', margin: '0 0 20px' }}>
-            Choose a strong password for your account.
-          </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#2D3A35', marginBottom: '6px' }}>New Password</label>
-              <div style={{ position: 'relative' }}>
-                <input style={{ ...inp, paddingRight: '40px' }}
-                  type={showPass ? 'text' : 'password'} placeholder="Min. 8 characters"
-                  value={password} onChange={e => { setPassword(e.target.value); setError('') }}
-                  onFocus={e => e.target.style.borderColor = '#00694C'}
-                  onBlur={e => e.target.style.borderColor = '#BCCAC1'} />
-                <button type="button" onClick={() => setShowPass(p => !p)}
-                  style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#6D7A73', display: 'flex' }}>
-                  <EyeIcon show={showPass} />
-                </button>
-              </div>
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#2D3A35', marginBottom: '6px' }}>Confirm Password</label>
-              <input style={inp} type="password" placeholder="Re-enter password"
-                value={confirm} onChange={e => { setConfirm(e.target.value); setError('') }}
-                onFocus={e => e.target.style.borderColor = '#00694C'}
-                onBlur={e => e.target.style.borderColor = '#BCCAC1'} />
-            </div>
-            <button type="submit" disabled={loading}
-              style={{ padding: '11px', background: '#00694C', color: 'white', border: 'none', borderRadius: '10px', fontSize: '14.5px', fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1, fontFamily: 'inherit' }}>
-              {loading ? 'Resetting…' : 'Reset Password'}
+        <form onSubmit={handleResetPassword} className="space-y-3.5">
+          <div>
+            <h2
+              className="text-[24px] font-bold text-[#143D2C] mb-1 leading-tight"
+              style={{ fontFamily: 'var(--font-newsreader), Georgia, serif' }}
+            >
+              Set new password
+            </h2>
+            <p className="text-[13px] text-[#5B7266]">
+              Choose a strong password for your account.
+            </p>
+          </div>
+          <div className="relative">
+            <Lock className="w-4 h-4 text-[#4B6B5C] absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              className="auth-pill-input pl-11 pr-11"
+              type={showPass ? 'text' : 'password'}
+              placeholder="New Password (Min. 8 chars)"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value)
+                setError('')
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPass((p) => !p)}
+              aria-label={showPass ? 'Hide password' : 'Show password'}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#647D71] hover:text-[#15543A] bg-transparent border-none p-1 cursor-pointer flex items-center"
+            >
+              {showPass ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
             </button>
           </div>
+          <div className="relative">
+            <Lock className="w-4 h-4 text-[#4B6B5C] absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              className="auth-pill-input pl-11 pr-4"
+              type="password"
+              placeholder="Confirm Password"
+              value={confirm}
+              onChange={(e) => {
+                setConfirm(e.target.value)
+                setError('')
+              }}
+            />
+          </div>
+          <button type="submit" disabled={loading} className="auth-submit-btn">
+            <span>{loading ? 'Resetting…' : 'Reset Password'}</span>
+            {!loading && <ArrowRight className="w-4 h-4" />}
+          </button>
         </form>
       )}
 
       {/* STEP 4: Done */}
       {step === 'done' && (
-        <div style={{ textAlign: 'center', padding: '16px 0' }}>
-          <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: '#E7F1DF', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
-            <svg width="28" height="28" fill="none" stroke="#00694C" strokeWidth="2.5" viewBox="0 0 24 24">
-              <path d="M20 6 9 17l-5-5"/>
-            </svg>
+        <div className="text-center py-4">
+          <div className="w-16 h-16 rounded-full bg-[#E7F2E2] flex items-center justify-center mx-auto mb-4 text-[#15543A]">
+            <ShieldCheck className="w-8 h-8" />
           </div>
-          <h2 style={{ fontFamily: '"Playfair Display",Georgia,serif', fontSize: '22px', fontWeight: 700, color: '#151E13', margin: '0 0 10px' }}>
+          <h2
+            className="text-[24px] font-bold text-[#143D2C] mb-2"
+            style={{ fontFamily: 'var(--font-newsreader), Georgia, serif' }}
+          >
             Password reset!
           </h2>
-          <p style={{ fontSize: '13.5px', color: '#6D7A73', margin: '0 0 24px', lineHeight: 1.6 }}>
+          <p className="text-[13.5px] text-[#5B7266] mb-6 leading-relaxed">
             Your password has been updated. You can now log in with your new password.
           </p>
-          <button onClick={onSuccess}
-            style={{ width: '100%', padding: '11px', background: '#00694C', color: 'white', border: 'none', borderRadius: '10px', fontSize: '14.5px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
-            Go to Login
+          <button type="button" onClick={onSuccess} className="auth-submit-btn">
+            <span>Go to Login</span>
+            <ArrowRight className="w-4 h-4" />
           </button>
         </div>
       )}
@@ -273,64 +396,106 @@ function ForgotPasswordFlow({ onBack, onSuccess }) {
 // ── Main AuthModal ────────────────────────────────────────────────────────────
 
 export default function AuthModal({ isOpen, onClose, defaultMode = 'login' }) {
+  if (!isOpen) return null
+  return <AuthModalContent key={defaultMode} onClose={onClose} defaultMode={defaultMode} />
+}
+
+function AuthModalContent({ onClose, defaultMode = 'login' }) {
   const { login, register } = useAuth()
 
-  const [mode,        setMode]        = useState(defaultMode)
-  const [showForgot,  setShowForgot]  = useState(false)
-  const [showPass,    setShowPass]    = useState(false)
+  const [mode, setMode] = useState(defaultMode)
+  const [showForgot, setShowForgot] = useState(false)
+  const [showPass, setShowPass] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
-  const [loading,     setLoading]     = useState(false)
-  const [apiError,    setApiError]    = useState('')
-  const [formData,    setFormData]    = useState({
-    firstName: '', lastName: '', email: '', password: '', confirmPassword: '',
+  const [loading, setLoading] = useState(false)
+  const [apiError, setApiError] = useState('')
+  const [socialNotice, setSocialNotice] = useState('')
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
   })
   const [errors, setErrors] = useState({})
   const overlayRef = useRef(null)
 
-  useEffect(() => { setMode(defaultMode); setShowForgot(false) }, [defaultMode, isOpen])
   useEffect(() => {
-    document.body.style.overflow = isOpen ? 'hidden' : ''
-    return () => { document.body.style.overflow = '' }
-  }, [isOpen])
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = prevOverflow
+    }
+  }, [])
+
   useEffect(() => {
-    const h = (e) => { if (e.key === 'Escape') onClose() }
+    const h = (e) => {
+      if (e.key === 'Escape') onClose()
+    }
     window.addEventListener('keydown', h)
     return () => window.removeEventListener('keydown', h)
   }, [onClose])
 
   function switchMode(m) {
-    setMode(m); setErrors({}); setApiError(''); setShowForgot(false)
-    setFormData({ firstName: '', lastName: '', email: '', password: '', confirmPassword: '' })
+    setMode(m)
+    setErrors({})
+    setApiError('')
+    setSocialNotice('')
+    setShowForgot(false)
+    setFormData({
+      firstName: '',
+      lastName: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+    })
   }
 
   function handleChange(e) {
     const { name, value } = e.target
-    setFormData(p => ({ ...p, [name]: value }))
-    if (errors[name]) setErrors(p => ({ ...p, [name]: '' }))
+    setFormData((p) => ({ ...p, [name]: value }))
+    if (errors[name]) setErrors((p) => ({ ...p, [name]: '' }))
+    if (socialNotice) setSocialNotice('')
   }
 
   function validate() {
     const e = {}
-    if (mode === 'signup' && !formData.firstName.trim()) e.firstName = 'First name is required'
+    if (mode === 'signup' && !formData.firstName.trim()) {
+      e.firstName = 'First name is required'
+    }
     if (!formData.email.trim()) e.email = 'Email is required'
     else if (!/\S+@\S+\.\S+/.test(formData.email)) e.email = 'Enter a valid email'
     if (!formData.password) e.password = 'Password is required'
-    else if (mode === 'signup' && formData.password.length < 8) e.password = 'Min. 8 characters'
-    if (mode === 'signup' && formData.password !== formData.confirmPassword)
+    else if (mode === 'signup' && formData.password.length < 8) {
+      e.password = 'Min. 8 characters'
+    }
+    if (mode === 'signup' && formData.password !== formData.confirmPassword) {
       e.confirmPassword = 'Passwords do not match'
+    }
     return e
   }
 
   async function handleSubmit(e) {
     e.preventDefault()
     const errs = validate()
-    if (Object.keys(errs).length) { setErrors(errs); return }
-    setLoading(true); setApiError('')
+    if (Object.keys(errs).length) {
+      setErrors(errs)
+      return
+    }
+    setLoading(true)
+    setApiError('')
+    setSocialNotice('')
     try {
       if (mode === 'login') {
         await login(formData.email, formData.password)
       } else {
-        await register({ email: formData.email, password: formData.password, confirmPassword: formData.confirmPassword, firstName: formData.firstName, lastName: formData.lastName })
+        await register({
+          email: formData.email,
+          password: formData.password,
+          confirmPassword: formData.confirmPassword,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+        })
       }
       onClose()
     } catch (err) {
@@ -340,166 +505,577 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login' }) {
     }
   }
 
-  if (!isOpen) return null
+  function handleSocialClick(provider) {
+    setSocialNotice(
+      `${provider} sign-in is not enabled yet. Please continue with your email and password.`
+    )
+  }
 
   return (
-    <div ref={overlayRef} onClick={(e) => e.target === overlayRef.current && onClose()}
-      style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(8,28,20,0.55)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px 16px', overflowY: 'auto', animation: 'authFadeIn 0.18s ease' }}>
+    <div
+      ref={overlayRef}
+      onClick={(e) => e.target === overlayRef.current && onClose()}
+      className="fixed inset-0 z-[1000] flex items-center justify-center p-3 sm:p-6 overflow-y-auto bg-[#072217]/45 backdrop-blur-[6px]"
+      style={{ animation: 'authBackdropIn 180ms cubic-bezier(0.22, 1, 0.36, 1) forwards' }}
+    >
       <style>{`
-        @keyframes authFadeIn  { from{opacity:0} to{opacity:1} }
-        @keyframes authSlideUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
-        .ai{width:100%;padding:10px 14px;border:1.5px solid #BCCAC1;border-radius:10px;background:#FAFAF8;color:#151E13;font-size:14px;outline:none;transition:border-color .15s,box-shadow .15s;box-sizing:border-box;}
-        .ai:focus{border-color:#00694C;box-shadow:0 0 0 3px rgba(0,105,76,.12);}
-        .ai::placeholder{color:#9DAAA3;}
-        .ai-err{border-color:#C84040!important;}
-        .abp{width:100%;padding:11px;background:#00694C;color:white;border:none;border-radius:10px;font-size:14.5px;font-weight:600;cursor:pointer;transition:background .15s;}
-        .abp:hover:not(:disabled){background:#085041;}
-        .abp:disabled{opacity:.65;cursor:not-allowed;}
-        .pt{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#6D7A73;padding:2px;display:flex;align-items:center;}
-        .tab{flex:1;padding:9px 0;background:none;border:none;font-size:14px;cursor:pointer;border-radius:8px;transition:background .15s,color .15s;font-weight:500;}
-        .tab-a{background:white;color:#085041;box-shadow:0 1px 4px rgba(0,0,0,.08);}
-        .tab-i{color:#6D7A73;}
+        @keyframes authBackdropIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes authModalSpring {
+          0% {
+            opacity: 0;
+            transform: scale(0.93) translateY(14px);
+          }
+          100% {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+          }
+        }
+        @keyframes authTabReveal {
+          from {
+            opacity: 0;
+            transform: translateY(6px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .auth-tab-reveal {
+          animation: authTabReveal 190ms cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .auth-pill-input {
+          width: 100%;
+          height: 44px;
+          border: 1.35px solid #D3DDD1;
+          border-radius: 9999px;
+          background: #FCFDF9;
+          color: #133527;
+          font-size: 13.5px;
+          outline: none;
+          transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+          box-sizing: border-box;
+        }
+        .auth-pill-input:focus {
+          border-color: #15543A;
+          background: #FFFFFF;
+          box-shadow: 0 0 0 3px rgba(21, 84, 58, 0.12);
+        }
+        .auth-pill-input::placeholder {
+          color: #6B8275;
+        }
+        .auth-pill-input-err {
+          border-color: #C94242 !important;
+          background: #FFF9F9 !important;
+        }
+        .auth-submit-btn {
+          width: 100%;
+          height: 46px;
+          border-radius: 9999px;
+          background: #15543A;
+          color: #FFFFFF;
+          border: none;
+          font-size: 14.5px;
+          font-weight: 600;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          box-shadow: 0 6px 18px -4px rgba(21, 84, 58, 0.38);
+          transition: background-color 160ms ease, transform 130ms ease, box-shadow 160ms ease;
+        }
+        .auth-submit-btn:hover:not(:disabled) {
+          background: #0E422C;
+          box-shadow: 0 8px 22px -4px rgba(14, 66, 44, 0.45);
+        }
+        .auth-submit-btn:active:not(:disabled) {
+          transform: scale(0.985);
+        }
+        .auth-submit-btn:disabled {
+          opacity: 0.65;
+          cursor: not-allowed;
+        }
       `}</style>
 
-      <div style={{ background: '#FAFAF8', borderRadius: '20px', width: '100%', maxWidth: '420px', maxHeight: 'calc(100dvh - 96px)', display: 'flex', flexDirection: 'column', animation: 'authSlideUp 0.22s ease', boxShadow: '0 20px 60px rgba(8,28,20,.18), 0 4px 16px rgba(0,0,0,.08)', position: 'relative', overflow: 'hidden' }}>
+      {/* Main Two-Column Card */}
+      <div
+        className="relative w-full max-w-[820px] rounded-[24px] bg-[#FDFCF8] border border-[#E3EADA] overflow-hidden shadow-[0_28px_80px_-14px_rgba(7,34,23,0.42),0_10px_28px_-8px_rgba(7,34,23,0.16)] grid grid-cols-1 md:grid-cols-[44%_56%] max-h-[calc(100dvh-24px)]"
+        style={{
+          animation: 'authModalSpring 230ms cubic-bezier(0.16, 1, 0.3, 1) forwards',
+          willChange: 'transform, opacity',
+        }}
+      >
+        {/* ── Left Botanical Welcome Panel (Desktop/Tablet) ── */}
+        <div
+          className="hidden md:flex flex-col justify-between relative overflow-hidden px-6 pt-7 pb-5 select-none"
+          style={{
+            background:
+              'linear-gradient(180deg, #F6FAF0 0%, #EEF5E6 60%, #E5EFE0 100%)',
+          }}
+        >
+          {/* Subtle decorative botanical leaves on left edge */}
+          <svg
+            viewBox="0 0 180 340"
+            className="pointer-events-none absolute left-0 top-12 w-32 h-72 opacity-[0.22]"
+            aria-hidden="true"
+          >
+            <path
+              d="M12 290 C28 210 38 140 24 45 M24 95 C48 80 65 65 74 42 C50 48 34 66 24 95 Z M27 148 C58 134 80 112 92 84 C64 94 42 118 27 148 Z M23 200 C54 188 76 168 88 142 C60 152 38 174 23 200 Z"
+              fill="#729B79"
+              stroke="#5A8362"
+              strokeWidth="1.5"
+            />
+          </svg>
 
-        {/* Header */}
-        <div style={{ padding: '28px 28px 0', flexShrink: 0 }}>
-          <button onClick={onClose} style={{ position: 'absolute', top: '16px', right: '16px', width: '32px', height: '32px', borderRadius: '8px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6D7A73' }}>
-            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
-          </button>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '20px' }}>
-            <PineTree />
-            <span style={{ fontFamily: '"Playfair Display",Georgia,serif', fontSize: '20px', fontWeight: 700, color: '#085041' }}>El Árbol</span>
+          {/* Brand Header */}
+          <div className="relative z-10 flex flex-col items-center">
+            <div className="inline-flex items-center gap-2.5">
+              <BrandTreeEmblem />
+              <div className="text-left">
+                <p
+                  className="text-[22px] font-bold text-[#0F4934] leading-none"
+                  style={{ fontFamily: 'var(--font-newsreader), Georgia, serif' }}
+                >
+                  El Árbol
+                </p>
+                <p
+                  className="text-[11px] italic text-[#2B5A46] leading-tight mt-0.5"
+                  style={{ fontFamily: 'var(--font-newsreader), Georgia, serif' }}
+                >
+                  Fresh. Local. Together.
+                </p>
+              </div>
+            </div>
+
+            {/* Welcome Message */}
+            <div className="mt-7 text-center">
+              <h2
+                className="text-[31px] font-bold text-[#0E4A35] leading-[1.12] tracking-[-0.01em]"
+                style={{ fontFamily: 'var(--font-newsreader), Georgia, serif' }}
+              >
+                {showForgot
+                  ? 'Reset Password'
+                  : mode === 'login'
+                  ? 'Welcome Back!'
+                  : 'Join El Árbol!'}
+              </h2>
+              <p className="mt-2 text-[13px] text-[#355446] leading-[1.45] max-w-[230px] mx-auto">
+                {showForgot
+                  ? 'Quickly recover access to your fresh produce account'
+                  : mode === 'login'
+                  ? 'Sign in to continue your fresh shopping journey'
+                  : 'Create an account for fresh produce delivered to your door'}
+              </p>
+            </div>
           </div>
 
-          {/* Tabs — শুধু login/signup mode-এ দেখাবে, forgot-এ না */}
-          {!showForgot && (
-            <div style={{ display: 'flex', background: '#ECF7E4', borderRadius: '10px', padding: '4px', marginBottom: '4px', gap: '2px' }}>
-              <button className={`tab ${mode === 'login'  ? 'tab-a' : 'tab-i'}`} onClick={() => switchMode('login')}>Log In</button>
-              <button className={`tab ${mode === 'signup' ? 'tab-a' : 'tab-i'}`} onClick={() => switchMode('signup')}>Sign Up</button>
+          {/* Center-Bottom Produce Basket + Floating Trust Pill Bar */}
+          <div className="relative z-10 mt-3 flex flex-col items-center">
+            <div className="relative w-full h-[185px] flex items-end justify-center overflow-hidden">
+              <Image
+                src="/wholesale/hero-basket.webp"
+                alt="Fresh produce basket"
+                width={320}
+                height={200}
+                priority
+                unoptimized
+                className="w-[290px] h-auto object-contain mix-blend-multiply drop-shadow-[0_12px_20px_rgba(14,74,53,0.12)] translate-y-2"
+              />
             </div>
-          )}
+
+            {/* Frosted 3-item Trust Strip */}
+            <div className="relative z-20 -mt-5 w-full bg-white/90 backdrop-blur-sm border border-[#DAE5D4] rounded-[16px] px-2.5 py-2.5 shadow-[0_6px_18px_rgba(14,74,53,0.08)] grid grid-cols-3 divide-x divide-[#DCE6D6]">
+              <div className="flex flex-col items-center text-center px-1">
+                <Leaf className="w-4 h-4 text-[#15543A] mb-1" strokeWidth={2} />
+                <span className="text-[10.5px] font-semibold text-[#174231] leading-[1.2]">
+                  Fresh
+                  <br />
+                  Products
+                </span>
+              </div>
+              <div className="flex flex-col items-center text-center px-1">
+                <Truck className="w-4 h-4 text-[#15543A] mb-1" strokeWidth={2} />
+                <span className="text-[10.5px] font-semibold text-[#174231] leading-[1.2]">
+                  Fast
+                  <br />
+                  Delivery
+                </span>
+              </div>
+              <div className="flex flex-col items-center text-center px-1">
+                <ShieldCheck className="w-4 h-4 text-[#15543A] mb-1" strokeWidth={2} />
+                <span className="text-[10.5px] font-semibold text-[#174231] leading-[1.2]">
+                  Secure
+                  <br />
+                  Payment
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Body */}
-        <div style={{ padding: '20px 28px 28px', overflowY: 'auto' }}>
+        {/* ── Right Auth Form Panel ── */}
+        <div className="relative bg-[#FDFCF8] px-6 sm:px-8 pt-6 pb-7 overflow-y-auto flex flex-col justify-center">
+          {/* Top-right Close Button */}
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close modal"
+            className="absolute top-4 right-4 w-8 h-8 rounded-full bg-[#EDF3E8] hover:bg-[#DFEBDC] text-[#28493A] flex items-center justify-center border-none cursor-pointer transition-all duration-200 hover:scale-105"
+          >
+            <X className="w-4 h-4" strokeWidth={2.2} />
+          </button>
 
-          {/* Forgot Password Flow */}
+          {/* Compact Mobile Header (shown only below md) */}
+          <div className="flex md:hidden items-center gap-2.5 mb-4 pr-8">
+            <BrandTreeEmblem />
+            <div>
+              <p
+                className="text-[18px] font-bold text-[#0F4934] leading-none"
+                style={{ fontFamily: 'var(--font-newsreader), Georgia, serif' }}
+              >
+                El Árbol
+              </p>
+              <p
+                className="text-[10.5px] italic text-[#2B5A46] leading-tight mt-0.5"
+                style={{ fontFamily: 'var(--font-newsreader), Georgia, serif' }}
+              >
+                Fresh. Local. Together.
+              </p>
+            </div>
+          </div>
+
+          {/* Pill Tab Switcher (Log In | Sign Up) */}
+          {!showForgot && (
+            <div className="flex items-center bg-[#F6F8F0] border border-[#E1E8D7] rounded-full p-1 mb-5 max-w-[300px] mx-auto w-full">
+              <button
+                type="button"
+                onClick={() => switchMode('login')}
+                className={`flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-4 rounded-full text-[13px] font-semibold border-none cursor-pointer transition-all duration-200 ${
+                  mode === 'login'
+                    ? 'bg-[#15543A] text-white shadow-sm'
+                    : 'bg-transparent text-[#244435] hover:text-[#0E4A35]'
+                }`}
+              >
+                <UserCheck className="w-3.5 h-3.5 shrink-0" />
+                <span>Log In</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => switchMode('signup')}
+                className={`flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-4 rounded-full text-[13px] font-semibold border-none cursor-pointer transition-all duration-200 ${
+                  mode === 'signup'
+                    ? 'bg-[#15543A] text-white shadow-sm'
+                    : 'bg-transparent text-[#244435] hover:text-[#0E4A35]'
+                }`}
+              >
+                <UserPlus className="w-3.5 h-3.5 shrink-0" />
+                <span>Sign Up</span>
+              </button>
+            </div>
+          )}
+
+          {/* Body Content */}
           {showForgot ? (
             <ForgotPasswordFlow
               onBack={() => setShowForgot(false)}
-              onSuccess={() => { setShowForgot(false); switchMode('login') }}
+              onSuccess={() => {
+                setShowForgot(false)
+                switchMode('login')
+              }}
             />
           ) : (
-            <>
-              <div style={{ marginBottom: '20px' }}>
-                <h2 style={{ fontFamily: '"Playfair Display",Georgia,serif', fontSize: '22px', fontWeight: 700, color: '#151E13', margin: '0 0 5px' }}>
-                  {mode === 'login' ? 'Welcome back' : 'Create your account'}
+            <div key={mode} className="auth-tab-reveal">
+              <div className="mb-4">
+                <h2
+                  className="text-[26px] font-bold text-[#143D2C] leading-tight"
+                  style={{ fontFamily: 'var(--font-newsreader), Georgia, serif' }}
+                >
+                  {mode === 'login' ? 'Sign In' : 'Create Account'}
                 </h2>
-                <p style={{ fontSize: '13.5px', color: '#6D7A73', margin: 0 }}>
-                  {mode === 'login' ? 'Sign in to continue to El Árbol' : 'Fresh produce delivered to your door'}
+                <p className="text-[12.5px] text-[#5B7266] mt-0.5">
+                  {mode === 'login'
+                    ? 'Welcome back! Please enter your details'
+                    : 'Fresh produce delivered to your door'}
                 </p>
               </div>
 
               {apiError && (
-                <div style={{ background: '#FFF0F0', border: '1px solid #FFCDD2', borderRadius: '10px', padding: '10px 14px', marginBottom: '16px', fontSize: '13.5px', color: '#BA1A1A' }}>
+                <div className="bg-[#FFF2F2] border border-[#F7CACA] rounded-xl px-3.5 py-2.5 mb-3.5 text-[12.5px] text-[#B82828]">
                   {apiError}
                 </div>
               )}
 
-              <form onSubmit={handleSubmit} noValidate>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {socialNotice && (
+                <div className="bg-[#F2F7EE] border border-[#CFE0C8] rounded-xl px-3.5 py-2.5 mb-3.5 text-[12.5px] text-[#22503B]">
+                  {socialNotice}
+                </div>
+              )}
 
+              <form onSubmit={handleSubmit} noValidate>
+                <div className="flex flex-col gap-3">
+                  {/* Sign Up: First Name + Last Name */}
                   {mode === 'signup' && (
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                       <div>
-                        <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#2D3A35', marginBottom: '6px' }}>First Name *</label>
-                        <input className={`ai${errors.firstName ? ' ai-err' : ''}`} type="text" name="firstName" placeholder="Jane" value={formData.firstName} onChange={handleChange} />
-                        {errors.firstName && <p style={{ fontSize: '12px', color: '#C84040', margin: '4px 0 0' }}>{errors.firstName}</p>}
+                        <div className="relative">
+                          <User className="w-4 h-4 text-[#4C6B5C] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                          <input
+                            className={`auth-pill-input pl-10 pr-3.5${
+                              errors.firstName ? ' auth-pill-input-err' : ''
+                            }`}
+                            type="text"
+                            name="firstName"
+                            placeholder="First Name *"
+                            value={formData.firstName}
+                            onChange={handleChange}
+                          />
+                        </div>
+                        {errors.firstName && (
+                          <p className="text-[11.5px] text-[#C94242] mt-1 pl-3">
+                            {errors.firstName}
+                          </p>
+                        )}
                       </div>
+
                       <div>
-                        <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#2D3A35', marginBottom: '6px' }}>Last Name</label>
-                        <input className="ai" type="text" name="lastName" placeholder="Doe" value={formData.lastName} onChange={handleChange} />
+                        <div className="relative">
+                          <User className="w-4 h-4 text-[#4C6B5C] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                          <input
+                            className="auth-pill-input pl-10 pr-3.5"
+                            type="text"
+                            name="lastName"
+                            placeholder="Last Name"
+                            value={formData.lastName}
+                            onChange={handleChange}
+                          />
+                        </div>
                       </div>
                     </div>
                   )}
 
+                  {/* Email Address * */}
                   <div>
-                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#2D3A35', marginBottom: '6px' }}>Email Address *</label>
-                    <input className={`ai${errors.email ? ' ai-err' : ''}`} type="email" name="email" placeholder="jane@example.com" value={formData.email} onChange={handleChange} autoComplete="email" />
-                    {errors.email && <p style={{ fontSize: '12px', color: '#C84040', margin: '4px 0 0' }}>{errors.email}</p>}
+                    <div className="relative">
+                      <Mail className="w-4 h-4 text-[#4C6B5C] absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <input
+                        className={`auth-pill-input pl-11 pr-4${
+                          errors.email ? ' auth-pill-input-err' : ''
+                        }`}
+                        type="email"
+                        name="email"
+                        placeholder="Email Address *"
+                        value={formData.email}
+                        onChange={handleChange}
+                        autoComplete="email"
+                      />
+                    </div>
+                    {errors.email && (
+                      <p className="text-[11.5px] text-[#C94242] mt-1 pl-3">
+                        {errors.email}
+                      </p>
+                    )}
                   </div>
 
+                  {/* Password * */}
                   <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                      <label style={{ fontSize: '13px', fontWeight: 600, color: '#2D3A35' }}>Password *</label>
-                      {mode === 'login' && (
-                        <button type="button" onClick={() => setShowForgot(true)}
-                          style={{ fontSize: '12.5px', color: '#00694C', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}>
-                          Forgot password?
-                        </button>
-                      )}
-                    </div>
-                    <div style={{ position: 'relative' }}>
-                      <input className={`ai${errors.password ? ' ai-err' : ''}`}
-                        type={showPass ? 'text' : 'password'} name="password"
-                        placeholder={mode === 'signup' ? 'Min. 8 characters' : '••••••••'}
-                        value={formData.password} onChange={handleChange} style={{ paddingRight: '40px' }} />
-                      <button type="button" className="pt" onClick={() => setShowPass(p => !p)}>
-                        <EyeIcon show={showPass} />
+                    <div className="relative">
+                      <Lock className="w-4 h-4 text-[#4C6B5C] absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <input
+                        className={`auth-pill-input pl-11 pr-11${
+                          errors.password ? ' auth-pill-input-err' : ''
+                        }`}
+                        type={showPass ? 'text' : 'password'}
+                        name="password"
+                        placeholder={
+                          mode === 'signup'
+                            ? 'Password * (Min. 8 chars)'
+                            : 'Password *'
+                        }
+                        value={formData.password}
+                        onChange={handleChange}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPass((p) => !p)}
+                        aria-label={showPass ? 'Hide password' : 'Show password'}
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#647D71] hover:text-[#15543A] bg-transparent border-none p-1 cursor-pointer flex items-center"
+                      >
+                        {showPass ? (
+                          <Eye className="w-4 h-4" />
+                        ) : (
+                          <EyeOff className="w-4 h-4" />
+                        )}
                       </button>
                     </div>
-                    {errors.password && <p style={{ fontSize: '12px', color: '#C84040', margin: '4px 0 0' }}>{errors.password}</p>}
+                    {errors.password && (
+                      <p className="text-[11.5px] text-[#C94242] mt-1 pl-3">
+                        {errors.password}
+                      </p>
+                    )}
                   </div>
 
+                  {/* Confirm Password * (Sign Up only) */}
                   {mode === 'signup' && (
                     <div>
-                      <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#2D3A35', marginBottom: '6px' }}>Confirm Password *</label>
-                      <div style={{ position: 'relative' }}>
-                        <input className={`ai${errors.confirmPassword ? ' ai-err' : ''}`}
-                          type={showConfirm ? 'text' : 'password'} name="confirmPassword"
-                          placeholder="Re-enter password" value={formData.confirmPassword} onChange={handleChange} style={{ paddingRight: '40px' }} />
-                        <button type="button" className="pt" onClick={() => setShowConfirm(p => !p)}>
-                          <EyeIcon show={showConfirm} />
+                      <div className="relative">
+                        <Lock className="w-4 h-4 text-[#4C6B5C] absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        <input
+                          className={`auth-pill-input pl-11 pr-11${
+                            errors.confirmPassword ? ' auth-pill-input-err' : ''
+                          }`}
+                          type={showConfirm ? 'text' : 'password'}
+                          name="confirmPassword"
+                          placeholder="Confirm Password *"
+                          value={formData.confirmPassword}
+                          onChange={handleChange}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirm((p) => !p)}
+                          aria-label={
+                            showConfirm ? 'Hide password' : 'Show password'
+                          }
+                          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#647D71] hover:text-[#15543A] bg-transparent border-none p-1 cursor-pointer flex items-center"
+                        >
+                          {showConfirm ? (
+                            <Eye className="w-4 h-4" />
+                          ) : (
+                            <EyeOff className="w-4 h-4" />
+                          )}
                         </button>
                       </div>
-                      {errors.confirmPassword && <p style={{ fontSize: '12px', color: '#C84040', margin: '4px 0 0' }}>{errors.confirmPassword}</p>}
+                      {errors.confirmPassword && (
+                        <p className="text-[11.5px] text-[#C94242] mt-1 pl-3">
+                          {errors.confirmPassword}
+                        </p>
+                      )}
                     </div>
                   )}
 
-                  {mode === 'signup' && (
-                    <p style={{ fontSize: '12px', color: '#9DAAA3', lineHeight: 1.5 }}>
-                      By signing up, you agree to our <span style={{ color: '#00694C', cursor: 'pointer' }}>Terms</span> and <span style={{ color: '#00694C', cursor: 'pointer' }}>Privacy Policy</span>.
+                  {/* Forgot password link (Login) or Terms (Sign Up) */}
+                  {mode === 'login' ? (
+                    <div className="flex justify-end -mt-1">
+                      <button
+                        type="button"
+                        onClick={() => setShowForgot(true)}
+                        className="text-[12px] font-semibold text-[#15543A] hover:underline bg-transparent border-none p-0 cursor-pointer"
+                      >
+                        Forgot password?
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="text-[11.5px] text-[#6E8378] leading-snug pl-1">
+                      By signing up, you agree to our{' '}
+                      <span className="text-[#15543A] font-medium">Terms</span> and{' '}
+                      <span className="text-[#15543A] font-medium">
+                        Privacy Policy
+                      </span>
+                      .
                     </p>
                   )}
 
-                  <button type="submit" className="abp" disabled={loading} style={{ marginTop: '4px' }}>
+                  {/* Submit Button */}
+                  <button
+                    type="submit"
+                    className="auth-submit-btn mt-0.5"
+                    disabled={loading}
+                  >
                     {loading ? (
-                      <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                        <svg style={{ animation: 'spin 1s linear infinite' }} width="16" height="16" viewBox="0 0 24 24" fill="none">
-                          <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="3" strokeOpacity=".3"/>
-                          <path d="M12 2a10 10 0 0 1 10 10" stroke="white" strokeWidth="3" strokeLinecap="round"/>
+                      <>
+                        <svg
+                          className="animate-spin"
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                        >
+                          <circle
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="white"
+                            strokeWidth="3"
+                            strokeOpacity=".3"
+                          />
+                          <path
+                            d="M12 2a10 10 0 0 1 10 10"
+                            stroke="white"
+                            strokeWidth="3"
+                            strokeLinecap="round"
+                          />
                         </svg>
-                        {mode === 'login' ? 'Signing in…' : 'Creating account…'}
-                      </span>
-                    ) : mode === 'login' ? 'Log In' : 'Create Account'}
+                        <span>
+                          {mode === 'login' ? 'Signing in…' : 'Creating account…'}
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <span>
+                          {mode === 'login' ? 'Log In' : 'Create Account'}
+                        </span>
+                        <ArrowRight className="w-4 h-4" />
+                      </>
+                    )}
                   </button>
                 </div>
               </form>
 
-              <p style={{ fontSize: '13px', color: '#6D7A73', textAlign: 'center', margin: '16px 0 0' }}>
-                {mode === 'login' ? "Don't have an account? " : 'Already have an account? '}
-                <button type="button" onClick={() => switchMode(mode === 'login' ? 'signup' : 'login')}
-                  style={{ color: '#00694C', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: '13px', fontFamily: 'inherit' }}>
+              {/* Social Divider + Buttons */}
+              <div className="mt-4">
+                <p className="text-center text-[11.5px] text-[#6A7F74] mb-2.5">
+                  or continue with
+                </p>
+
+                <div className="grid grid-cols-3 gap-2.5 max-w-[260px] mx-auto">
+                  <button
+                    type="button"
+                    onClick={() => handleSocialClick('Google')}
+                    aria-label="Continue with Google"
+                    className="h-9 rounded-full bg-[#FCFDF9] hover:bg-[#F3F7EE] border border-[#DCE5D9] flex items-center justify-center cursor-pointer transition-all duration-150 hover:border-[#B6CBB5]"
+                  >
+                    <GoogleIcon />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSocialClick('Facebook')}
+                    aria-label="Continue with Facebook"
+                    className="h-9 rounded-full bg-[#FCFDF9] hover:bg-[#F3F7EE] border border-[#DCE5D9] flex items-center justify-center cursor-pointer transition-all duration-150 hover:border-[#B6CBB5]"
+                  >
+                    <FacebookIcon />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSocialClick('GitHub')}
+                    aria-label="Continue with GitHub"
+                    className="h-9 rounded-full bg-[#FCFDF9] hover:bg-[#F3F7EE] border border-[#DCE5D9] flex items-center justify-center cursor-pointer transition-all duration-150 hover:border-[#B6CBB5]"
+                  >
+                    <GitHubIcon />
+                  </button>
+                </div>
+              </div>
+
+              {/* Bottom Toggle Link */}
+              <p className="text-[12.5px] text-[#5B7266] text-center mt-4 mb-0">
+                {mode === 'login'
+                  ? "Don't have an account? "
+                  : 'Already have an account? '}
+                <button
+                  type="button"
+                  onClick={() =>
+                    switchMode(mode === 'login' ? 'signup' : 'login')
+                  }
+                  className="text-[#15543A] font-bold hover:underline bg-transparent border-none p-0 cursor-pointer text-[12.5px]"
+                >
                   {mode === 'login' ? 'Sign Up' : 'Log In'}
                 </button>
               </p>
-            </>
+            </div>
           )}
         </div>
       </div>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   )
 }

@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Check, Heart } from 'lucide-react'
+import { Check, Heart, ShoppingCart } from 'lucide-react'
 import { slugify } from '@/app/lib/slugify'
 import { useWishlist } from '@/app/context/WishlistContext'
 import { useAuth } from '@/app/context/AuthContext'
@@ -105,6 +105,7 @@ export default function ProductCard({
   onNotify,
   variant = 'default',
   layout = 'grid',
+  showCartIcon = false,
 }) {
   const [isNavigating, setIsNavigating] = useState(false)
   const [imgError, setImgError] = useState(false)
@@ -402,7 +403,10 @@ export default function ProductCard({
                   <span>Added</span>
                 </>
               ) : effectiveInStock ? (
-                <span>Add to Cart</span>
+                <>
+                  {showCartIcon && <ShoppingCart className="w-3.5 h-3.5 shrink-0" strokeWidth={2.2} />}
+                  <span>Add to Cart</span>
+                </>
               ) : (
                 <span>{notified ? 'Notified ✓' : 'Notify Me'}</span>
               )}

@@ -1,329 +1,39 @@
-// 'use client'
-// // src/app/stores/[slug]/StoreDetailClient.jsx
-
-// import { useRouter } from 'next/navigation'
-// import Link from 'next/link'
-// import { useState } from 'react'
-// import { isStoreOpen } from '@/lib/stores-api'
-// import * as LucideIcons from 'lucide-react'
-
-// // ── Lucide dynamic icon helper ─────────────────────────────────────────────────
-// // DB stores kebab-case names like "apple", "leafy-green", "wheat", "milk", "wine-glass"
-// // Lucide React exports PascalCase: Apple, LeafyGreen, Wheat, Milk, WineGlass
-// function toPascalCase(name = '') {
-//   return name
-//     .split('-')
-//     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-//     .join('')
-// }
-
-// function AvailIcon({ name, size = 28, color = '#00694c' }) {
-//   const key  = toPascalCase(name)
-//   const Icon = LucideIcons[key] || LucideIcons.ShoppingBasket
-//   return <Icon size={size} color={color} strokeWidth={1.75} />
-// }
-
-// // ─────────────────────────────────────────────────────────────────────────────
-
-// const FEATURE_LABELS = {
-//   leftoverPack: 'LEFTOVER PACK',
-//   clickCollect: 'CLICK & COLLECT',
-//   organic:      'ORGANIC',
-//   delivery:     'DELIVERY',
-//   pickup:       'CLICK & COLLECT',
-// }
-
-// function BackIcon() {
-//   return <svg width="20" height="20" fill="none" style={{ color: '#00694c' }} stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-// }
-// function PinIcon({ size = 14 }) {
-//   return <svg width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-// }
-// function ExternalIcon() {
-//   return <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
-// }
-// function HeartIcon({ filled }) {
-//   return <svg width="20" height="20" fill={filled ? '#00694c' : 'none'} stroke="#00694c" strokeWidth="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-// }
-
-// function LocationMap({ store }) {
-//   const delta = 0.008
-//   const bbox  = `${store.lng - delta},${store.lat - delta},${store.lng + delta},${store.lat + delta}`
-//   const src   = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${store.lat},${store.lng}`
-
-//   return (
-//     <a href={`https://www.google.com/maps/dir/?api=1&destination=${store.lat},${store.lng}`}
-//       target="_blank" rel="noopener noreferrer"
-//       className="block relative rounded-2xl overflow-hidden" style={{ height: '180px', boxShadow: '0 4px 24px rgba(0,33,21,0.08)' }}>
-//       <iframe src={src} style={{ width: '100%', height: '100%', border: 'none', opacity: 0.85, pointerEvents: 'none' }} title="Store location" />
-//       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-//         <div className="w-10 h-10 rounded-full flex items-center justify-center border-4 border-white" style={{ background: '#00694c', boxShadow: '0 4px 16px rgba(0,105,76,0.4)' }}>
-//           <svg width="16" height="16" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-//         </div>
-//       </div>
-//       <div className="absolute bottom-3 left-3 text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full pointer-events-none"
-//         style={{ background: 'rgba(255,255,255,0.92)', color: '#00694c', backdropFilter: 'blur(6px)' }}>
-//         Open Navigation
-//       </div>
-//     </a>
-//   )
-// }
-
-// export default function StoreDetailClient({ store }) {
-//   const router = useRouter()
-//   const [fav, setFav] = useState(false)
-//   const open = isStoreOpen(store)
-
-//   const leftoverPacks = store.leftoverPacks ?? []
-//   // availability is now [{category, icon}, …]
-//   const availability  = store.availability ?? []
-
-//   return (
-//     <>
-//       {/* ═══ MOBILE ═══ */}
-//       <div className="md:hidden min-h-screen" style={{ background: '#f2fdea' }}>
-//         <header className="fixed top-0 left-0 right-0 z-50"
-//           style={{ background: 'rgba(242,253,234,0.82)', backdropFilter: 'blur(14px)', borderBottom: '1px solid rgba(188,202,193,0.15)' }}>
-//           <div className="flex items-center justify-between px-5 h-[60px]">
-//             <button onClick={() => router.back()} className="w-10 h-10 rounded-full flex items-center justify-center active:scale-95 transition-transform" style={{ background: 'rgba(0,105,76,0.08)' }}>
-//               <BackIcon />
-//             </button>
-//             <span style={{ fontFamily: '"Newsreader", Georgia, serif', fontSize: '20px', fontStyle: 'italic', color: '#00694c' }}>El Árbol</span>
-//             <button onClick={() => setFav(!fav)} className="w-10 h-10 rounded-full flex items-center justify-center active:scale-95 transition-transform" style={{ background: 'rgba(0,105,76,0.08)' }}>
-//               <HeartIcon filled={fav} />
-//             </button>
-//           </div>
-//         </header>
-
-//         <div className="pt-[60px] pb-32">
-//           {/* Hero */}
-//           <div className="relative h-64 overflow-hidden" style={{ borderRadius: '0 0 24px 24px' }}>
-//             <img src={store.image} alt={store.name} className="w-full h-full object-cover" />
-//             <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
-//             <div className="absolute bottom-4 left-5">
-//               <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold"
-//                 style={{ background: open ? '#E7F1DF' : '#FEE2E2', color: open ? '#00694c' : '#e11d48' }}>
-//                 <div className="w-1.5 h-1.5 rounded-full" style={{ background: open ? '#00694c' : '#e11d48' }} />
-//                 {open ? `Open until ${store.closeTime}` : 'Closed now'}
-//               </div>
-//             </div>
-//           </div>
-
-//           <div className="px-6 mt-6">
-//             <h1 style={{ fontFamily: '"Newsreader", Georgia, serif', fontSize: '30px', fontWeight: 700, color: '#151e13', lineHeight: 1.15, marginBottom: '10px' }}>
-//               {store.name}
-//             </h1>
-//             <div className="flex items-start gap-2 mb-6" style={{ color: '#6D7A73', fontSize: '13px' }}>
-//               <span style={{ marginTop: '2px', flexShrink: 0, color: '#00694c' }}><PinIcon size={13} /></span>
-//               {store.fullAddress}
-//             </div>
-
-//             {/* Info grid */}
-//             <div className="grid grid-cols-2 gap-3 mb-10">
-//               {[{ label: 'Opening Hours', value: store.hours }, { label: 'Contact', value: store.phone }].map(({ label, value }) => (
-//                 <div key={label} className="p-4 rounded-xl" style={{ background: '#ECF7E4' }}>
-//                   <span className="block text-[10px] uppercase tracking-widest mb-1.5 font-bold" style={{ color: '#6D7A73', opacity: 0.75 }}>{label}</span>
-//                   <p className="font-semibold text-sm" style={{ color: '#151e13' }}>{value}</p>
-//                 </div>
-//               ))}
-//             </div>
-
-//             {/* Availability — Lucide icons */}
-//             <section className="mb-10">
-//               <div className="flex items-center justify-between mb-5">
-//                 <h2 style={{ fontFamily: '"Newsreader", Georgia, serif', fontSize: '20px', fontWeight: 700, color: '#151e13' }}>Today's Availability</h2>
-//                 <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#00694c' }}>Fresh Today</span>
-//               </div>
-//               <div className="flex gap-3 overflow-x-auto pb-3" style={{ scrollbarWidth: 'none' }}>
-//                 {availability.map((item) => (
-//                   <div key={item.category} className="min-w-[96px] flex-shrink-0 p-4 rounded-2xl flex flex-col items-center gap-2.5"
-//                     style={{ background: '#fff', boxShadow: '0 2px 12px rgba(0,33,21,0.06)' }}>
-//                     <AvailIcon name={item.icon} size={28} />
-//                     <span className="text-xs font-bold text-center" style={{ color: '#151e13' }}>{item.category}</span>
-//                     <div className="w-1.5 h-1.5 rounded-full" style={{ background: '#008560' }} />
-//                   </div>
-//                 ))}
-//               </div>
-//             </section>
-
-//             {/* Leftover packs */}
-//             {leftoverPacks.length > 0 && (
-//               <section className="mb-10">
-//                 <div className="flex items-baseline justify-between mb-5">
-//                   <h2 style={{ fontFamily: '"Newsreader", Georgia, serif', fontSize: '20px', fontWeight: 700, color: '#151e13' }}>Leftover Packs</h2>
-//                   <span style={{ fontFamily: '"Newsreader", Georgia, serif', fontSize: '13px', fontStyle: 'italic', color: '#855000' }}>{leftoverPacks.length} packs remaining</span>
-//                 </div>
-//                 <div className="space-y-4">
-//                   {leftoverPacks.map((pack) => (
-//                     <div key={pack.id} className="flex overflow-hidden rounded-xl" style={{ background: '#fff', boxShadow: '0 2px 12px rgba(0,33,21,0.06)' }}>
-//                       <div className="w-28 h-28 flex-shrink-0"><img src={pack.image} alt={pack.name} className="w-full h-full object-cover" /></div>
-//                       <div className="p-4 flex flex-col justify-between flex-grow">
-//                         <div>
-//                           <h3 className="font-bold text-sm leading-snug" style={{ color: '#151e13' }}>{pack.name}</h3>
-//                           <p className="text-xs mt-1" style={{ color: '#6D7A73' }}>{pack.description}</p>
-//                         </div>
-//                         <div className="flex items-center justify-between">
-//                           <span className="font-bold text-sm" style={{ color: '#855000' }}>€{Number(pack.price).toFixed(2)}</span>
-//                           <button className="text-xs font-bold px-3 py-1.5 rounded-full" style={{ background: 'rgba(0,105,76,0.09)', color: '#00694c', border: 'none' }}>Reserve Now</button>
-//                         </div>
-//                       </div>
-//                     </div>
-//                   ))}
-//                 </div>
-//               </section>
-//             )}
-
-//             {/* Location */}
-//             <section className="mb-10">
-//               <h2 style={{ fontFamily: '"Newsreader", Georgia, serif', fontSize: '20px', fontWeight: 700, color: '#151e13', marginBottom: '20px' }}>Location</h2>
-//               <LocationMap store={store} />
-//             </section>
-//           </div>
-//         </div>
-
-//         {/* Sticky CTA */}
-//         <div className="fixed bottom-0 left-0 right-0 p-5" style={{ background: 'rgba(242,253,234,0.9)', backdropFilter: 'blur(14px)', borderTop: '1px solid rgba(188,202,193,0.15)' }}>
-//           <Link href={`/shop?store=${store.slug}`} className="flex items-center justify-center w-full py-4 rounded-xl font-bold text-sm text-white active:scale-[0.98] transition-transform"
-//             style={{ background: 'linear-gradient(135deg, #00694c 0%, #008560 100%)', boxShadow: '0 4px 18px rgba(0,105,76,0.28)' }}>
-//             Shop This Store's Products
-//           </Link>
-//         </div>
-//       </div>
-
-//       {/* ═══ DESKTOP — full width, no max-w cap ═══ */}
-//       <div className="hidden md:block" style={{ background: '#f2fdea', minHeight: 'calc(100vh - 60px)' }}>
-//         <div className="w-full px-10 py-10">
-//           <button onClick={() => router.back()} className="flex cursor-pointer items-center gap-2 mb-8 text-sm font-semibold" style={{ color: '#00694c' }}>
-//             <BackIcon /> Back to stores
-//           </button>
-
-//           <div className="grid grid-cols-5 gap-10">
-//             {/* Left — main content */}
-//             <div className="col-span-3 space-y-10">
-//               <div className="rounded-2xl overflow-hidden h-72 relative">
-//                 <img src={store.image} alt={store.name} className="w-full h-full object-cover" />
-//                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-//                 <div className="absolute bottom-5 left-5">
-//                   <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold"
-//                     style={{ background: open ? '#E7F1DF' : '#FEE2E2', color: open ? '#00694c' : '#e11d48' }}>
-//                     <div className="w-1.5 h-1.5 rounded-full" style={{ background: open ? '#00694c' : '#e11d48' }} />
-//                     {open ? `Open until ${store.closeTime}` : 'Closed now'}
-//                   </div>
-//                 </div>
-//               </div>
-
-//               <div>
-//                 <h1 style={{ fontFamily: '"Newsreader", Georgia, serif', fontSize: '38px', fontWeight: 700, color: '#151e13', lineHeight: 1.15, marginBottom: '12px' }}>{store.name}</h1>
-//                 <div className="flex items-center gap-2" style={{ color: '#6D7A73', fontSize: '14px' }}>
-//                   <span style={{ color: '#00694c' }}><PinIcon /></span>
-//                   {store.fullAddress}
-//                 </div>
-//               </div>
-
-//               <div className="grid grid-cols-2 gap-4">
-//                 {[{ label: 'Opening Hours', value: store.hours }, { label: 'Contact', value: store.phone }].map(({ label, value }) => (
-//                   <div key={label} className="p-5 rounded-xl" style={{ background: '#ECF7E4' }}>
-//                     <span className="block text-[10px] uppercase tracking-widest mb-2 font-bold" style={{ color: '#6D7A73', opacity: 0.75 }}>{label}</span>
-//                     <p className="font-semibold text-sm" style={{ color: '#151e13' }}>{value}</p>
-//                   </div>
-//                 ))}
-//               </div>
-
-//               {/* Availability — Lucide icons */}
-//               <section>
-//                 <div className="flex items-center justify-between mb-5">
-//                   <h2 style={{ fontFamily: '"Newsreader", Georgia, serif', fontSize: '22px', fontWeight: 700, color: '#151e13' }}>Today's Availability</h2>
-//                   <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#00694c' }}>Fresh Today</span>
-//                 </div>
-//                 <div className="flex gap-4 flex-wrap">
-//                   {availability.map((item) => (
-//                     <div key={item.category} className="px-5 py-4 rounded-2xl flex flex-col items-center gap-2.5" style={{ background: '#fff', minWidth: '96px', boxShadow: '0 2px 12px rgba(0,33,21,0.06)' }}>
-//                       <AvailIcon name={item.icon} size={28} />
-//                       <span className="text-xs font-bold text-center" style={{ color: '#151e13' }}>{item.category}</span>
-//                       <div className="w-1.5 h-1.5 rounded-full" style={{ background: '#008560' }} />
-//                     </div>
-//                   ))}
-//                 </div>
-//               </section>
-
-//               {leftoverPacks.length > 0 && (
-//                 <section>
-//                   <div className="flex items-baseline justify-between mb-5">
-//                     <h2 style={{ fontFamily: '"Newsreader", Georgia, serif', fontSize: '22px', fontWeight: 700, color: '#151e13' }}>Leftover Packs</h2>
-//                     <span style={{ fontFamily: '"Newsreader", Georgia, serif', fontSize: '13px', fontStyle: 'italic', color: '#855000' }}>{leftoverPacks.length} packs remaining</span>
-//                   </div>
-//                   <div className="space-y-4">
-//                     {leftoverPacks.map((pack) => (
-//                       <div key={pack.id} className="flex overflow-hidden rounded-xl" style={{ background: '#fff', boxShadow: '0 2px 12px rgba(0,33,21,0.06)' }}>
-//                         <div className="w-36 h-36 flex-shrink-0"><img src={pack.image} alt={pack.name} className="w-full h-full object-cover" /></div>
-//                         <div className="p-5 flex flex-col justify-between flex-grow">
-//                           <div>
-//                             <h3 className="font-bold text-base leading-snug mb-1" style={{ color: '#151e13' }}>{pack.name}</h3>
-//                             <p className="text-sm" style={{ color: '#6D7A73' }}>{pack.description}</p>
-//                           </div>
-//                           <div className="flex items-center justify-between">
-//                             <span className="font-bold text-lg" style={{ color: '#855000' }}>€{Number(pack.price).toFixed(2)}</span>
-//                             <button className="text-sm font-bold px-5 py-2 rounded-full" style={{ background: 'rgba(0,105,76,0.09)', color: '#00694c' }}>Reserve Now</button>
-//                           </div>
-//                         </div>
-//                       </div>
-//                     ))}
-//                   </div>
-//                 </section>
-//               )}
-//             </div>
-
-//             {/* Right sidebar */}
-//             <div className="col-span-2">
-//               <div className="sticky top-[80px] space-y-5">
-//                 <div className="flex flex-wrap gap-2">
-//                   {store.features.map((f) => (
-//                     <span key={f} className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider"
-//                       style={{ background: f === 'leftoverPack' ? '#FFF8ED' : '#E7F1DF', color: f === 'leftoverPack' ? '#855000' : '#00694c' }}>
-//                       {FEATURE_LABELS[f] || f}
-//                     </span>
-//                   ))}
-//                 </div>
-
-//                 {store.provenance && (
-//                   <p style={{ fontFamily: '"Newsreader", Georgia, serif', fontSize: '15px', fontStyle: 'italic', color: '#00694c' }}>
-//                     Produce {store.provenance}
-//                   </p>
-//                 )}
-
-//                 <div>
-//                   <h3 style={{ fontFamily: '"Newsreader", Georgia, serif', fontSize: '18px', fontWeight: 700, color: '#151e13', marginBottom: '14px' }}>Location</h3>
-//                   <LocationMap store={store} />
-//                   <a href={`https://www.google.com/maps/dir/?api=1&destination=${store.lat},${store.lng}`}
-//                     target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 mt-3 text-xs font-bold" style={{ color: '#855000' }}>
-//                     Get Directions <ExternalIcon />
-//                   </a>
-//                 </div>
-
-//                 <Link href={`/shop?store=${store.slug}`}
-//                   className="flex items-center justify-center w-full py-4 rounded-xl font-bold text-sm text-white active:scale-[0.98] transition-transform"
-//                   style={{ background: 'linear-gradient(135deg, #00694c 0%, #008560 100%)', boxShadow: '0 4px 18px rgba(0,105,76,0.28)' }}>
-//                   Shop This Store's Products
-//                 </Link>
-//                 <Link href="/stores" className="flex cursor-pointer items-center justify-center w-full py-3.5 rounded-xl font-bold text-sm active:scale-[0.98] transition-transform" style={{ background: '#ECF7E4', color: '#151e13' }}>
-//                   All Stores
-//                 </Link>
-//               </div>
-//             </div>
-//           </div>
-//         </div>
-//       </div>
-//     </>
-//   )
-// }
-
-
 'use client'
-import { useRouter } from 'next/navigation'
+
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { useState } from 'react'
-import { isStoreOpen, formatTime12h } from '@/lib/stores-api'
 import {
+  Store,
+  MapPin,
+  Clock,
+  Phone,
+  ArrowRight,
+  Calendar,
+  Leaf,
+  Truck,
+  ShieldCheck,
+  Headphones,
+  BriefcaseBusiness,
+  ShoppingBasket,
+  Apple,
+  Wheat,
+  Milk,
+  Wine,
+  Croissant,
+  Carrot,
+  Fish,
+  Beef,
+  Coffee,
+  Egg,
+  Package,
+  Plus,
+  Minus,
+  X,
+} from 'lucide-react'
+import { isStoreOpen } from '@/lib/stores-api'
+import { useCart } from '@/app/context/CartContext'
+
+const ICON_MAP = {
   ShoppingBasket,
   Apple,
   Leaf,
@@ -339,92 +49,125 @@ import {
   Package,
   Store,
   MapPin,
-  Clock
-} from 'lucide-react'
-import { useCart } from '@/app/context/CartContext'
-
-// ── Lucide dynamic icon helper ─────────────────────────────────────────────────
-const ICON_MAP = {
-  ShoppingBasket, Apple, Leaf, Wheat, Milk, Wine, Croissant, 
-  Carrot, Fish, Beef, Coffee, Egg, Package, Store, MapPin, Clock
+  Clock,
 }
 
 function toPascalCase(name = '') {
-  return name.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join('')
+  return name
+    .split('-')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join('')
 }
 
-function AvailIcon({ name, size = 28, color = '#00694c' }) {
-  const key = toPascalCase(name)
-  const Icon = ICON_MAP[key] || ICON_MAP.ShoppingBasket
-  return <Icon size={size} color={color} strokeWidth={1.75} />
+function AvailIcon({ name, size = 24, color = '#0E4D2D' }) {
+  const Icon = ICON_MAP[toPascalCase(name)] || ShoppingBasket
+  return <Icon size={size} color={color} strokeWidth={1.85} />
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-
-const FEATURE_LABELS = {
-  leftoverPack: 'LEFTOVER PACK',
-  clickCollect: 'CLICK & COLLECT',
-  organic:      'ORGANIC',
-  delivery:     'DELIVERY',
-  pickup:       'CLICK & COLLECT',
+function TwinLeafIcon() {
+  return (
+    <svg width="24" height="19" viewBox="0 0 28 22" fill="none" aria-hidden="true" className="shrink-0">
+      <path d="M2 5.8C2.4 13.2 6.8 18.4 13.4 19.2C13.9 12.4 10.2 6.8 2 5.8Z" fill="#5CA336" />
+      <path d="M26 2C17.2 2.5 12 9 13 19.4C21.3 18.9 26.5 12.4 26 2Z" fill="#0E4D2D" />
+    </svg>
+  )
 }
 
-function BackIcon() {
-  return <svg width="20" height="20" fill="none" style={{ color: '#00694c' }} stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-}
-function PinIcon({ size = 14 }) {
-  return <svg width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-}
-function ExternalIcon() {
-  return <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
-}
-function HeartIcon({ filled }) {
-  return <svg width="20" height="20" fill={filled ? '#00694c' : 'none'} stroke="#00694c" strokeWidth="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+function formatDiscountPct(val) {
+  const num = Number(val || 0)
+  if (!num) return ''
+  return num.toFixed(2).replace(/\.00$/, '')
 }
 
 function PackQuickViewModal({ pack, onClose, onReserve }) {
-  if (!pack) return null;
+  if (!pack) return null
   return (
-    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-0 sm:p-5 transition-opacity" onClick={onClose}>
-      <div className="bg-white w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl overflow-hidden flex flex-col shadow-2xl transform transition-all translate-y-0" onClick={e => e.stopPropagation()}>
-        <div className="relative h-64 w-full bg-gray-100 flex-shrink-0">
-          <img src={pack.image} alt={pack.name} className="w-full h-full object-cover" />
-          <button onClick={onClose} className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center bg-white/80 rounded-full text-gray-800 hover:bg-white transition-colors shadow-sm cursor-pointer">
-            <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    <div
+      className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-0 sm:p-5"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl overflow-hidden flex flex-col shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="relative h-60 w-full bg-[#EFF5EC] shrink-0">
+          <img
+            src={pack.image || '/stores/store_fallback.jpg'}
+            alt={pack.name}
+            className="w-full h-full object-cover"
+          />
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close pack details"
+            className="absolute top-3.5 right-3.5 w-9 h-9 flex items-center justify-center bg-white/90 hover:bg-white rounded-full text-[#142D22] shadow-sm cursor-pointer border-none"
+          >
+            <X className="w-4.5 h-4.5" strokeWidth={2.2} />
           </button>
         </div>
+
         <div className="p-6">
-          <div className="flex justify-between items-start mb-2">
-            <h2 className="text-2xl font-bold text-gray-900 leading-tight" style={{ fontFamily: '"Newsreader", Georgia, serif' }}>{pack.name}</h2>
-            <span className="text-xs uppercase font-bold text-gray-600 bg-gray-100 px-2 py-1 rounded border border-gray-200">{pack.package_type}</span>
+          <div className="flex justify-between items-start gap-3 mb-2">
+            <h2
+              className="text-2xl font-bold text-[#142D22] leading-tight m-0"
+              style={{ fontFamily: 'var(--font-newsreader), Georgia, serif' }}
+            >
+              {pack.name}
+            </h2>
+            {pack.package_type && (
+              <span className="text-[11px] uppercase font-bold text-[#3D5548] bg-[#EFF5EC] px-2.5 py-1 rounded-md border border-[#D8E5D3] shrink-0">
+                {pack.package_type}
+              </span>
+            )}
           </div>
-          <p className="text-gray-600 text-sm mb-4 leading-relaxed">{pack.description}</p>
-          
-          <div className="flex gap-4 mb-6">
-            <div className="bg-green-50 px-4 py-3 rounded-xl flex-1 border border-green-100">
-              <span className="block text-[10px] uppercase font-bold text-green-700 tracking-wider mb-1">Price</span>
+
+          {pack.description && (
+            <p className="text-[#4F6559] text-sm mb-4 leading-relaxed">{pack.description}</p>
+          )}
+
+          <div className="grid grid-cols-2 gap-3 mb-5 mt-3">
+            <div className="bg-[#EFF7EB] px-4 py-3 rounded-xl border border-[#DAE9D3]">
+              <span className="block text-[10px] uppercase font-bold text-[#165936] tracking-wider mb-1">
+                Price
+              </span>
               <div className="flex items-end gap-2">
-                <span className="text-2xl font-bold leading-none" style={{ color: '#855000' }}>€{Number(pack.price).toFixed(2)}</span>
-                {pack.original_price && pack.original_price > pack.price && (
-                  <span className="text-sm text-gray-400 line-through leading-none mb-0.5">€{Number(pack.original_price).toFixed(2)}</span>
+                <span className="text-2xl font-bold leading-none text-[#114A2C]">
+                  €{Number(pack.price).toFixed(2)}
+                </span>
+                {pack.original_price && Number(pack.original_price) > Number(pack.price) && (
+                  <span className="text-sm text-[#7B8C82] line-through leading-none mb-0.5">
+                    €{Number(pack.original_price).toFixed(2)}
+                  </span>
                 )}
               </div>
             </div>
-            <div className="bg-gray-50 px-4 py-3 rounded-xl flex-1 border border-gray-100">
-              <span className="block text-[10px] uppercase font-bold text-gray-600 tracking-wider mb-1">Stock & Qty</span>
-              <div className="font-semibold text-gray-900 text-sm">
+
+            <div className="bg-[#F6F8F4] px-4 py-3 rounded-xl border border-[#E5ECE2]">
+              <span className="block text-[10px] uppercase font-bold text-[#53685D] tracking-wider mb-1">
+                Stock &amp; Weight
+              </span>
+              <div className="font-semibold text-[#142D22] text-sm">
                 {pack.weight_quantity && <span className="mr-2">{pack.weight_quantity}</span>}
-                <span className={pack.stock > 0 ? "text-green-600" : "text-red-500"}>{pack.stock > 0 ? `${pack.stock} left` : 'Sold out'}</span>
+                <span className={pack.stock > 0 ? 'text-[#18643B]' : 'text-[#D14343]'}>
+                  {pack.stock > 0 ? `${pack.stock} available` : 'Sold out'}
+                </span>
               </div>
             </div>
           </div>
 
-          <button 
+          <button
+            type="button"
             onClick={() => onReserve(pack)}
             disabled={pack.stock <= 0}
-            className="w-full py-4 rounded-xl font-bold text-white text-[15px] shadow-lg active:scale-[0.98] transition-all disabled:opacity-50 disabled:active:scale-100 cursor-pointer"
-            style={{ background: pack.stock > 0 ? 'linear-gradient(135deg, #00694c 0%, #008560 100%)' : '#94a3b8' }}>
-            {pack.stock > 0 ? 'Add to Cart' : 'Out of Stock'}
+            className="w-full py-3.5 rounded-full font-bold text-white text-[14.5px] shadow-md active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer border-none"
+            style={{
+              background:
+                pack.stock > 0
+                  ? 'linear-gradient(135deg, #0E4D2D 0%, #14633B 100%)'
+                  : '#94A3B8',
+            }}
+          >
+            {pack.stock > 0 ? 'Reserve & Add to Cart' : 'Out of Stock'}
           </button>
         </div>
       </div>
@@ -432,368 +175,542 @@ function PackQuickViewModal({ pack, onClose, onReserve }) {
   )
 }
 
-function LocationMap({ store }) {
-  const delta = 0.008
-  const bbox  = `${store.lng - delta},${store.lat - delta},${store.lng + delta},${store.lat + delta}`
-  const src   = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${store.lat},${store.lng}`
+function extractCoordsFromMapLink(url) {
+  if (!url || typeof url !== 'string') return null
+  const patterns = [
+    /@(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)/,
+    /[?&]q=(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)/,
+    /[?&]ll=(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)/,
+    /[?&]destination=(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)/,
+  ]
+  for (const pat of patterns) {
+    const m = url.match(pat)
+    if (m) {
+      const lat = parseFloat(m[1])
+      const lng = parseFloat(m[2])
+      if (Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180) {
+        return { lat, lng }
+      }
+    }
+  }
+  return null
+}
+
+function escapeHtml(str = '') {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+function isValidCoord(v) {
+  return v !== null && v !== undefined && v !== '' && Number.isFinite(Number(v))
+}
+
+function StoreLocationMiniMap({ store, directionsUrl }) {
+  const containerRef = useRef(null)
+  const mapRef = useRef(null)
+  const markerRef = useRef(null)
+  const destroyedRef = useRef(false)
+
+  const linkCoords = extractCoordsFromMapLink(store?.mapLink)
+  const initialCoords =
+    isValidCoord(store?.lat) && isValidCoord(store?.lng)
+      ? { lat: Number(store.lat), lng: Number(store.lng) }
+      : linkCoords
+
+  const [coords, setCoords] = useState(initialCoords)
+  const pinLabel =
+    store?.shortName?.trim() ||
+    store?.name?.trim() ||
+    store?.address?.split(',')[0]?.trim() ||
+    store?.city?.trim() ||
+    'Store'
+
+  // Geocode store address on client only if store coordinates are missing
+  useEffect(() => {
+    if (coords) return
+    const query = store?.fullAddress || store?.address || store?.city || store?.name
+    if (!query) return
+    let active = true
+    fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query)}`)
+      .then((r) => (r.ok ? r.json() : []))
+      .then((results) => {
+        if (!active || !Array.isArray(results) || results.length === 0) return
+        const lat = parseFloat(results[0].lat)
+        const lng = parseFloat(results[0].lon)
+        if (Number.isFinite(lat) && Number.isFinite(lng)) {
+          setCoords({ lat, lng })
+        }
+      })
+      .catch(() => {})
+    return () => {
+      active = false
+    }
+  }, [coords, store?.fullAddress, store?.address, store?.city, store?.name])
+
+  // Render real interactive Leaflet map centered & pinned at exact store coordinates
+  useEffect(() => {
+    if (!coords || !containerRef.current) return
+    destroyedRef.current = false
+
+    if (!document.getElementById('leaflet-css')) {
+      const link = document.createElement('link')
+      link.id = 'leaflet-css'
+      link.rel = 'stylesheet'
+      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
+      document.head.appendChild(link)
+    }
+
+    const placeMarkerAndCenter = (L, map) => {
+      map.setView([coords.lat, coords.lng], map.getZoom() || 15, { animate: false })
+      if (markerRef.current) {
+        map.removeLayer(markerRef.current)
+      }
+      const icon = L.divIcon({
+        className: '',
+        html: `<div style="display:flex;flex-direction:column;align-items:center;cursor:pointer;">
+          <div style="position:relative;display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 3px 6px rgba(13,75,43,0.35));">
+            <svg width="34" height="42" viewBox="0 0 40 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M20 2.5C10.89 2.5 3.5 9.89 3.5 19c0 11.15 13.45 24.48 15.63 26.55a1.25 1.25 0 0 0 1.74 0C23.05 43.48 36.5 30.15 36.5 19 36.5 9.89 29.11 2.5 20 2.5Z" fill="#0D4B2B" stroke="#FFFFFF" stroke-width="2.5"/>
+            </svg>
+            <img src="/el-erbol-logo.png" alt="" style="position:absolute;top:6px;width:19px;height:19px;border-radius:9999px;background:#fff;padding:1.5px;object-fit:contain;" />
+          </div>
+          <span style="margin-top:2px;padding:2px 7px;border-radius:4px;background:rgba(255,255,255,0.94);color:#142E22;font-size:10.5px;font-weight:700;line-height:1.15;box-shadow:0 1px 4px rgba(0,0,0,0.14);white-space:nowrap;">${escapeHtml(pinLabel)}</span>
+        </div>`,
+        iconSize: [96, 62],
+        iconAnchor: [48, 41],
+      })
+      markerRef.current = L.marker([coords.lat, coords.lng], { icon })
+        .addTo(map)
+        .on('click', () => {
+          window.open(directionsUrl, '_blank', 'noopener,noreferrer')
+        })
+    }
+
+    const initMap = (L) => {
+      if (destroyedRef.current || !containerRef.current) return
+      if (mapRef.current) {
+        placeMarkerAndCenter(L, mapRef.current)
+        return
+      }
+      const map = L.map(containerRef.current, {
+        center: [coords.lat, coords.lng],
+        zoom: 15,
+        zoomControl: false,
+        attributionControl: false,
+        scrollWheelZoom: false,
+      })
+
+      L.control.attribution({ position: 'bottomleft', prefix: false }).addTo(map)
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
+        maxZoom: 19,
+      }).addTo(map)
+
+      mapRef.current = map
+      placeMarkerAndCenter(L, map)
+    }
+
+    let poll = null
+    if (window.L) {
+      initMap(window.L)
+    } else if (!document.getElementById('leaflet-js')) {
+      const script = document.createElement('script')
+      script.id = 'leaflet-js'
+      script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
+      script.onload = () => initMap(window.L)
+      document.head.appendChild(script)
+    } else {
+      poll = setInterval(() => {
+        if (window.L) {
+          clearInterval(poll)
+          initMap(window.L)
+        }
+      }, 60)
+    }
+
+    return () => {
+      destroyedRef.current = true
+      if (poll) clearInterval(poll)
+      if (mapRef.current) {
+        mapRef.current.remove()
+        mapRef.current = null
+        markerRef.current = null
+      }
+    }
+  }, [coords, pinLabel, directionsUrl])
+
   return (
-    <a href={`https://www.google.com/maps/dir/?api=1&destination=${store.lat},${store.lng}`}
-      target="_blank" rel="noopener noreferrer"
-      className="block relative rounded-2xl overflow-hidden" style={{ height: '180px', boxShadow: '0 4px 24px rgba(0,33,21,0.08)' }}>
-      <iframe src={src} style={{ width: '100%', height: '100%', border: 'none', opacity: 0.85, pointerEvents: 'none' }} title="Store location" />
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div className="w-10 h-10 rounded-full flex items-center justify-center border-4 border-white" style={{ background: '#00694c', boxShadow: '0 4px 16px rgba(0,105,76,0.4)' }}>
-          <svg width="16" height="16" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-        </div>
+    <div className="relative rounded-[14px] overflow-hidden h-[116px] sm:h-[122px] bg-[#E7EFE4] border border-[#DEE8DA]">
+      <div ref={containerRef} className="w-full h-full z-0" />
+
+      {/* Clean + / - Zoom Controls */}
+      <div className="absolute bottom-2 right-2 z-[450] flex flex-col bg-white rounded-[8px] border border-[#D9E3D5] shadow-sm overflow-hidden">
+        <button
+          type="button"
+          onClick={() => mapRef.current?.zoomIn()}
+          aria-label="Zoom in map"
+          className="w-6 h-6 flex items-center justify-center text-[#1B3A2A] hover:bg-[#EFF6EB] border-b border-[#E5ECE2] bg-white cursor-pointer"
+        >
+          <Plus className="w-3.5 h-3.5" strokeWidth={2.2} />
+        </button>
+        <button
+          type="button"
+          onClick={() => mapRef.current?.zoomOut()}
+          aria-label="Zoom out map"
+          className="w-6 h-6 flex items-center justify-center text-[#1B3A2A] hover:bg-[#EFF6EB] bg-white cursor-pointer border-0"
+        >
+          <Minus className="w-3.5 h-3.5" strokeWidth={2.2} />
+        </button>
       </div>
-      <div className="absolute bottom-3 left-3 text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full pointer-events-none"
-        style={{ background: 'rgba(255,255,255,0.92)', color: '#00694c', backdropFilter: 'blur(6px)' }}>
-        Open Navigation
-      </div>
-    </a>
+    </div>
   )
 }
 
+const TRUST_HIGHLIGHTS = [
+  { Icon: Leaf, title: 'Fresh & Organic', subtitle: 'Always' },
+  { Icon: Truck, title: 'Fast Delivery', subtitle: 'Within 24–48h' },
+  { Icon: ShieldCheck, title: 'Secure Payment', subtitle: 'Your data is safe' },
+  { Icon: Headphones, title: '24/7 Support', subtitle: "We're here to help" },
+]
+
 export default function StoreDetailClient({ store }) {
-  const router        = useRouter()
-  const { addItem }   = useCart()
-  const [fav, setFav] = useState(false)
+  const { addItem } = useCart()
   const [selectedPack, setSelectedPack] = useState(null)
-  const open          = isStoreOpen(store)
+  const [heroSrcFailed, setHeroSrcFailed] = useState(false)
 
-  // Format close time with AM/PM once — reuse everywhere
-  const closeFmt   = formatTime12h(store.closeTime)
+  const open = isStoreOpen(store)
+  const leftoverPacks = Array.isArray(store?.leftoverPacks) ? store.leftoverPacks : []
+  const availability = Array.isArray(store?.availability) ? store.availability : []
 
-  const leftoverPacks = store.leftoverPacks ?? []
-  const availability  = store.availability  ?? []
+  const directionsUrl =
+    store?.mapLink ||
+    (store?.lat != null && store?.lng != null
+      ? `https://www.google.com/maps/dir/?api=1&destination=${store.lat},${store.lng}`
+      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+        store?.fullAddress || store?.address || store?.name || 'El Arbol'
+      )}`)
 
-  // Open/closed label reused in both mobile & desktop
-  const statusLabel = open ? `Open until ${closeFmt}` : 'Closed now'
-  const statusBg    = open ? '#E7F1DF' : '#FEE2E2'
-  const statusColor = open ? '#00694c' : '#e11d48'
-  const dotColor    = open ? '#00694c' : '#e11d48'
+  const heroImage =
+    !heroSrcFailed && store?.image ? store.image : '/stores/hero_farm.webp'
 
   const handleReserve = (pack) => {
-    // Leftover pack is passed to addItem. item_type flag is injected.
     addItem({ ...pack, item_type: 'pack' }, pack.price, 1)
     setSelectedPack(null)
   }
 
   return (
-    <>
-      <PackQuickViewModal pack={selectedPack} onClose={() => setSelectedPack(null)} onReserve={handleReserve} />
-      {/* ═══ MOBILE ═══ */}
-      <div className="md:hidden min-h-screen" style={{ background: '#f2fdea' }}>
-        <header className="fixed top-0 left-0 right-0 z-50"
-          style={{ background: 'rgba(242,253,234,0.82)', backdropFilter: 'blur(14px)', borderBottom: '1px solid rgba(188,202,193,0.15)' }}>
-          <div className="flex items-center justify-between px-5 h-[60px]">
-            <button onClick={() => router.back()} className="w-10 h-10 rounded-full flex items-center justify-center active:scale-95 transition-transform" style={{ background: 'rgba(0,105,76,0.08)' }}>
-              <BackIcon />
-            </button>
-            <span style={{ fontFamily: '"Newsreader", Georgia, serif', fontSize: '20px', fontStyle: 'italic', color: '#00694c' }}>El Árbol</span>
-            <button onClick={() => setFav(!fav)} className="w-10 h-10 rounded-full flex items-center justify-center active:scale-95 transition-transform" style={{ background: 'rgba(0,105,76,0.08)' }}>
-              <HeartIcon filled={fav} />
-            </button>
-          </div>
-        </header>
+    <div className="min-h-screen bg-[#F5F8F1] text-[#142D22] pb-10">
+      <PackQuickViewModal
+        pack={selectedPack}
+        onClose={() => setSelectedPack(null)}
+        onReserve={handleReserve}
+      />
 
-        <div className="pt-[60px] pb-32">
-          {/* Hero */}
-          <div className="relative h-64 overflow-hidden" style={{ borderRadius: '0 0 24px 24px' }}>
-            <img
-              src={store.image}
-              alt={store.name}
-              loading="eager"
-              fetchPriority="high"
-              decoding="async"
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
-            <div className="absolute bottom-4 left-5">
-              {/* ← AM/PM time badge */}
-              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold"
-                style={{ background: statusBg, color: statusColor }}>
-                <div className="w-1.5 h-1.5 rounded-full" style={{ background: dotColor }} />
-                {statusLabel}
-              </div>
+      <div className="max-w-[1260px] mx-auto px-4 sm:px-6 lg:px-8 pt-5 sm:pt-7">
+        {/* ═══ HERO BANNER CARD ═══ */}
+        <section className="relative rounded-[22px] sm:rounded-[26px] overflow-hidden min-h-[270px] sm:min-h-[305px] lg:min-h-[325px] shadow-[0_12px_36px_rgba(12,68,41,0.12)] mb-5 flex items-center">
+          <img
+            src={heroImage}
+            alt={store?.name || 'Store storefront'}
+            loading="eager"
+            fetchPriority="high"
+            decoding="async"
+            onError={() => setHeroSrcFailed(true)}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+
+          {/* Warm editorial left-to-right gradient scrim for clear white text */}
+          <div
+            aria-hidden="true"
+            className="absolute inset-0"
+            style={{
+              background:
+                'linear-gradient(90deg, rgba(16, 26, 20, 0.88) 0%, rgba(18, 30, 23, 0.72) 38%, rgba(18, 30, 23, 0.30) 68%, rgba(18, 30, 23, 0.12) 100%)',
+            }}
+          />
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-black/10"
+          />
+
+          <div className="relative z-10 px-6 sm:px-9 lg:px-11 py-8 max-w-[580px]">
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-[#B4D89C] text-[#113C24] px-3.5 py-1.5 text-[12px] font-semibold shadow-sm mb-3.5">
+              <Store className="w-3.5 h-3.5 shrink-0" strokeWidth={2.2} />
+              <span>Our Store</span>
             </div>
-          </div>
 
-          <div className="px-6 mt-6">
-            <h1 style={{ fontFamily: '"Newsreader", Georgia, serif', fontSize: '30px', fontWeight: 700, color: '#151e13', lineHeight: 1.15, marginBottom: '10px' }}>
-              {store.name}
+            <h1
+              className="text-[32px] sm:text-[42px] lg:text-[48px] font-bold text-white leading-[1.06] tracking-[-0.015em] mb-2.5 drop-shadow-sm"
+              style={{ fontFamily: 'var(--font-newsreader), "Playfair Display", Georgia, serif' }}
+            >
+              {store?.name}
             </h1>
-            <div className="flex items-start gap-2 mb-6" style={{ color: '#6D7A73', fontSize: '13px' }}>
-              <span style={{ marginTop: '2px', flexShrink: 0, color: '#00694c' }}><PinIcon size={13} /></span>
-              {store.fullAddress}
+
+            {(store?.fullAddress || store?.address) && (
+              <div className="flex items-start gap-1.5 text-[13.5px] sm:text-[14.5px] text-white/90 font-medium mb-2">
+                <MapPin className="w-4 h-4 mt-0.5 shrink-0 text-white/90" strokeWidth={2} />
+                <span>{store.fullAddress || store.address}</span>
+              </div>
+            )}
+
+            <p
+              className="text-[13.5px] sm:text-[14.5px] italic text-white/85 mb-5"
+              style={{ fontFamily: 'var(--font-newsreader), Georgia, serif' }}
+            >
+              Fresh produce, closer to you.
+            </p>
+
+            <a
+              href={directionsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2.5 rounded-full bg-white hover:bg-[#F5FAF1] text-[#113C24] pl-5 pr-2 py-1.5 text-[13.5px] font-bold shadow-[0_6px_18px_rgba(0,0,0,0.2)] transition-all active:scale-95 no-underline"
+            >
+              <span>Get Directions</span>
+              <span className="w-6 h-6 rounded-full bg-[#5EA03A] text-white flex items-center justify-center shrink-0">
+                <ArrowRight className="w-3.5 h-3.5" strokeWidth={2.5} />
+              </span>
+            </a>
+          </div>
+        </section>
+
+        {/* ═══ 3-CARD INFO ROW: HOURS · CONTACT · LOCATION MAP ═══ */}
+        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[1fr_1fr_1.48fr] gap-4 mb-6">
+          {/* Card 1: Opening Hours */}
+          <div className="bg-white/95 rounded-[20px] border border-[#E7ECE4] p-5 sm:p-6 shadow-[0_2px_10px_rgba(12,68,41,0.04)] flex items-center gap-4">
+            <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-[#E1EFDB] text-[#0D4A2C] flex items-center justify-center shrink-0">
+              <Clock className="w-6 h-6" strokeWidth={2.2} />
+            </div>
+            <div className="min-w-0">
+              <span className="block text-[13px] font-medium text-[#546B5F]">
+                Opening Hours
+              </span>
+              <p className="mt-0.5 mb-0 text-[16px] sm:text-[17.5px] font-bold text-[#142D22] leading-snug">
+                {store?.hours || '8:00 AM – 9:00 PM'}
+              </p>
+              <span className="block text-[12.5px] text-[#5B6F64] mt-0.5">
+                {open ? 'Open 7 days a week' : 'Closed right now'}
+              </span>
+            </div>
+          </div>
+
+          {/* Card 2: Contact */}
+          <div className="bg-white/95 rounded-[20px] border border-[#E7ECE4] p-5 sm:p-6 shadow-[0_2px_10px_rgba(12,68,41,0.04)] flex items-center gap-4">
+            <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-[#E1EFDB] text-[#0D4A2C] flex items-center justify-center shrink-0">
+              <Phone className="w-5.5 h-5.5" fill="currentColor" strokeWidth={1.6} />
+            </div>
+            <div className="min-w-0">
+              <span className="block text-[13px] font-medium text-[#546B5F]">Contact</span>
+              <a
+                href={store?.phone ? `tel:${store.phone}` : '#'}
+                className="block mt-0.5 text-[16px] sm:text-[17.5px] font-bold text-[#142D22] hover:text-[#0C4429] no-underline truncate"
+              >
+                {store?.phone || 'Not listed'}
+              </a>
+              <span className="block text-[12.5px] text-[#5B6F64] mt-0.5">
+                We&apos;re here to help
+              </span>
+            </div>
+          </div>
+
+          {/* Card 3: Location Map */}
+          <div className="md:col-span-2 lg:col-span-1 bg-white/95 rounded-[20px] border border-[#E7ECE4] p-4 sm:p-5 shadow-[0_2px_10px_rgba(12,68,41,0.04)] flex flex-col justify-between">
+            <div className="flex items-center justify-between gap-2 mb-2.5">
+              <div className="inline-flex items-center gap-1.5 text-[14.5px] font-bold text-[#142D22]">
+                <MapPin className="w-4 h-4 text-[#0D4B2B]" fill="#0D4B2B" stroke="#FFFFFF" />
+                <span>Location</span>
+              </div>
+              <a
+                href={directionsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-[#164A30] hover:underline no-underline"
+              >
+                <span>View on Google Maps</span>
+                <ArrowRight className="w-3.5 h-3.5" strokeWidth={2.2} />
+              </a>
             </div>
 
-            {/* Info grid — hours already has AM/PM from model */}
-            <div className="grid grid-cols-2 gap-3 mb-10">
-              {[{ label: 'Opening Hours', value: store.hours }, { label: 'Contact', value: store.phone }].map(({ label, value }) => (
-                <div key={label} className="p-4 rounded-xl" style={{ background: '#ECF7E4' }}>
-                  <span className="block text-[10px] uppercase tracking-widest mb-1.5 font-bold" style={{ color: '#6D7A73', opacity: 0.75 }}>{label}</span>
-                  <p className="font-semibold text-sm" style={{ color: '#151e13' }}>{value}</p>
+            <StoreLocationMiniMap store={store} directionsUrl={directionsUrl} />
+          </div>
+        </section>
+
+        {/* ═══ TODAY'S AVAILABILITY & LEFTOVER PACKS ═══ */}
+        <section className="mb-8">
+          <div className="flex items-center gap-4 mb-3.5 lg:max-w-[770px]">
+            <div className="inline-flex items-center gap-2.5 shrink-0">
+              <BriefcaseBusiness className="w-5 h-5 text-[#0E4D2D]" strokeWidth={2.2} />
+              <h2
+                className="text-[25px] sm:text-[28px] font-bold text-[#143726] leading-none tracking-[-0.01em] m-0"
+                style={{ fontFamily: 'var(--font-newsreader), "Playfair Display", Georgia, serif' }}
+              >
+                Today&apos;s Availability
+              </h2>
+            </div>
+            <span className="h-px flex-1 bg-[#B8CEB6]" />
+          </div>
+
+          {leftoverPacks.length > 0 ? (
+            <>
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <div className="inline-flex items-center gap-2">
+                  <TwinLeafIcon />
+                  <h3 className="text-[17px] sm:text-[18px] font-bold text-[#173A29] m-0">
+                    Leftover Packs
+                  </h3>
+                </div>
+
+                <span
+                  className="inline-flex items-center gap-1.5 rounded-full bg-[#FBF2E1] border border-[#EFDFBF] px-3.5 py-1 text-[12.5px] font-medium italic text-[#9A5B13]"
+                  style={{ fontFamily: 'var(--font-newsreader), Georgia, serif' }}
+                >
+                  <Clock className="w-3.5 h-3.5 shrink-0 not-italic" strokeWidth={2} />
+                  <span>{leftoverPacks.length} packs remaining</span>
+                </span>
+              </div>
+
+              <div className="space-y-4">
+                {leftoverPacks.map((pack) => {
+                  const pctText = formatDiscountPct(pack.discount_percentage)
+                  const hasDiscount = Number(pack.discount_percentage) > 0
+                  const hasOldPrice =
+                    pack.original_price && Number(pack.original_price) > Number(pack.price)
+                  return (
+                    <div
+                      key={pack.id}
+                      onClick={() => setSelectedPack(pack)}
+                      className="group relative lg:max-w-[770px] rounded-[20px] border border-[#E3ECE1] bg-white overflow-hidden shadow-[0_6px_22px_rgba(12,68,41,0.06)] hover:shadow-[0_10px_28px_rgba(12,68,41,0.1)] hover:border-[#C5DEC6] transition-all cursor-pointer p-3 sm:p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                      style={{
+                        background:
+                          'linear-gradient(135deg, #FFFFFF 58%, #EBF5E5 100%)',
+                      }}
+                    >
+                      {/* Subtle soft organic bottom-right wave accent */}
+                      <svg
+                        aria-hidden="true"
+                        viewBox="0 0 320 90"
+                        preserveAspectRatio="none"
+                        className="absolute bottom-0 right-0 w-[62%] h-[68px] pointer-events-none opacity-65"
+                      >
+                        <path
+                          d="M0,78 C95,28 210,85 320,18 L320,90 L0,90 Z"
+                          fill="#DCECD5"
+                        />
+                      </svg>
+
+                      {/* Left Image + Discount Badge */}
+                      <div className="relative z-10 w-full sm:w-[192px] h-[160px] sm:h-[124px] rounded-[14px] overflow-hidden shrink-0 bg-[#EFF5EC]">
+                        <img
+                          src={pack.image || '/stores/store_fallback.jpg'}
+                          alt={pack.name}
+                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        />
+                        {hasDiscount && (
+                          <span className="absolute top-2.5 left-2.5 rounded-full bg-[#114A2C] text-white text-[12px] font-bold px-2.5 py-1 shadow-sm leading-none">
+                            -{pctText}%
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Middle Title + Quantity + Price */}
+                      <div className="relative z-10 flex-1 min-w-0 flex flex-col justify-center gap-2.5">
+                        <h4
+                          className="text-[20px] sm:text-[21px] font-bold text-[#142E22] leading-tight m-0 truncate"
+                          style={{
+                            fontFamily: 'var(--font-newsreader), Georgia, serif',
+                          }}
+                        >
+                          {pack.name}
+                        </h4>
+
+                        <div className="flex flex-wrap items-center gap-2.5">
+                          {pack.weight_quantity && (
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-[8px] border border-[#D8E2D6] bg-white text-[12.5px] font-bold text-[#193327] leading-none">
+                              {pack.weight_quantity}
+                            </span>
+                          )}
+                          <span
+                            className={`text-[13px] font-semibold ${pack.stock > 0 ? 'text-[#1B5E38]' : 'text-[#D14343]'
+                              }`}
+                          >
+                            {pack.stock > 0 ? `${pack.stock} available` : 'Sold out'}
+                          </span>
+                        </div>
+
+                        <div className="flex items-baseline gap-2.5">
+                          {hasOldPrice && (
+                            <span className="text-[14px] text-[#7D8F85] line-through">
+                              €{Number(pack.original_price).toFixed(2)}
+                            </span>
+                          )}
+                          <span className="text-[18px] sm:text-[19px] font-extrabold text-[#143D28]">
+                            €{Number(pack.price).toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Right Reserve CTA Pill */}
+                      <div className="relative z-10 shrink-0 sm:pr-2">
+                        <button
+                          type="button"
+                          disabled={pack.stock <= 0}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setSelectedPack(pack)
+                          }}
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full bg-[#0E4D2D] hover:bg-[#093A21] text-white border-none px-6 py-3 text-[13.5px] font-semibold shadow-[0_6px_16px_rgba(14,77,45,0.22)] transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+                        >
+                          <Calendar className="w-4 h-4 shrink-0" strokeWidth={2} />
+                          <span>{pack.stock > 0 ? 'Reserve Now' : 'Sold Out'}</span>
+                          <ArrowRight className="w-4 h-4 shrink-0" strokeWidth={2.2} />
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </>
+          ) : availability.length > 0 ? (
+            <div className="flex flex-wrap gap-3 pt-1">
+              {availability.map((item) => (
+                <div
+                  key={item.category}
+                  className="px-5 py-3.5 rounded-[16px] bg-white border border-[#E6EDE2] shadow-[0_2px_10px_rgba(12,68,41,0.04)] flex items-center gap-3"
+                >
+                  <span className="w-10 h-10 rounded-full bg-[#EAF3E7] flex items-center justify-center shrink-0">
+                    <AvailIcon name={item.icon} size={20} />
+                  </span>
+                  <span className="text-sm font-bold text-[#142D22]">{item.category}</span>
                 </div>
               ))}
             </div>
+          ) : null}
+        </section>
 
-            {/* Availability */}
-            <section className="mb-10">
-              <div className="flex items-center justify-between mb-5">
-                <h2 style={{ fontFamily: '"Newsreader", Georgia, serif', fontSize: '20px', fontWeight: 700, color: '#151e13' }}>Today's Availability</h2>
-                <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#00694c' }}>Fresh Today</span>
-              </div>
-              <div className="flex gap-3 overflow-x-auto pb-3" style={{ scrollbarWidth: 'none' }}>
-                {availability.map((item) => (
-                  <div key={item.category} className="min-w-[96px] flex-shrink-0 p-4 rounded-2xl flex flex-col items-center gap-2.5"
-                    style={{ background: '#fff', boxShadow: '0 2px 12px rgba(0,33,21,0.06)' }}>
-                    <AvailIcon name={item.icon} size={28} />
-                    <span className="text-xs font-bold text-center" style={{ color: '#151e13' }}>{item.category}</span>
-                    <div className="w-1.5 h-1.5 rounded-full" style={{ background: '#008560' }} />
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            {/* Leftover packs */}
-            {leftoverPacks.length > 0 && (
-              <section className="mb-10">
-                <div className="flex items-baseline justify-between mb-5">
-                  <h2 style={{ fontFamily: '"Newsreader", Georgia, serif', fontSize: '20px', fontWeight: 700, color: '#151e13' }}>Leftover Packs</h2>
-                  <span style={{ fontFamily: '"Newsreader", Georgia, serif', fontSize: '13px', fontStyle: 'italic', color: '#855000' }}>{leftoverPacks.length} packs remaining</span>
-                </div>
-                <div className="space-y-4">
-                  {leftoverPacks.map((pack) => (
-                    <div key={pack.id} 
-                         onClick={() => setSelectedPack(pack)}
-                         className="flex overflow-hidden rounded-xl relative group transition-all cursor-pointer hover:ring-2 hover:ring-[#00694c]/20" 
-                         style={{ background: '#fff', boxShadow: '0 2px 12px rgba(0,33,21,0.06)' }}>
-                      <div className="w-28 h-28 flex-shrink-0 relative overflow-hidden">
-                        <img src={pack.image} alt={pack.name} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
-                        {pack.discount_percentage > 0 && (
-                            <div className="absolute top-2 left-2 text-[10px] font-bold px-1.5 py-0.5 rounded shadow-sm" style={{ background: '#e11d48', color: '#fff' }}>
-                              -{pack.discount_percentage}%
-                            </div>
-                        )}
-                      </div>
-                      <div className="p-4 flex flex-col justify-between flex-grow">
-                        <div>
-                          <div className="flex justify-between items-start">
-                            <h3 className="font-bold text-sm leading-snug" style={{ color: '#151e13' }}>{pack.name}</h3>
-                            <span className="text-[9px] uppercase font-bold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded ml-2 whitespace-nowrap">{pack.package_type}</span>
-                          </div>
-                          <p className="text-xs mt-1 line-clamp-2" style={{ color: '#6D7A73' }}>{pack.description}</p>
-                          <div className="flex items-center gap-2 mt-1.5 text-[10px]">
-                            {pack.weight_quantity && <span className="font-medium text-gray-600 border border-gray-200 px-1.5 rounded">{pack.weight_quantity}</span>}
-                            {pack.stock > 0 ? <span className="text-green-600 font-medium">{pack.stock} left</span> : <span className="text-red-500 font-medium">Sold Out</span>}
-                          </div>
-                        </div>
-                        <div className="flex items-end justify-between mt-2">
-                          <div className="flex flex-col">
-                              {pack.original_price && pack.original_price > pack.price && (
-                                  <span className="text-[10px] text-gray-400 line-through leading-none mb-0.5">€{Number(pack.original_price).toFixed(2)}</span>
-                              )}
-                              <span className="font-bold text-sm leading-none" style={{ color: '#855000' }}>€{Number(pack.price).toFixed(2)}</span>
-                          </div>
-                          <button 
-                            className="text-xs font-bold px-3 py-1.5 rounded-full transition-colors active:scale-95 disabled:opacity-50 disabled:active:scale-100" 
-                            disabled={pack.stock <= 0}
-                            style={{ background: pack.stock > 0 ? 'rgba(0,105,76,0.09)' : '#f1f5f9', color: pack.stock > 0 ? '#00694c' : '#94a3b8', border: 'none' }}>
-                            {pack.stock > 0 ? 'Reserve Now' : 'Sold Out'}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {/* Location */}
-            <section className="mb-10">
-              <h2 style={{ fontFamily: '"Newsreader", Georgia, serif', fontSize: '20px', fontWeight: 700, color: '#151e13', marginBottom: '20px' }}>Location</h2>
-              <LocationMap store={store} />
-            </section>
-          </div>
-        </div>
-
-        {/* Sticky CTA */}
-        <div className="fixed bottom-0 left-0 right-0 p-5" style={{ background: 'rgba(242,253,234,0.9)', backdropFilter: 'blur(14px)', borderTop: '1px solid rgba(188,202,193,0.15)' }}>
-          <Link href={`/shop?store=${store.slug}`} className="flex items-center justify-center w-full py-4 rounded-xl font-bold text-sm text-white active:scale-[0.98] transition-transform"
-            style={{ background: 'linear-gradient(135deg, #00694c 0%, #008560 100%)', boxShadow: '0 4px 18px rgba(0,105,76,0.28)' }}>
-            Shop This Store's Products
-          </Link>
-        </div>
-      </div>
-
-      {/* ═══ DESKTOP — full width ═══ */}
-      <div className="hidden md:block" style={{ background: '#f2fdea', minHeight: 'calc(100vh - 60px)' }}>
-        <div className="w-full px-10 py-10">
-          <button onClick={() => router.back()} className="flex cursor-pointer items-center gap-2 mb-8 text-sm font-semibold" style={{ color: '#00694c' }}>
-            <BackIcon /> Back to stores
-          </button>
-
-          <div className="grid grid-cols-5 gap-10">
-            {/* Left */}
-            <div className="col-span-3 space-y-10">
-              <div className="rounded-2xl overflow-hidden h-72 relative">
-                <img
-              src={store.image}
-              alt={store.name}
-              loading="eager"
-              fetchPriority="high"
-              decoding="async"
-              className="w-full h-full object-cover"
-            />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-                <div className="absolute bottom-5 left-5">
-                  {/* ← AM/PM time badge */}
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold"
-                    style={{ background: statusBg, color: statusColor }}>
-                    <div className="w-1.5 h-1.5 rounded-full" style={{ background: dotColor }} />
-                    {statusLabel}
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <h1 style={{ fontFamily: '"Newsreader", Georgia, serif', fontSize: '38px', fontWeight: 700, color: '#151e13', lineHeight: 1.15, marginBottom: '12px' }}>{store.name}</h1>
-                <div className="flex items-center gap-2" style={{ color: '#6D7A73', fontSize: '14px' }}>
-                  <span style={{ color: '#00694c' }}><PinIcon /></span>
-                  {store.fullAddress}
-                </div>
-              </div>
-
-              {/* Info grid — hours already has AM/PM from model */}
-              <div className="grid grid-cols-2 gap-4">
-                {[{ label: 'Opening Hours', value: store.hours }, { label: 'Contact', value: store.phone }].map(({ label, value }) => (
-                  <div key={label} className="p-5 rounded-xl" style={{ background: '#ECF7E4' }}>
-                    <span className="block text-[10px] uppercase tracking-widest mb-2 font-bold" style={{ color: '#6D7A73', opacity: 0.75 }}>{label}</span>
-                    <p className="font-semibold text-sm" style={{ color: '#151e13' }}>{value}</p>
-                  </div>
-                ))}
-              </div>
-
-              {/* Availability */}
-              <section>
-                <div className="flex items-center justify-between mb-5">
-                  <h2 style={{ fontFamily: '"Newsreader", Georgia, serif', fontSize: '22px', fontWeight: 700, color: '#151e13' }}>Today's Availability</h2>
-                  <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#00694c' }}>Fresh Today</span>
-                </div>
-                <div className="flex gap-4 flex-wrap">
-                  {availability.map((item) => (
-                    <div key={item.category} className="px-5 py-4 rounded-2xl flex flex-col items-center gap-2.5" style={{ background: '#fff', minWidth: '96px', boxShadow: '0 2px 12px rgba(0,33,21,0.06)' }}>
-                      <AvailIcon name={item.icon} size={28} />
-                      <span className="text-xs font-bold text-center" style={{ color: '#151e13' }}>{item.category}</span>
-                      <div className="w-1.5 h-1.5 rounded-full" style={{ background: '#008560' }} />
-                    </div>
-                  ))}
-                </div>
-              </section>
-
-              {leftoverPacks.length > 0 && (
-                <section>
-                  <div className="flex items-baseline justify-between mb-5">
-                    <h2 style={{ fontFamily: '"Newsreader", Georgia, serif', fontSize: '22px', fontWeight: 700, color: '#151e13' }}>Leftover Packs</h2>
-                    <span style={{ fontFamily: '"Newsreader", Georgia, serif', fontSize: '13px', fontStyle: 'italic', color: '#855000' }}>{leftoverPacks.length} packs remaining</span>
-                  </div>
-                  <div className="space-y-4">
-                    {leftoverPacks.map((pack) => (
-                      <div key={pack.id} 
-                           onClick={() => setSelectedPack(pack)}
-                           className="flex overflow-hidden rounded-xl relative group transition-all cursor-pointer hover:ring-2 hover:ring-[#00694c]/20 hover:shadow-lg" 
-                           style={{ background: '#fff', boxShadow: '0 2px 12px rgba(0,33,21,0.06)' }}>
-                        <div className="w-36 h-36 flex-shrink-0 relative overflow-hidden">
-                          <img src={pack.image} alt={pack.name} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
-                          {pack.discount_percentage > 0 && (
-                              <div className="absolute top-2 left-2 text-[11px] font-bold px-2 py-1 rounded shadow-sm" style={{ background: '#e11d48', color: '#fff' }}>
-                                -{pack.discount_percentage}%
-                              </div>
-                          )}
-                        </div>
-                        <div className="p-5 flex flex-col justify-between flex-grow">
-                          <div>
-                            <div className="flex justify-between items-start">
-                              <h3 className="font-bold text-base leading-snug mb-1" style={{ color: '#151e13' }}>{pack.name}</h3>
-                              <span className="text-[10px] uppercase font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded ml-3 whitespace-nowrap border border-gray-200">{pack.package_type}</span>
-                            </div>
-                            <p className="text-sm line-clamp-2" style={{ color: '#6D7A73' }}>{pack.description}</p>
-                            <div className="flex items-center gap-3 mt-2 text-xs">
-                              {pack.weight_quantity && <span className="font-medium text-gray-600 bg-gray-50 border border-gray-200 px-2 py-0.5 rounded">{pack.weight_quantity}</span>}
-                              {pack.stock > 0 ? <span className="text-green-600 font-medium">{pack.stock} available</span> : <span className="text-red-500 font-medium">Out of stock</span>}
-                              {pack.estimated_delivery && <span className="text-gray-500 font-medium ml-auto">Delivers in: {pack.estimated_delivery}</span>}
-                            </div>
-                          </div>
-                          <div className="flex items-end justify-between mt-3">
-                            <div className="flex flex-col">
-                                {pack.original_price && pack.original_price > pack.price && (
-                                    <span className="text-xs text-gray-400 line-through leading-none mb-1">€{Number(pack.original_price).toFixed(2)}</span>
-                                )}
-                                <span className="font-bold text-lg leading-none" style={{ color: '#855000' }}>€{Number(pack.price).toFixed(2)}</span>
-                            </div>
-                            <button 
-                              className="text-xs font-bold px-4 py-2 rounded-full transition-colors active:scale-95 disabled:opacity-50 disabled:active:scale-100" 
-                              disabled={pack.stock <= 0}
-                              style={{ background: pack.stock > 0 ? 'rgba(0,105,76,0.09)' : '#f1f5f9', color: pack.stock > 0 ? '#00694c' : '#94a3b8' }}>
-                              {pack.stock > 0 ? 'Reserve Now' : 'Sold Out'}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              )}
-            </div>
-
-            {/* Right sidebar */}
-            <div className="col-span-2">
-              <div className="sticky top-[80px] space-y-5">
-                <div className="flex flex-wrap gap-2">
-                  {store.features.map((f) => (
-                    <span key={f} className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider"
-                      style={{ background: f === 'leftoverPack' ? '#FFF8ED' : '#E7F1DF', color: f === 'leftoverPack' ? '#855000' : '#00694c' }}>
-                      {FEATURE_LABELS[f] || f}
-                    </span>
-                  ))}
-                </div>
-
-                {/* ← AM/PM open status in sidebar */}
-                <div className="flex items-center gap-2 px-3 py-2 rounded-full w-fit"
-                  style={{ background: statusBg }}>
-                  <div className="w-2 h-2 rounded-full" style={{ background: dotColor }} />
-                  <span style={{ fontSize: '13px', fontWeight: 600, color: statusColor }}>{statusLabel}</span>
-                </div>
-
-                {store.provenance && (
-                  <p style={{ fontFamily: '"Newsreader", Georgia, serif', fontSize: '15px', fontStyle: 'italic', color: '#00694c' }}>
-                    Produce {store.provenance}
-                  </p>
-                )}
-
-                <div>
-                  <h3 style={{ fontFamily: '"Newsreader", Georgia, serif', fontSize: '18px', fontWeight: 700, color: '#151e13', marginBottom: '14px' }}>Location</h3>
-                  <LocationMap store={store} />
-                  <a href={`https://www.google.com/maps/dir/?api=1&destination=${store.lat},${store.lng}`}
-                    target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 mt-3 text-xs font-bold" style={{ color: '#855000' }}>
-                    Get Directions <ExternalIcon />
-                  </a>
-                </div>
-
-                <Link href={`/shop?store=${store.slug}`}
-                  className="flex items-center justify-center w-full py-4 rounded-xl font-bold text-sm text-white active:scale-[0.98] transition-transform"
-                  style={{ background: 'linear-gradient(135deg, #00694c 0%, #008560 100%)', boxShadow: '0 4px 18px rgba(0,105,76,0.28)' }}>
-                  Shop This Store's Products
-                </Link>
-                <Link href="/stores" className="flex cursor-pointer items-center justify-center w-full py-3.5 rounded-xl font-bold text-sm active:scale-[0.98] transition-transform" style={{ background: '#ECF7E4', color: '#151e13' }}>
-                  All Stores
-                </Link>
+        {/* ═══ BOTTOM 4-FEATURE TRUST BAR ═══ */}
+        <section className="rounded-[20px] bg-[#E8EFE0] border border-[#DCE6D3] px-5 sm:px-8 py-4 sm:py-5 grid grid-cols-2 lg:grid-cols-4 gap-y-4 gap-x-6 lg:divide-x lg:divide-[#CAD9C2]">
+          {TRUST_HIGHLIGHTS.map(({ Icon, title, subtitle }, idx) => (
+            <div
+              key={title}
+              className={`flex items-center gap-3.5 ${idx > 0 ? 'lg:pl-6' : ''}`}
+            >
+              <Icon className="w-7 h-7 text-[#0E4D2D] shrink-0" strokeWidth={2} />
+              <div className="min-w-0">
+                <p className="m-0 text-[14.5px] sm:text-[15px] font-bold text-[#142D22] leading-tight truncate">
+                  {title}
+                </p>
+                <p className="mt-0.5 mb-0 text-[12.5px] text-[#4C6457] leading-tight truncate">
+                  {subtitle}
+                </p>
               </div>
             </div>
-          </div>
-        </div>
+          ))}
+        </section>
       </div>
-    </>
+    </div>
   )
 }

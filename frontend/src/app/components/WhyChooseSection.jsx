@@ -84,67 +84,98 @@ const VALUE_PILLARS = [
   },
 ]
 
-const TESTIMONIALS = [
+const DEFAULT_TESTIMONIALS = [
   {
     id: 1,
-    quote: 'Excellent quality and super fast delivery! El Árbol is my go-to for fresh produce.',
+    quote: 'Excellent quality and crisp farm produce! Every basket from El Árbol tastes harvested the same morning.',
     author: 'Sarah M.',
     location: 'Dhaka',
     initials: 'SM',
+    rating: 5,
   },
   {
     id: 2,
-    quote: 'Every basket arrives farm-fresh and crisp. Knowing it supports local growers makes it even better.',
+    quote: 'Grabbing a Leftover Pack from our nearby store saves money every week and keeps fresh food from going to waste.',
     author: 'Rafiq H.',
     location: 'Dhanmondi',
     initials: 'RH',
+    rating: 5,
   },
   {
     id: 3,
-    quote: 'Reliable doorstep delivery, fair prices, and genuinely organic vegetables our whole family trusts.',
+    quote: 'Our family relies on El Árbol for pesticide-free vegetables and reliable same-day doorstep delivery.',
     author: 'Nadia K.',
     location: 'Gulshan',
     initials: 'NK',
+    rating: 5,
+  },
+  {
+    id: 4,
+    quote: 'For our café kitchen, El Árbol wholesale crates always arrive fresh, graded, and right on schedule.',
+    author: 'Tariq A.',
+    location: 'Banani',
+    initials: 'TA',
+    rating: 5,
   },
 ]
 
-const FAQ_ITEMS = [
+const DEFAULT_FAQ_ITEMS = [
   {
     id: 'order',
     question: 'How do I place an order?',
     answer:
-      'Browse fresh items in our Shop, add your chosen produce to the cart, select your nearest store or delivery address, and confirm at checkout.',
+      'Browse fresh seasonal produce in our Shop, add your chosen items or bundles to your basket, select Home Delivery or Click & Collect at a local store, and complete checkout in seconds.',
   },
   {
     id: 'delivery',
     question: 'What is the delivery time?',
     answer:
-      'Same-day or next-morning delivery is available across Dhaka, keeping harvested produce crisp straight from our local store hubs.',
+      'We offer same-day and next-morning carbon-free delivery across Dhaka and surrounding areas, or convenient instant pickup via Click & Collect at your nearest El Árbol store.',
   },
   {
     id: 'organic',
-    question: 'Is the produce organic?',
+    question: 'Is the produce locally grown and organic?',
     answer:
-      'Yes, our certified organic produce is sourced directly from trusted partner farms grown with sustainable practices and zero harmful sprays.',
+      'Yes. Every fruit, vegetable, and pantry item is sourced directly from trusted local partner farms following sustainable, clean-harvest practices with zero harmful chemical sprays.',
+  },
+  {
+    id: 'leftover-pack',
+    question: 'How do Leftover Packs work?',
+    answer:
+      'Leftover Packs are curated surprise bundles of fresh surplus produce from our local stores offered at up to 40–50% off—giving you great value while helping reduce food waste.',
   },
   {
     id: 'returns',
-    question: 'Can I return an item?',
+    question: 'What if an item arrives damaged or not fresh?',
     answer:
-      'If anything arrives damaged or below quality standards, let our support team know within 24 hours for an immediate replacement or refund.',
+      'Your freshness is guaranteed. Contact our support team within 24 hours of delivery or pickup with your order number for an immediate replacement or full refund.',
   },
 ]
 
-export default function WhyChooseSection() {
+function buildInitials(author = '') {
+  const parts = String(author).trim().split(/\s+/).filter(Boolean)
+  if (parts.length === 0) return 'EA'
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
+  return `${parts[0][0] || ''}${parts[parts.length - 1][0] || ''}`.toUpperCase()
+}
+
+export default function WhyChooseSection({ testimonials = [], faqs = [] }) {
+  const testimonialList =
+    Array.isArray(testimonials) && testimonials.length > 0 ? testimonials : DEFAULT_TESTIMONIALS
+  const faqList = Array.isArray(faqs) && faqs.length > 0 ? faqs : DEFAULT_FAQ_ITEMS
+
   const [slideIdx, setSlideIdx] = useState(0)
   const [openFaqId, setOpenFaqId] = useState(null)
   const [email, setEmail] = useState('')
   const [subscribed, setSubscribed] = useState(false)
 
-  const currentTestimonial = TESTIMONIALS[slideIdx]
+  const activeIdx = slideIdx % testimonialList.length
+  const currentTestimonial = testimonialList[activeIdx]
+  const currentInitials = currentTestimonial?.initials || buildInitials(currentTestimonial?.author)
+  const currentRating = Math.min(5, Math.max(1, Number(currentTestimonial?.rating || 5)))
 
   function handleNextSlide() {
-    setSlideIdx((prev) => (prev + 1) % TESTIMONIALS.length)
+    setSlideIdx((prev) => (prev + 1) % testimonialList.length)
   }
 
   function handleSubscribe(e) {
@@ -263,7 +294,7 @@ export default function WhyChooseSection() {
                 <div className="flex items-end justify-between gap-2 mt-4 pt-1">
                   <div className="flex items-center gap-2.5 min-w-0">
                     <div className="w-9 h-9 rounded-full bg-[#DCECD8] border border-[#C3DEC5] flex items-center justify-center text-[11.5px] font-bold text-[#085041] shrink-0">
-                      {currentTestimonial.initials}
+                      {currentInitials}
                     </div>
                     <div className="min-w-0">
                       <p className="text-[13px] font-bold text-[#085041] leading-tight truncate">
@@ -275,15 +306,15 @@ export default function WhyChooseSection() {
                     </div>
                   </div>
 
-                  {/* 5 Stars */}
-                  <div className="flex items-center gap-0.5 shrink-0 pb-0.5" aria-label="5 out of 5 stars">
+                  {/* Star Rating */}
+                  <div className="flex items-center gap-0.5 shrink-0 pb-0.5" aria-label={`${currentRating} out of 5 stars`}>
                     {Array.from({ length: 5 }).map((_, starIdx) => (
                       <svg
                         key={starIdx}
                         width="13"
                         height="13"
                         viewBox="0 0 20 20"
-                        fill="#E89828"
+                        fill={starIdx < currentRating ? '#E89828' : '#D5E2D9'}
                         aria-hidden="true"
                       >
                         <path d="M10 1.5L12.5 6.8L18.3 7.6L14.1 11.7L15.1 17.5L10 14.8L4.9 17.5L5.9 11.7L1.7 7.6L7.5 6.8L10 1.5Z" />
@@ -316,11 +347,11 @@ export default function WhyChooseSection() {
 
             {/* Carousel Pagination Dots */}
             <div className="flex items-center justify-center gap-1.5 mt-3">
-              {TESTIMONIALS.map((item, idx) => {
-                const isActive = idx === slideIdx
+              {testimonialList.map((item, idx) => {
+                const isActive = idx === activeIdx
                 return (
                   <button
-                    key={item.id}
+                    key={item.id || idx}
                     type="button"
                     onClick={() => setSlideIdx(idx)}
                     aria-label={`View review ${idx + 1}`}
@@ -353,13 +384,14 @@ export default function WhyChooseSection() {
             </div>
 
             <div className="rounded-[14px] bg-[#F7FAF5] border border-[#DCE8DF] divide-y divide-[#E3ECE5] overflow-hidden">
-              {FAQ_ITEMS.map((faq) => {
-                const isOpen = openFaqId === faq.id
+              {faqList.map((faq, idx) => {
+                const itemId = faq.id || `faq-${idx}`
+                const isOpen = openFaqId === itemId
                 return (
-                  <div key={faq.id}>
+                  <div key={itemId}>
                     <button
                       type="button"
-                      onClick={() => setOpenFaqId(isOpen ? null : faq.id)}
+                      onClick={() => setOpenFaqId(isOpen ? null : itemId)}
                       aria-expanded={isOpen}
                       className="w-full flex items-center justify-between gap-3 px-4 py-[13px] text-left text-[13px] font-medium text-[#085041] hover:bg-[#EEF6F0] transition-colors cursor-pointer"
                     >

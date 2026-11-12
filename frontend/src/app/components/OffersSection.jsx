@@ -1,49 +1,156 @@
-import React from "react"
+'use client'
+
+import React, { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { ArrowRight } from "lucide-react"
+import { isOfferValid, getOfferMaxDiscount } from "@/lib/api_product"
 
-const DEFAULT_DEALS = [
-  {
-    id: "deal-tomatoes",
-    discount: "Save 25%",
-    subtitle: "on Fresh Tomatoes",
-    ctaText: "Shop Now",
-    href: "/shop",
-    image: "/homepage/offer_card_1.jpg?v=4",
-    theme: "dark",
-    bgColor: "#085041",
-  },
-  {
-    id: "deal-bananas",
-    discount: "Save 20%",
-    subtitle: "on Organic Bananas",
-    ctaText: "Shop Now",
-    href: "/shop",
-    image: "/homepage/offer_card_2.jpg?v=4",
-    theme: "light",
-    bgColor: "#FAFCFA",
-  },
-  {
-    id: "deal-oranges",
-    discount: "Save 30%",
-    subtitle: "on Oranges",
-    ctaText: "Shop Now",
-    href: "/shop",
-    image: "/homepage/offer_card_3.jpg?v=4",
-    theme: "dark",
-    bgColor: "#085041",
-  },
+const FALLBACK_CARD_ART = [
+  "/homepage/offer_card_1.jpg?v=4",
+  "/homepage/offer_card_2.jpg?v=4",
+  "/homepage/offer_card_3.jpg?v=4",
 ]
 
-export default function OffersSection({ offers = [] }) {
-  const deals = DEFAULT_DEALS.map((deal, idx) => {
-    const matchedOffer = Array.isArray(offers) && offers[idx] ? offers[idx] : null
-    return {
-      ...deal,
-      href: matchedOffer?.slug ? `/offers/${matchedOffer.slug}` : "/shop",
+function stripHtml(value) {
+  if (!value || typeof value !== "string") return ""
+  return value.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim()
+}
+
+function buildDynamicOfferCard(offer, idx) {
+  const fallbackImage = FALLBACK_CARD_ART[idx % FALLBACK_CARD_ART.length]
+  const isDark = idx % 2 === 0
+  const cleanDesc = stripHtml(offer.description)
+  const maxPct = getOfferMaxDiscount(offer)
+  const availableCount = Array.isArray(offer.items)
+    ? offer.items.filter((it) => it && it.productIsActive !== false && it.productInStock !== false).length
+    : 0
+
+  const headline = maxPct > 0 ? `Save ${maxPct}%` : offer.title || "Special Offer"
+
+  let subtitle = cleanDesc
+  if (!subtitle) {
+    if (maxPct > 0 && offer.title) {
+      subtitle = offer.title
+    } else if (availableCount > 0) {
+      subtitle = `${availableCount} fresh ${availableCount === 1 ? "product" : "products"} available`
+    } else {
+      subtitle = "Limited-time fresh seasonal deal"
     }
-  })
+  }
+
+  return {
+    id: offer.id || `offer-${idx}`,
+    headline,
+    subtitle,
+    ctaText: "Shop Now",
+    href: offer.slug ? `/offers/${offer.slug}` : "/offers",
+    image: offer.image || fallbackImage,
+    fallbackImage,
+    theme: isDark ? "dark" : "light",
+    bgColor: isDark ? "#085041" : "#FAFCFA",
+  }
+}
+
+function OfferCard({ card }) {
+  const [imgFailed, setImgFailed] = useState(false)
+  const isDark = card.theme === "dark"
+  const imgSrc = imgFailed || !card.image ? card.fallbackImage : card.image
+
+  return (
+    <Link
+      href={card.href}
+      className="group relative rounded-[16px] overflow-hidden flex items-center min-h-[146px] sm:min-h-[154px] no-underline transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-1.5 hover:shadow-[0_14px_30px_rgba(8,80,65,0.16)]"
+      style={{
+        backgroundColor: card.bgColor,
+        border: isDark ? "1px solid rgba(8,80,65,0.28)" : "1px solid #C8E2D0",
+        boxShadow: "0 4px 16px rgba(8, 80, 65, 0.08)",
+        textDecoration: "none",
+      }}
+    >
+      {/* Full Card Artwork Background */}
+      <div className="absolute inset-0 w-full h-full pointer-events-none select-none overflow-hidden">
+        <Image
+          src={imgSrc}
+          alt={card.headline}
+          fill
+          unoptimized
+          sizes="(max-width: 768px) 100vw, 33vw"
+          onError={() => setImgFailed(true)}
+          className="object-cover object-center transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.06]"
+        />
+        <div
+          className="absolute inset-0"
+          style={{
+            background: isDark
+              ? "linear-gradient(90deg, rgba(8, 80, 65, 0.94) 0%, rgba(8, 80, 65, 0.74) 46%, rgba(8, 80, 65, 0) 74%)"
+              : "linear-gradient(90deg, #FFFFFF 0%, rgba(250, 252, 250, 0.92) 46%, rgba(250, 252, 250, 0) 72%)",
+          }}
+        />
+      </div>
+
+      {/* Left Text Content */}
+      <div className="relative z-10 pl-5 sm:pl-6 pr-3 py-5 max-w-[60%]">
+        <h3
+          className="transition-transform duration-300 ease-out group-hover:translate-x-0.5 line-clamp-1"
+          style={{
+            fontFamily: 'var(--font-newsreader), "Playfair Display", Georgia, serif',
+            fontSize: "clamp(1.38rem, 1.9vw, 1.7rem)",
+            fontWeight: 700,
+            color: isDark ? "#FFFFFF" : "#085041",
+            lineHeight: 1.15,
+            marginBottom: "4px",
+          }}
+        >
+          {card.headline}
+        </h3>
+        <p
+          className="transition-transform duration-300 ease-out group-hover:translate-x-0.5 line-clamp-2"
+          style={{
+            fontSize: "13.5px",
+            fontWeight: 450,
+            color: isDark ? "rgba(255,255,255,0.9)" : "#284B3F",
+            marginBottom: "14px",
+            lineHeight: 1.3,
+          }}
+        >
+          {card.subtitle}
+        </p>
+        <span
+          className="inline-flex items-center gap-1.5 font-semibold no-underline transition-all duration-300 ease-out group-hover:gap-2.5 group-hover:translate-x-1"
+          style={{
+            fontSize: "13px",
+            color: isDark ? "#FFFFFF" : "#085041",
+            textDecoration: "none",
+          }}
+        >
+          <span>{card.ctaText}</span>
+          <ArrowRight
+            className={`w-3.5 h-3.5 transition-transform duration-300 ease-out group-hover:translate-x-1 ${
+              isDark ? "text-[#8EE06B]" : "text-[#57A12A]"
+            }`}
+          />
+        </span>
+      </div>
+    </Link>
+  )
+}
+
+export default function OffersSection({ offers = [] }) {
+  const validOffers = (Array.isArray(offers) ? offers : []).filter((offer) => isOfferValid(offer))
+
+  if (validOffers.length === 0) {
+    return null
+  }
+
+  const deals = validOffers.slice(0, 3).map((offer, idx) => buildDynamicOfferCard(offer, idx))
+
+  const gridColsClass =
+    deals.length === 1
+      ? "grid-cols-1 max-w-md"
+      : deals.length === 2
+      ? "grid-cols-1 md:grid-cols-2"
+      : "grid-cols-1 md:grid-cols-3"
 
   return (
     <section className="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8 pt-9 md:pt-11 pb-6 md:pb-8">
@@ -74,7 +181,7 @@ export default function OffersSection({ offers = [] }) {
         </h2>
 
         <Link
-          href={offers?.length > 0 ? "/offers" : "/shop"}
+          href="/offers"
           className="group inline-flex items-center gap-1.5 no-underline shrink-0 transition-all duration-300 ease-out hover:text-[#085041] hover:translate-x-0.5"
           style={{
             fontSize: "13px",
@@ -88,84 +195,11 @@ export default function OffersSection({ offers = [] }) {
         </Link>
       </div>
 
-      {/* 3 Offer Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
-        {deals.map((card) => {
-          const isDark = card.theme === "dark"
-          return (
-            <Link
-              key={card.id}
-              href={card.href}
-              className="group relative rounded-[16px] overflow-hidden flex items-center min-h-[146px] sm:min-h-[154px] no-underline transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-1.5 hover:shadow-[0_14px_30px_rgba(8,80,65,0.16)]"
-              style={{
-                backgroundColor: card.bgColor,
-                border: isDark ? "1px solid rgba(8,80,65,0.28)" : "1px solid #C8E2D0",
-                boxShadow: "0 4px 16px rgba(8, 80, 65, 0.08)",
-                textDecoration: "none",
-              }}
-            >
-              {/* Full Card Artwork Background */}
-              <div className="absolute inset-0 w-full h-full pointer-events-none select-none overflow-hidden">
-                <Image
-                  src={card.image}
-                  alt={card.subtitle}
-                  fill
-                  unoptimized
-                  sizes="(max-width: 768px) 100vw, 33vw"
-                  className="object-cover object-center transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.06]"
-                />
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    background: isDark
-                      ? "linear-gradient(90deg, rgba(8, 80, 65, 0.94) 0%, rgba(8, 80, 65, 0.72) 44%, rgba(8, 80, 65, 0) 70%)"
-                      : "linear-gradient(90deg, #FFFFFF 0%, rgba(250, 252, 250, 0.92) 45%, rgba(250, 252, 250, 0) 68%)",
-                  }}
-                />
-              </div>
-
-              {/* Left Text Content */}
-              <div className="relative z-10 pl-5 sm:pl-6 pr-3 py-5 max-w-[58%]">
-                <h3
-                  className="transition-transform duration-300 ease-out group-hover:translate-x-0.5"
-                  style={{
-                    fontFamily: 'var(--font-newsreader), "Playfair Display", Georgia, serif',
-                    fontSize: "clamp(1.45rem, 2vw, 1.75rem)",
-                    fontWeight: 700,
-                    color: isDark ? "#FFFFFF" : "#085041",
-                    lineHeight: 1.1,
-                    marginBottom: "4px",
-                  }}
-                >
-                  {card.discount}
-                </h3>
-                <p
-                  className="transition-transform duration-300 ease-out group-hover:translate-x-0.5"
-                  style={{
-                    fontSize: "13.5px",
-                    fontWeight: 450,
-                    color: isDark ? "rgba(255,255,255,0.9)" : "#284B3F",
-                    marginBottom: "14px",
-                    lineHeight: 1.3,
-                  }}
-                >
-                  {card.subtitle}
-                </p>
-                <span
-                  className="inline-flex items-center gap-1.5 font-semibold no-underline transition-all duration-300 ease-out group-hover:gap-2.5 group-hover:translate-x-1"
-                  style={{
-                    fontSize: "13px",
-                    color: isDark ? "#FFFFFF" : "#085041",
-                    textDecoration: "none",
-                  }}
-                >
-                  <span>{card.ctaText}</span>
-                  <ArrowRight className={`w-3.5 h-3.5 transition-transform duration-300 ease-out group-hover:translate-x-1 ${isDark ? "text-[#8EE06B]" : "text-[#57A12A]"}`} />
-                </span>
-              </div>
-            </Link>
-          )
-        })}
+      {/* Valid Dynamic Offer Cards */}
+      <div className={`grid ${gridColsClass} gap-4 md:gap-5`}>
+        {deals.map((card) => (
+          <OfferCard key={card.id} card={card} />
+        ))}
       </div>
     </section>
   )
