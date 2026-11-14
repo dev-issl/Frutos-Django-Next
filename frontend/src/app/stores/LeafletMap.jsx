@@ -3,6 +3,7 @@
 
 import { useEffect, useRef, useCallback, useState } from 'react'
 import { Plus, Minus, LocateFixed } from 'lucide-react'
+import { buildStoreMarkerIcon } from './mapMarkerUtils'
 
 const TILE_LAYERS = {
   map: {
@@ -16,33 +17,8 @@ const TILE_LAYERS = {
   },
 }
 
-function buildTeardropIcon(L, isActive) {
-  const width = isActive ? 42 : 34
-  const height = isActive ? 52 : 42
-  const fill = isActive ? '#085041' : '#2E6D5A'
-
-  return L.divIcon({
-    className: '',
-    html: `<div style="
-      width:${width}px;height:${height}px;
-      display:flex;align-items:center;justify-content:center;
-      filter:drop-shadow(0 2px 4px rgba(8,80,65,${isActive ? '0.24' : '0.16'}));
-      transform:${isActive ? 'scale(1.06)' : 'scale(1)'};
-      transition:transform 0.18s ease;
-      cursor:pointer;
-    ">
-      <svg width="${width}" height="${height}" viewBox="0 0 40 50" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M20 2.5C10.89 2.5 3.5 9.89 3.5 19c0 11.15 13.45 24.48 15.63 26.55a1.25 1.25 0 0 0 1.74 0C23.05 43.48 36.5 30.15 36.5 19 36.5 9.89 29.11 2.5 20 2.5Z"
-          fill="${fill}" stroke="#FFFFFF" stroke-width="2.5"/>
-        <circle cx="20" cy="18.5" r="8.8" fill="rgba(255,255,255,0.14)"/>
-        <path d="M20 24.5V16.8M20 19.8c0-3.3 2.5-5.6 5.8-5.8 0 3.3-2.3 5.8-5.8 5.8ZM20 22c-3.1 0-5.4-2.1-5.4-5.2 2.9.1 5.4 2.1 5.4 5.2Z"
-          stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </div>`,
-    iconSize: [width, height],
-    iconAnchor: [Math.round(width / 2), height - 3],
-    tooltipAnchor: [0, -Math.round(height * 0.78)],
-  })
+function buildTeardropIcon(L, isActive, store) {
+  return buildStoreMarkerIcon(L, isActive, store)
 }
 
 export default function LeafletMap({
@@ -72,7 +48,7 @@ export default function LeafletMap({
         if (store.lat == null || store.lng == null) return
         const isActive = store.id === activeStoreId
         const marker = L.marker([store.lat, store.lng], {
-          icon: buildTeardropIcon(L, isActive),
+          icon: buildTeardropIcon(L, isActive, store),
           zIndexOffset: isActive ? 500 : 0,
         })
           .addTo(map)

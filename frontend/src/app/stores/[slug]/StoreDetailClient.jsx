@@ -1,7 +1,9 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
+import { buildStoreMiniMapIcon } from '../mapMarkerUtils'
 import {
   Store,
   MapPin,
@@ -91,10 +93,13 @@ function PackQuickViewModal({ pack, onClose, onReserve }) {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="relative h-60 w-full bg-[#EFF5EC] shrink-0">
-          <img
+          <Image
             src={pack.image || '/stores/store_fallback.jpg'}
             alt={pack.name}
-            className="w-full h-full object-cover"
+            fill
+            unoptimized
+            sizes="(max-width: 640px) 100vw, 512px"
+            className="object-cover"
           />
           <button
             type="button"
@@ -196,14 +201,7 @@ function extractCoordsFromMapLink(url) {
   return null
 }
 
-function escapeHtml(str = '') {
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-}
+
 
 function isValidCoord(v) {
   return v !== null && v !== undefined && v !== '' && Number.isFinite(Number(v))
@@ -215,13 +213,16 @@ function StoreLocationMiniMap({ store, directionsUrl }) {
   const markerRef = useRef(null)
   const destroyedRef = useRef(false)
 
-  const linkCoords = extractCoordsFromMapLink(store?.mapLink)
-  const initialCoords =
-    isValidCoord(store?.lat) && isValidCoord(store?.lng)
-      ? { lat: Number(store.lat), lng: Number(store.lng) }
-      : linkCoords
+  const resolvedCoords = useMemo(() => {
+    if (isValidCoord(store?.lat) && isValidCoord(store?.lng)) {
+      return { lat: Number(store.lat), lng: Number(store.lng) }
+    }
+    return extractCoordsFromMapLink(store?.mapLink)
+  }, [store?.lat, store?.lng, store?.mapLink])
 
-  const [coords, setCoords] = useState(initialCoords)
+  const [geocodedCoords, setGeocodedCoords] = useState(null)
+  const coords = resolvedCoords || geocodedCoords
+
   const pinLabel =
     store?.shortName?.trim() ||
     store?.name?.trim() ||
@@ -231,7 +232,7 @@ function StoreLocationMiniMap({ store, directionsUrl }) {
 
   // Geocode store address on client only if store coordinates are missing
   useEffect(() => {
-    if (coords) return
+    if (resolvedCoords) return
     const query = store?.fullAddress || store?.address || store?.city || store?.name
     if (!query) return
     let active = true
@@ -242,14 +243,14 @@ function StoreLocationMiniMap({ store, directionsUrl }) {
         const lat = parseFloat(results[0].lat)
         const lng = parseFloat(results[0].lon)
         if (Number.isFinite(lat) && Number.isFinite(lng)) {
-          setCoords({ lat, lng })
+          setGeocodedCoords({ lat, lng })
         }
       })
       .catch(() => {})
     return () => {
       active = false
     }
-  }, [coords, store?.fullAddress, store?.address, store?.city, store?.name])
+  }, [resolvedCoords, store?.fullAddress, store?.address, store?.city, store?.name])
 
   // Render real interactive Leaflet map centered & pinned at exact store coordinates
   useEffect(() => {
@@ -269,20 +270,7 @@ function StoreLocationMiniMap({ store, directionsUrl }) {
       if (markerRef.current) {
         map.removeLayer(markerRef.current)
       }
-      const icon = L.divIcon({
-        className: '',
-        html: `<div style="display:flex;flex-direction:column;align-items:center;cursor:pointer;">
-          <div style="position:relative;display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 3px 6px rgba(13,75,43,0.35));">
-            <svg width="34" height="42" viewBox="0 0 40 50" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M20 2.5C10.89 2.5 3.5 9.89 3.5 19c0 11.15 13.45 24.48 15.63 26.55a1.25 1.25 0 0 0 1.74 0C23.05 43.48 36.5 30.15 36.5 19 36.5 9.89 29.11 2.5 20 2.5Z" fill="#0D4B2B" stroke="#FFFFFF" stroke-width="2.5"/>
-            </svg>
-            <img src="/el-erbol-logo.png" alt="" style="position:absolute;top:6px;width:19px;height:19px;border-radius:9999px;background:#fff;padding:1.5px;object-fit:contain;" />
-          </div>
-          <span style="margin-top:2px;padding:2px 7px;border-radius:4px;background:rgba(255,255,255,0.94);color:#142E22;font-size:10.5px;font-weight:700;line-height:1.15;box-shadow:0 1px 4px rgba(0,0,0,0.14);white-space:nowrap;">${escapeHtml(pinLabel)}</span>
-        </div>`,
-        iconSize: [96, 62],
-        iconAnchor: [48, 41],
-      })
+      const icon = buildStoreMiniMapIcon(L, store, pinLabel)
       markerRef.current = L.marker([coords.lat, coords.lng], { icon })
         .addTo(map)
         .on('click', () => {
@@ -341,7 +329,7 @@ function StoreLocationMiniMap({ store, directionsUrl }) {
         markerRef.current = null
       }
     }
-  }, [coords, pinLabel, directionsUrl])
+  }, [coords, pinLabel, directionsUrl, store])
 
   return (
     <div className="relative rounded-[14px] overflow-hidden h-[116px] sm:h-[122px] bg-[#E7EFE4] border border-[#DEE8DA]">
@@ -413,14 +401,15 @@ export default function StoreDetailClient({ store }) {
       <div className="max-w-[1260px] mx-auto px-4 sm:px-6 lg:px-8 pt-5 sm:pt-7">
         {/* ═══ HERO BANNER CARD ═══ */}
         <section className="relative rounded-[22px] sm:rounded-[26px] overflow-hidden min-h-[270px] sm:min-h-[305px] lg:min-h-[325px] shadow-[0_12px_36px_rgba(12,68,41,0.12)] mb-5 flex items-center">
-          <img
+          <Image
             src={heroImage}
             alt={store?.name || 'Store storefront'}
-            loading="eager"
-            fetchPriority="high"
-            decoding="async"
+            fill
+            unoptimized
+            priority
+            sizes="(max-width: 1260px) 100vw, 1260px"
             onError={() => setHeroSrcFailed(true)}
-            className="absolute inset-0 w-full h-full object-cover"
+            className="object-cover"
           />
 
           {/* Warm editorial left-to-right gradient scrim for clear white text */}
@@ -604,10 +593,13 @@ export default function StoreDetailClient({ store }) {
 
                       {/* Left Image + Discount Badge */}
                       <div className="relative z-10 w-full sm:w-[192px] h-[160px] sm:h-[124px] rounded-[14px] overflow-hidden shrink-0 bg-[#EFF5EC]">
-                        <img
+                        <Image
                           src={pack.image || '/stores/store_fallback.jpg'}
                           alt={pack.name}
-                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          fill
+                          unoptimized
+                          sizes="(max-width: 640px) 100vw, 192px"
+                          className="object-cover transition-transform duration-300 group-hover:scale-105"
                         />
                         {hasDiscount && (
                           <span className="absolute top-2.5 left-2.5 rounded-full bg-[#114A2C] text-white text-[12px] font-bold px-2.5 py-1 shadow-sm leading-none">

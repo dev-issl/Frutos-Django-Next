@@ -1,302 +1,90 @@
 'use client'
 // src/app/wholesale/WholesaleModal.jsx
 import { useState, useEffect, useRef } from 'react'
+import Image from 'next/image'
 import { signIn, signOut } from 'next-auth/react'
 import { useSafeSession } from '@/lib/useSafeSession'
 import { wholesaleRegister, wholesaleLogin } from '@/lib/api'
-import { getStores, haversineDistance } from '@/lib/stores-api'
+import { getStores } from '@/lib/stores-api'
 import { useAuth } from '@/app/context/AuthContext'
-import { MapPin, Search, ChevronDown, Check, X, Navigation, Briefcase, TrendingUp } from 'lucide-react'
+import {
+  Building2,
+  User,
+  Mail,
+  CreditCard,
+  Phone,
+  MapPin,
+  Briefcase,
+  Send,
+  FileText,
+  LogIn,
+  Info,
+  X,
+  Check,
+  ChevronDown,
+  Lock,
+  Eye,
+  EyeOff,
+  Sparkles,
+} from 'lucide-react'
 
-function PineTree() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="#00694C">
-      <polygon points="12,2 5.5,10.5 8.5,10.5 3,18 21,18 15.5,10.5 18.5,10.5" />
-      <rect x="10.5" y="18" width="3" height="3.5" rx="0.4" />
-    </svg>
-  )
-}
-
-function CloseIcon() {
-  return (
-    <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
-      <path d="M18 6 6 18M6 6l12 12" />
-    </svg>
-  )
-}
-
-function EyeIcon({ show }) {
-  return show ? (
-    <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
-      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
-    </svg>
-  ) : (
-    <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
-      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
-      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
-      <line x1="1" y1="1" x2="23" y2="23" />
-    </svg>
-  )
-}
-
-function CheckIcon() {
-  return (
-    <svg width="20" height="20" fill="none" stroke="#00694c" strokeWidth="2.5" viewBox="0 0 24 24">
-      <path d="M20 6 9 17l-5-5" />
-    </svg>
-  )
-}
-
+// ── HELPER SPINNER ICON ──
 function SpinnerIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
-      style={{ animation: 'spin 0.8s linear infinite' }}>
+    <svg
+      width="17"
+      height="17"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      className="animate-spin inline-block"
+    >
       <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
     </svg>
   )
 }
 
+// ── BUSINESS TYPES ──
 const BUSINESS_TYPES = [
-  'Restaurant / Bistro', 'Hotel / Resort', 'Catering Company',
-  'Food Retail / Grocery', 'Dark Kitchen', 'Café / Bakery', 'Other',
+  'Restaurant / Bistro',
+  'Hotel / Resort',
+  'Catering Company',
+  'Food Retail / Grocery',
+  'Dark Kitchen',
+  'Café / Bakery',
+  'Other',
 ]
-
-const BUSINESS_TYPE_DETAILS = {
-  'Restaurant / Bistro': { subtitle: 'Dining, bistro & casual restaurants', tag: 'Foodservice' },
-  'Hotel / Resort': { subtitle: 'Hotels, resorts & breakfast banquets', tag: 'Hospitality' },
-  'Catering Company': { subtitle: 'Event caterers & bulk food supply', tag: 'Catering' },
-  'Food Retail / Grocery': { subtitle: 'Grocery stores, supermarkets & deli', tag: 'Retail' },
-  'Dark Kitchen': { subtitle: 'Cloud kitchens & delivery brands', tag: 'Cloud Kitchen' },
-  'Café / Bakery': { subtitle: 'Coffee shops, artisanal bakeries & patisserie', tag: 'Café' },
-  'Other': { subtitle: 'Corporate, wholesale & general commercial', tag: 'Commercial' },
-}
 
 const BUSINESS_TYPE_VALUES = {
-  'Restaurant / Bistro': 'restaurant', 'Hotel / Resort': 'hotel',
-  'Catering Company': 'catering', 'Food Retail / Grocery': 'food_retail',
-  'Dark Kitchen': 'dark_kitchen', 'Café / Bakery': 'cafe', 'Other': 'other',
-}
-
-const VOLUME_RANGES = [
-  '€400 – €1,000 / month', '€1,000 – €3,000 / month',
-  '€3,000 – €7,000 / month', '€7,000+ / month',
-]
-
-const VOLUME_DETAILS = {
-  '€400 – €1,000 / month': { subtitle: 'Starter wholesale tier (€400 min)', tag: 'Starter' },
-  '€1,000 – €3,000 / month': { subtitle: 'Regular wholesale volume tier', tag: 'Growth' },
-  '€3,000 – €7,000 / month': { subtitle: 'High volume bulk wholesale pricing', tag: 'Scale' },
-  '€7,000+ / month': { subtitle: 'Enterprise tier with dedicated logistics', tag: 'Enterprise' },
-}
-
-const VOLUME_VALUES = {
-  '€400 – €1,000 / month': '400_1000',
-  '€1,000 – €3,000 / month': '1000_3000',
-  '€3,000 – €7,000 / month': '3000_7000',
-  '€7,000+ / month': '7000_plus',
+  'Restaurant / Bistro': 'restaurant',
+  'Hotel / Resort': 'hotel',
+  'Catering Company': 'catering',
+  'Food Retail / Grocery': 'food_retail',
+  'Dark Kitchen': 'dark_kitchen',
+  'Café / Bakery': 'cafe',
+  'Other': 'other',
 }
 
 const EMPTY_APPLY = {
-  businessName: '', contactName: '', cif: '', tradeLicense: '', email: '', phone: '',
-  businessType: '', volume: '', postcode: '', password: '', accountType: 'RESTAURANT',
+  businessName: '',
+  contactName: '',
+  cif: '',
+  tradeLicense: '',
+  email: '',
+  phone: '',
+  businessType: '',
+  volume: '400_1000',
+  postcode: '',
+  password: '',
+  accountType: 'RESTAURANT',
   store: '',
 }
 
-
 const WS_API = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api') + '/wholesale'
 
-function WholesaleForgotPasswordFlow({ onBack, onSuccess }) {
-  const [step, setStep]         = useState('email')
-  const [email, setEmail]       = useState('')
-  const [otp, setOtp]           = useState('')
-  const [password, setPassword] = useState('')
-  const [confirm, setConfirm]   = useState('')
-  const [showPass, setShowPass] = useState(false)
-  const [loading, setLoading]   = useState(false)
-  const [error, setError]       = useState('')
-  const [resendTimer, setResendTimer] = useState(0)
-
-  useEffect(() => {
-    if (resendTimer > 0) {
-      const t = setTimeout(() => setResendTimer(r => r - 1), 1000)
-      return () => clearTimeout(t)
-    }
-  }, [resendTimer])
-
-  async function handleSendOTP(e) {
-    e.preventDefault()
-    if (!email.trim() || !/\S+@\S+\.\S+/.test(email)) { setError('Please enter a valid email.'); return }
-    setLoading(true); setError('')
-    try {
-      const res = await fetch(`${WS_API}/auth/password-reset/send-otp/`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.detail || 'Failed to send OTP.')
-      setStep('otp'); setResendTimer(60)
-    } catch (err) { setError(err.message) }
-    finally { setLoading(false) }
-  }
-
-  async function handleVerifyOTP(e) {
-    e.preventDefault()
-    if (otp.length !== 6) { setError('Enter the 6-digit OTP.'); return }
-    setStep('password'); setError('')
-  }
-
-  async function handleResetPassword(e) {
-    e.preventDefault()
-    if (password.length < 8) { setError('Min. 8 characters.'); return }
-    if (password !== confirm) { setError('Passwords do not match.'); return }
-    setLoading(true); setError('')
-    try {
-      const res = await fetch(`${WS_API}/auth/password-reset/verify/`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, otp, password }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.detail || 'Reset failed.')
-      setStep('done')
-    } catch (err) { setError(err.message); if (err.message.includes('OTP')) setStep('otp') }
-    finally { setLoading(false) }
-  }
-
-  async function handleResend() {
-    if (resendTimer > 0) return
-    setLoading(true)
-    try {
-      await fetch(`${WS_API}/auth/password-reset/send-otp/`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      })
-      setResendTimer(60)
-    } catch {}
-    finally { setLoading(false) }
-  }
-
-  const inp = { width: '100%', padding: '10px 13px', border: '1.5px solid #C8D5CC', borderRadius: '10px', background: '#fff', color: '#151E13', fontSize: '13.5px', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit', transition: 'border-color .15s' }
-
-  return (
-    <div>
-      {step !== 'done' && (
-        <button onClick={step === 'email' ? onBack : () => { setStep('email'); setError('') }}
-          style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', cursor: 'pointer', color: '#6D7A73', fontSize: '13px', padding: '0 0 16px', fontFamily: 'inherit' }}>
-          <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-          {step === 'email' ? 'Back to login' : 'Change email'}
-        </button>
-      )}
-      {step !== 'done' && (
-        <div style={{ display: 'flex', gap: '6px', marginBottom: '20px' }}>
-          {['email','otp','password'].map((s,i) => (
-            <div key={s} style={{ flex: 1, height: '3px', borderRadius: '99px', background: ['email','otp','password'].indexOf(step) >= i ? '#00694C' : '#E7F1DF', transition: 'background .3s' }} />
-          ))}
-        </div>
-      )}
-      {error && <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '10px', padding: '10px 14px', marginBottom: '16px', fontSize: '13px', color: '#D94040' }}>{error}</div>}
-
-      {step === 'email' && (
-        <form onSubmit={handleSendOTP}>
-          <h2 style={{ fontFamily: '"Playfair Display",Georgia,serif', fontSize: '20px', fontWeight: 700, color: '#151E13', margin: '0 0 6px' }}>Forgot password?</h2>
-          <p style={{ fontSize: '13px', color: '#6D7A73', margin: '0 0 18px', lineHeight: 1.55 }}>Enter your wholesale email to receive a reset OTP.</p>
-          <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: '#2D3A35', marginBottom: '5px' }}>Business Email</label>
-          <input style={inp} type="email" placeholder="orders@yourbusiness.com" value={email}
-            onChange={e => { setEmail(e.target.value); setError('') }}
-            onFocus={e => e.target.style.borderColor = '#00694C'}
-            onBlur={e => e.target.style.borderColor = '#C8D5CC'} />
-          <button type="submit" disabled={loading} style={{ width: '100%', marginTop: '16px', padding: '12px', background: '#00694C', color: 'white', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1, fontFamily: 'inherit' }}>
-            {loading ? 'Sending…' : 'Send OTP'}
-          </button>
-        </form>
-      )}
-
-      {step === 'otp' && (
-        <form onSubmit={handleVerifyOTP}>
-          <h2 style={{ fontFamily: '"Playfair Display",Georgia,serif', fontSize: '20px', fontWeight: 700, color: '#151E13', margin: '0 0 6px' }}>Check your email</h2>
-          <p style={{ fontSize: '13px', color: '#6D7A73', margin: '0 0 18px', lineHeight: 1.55 }}>We sent a code to <strong style={{ color: '#151E13' }}>{email}</strong>.</p>
-          <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: '#2D3A35', marginBottom: '5px' }}>6-Digit OTP</label>
-          <input style={{ ...inp, letterSpacing: '0.3em', fontSize: '20px', textAlign: 'center', fontWeight: 700 }}
-            type="text" inputMode="numeric" maxLength={6} placeholder="──────"
-            value={otp} onChange={e => { setOtp(e.target.value.replace(/\D/g,'')); setError('') }}
-            onFocus={e => e.target.style.borderColor = '#00694C'}
-            onBlur={e => e.target.style.borderColor = '#C8D5CC'} />
-          <button type="submit" disabled={otp.length !== 6}
-            style={{ width: '100%', marginTop: '16px', padding: '12px', background: '#00694C', color: 'white', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: otp.length !== 6 ? 'not-allowed' : 'pointer', opacity: otp.length !== 6 ? 0.65 : 1, fontFamily: 'inherit' }}>
-            Verify OTP
-          </button>
-          <p style={{ fontSize: '13px', color: '#6D7A73', textAlign: 'center', marginTop: '14px' }}>
-            Didn&apos;t receive it?{' '}
-            <button type="button" onClick={handleResend} disabled={resendTimer > 0}
-              style={{ color: resendTimer > 0 ? '#BCCAC1' : '#00694C', fontWeight: 600, background: 'none', border: 'none', cursor: resendTimer > 0 ? 'default' : 'pointer', padding: 0, fontSize: '13px', fontFamily: 'inherit' }}>
-              {resendTimer > 0 ? `Resend in ${resendTimer}s` : 'Resend'}
-            </button>
-          </p>
-        </form>
-      )}
-
-      {step === 'password' && (
-        <form onSubmit={handleResetPassword}>
-          <h2 style={{ fontFamily: '"Playfair Display",Georgia,serif', fontSize: '20px', fontWeight: 700, color: '#151E13', margin: '0 0 6px' }}>New password</h2>
-          <p style={{ fontSize: '13px', color: '#6D7A73', margin: '0 0 18px' }}>Choose a strong password.</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: '#2D3A35', marginBottom: '5px' }}>New Password</label>
-              <div style={{ position: 'relative' }}>
-                <input style={{ ...inp, paddingRight: '40px' }} type={showPass ? 'text' : 'password'} placeholder="Min. 8 characters"
-                  value={password} onChange={e => { setPassword(e.target.value); setError('') }}
-                  onFocus={e => e.target.style.borderColor = '#00694C'}
-                  onBlur={e => e.target.style.borderColor = '#C8D5CC'} />
-                <button type="button" onClick={() => setShowPass(p => !p)}
-                  style={{ position: 'absolute', right: '11px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#6D7A73', display: 'flex' }}>
-                  <EyeIcon show={showPass} />
-                </button>
-              </div>
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: '#2D3A35', marginBottom: '5px' }}>Confirm Password</label>
-              <input style={inp} type="password" placeholder="Re-enter password"
-                value={confirm} onChange={e => { setConfirm(e.target.value); setError('') }}
-                onFocus={e => e.target.style.borderColor = '#00694C'}
-                onBlur={e => e.target.style.borderColor = '#C8D5CC'} />
-            </div>
-            <button type="submit" disabled={loading}
-              style={{ padding: '12px', background: '#00694C', color: 'white', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1, fontFamily: 'inherit' }}>
-              {loading ? 'Resetting…' : 'Reset Password'}
-            </button>
-          </div>
-        </form>
-      )}
-
-      {step === 'done' && (
-        <div style={{ textAlign: 'center', padding: '16px 0' }}>
-          <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: '#E7F1DF', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 18px' }}>
-            <svg width="26" height="26" fill="none" stroke="#00694C" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>
-          </div>
-          <h2 style={{ fontFamily: '"Playfair Display",Georgia,serif', fontSize: '20px', fontWeight: 700, color: '#151E13', margin: '0 0 10px' }}>Password reset!</h2>
-          <p style={{ fontSize: '13px', color: '#6D7A73', margin: '0 0 22px', lineHeight: 1.6 }}>
-            Your wholesale password has been updated. Log in with your new password.
-          </p>
-          <button onClick={onSuccess}
-            style={{ width: '100%', padding: '12px', background: '#00694C', color: 'white', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
-            Back to Login
-          </button>
-        </div>
-      )}
-    </div>
-  )
-}
-
-
-function CustomSelect({
-  name,
-  value,
-  onChange,
-  options,
-  details = {},
-  placeholder = "Select...",
-  hasError = false,
-  icon: Icon = null
-}) {
+// ── CUSTOM SELECT DROPDOWN (Matching reference select style) ──
+function SelectBusinessType({ value, onChange, hasError }) {
   const [isOpen, setIsOpen] = useState(false)
   const containerRef = useRef(null)
 
@@ -312,11 +100,8 @@ function CustomSelect({
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [isOpen])
 
-  const selectedDetail = value ? details[value] : null
-
   return (
-    <div ref={containerRef} style={{ position: 'relative', zIndex: isOpen ? 60 : 1 }}>
-      {/* Trigger Button */}
+    <div ref={containerRef} className="relative z-30">
       <div
         role="button"
         tabIndex={0}
@@ -329,194 +114,62 @@ function CustomSelect({
             setIsOpen(false)
           }
         }}
-        style={{
-          width: '100%',
-          padding: '10px 13px',
-          border: hasError
-            ? '1.5px solid #D94040'
+        className={`w-full h-[42px] sm:h-[44px] px-3.5 bg-white border rounded-xl flex items-center justify-between cursor-pointer transition-all duration-150 select-none ${
+          hasError
+            ? 'border-red-400 ring-2 ring-red-100'
             : isOpen
-              ? '1.5px solid #00694C'
-              : '1.5px solid #C8D5CC',
-          borderRadius: '10px',
-          background: '#fff',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          cursor: 'pointer',
-          outline: 'none',
-          boxShadow: isOpen ? '0 0 0 3px rgba(0, 105, 76, 0.1)' : 'none',
-          transition: 'border-color 0.15s, box-shadow 0.15s',
-          boxSizing: 'border-box',
-          fontFamily: 'inherit',
-          userSelect: 'none',
-          gap: '10px'
-        }}
+              ? 'border-[#0B4828] ring-2 ring-[#0B4828]/15 shadow-xs'
+              : 'border-[#D4DFD8] hover:border-[#B7C7BB] shadow-[0_1px_2px_rgba(0,0,0,0.03)]'
+        }`}
+        style={{ cursor: 'pointer' }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: 1 }}>
-          {Icon && <Icon size={15} color={value ? '#00694C' : '#8A9991'} style={{ flexShrink: 0 }} />}
-          <div style={{ minWidth: 0, flex: 1 }}>
-            {value ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ fontSize: '13.5px', fontWeight: 600, color: '#151E13', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {value}
-                </span>
-                {selectedDetail?.tag && (
-                  <span style={{
-                    fontSize: '9.5px',
-                    fontWeight: 700,
-                    padding: '1px 6px',
-                    borderRadius: '4px',
-                    background: '#EAF2EC',
-                    color: '#00694C',
-                    flexShrink: 0
-                  }}>
-                    {selectedDetail.tag}
-                  </span>
-                )}
-              </div>
-            ) : (
-              <span style={{ fontSize: '13.5px', color: '#A0ADA6' }}>{placeholder}</span>
-            )}
-          </div>
+        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+          <Briefcase className="w-4 h-4 text-[#7A8C81] flex-shrink-0" />
+          <span
+            className={`text-[13px] sm:text-[13.5px] truncate ${
+              value ? 'text-[#14261C] font-medium' : 'text-[#9BAAA0]'
+            }`}
+          >
+            {value || 'Select business type'}
+          </span>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-          {value && (
-            <span
-              role="button"
-              tabIndex={0}
-              onClick={(e) => {
-                e.stopPropagation()
-                onChange({ target: { name, value: '' } })
-              }}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '18px',
-                height: '18px',
-                borderRadius: '50%',
-                background: '#E2EDE6',
-                color: '#4A5B52',
-                cursor: 'pointer'
-              }}
-              title="Clear selection"
-            >
-              <X size={11} strokeWidth={2.5} />
-            </span>
-          )}
-          <ChevronDown
-            size={16}
-            color="#6D7A73"
-            style={{
-              transition: 'transform 0.2s ease',
-              transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)'
-            }}
-          />
-        </div>
+        <ChevronDown
+          className={`w-4 h-4 text-[#7A8C81] transition-transform duration-200 flex-shrink-0 ${
+            isOpen ? 'rotate-180 text-[#0B4828]' : ''
+          }`}
+        />
       </div>
 
-      {/* Floating Options Panel */}
       {isOpen && (
-        <div
-          className="ws-scroll"
-          style={{
-            position: 'absolute',
-            top: 'calc(100% + 5px)',
-            left: 0,
-            right: 0,
-            zIndex: 100,
-            background: '#ffffff',
-            borderRadius: '12px',
-            border: '1.5px solid #C8D5CC',
-            boxShadow: '0 14px 30px -4px rgba(21, 30, 19, 0.18), 0 4px 10px rgba(0, 0, 0, 0.04)',
-            overflow: 'hidden',
-            maxHeight: '230px',
-            overflowY: 'auto',
-            padding: '5px',
-            animation: 'wsSlideUp 0.15s ease'
-          }}
-        >
-          {options.map((opt) => {
+        <div className="absolute top-[calc(100%+6px)] left-0 right-0 z-50 bg-white border border-[#D4DFD8] rounded-xl shadow-xl overflow-hidden py-1.5 animate-in fade-in zoom-in-95 duration-100">
+          {BUSINESS_TYPES.map(opt => {
             const isSelected = opt === value
-            const d = details[opt]
-
             return (
               <div
                 key={opt}
+                role="button"
+                tabIndex={0}
                 onClick={() => {
-                  onChange({ target: { name, value: opt } })
+                  onChange({ target: { name: 'businessType', value: opt } })
                   setIsOpen(false)
                 }}
-                style={{
-                  padding: '8px 10px',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  background: isSelected ? '#E7F1DF' : 'transparent',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: '10px',
-                  marginTop: '2px',
-                  transition: 'background 0.12s'
+                onKeyDown={e => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    onChange({ target: { name: 'businessType', value: opt } })
+                    setIsOpen(false)
+                  }
                 }}
-                onMouseEnter={e => {
-                  if (!isSelected) e.currentTarget.style.background = '#F0F7F3'
-                }}
-                onMouseLeave={e => {
-                  if (!isSelected) e.currentTarget.style.background = 'transparent'
-                }}
+                className={`px-3.5 py-2 text-[13px] cursor-pointer flex items-center justify-between transition-colors ${
+                  isSelected
+                    ? 'bg-[#EAF3E4] text-[#0B4828] font-semibold'
+                    : 'text-[#1F3327] hover:bg-[#F2F7EF]'
+                }`}
+                style={{ cursor: 'pointer' }}
               >
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{
-                      fontSize: '13px',
-                      fontWeight: isSelected ? 700 : 500,
-                      color: isSelected ? '#00694C' : '#151E13'
-                    }}>
-                      {opt}
-                    </span>
-                    {d?.tag && (
-                      <span style={{
-                        fontSize: '9.5px',
-                        fontWeight: 600,
-                        padding: '1px 5px',
-                        borderRadius: '4px',
-                        background: isSelected ? '#00694C' : '#EAF2EC',
-                        color: isSelected ? '#ffffff' : '#00694C'
-                      }}>
-                        {d.tag}
-                      </span>
-                    )}
-                  </div>
-                  {d?.subtitle && (
-                    <p style={{
-                      fontSize: '11px',
-                      color: isSelected ? '#3A5A44' : '#6D7A73',
-                      margin: '2px 0 0',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap'
-                    }}>
-                      {d.subtitle}
-                    </p>
-                  )}
-                </div>
-
-                {isSelected && (
-                  <div style={{
-                    width: '18px',
-                    height: '18px',
-                    borderRadius: '50%',
-                    background: '#00694C',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0
-                  }}>
-                    <Check size={11} color="#fff" strokeWidth={3} />
-                  </div>
-                )}
+                <span>{opt}</span>
+                {isSelected && <Check className="w-4 h-4 text-[#0B4828]" strokeWidth={2.5} />}
               </div>
             )
           })}
@@ -526,414 +179,323 @@ function CustomSelect({
   )
 }
 
+// ── FORGOT PASSWORD FLOW ──
+function WholesaleForgotPasswordFlow({ onBack, onSuccess }) {
+  const [step, setStep] = useState('email')
+  const [email, setEmail] = useState('')
+  const [otp, setOtp] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirm, setConfirm] = useState('')
+  const [showPass, setShowPass] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [resendTimer, setResendTimer] = useState(0)
 
-const DEFAULT_USER_COORDS = { lat: 23.7500, lng: 90.3800 }
-
-function SearchableStoreSelect({ stores, value, onChange, userPostcode = '', placeholder = "Select preferred store (optional)..." }) {
-  const [isOpen, setIsOpen] = useState(false)
-  const [search, setSearch] = useState('')
-  const [userLocation, setUserLocation] = useState(DEFAULT_USER_COORDS)
-  const containerRef = useRef(null)
-  const searchInputRef = useRef(null)
-
-  const selectedStore = stores.find(s => String(s.id) === String(value))
-
-  // Retrieve user location for distance calculation with reliable fallback
   useEffect(() => {
-    if (typeof window !== 'undefined' && navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        pos => {
-          if (pos?.coords?.latitude && pos?.coords?.longitude) {
-            setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude })
-          }
-        },
-        () => {
-          // Default fallback coordinates are already set in state
-        },
-        { timeout: 6000, enableHighAccuracy: false, maximumAge: 60000 }
-      )
+    if (resendTimer > 0) {
+      const t = setTimeout(() => setResendTimer(r => r - 1), 1000)
+      return () => clearTimeout(t)
     }
-  }, [])
+  }, [resendTimer])
 
-  const getDistanceKm = (store) => {
-    if (!userLocation || store == null) return null
-    const lat = store.lat != null ? parseFloat(store.lat) : null
-    const lng = store.lng != null ? parseFloat(store.lng) : null
-    if (lat == null || lng == null || isNaN(lat) || isNaN(lng)) return null
-    return haversineDistance(userLocation.lat, userLocation.lng, lat, lng)
+  async function handleSendOTP(e) {
+    e.preventDefault()
+    if (!email.trim() || !/\S+@\S+\.\S+/.test(email)) {
+      setError('Please enter a valid business email.')
+      return
+    }
+    setLoading(true)
+    setError('')
+    try {
+      const res = await fetch(`${WS_API}/auth/password-reset/send-otp/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.detail || 'Failed to send OTP.')
+      setStep('otp')
+      setResendTimer(60)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const formatDistanceKm = (km) => {
-    if (km == null || isNaN(km)) return null
-    if (km < 1) return `${km.toFixed(1)} km`
-    if (km < 10) return `${km.toFixed(1)} km`
-    return `${Math.round(km)} km`
+  async function handleVerifyOTP(e) {
+    e.preventDefault()
+    if (otp.length !== 6) {
+      setError('Enter the 6-digit OTP code.')
+      return
+    }
+    setStep('password')
+    setError('')
   }
 
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (containerRef.current && !containerRef.current.contains(event.target)) {
-        setIsOpen(false)
-      }
+  async function handleResetPassword(e) {
+    e.preventDefault()
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters.')
+      return
     }
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside)
+    if (password !== confirm) {
+      setError('Passwords do not match.')
+      return
     }
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [isOpen])
-
-  useEffect(() => {
-    if (isOpen && searchInputRef.current) {
-      const timer = setTimeout(() => {
-        searchInputRef.current?.focus()
-      }, 50)
-      return () => clearTimeout(timer)
+    setLoading(true)
+    setError('')
+    try {
+      const res = await fetch(`${WS_API}/auth/password-reset/verify/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, otp, password }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.detail || 'Reset failed.')
+      setStep('done')
+    } catch (err) {
+      setError(err.message)
+      if (err.message.includes('OTP')) setStep('otp')
+    } finally {
+      setLoading(false)
     }
-  }, [isOpen])
+  }
 
-  const cleanPostcode = (userPostcode || '').trim().toLowerCase()
-
-  const filteredStores = stores.filter(s => {
-    if (!search.trim()) return true
-    const q = search.toLowerCase()
-    const name = (s.name || '').toLowerCase()
-    const code = (s.storeCode || s.store_code || '').toLowerCase()
-    const city = (s.city || '').toLowerCase()
-    const address = (s.fullAddress || s.full_address || s.address || '').toLowerCase()
-    return name.includes(q) || code.includes(q) || city.includes(q) || address.includes(q)
-  })
-
-  // Sort stores by proximity (closest distance first)
-  const sortedStores = [...filteredStores].sort((a, b) => {
-    const distA = getDistanceKm(a)
-    const distB = getDistanceKm(b)
-    if (distA != null && distB != null) return distA - distB
-    if (distA != null) return -1
-    if (distB != null) return 1
-    return 0
-  })
-
-  const selectedDistKm = selectedStore ? getDistanceKm(selectedStore) : null
-  const selectedDistText = selectedDistKm != null ? formatDistanceKm(selectedDistKm) : null
+  async function handleResend() {
+    if (resendTimer > 0) return
+    setLoading(true)
+    try {
+      await fetch(`${WS_API}/auth/password-reset/send-otp/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      })
+      setResendTimer(60)
+    } catch {}
+    finally {
+      setLoading(false)
+    }
+  }
 
   return (
-    <div ref={containerRef} style={{ position: 'relative', zIndex: isOpen ? 50 : 1 }}>
-      {/* Trigger Field */}
-      <div
-        role="button"
-        tabIndex={0}
-        onClick={() => setIsOpen(p => !p)}
-        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setIsOpen(p => !p); } }}
-        style={{
-          width: '100%',
-          padding: selectedStore ? '7px 12px' : '10px 13px',
-          border: isOpen ? '1.5px solid #00694C' : '1.5px solid #C8D5CC',
-          borderRadius: '10px',
-          background: '#fff',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          textAlign: 'left',
-          cursor: 'pointer',
-          outline: 'none',
-          boxShadow: isOpen ? '0 0 0 3px rgba(0, 105, 76, 0.1)' : 'none',
-          transition: 'border-color 0.15s, box-shadow 0.15s',
-          boxSizing: 'border-box',
-          fontFamily: 'inherit',
-          gap: '8px'
-        }}
-      >
-        {selectedStore ? (
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-              <span style={{ fontSize: '13.5px', fontWeight: 600, color: '#151E13' }}>
-                {selectedStore.name}
-              </span>
-              {(selectedStore.storeCode || selectedStore.store_code) && (
-                <span style={{ fontSize: '10px', fontFamily: 'monospace', fontWeight: 700, background: '#E7F1DF', color: '#00694C', padding: '1px 6px', borderRadius: '4px' }}>
-                  {selectedStore.storeCode || selectedStore.store_code}
-                </span>
-              )}
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
-              <MapPin size={12} color="#00694C" style={{ flexShrink: 0 }} />
-              <span style={{ fontSize: '11.5px', color: '#6D7A73', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {selectedStore.city ? `${selectedStore.city} • ` : ''}{selectedStore.fullAddress || selectedStore.full_address || selectedStore.address || 'Standard Location'}
-              </span>
-            </div>
-          </div>
-        ) : (
-          <span style={{ fontSize: '13.5px', color: '#9DAAA3' }}>{placeholder}</span>
-        )}
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-          {selectedDistText && (
-            <span style={{
-              fontSize: '11px',
-              fontWeight: 700,
-              color: '#00694C',
-              background: '#E7F1DF',
-              border: '1px solid #D1E5D5',
-              padding: '2px 7px',
-              borderRadius: '6px',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '3.5px',
-              whiteSpace: 'nowrap'
-            }}>
-              <Navigation size={9} style={{ transform: 'rotate(45deg)' }} />
-              {selectedDistText}
-            </span>
-          )}
-
-          {selectedStore && (
-            <span
-              role="button"
-              tabIndex={0}
-              onClick={(e) => {
-                e.stopPropagation()
-                onChange({ target: { name: 'store', value: '' } })
-              }}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '18px',
-                height: '18px',
-                borderRadius: '50%',
-                background: '#E2EDE6',
-                color: '#4A5B52',
-                cursor: 'pointer'
-              }}
-              title="Clear selection"
-            >
-              <X size={11} strokeWidth={2.5} />
-            </span>
-          )}
-          <ChevronDown
-            size={16}
-            color="#6D7A73"
-            style={{
-              transition: 'transform 0.2s ease',
-              transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)'
-            }}
-          />
-        </div>
-      </div>
-
-      {/* Floating Searchable Dropdown */}
-      {isOpen && (
-        <div
-          style={{
-            position: 'absolute',
-            top: 'calc(100% + 6px)',
-            left: 0,
-            right: 0,
-            zIndex: 100,
-            background: '#ffffff',
-            borderRadius: '12px',
-            border: '1.5px solid #C8D5CC',
-            boxShadow: '0 14px 30px -4px rgba(21, 30, 19, 0.18), 0 4px 10px rgba(0, 0, 0, 0.04)',
-            overflow: 'hidden',
-            animation: 'wsSlideUp 0.15s ease'
-          }}
+    <div className="py-2">
+      {step !== 'done' && (
+        <button
+          type="button"
+          onClick={step === 'email' ? onBack : () => { setStep('email'); setError('') }}
+          className="flex items-center gap-1.5 text-xs text-[#526F5E] hover:text-[#0B4828] mb-4 font-medium transition-colors cursor-pointer"
+          style={{ cursor: 'pointer' }}
         >
-          {/* Search Input Box */}
-          <div style={{ padding: '8px 10px', borderBottom: '1px solid #EEF3F0', background: '#FAFCFB' }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '7px 10px',
-              background: '#fff',
-              border: '1.5px solid #00694C',
-              borderRadius: '8px'
-            }}>
-              <Search size={14} color="#00694C" style={{ flexShrink: 0 }} />
-              <input
-                ref={searchInputRef}
-                type="text"
-                placeholder="Search store name, city, address or code..."
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                style={{
-                  width: '100%',
-                  border: 'none',
-                  outline: 'none',
-                  fontSize: '12.5px',
-                  color: '#151E13',
-                  background: 'transparent',
-                  fontFamily: 'inherit'
-                }}
-              />
-              {search && (
-                <button
-                  type="button"
-                  onClick={() => setSearch('')}
-                  style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#9DAAA3', padding: 0 }}
-                >
-                  <X size={13} />
-                </button>
-              )}
-            </div>
-          </div>
+          <ChevronDown className="w-3.5 h-3.5 rotate-90" />
+          {step === 'email' ? 'Back to login' : 'Change email'}
+        </button>
+      )}
 
-          {/* Stores List */}
-          <div style={{ maxHeight: '230px', overflowY: 'auto', padding: '6px' }}>
-            {/* Auto-Assign Option */}
-            <div
-              onClick={() => {
-                onChange({ target: { name: 'store', value: '' } })
-                setIsOpen(false)
-              }}
-              style={{
-                padding: '8px 10px',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                background: !value ? '#F0F7F3' : 'transparent',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                transition: 'background 0.12s'
-              }}
-              onMouseEnter={e => { if (value) e.currentTarget.style.background = '#F6FAF7' }}
-              onMouseLeave={e => { if (value) e.currentTarget.style.background = 'transparent' }}
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl p-3 mb-4">
+          {error}
+        </div>
+      )}
+
+      {step === 'email' && (
+        <form onSubmit={handleSendOTP} className="space-y-4">
+          <div>
+            <h3
+              className="font-serif text-[22px] font-bold text-[#143223]"
+              style={{ fontFamily: 'var(--font-newsreader), "Playfair Display", Georgia, serif' }}
             >
-              <div>
-                <p style={{ fontSize: '13px', fontWeight: 600, color: !value ? '#00694C' : '#3A5A44', margin: 0 }}>
-                  Auto-Assign (Default Nearest Store)
-                </p>
-                <p style={{ fontSize: '11px', color: '#8A9991', margin: '2px 0 0' }}>
-                  Let system automatically assign the best fulfillment branch
-                </p>
-              </div>
-              {!value && <Check size={15} color="#00694C" strokeWidth={2.5} />}
-            </div>
-
-            {sortedStores.length === 0 ? (
-              <div style={{ padding: '20px 16px', textAlign: 'center', color: '#8A9991', fontSize: '12.5px' }}>
-                No stores found matching &ldquo;{search}&rdquo;
-              </div>
-            ) : (
-              sortedStores.map(st => {
-                const isSelected = String(st.id) === String(value)
-                const isNearUser = cleanPostcode && ((st.fullAddress || st.full_address || st.address || '') + ' ' + (st.city || '')).toLowerCase().includes(cleanPostcode)
-                const distKm = getDistanceKm(st)
-                const distText = formatDistanceKm(distKm)
-
-                return (
-                  <div
-                    key={st.id}
-                    onClick={() => {
-                      onChange({ target: { name: 'store', value: st.id } })
-                      setIsOpen(false)
-                    }}
-                    style={{
-                      padding: '8px 10px',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      background: isSelected ? '#E7F1DF' : 'transparent',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      gap: '10px',
-                      marginTop: '2px',
-                      transition: 'background 0.12s'
-                    }}
-                    onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = '#F0F7F3' }}
-                    onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent' }}
-                  >
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: '13px', fontWeight: 600, color: isSelected ? '#00694C' : '#151E13' }}>
-                          {st.name}
-                        </span>
-                        {(st.storeCode || st.store_code) && (
-                          <span style={{
-                            fontSize: '9.5px',
-                            fontFamily: 'monospace',
-                            fontWeight: 700,
-                            padding: '1px 5px',
-                            borderRadius: '4px',
-                            background: isSelected ? '#00694C' : '#EAF2EC',
-                            color: isSelected ? '#fff' : '#00694C'
-                          }}>
-                            {st.storeCode || st.store_code}
-                          </span>
-                        )}
-                        {isNearUser && (
-                          <span style={{
-                            fontSize: '9.5px',
-                            fontWeight: 600,
-                            padding: '1px 6px',
-                            borderRadius: '4px',
-                            background: '#DEF7EC',
-                            color: '#03543F'
-                          }}>
-                            Near delivery postcode
-                          </span>
-                        )}
-                      </div>
-
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
-                        <MapPin size={11} color="#00694C" style={{ flexShrink: 0 }} />
-                        <span style={{ fontSize: '11.5px', color: '#5C6E64', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {st.city ? `${st.city} • ` : ''}{st.fullAddress || st.full_address || st.address || 'Standard Location'}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-                      {distText && (
-                        <span style={{
-                          fontSize: '11px',
-                          fontWeight: 700,
-                          color: isSelected ? '#00694C' : '#1b5e39',
-                          background: isSelected ? '#d0ebd8' : '#eaf6ee',
-                          border: isSelected ? '1px solid #9dd7ac' : '1px solid #cce8d4',
-                          padding: '2.5px 7px',
-                          borderRadius: '6px',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '3.5px',
-                          whiteSpace: 'nowrap',
-                          fontFamily: 'inherit'
-                        }}>
-                          <Navigation size={10} style={{ transform: 'rotate(45deg)' }} />
-                          {distText}
-                        </span>
-                      )}
-
-                      {isSelected && (
-                        <div style={{ width: '18px', height: '18px', borderRadius: '50%', background: '#00694C', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                          <Check size={11} color="#fff" strokeWidth={3} />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )
-              })
-            )}
+              Reset Password
+            </h3>
+            <p className="text-xs sm:text-[13px] text-[#556F60] mt-0.5">
+              Enter your wholesale registered email to receive an OTP.
+            </p>
           </div>
+          <div>
+            <label className="block text-[12px] font-semibold text-[#183526] mb-1.5">
+              Business Email
+            </label>
+            <div className="flex items-center w-full bg-white border border-[#D5DFD8] rounded-xl px-3.5 h-[42px] focus-within:border-[#0B4828] focus-within:ring-2 focus-within:ring-[#0B4828]/15">
+              <Mail className="w-4 h-4 text-[#7A8C81] mr-2.5 flex-shrink-0" />
+              <input
+                type="email"
+                placeholder="order@yourbusiness.com"
+                value={email}
+                onChange={e => { setEmail(e.target.value); setError('') }}
+                className="w-full bg-transparent border-0 outline-none text-[13.5px] text-[#14261C]"
+                required
+              />
+            </div>
+          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-[#0B4828] hover:bg-[#07361D] text-white py-3 rounded-full font-semibold text-[14px] flex items-center justify-center gap-2 shadow-md transition-all disabled:opacity-60 cursor-pointer"
+            style={{ cursor: 'pointer' }}
+          >
+            {loading ? <><SpinnerIcon /> Sending OTP…</> : 'Send Reset Code'}
+          </button>
+        </form>
+      )}
+
+      {step === 'otp' && (
+        <form onSubmit={handleVerifyOTP} className="space-y-4">
+          <div>
+            <h3
+              className="font-serif text-[22px] font-bold text-[#143223]"
+              style={{ fontFamily: 'var(--font-newsreader), "Playfair Display", Georgia, serif' }}
+            >
+              Enter Verification Code
+            </h3>
+            <p className="text-xs sm:text-[13px] text-[#556F60] mt-0.5">
+              We sent a 6-digit code to <strong className="text-[#143223]">{email}</strong>.
+            </p>
+          </div>
+          <div>
+            <label className="block text-[12px] font-semibold text-[#183526] mb-1.5">
+              6-Digit OTP
+            </label>
+            <input
+              type="text"
+              inputMode="numeric"
+              maxLength={6}
+              placeholder="------"
+              value={otp}
+              onChange={e => { setOtp(e.target.value.replace(/\D/g, '')); setError('') }}
+              className="w-full text-center tracking-[0.4em] font-mono text-[20px] font-bold bg-white border border-[#D5DFD8] rounded-xl h-[46px] outline-none focus:border-[#0B4828] focus:ring-2 focus:ring-[#0B4828]/15"
+              autoFocus
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={otp.length !== 6}
+            className="w-full bg-[#0B4828] hover:bg-[#07361D] text-white py-3 rounded-full font-semibold text-[14px] flex items-center justify-center gap-2 shadow-md transition-all disabled:opacity-60 cursor-pointer"
+            style={{ cursor: 'pointer' }}
+          >
+            Verify OTP
+          </button>
+          <p className="text-xs text-center text-[#556F60]">
+            Didn&apos;t receive it?{' '}
+            <button
+              type="button"
+              onClick={handleResend}
+              disabled={resendTimer > 0}
+              className="text-[#0B4828] font-semibold underline disabled:opacity-60 disabled:no-underline cursor-pointer"
+              style={{ cursor: 'pointer' }}
+            >
+              {resendTimer > 0 ? `Resend in ${resendTimer}s` : 'Resend'}
+            </button>
+          </p>
+        </form>
+      )}
+
+      {step === 'password' && (
+        <form onSubmit={handleResetPassword} className="space-y-4">
+          <div>
+            <h3
+              className="font-serif text-[22px] font-bold text-[#143223]"
+              style={{ fontFamily: 'var(--font-newsreader), "Playfair Display", Georgia, serif' }}
+            >
+              New Password
+            </h3>
+            <p className="text-xs sm:text-[13px] text-[#556F60] mt-0.5">
+              Choose a strong password with at least 8 characters.
+            </p>
+          </div>
+          <div>
+            <label className="block text-[12px] font-semibold text-[#183526] mb-1.5">
+              New Password
+            </label>
+            <div className="flex items-center w-full bg-white border border-[#D5DFD8] rounded-xl px-3.5 h-[42px] focus-within:border-[#0B4828] focus-within:ring-2 focus-within:ring-[#0B4828]/15">
+              <Lock className="w-4 h-4 text-[#7A8C81] mr-2.5 flex-shrink-0" />
+              <input
+                type={showPass ? 'text' : 'password'}
+                placeholder="Min. 8 characters"
+                value={password}
+                onChange={e => { setPassword(e.target.value); setError('') }}
+                className="w-full bg-transparent border-0 outline-none text-[13.5px] text-[#14261C]"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPass(p => !p)}
+                className="text-[#7A8C81] hover:text-[#14261C] p-1 cursor-pointer"
+                style={{ cursor: 'pointer' }}
+              >
+                {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+          <div>
+            <label className="block text-[12px] font-semibold text-[#183526] mb-1.5">
+              Confirm Password
+            </label>
+            <div className="flex items-center w-full bg-white border border-[#D5DFD8] rounded-xl px-3.5 h-[42px] focus-within:border-[#0B4828] focus-within:ring-2 focus-within:ring-[#0B4828]/15">
+              <Lock className="w-4 h-4 text-[#7A8C81] mr-2.5 flex-shrink-0" />
+              <input
+                type={showPass ? 'text' : 'password'}
+                placeholder="Re-enter password"
+                value={confirm}
+                onChange={e => { setConfirm(e.target.value); setError('') }}
+                className="w-full bg-transparent border-0 outline-none text-[13.5px] text-[#14261C]"
+                required
+              />
+            </div>
+          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-[#0B4828] hover:bg-[#07361D] text-white py-3 rounded-full font-semibold text-[14px] flex items-center justify-center gap-2 shadow-md transition-all disabled:opacity-60 cursor-pointer"
+            style={{ cursor: 'pointer' }}
+          >
+            {loading ? <><SpinnerIcon /> Updating…</> : 'Reset Password'}
+          </button>
+        </form>
+      )}
+
+      {step === 'done' && (
+        <div className="text-center py-6">
+          <div className="w-14 h-14 rounded-full bg-[#EAF3E4] text-[#0B4828] flex items-center justify-center mx-auto mb-3">
+            <Check className="w-7 h-7" strokeWidth={2.5} />
+          </div>
+          <h3
+            className="font-serif text-[22px] font-bold text-[#143223]"
+            style={{ fontFamily: 'var(--font-newsreader), "Playfair Display", Georgia, serif' }}
+          >
+            Password Reset Complete
+          </h3>
+          <p className="text-xs sm:text-[13px] text-[#556F60] mt-1 mb-5">
+            Your wholesale password has been updated successfully.
+          </p>
+          <button
+            type="button"
+            onClick={onSuccess}
+            className="w-full bg-[#0B4828] hover:bg-[#07361D] text-white py-3 rounded-full font-semibold text-[14px] cursor-pointer"
+            style={{ cursor: 'pointer' }}
+          >
+            Back to Login
+          </button>
         </div>
       )}
     </div>
   )
 }
 
-
+// ── MAIN WHOLESALE MODAL COMPONENT ──
 export default function WholesaleModal({ isOpen, onClose }) {
   const { data: session } = useSafeSession()
   const { user: normalUser, logout: normalLogout } = useAuth()
-  const [step, setStep] = useState(1)  // 1=apply, 2=login, 3=success
-  const [loginMode, setLoginMode] = useState('wholesale_id') // 'wholesale_id' or 'email'
+  const [step, setStep] = useState(1) // 1 = Apply, 2 = Login, 3 = Success
+  const [loginMode, setLoginMode] = useState('wholesale_id') // 'wholesale_id' | 'email'
   const [showPass, setShowPass] = useState(false)
+  const [showOptionalPassword, setShowOptionalPassword] = useState(false)
   const [errors, setErrors] = useState({})
   const [loading, setLoading] = useState(false)
   const [serverError, setServerError] = useState('')
   const [applyData, setApplyData] = useState(EMPTY_APPLY)
   const [loginData, setLoginData] = useState({ email: '', password: '', wholesaleId: '' })
-  const [stores, setStores] = useState([])
+  const [, setStores] = useState([])
+  const [showForgot, setShowForgot] = useState(false)
   const overlayRef = useRef(null)
 
   useEffect(() => {
@@ -945,20 +507,20 @@ export default function WholesaleModal({ isOpen, onClose }) {
         }
       })
       .catch(() => {})
-    return () => { isMounted = false }
+    return () => {
+      isMounted = false
+    }
   }, [])
 
-  const [showForgot, setShowForgot] = useState(false)
-
-  // If user is already logged in via NextAuth, jump to success-like state
-  const isLoggedIn = !!session?.user
-
+  // Reset modal state on open
   const [prevOpen, setPrevOpen] = useState(isOpen)
   if (isOpen !== prevOpen) {
     setPrevOpen(isOpen)
     if (isOpen) {
       setStep(1)
       setLoginMode('wholesale_id')
+      setShowForgot(false)
+      setShowOptionalPassword(false)
       setErrors({})
       setServerError('')
       setApplyData(EMPTY_APPLY)
@@ -972,24 +534,30 @@ export default function WholesaleModal({ isOpen, onClose }) {
     } else {
       document.body.style.overflow = ''
     }
-    return () => { document.body.style.overflow = '' }
+    return () => {
+      document.body.style.overflow = ''
+    }
   }, [isOpen])
 
   useEffect(() => {
-    const fn = (e) => { if (e.key === 'Escape') onClose() }
+    const fn = e => {
+      if (e.key === 'Escape') onClose()
+    }
     window.addEventListener('keydown', fn)
     return () => window.removeEventListener('keydown', fn)
   }, [onClose])
 
-  const handleOverlay = (e) => { if (e.target === overlayRef.current) onClose() }
+  const handleOverlay = e => {
+    if (e.target === overlayRef.current) onClose()
+  }
 
-  const handleApplyChange = (e) => {
+  const handleApplyChange = e => {
     const { name, value } = e.target
     setApplyData(p => ({
       ...p,
       [name]: value,
       ...(name === 'cif' ? { tradeLicense: value } : {}),
-      ...(name === 'tradeLicense' ? { cif: value } : {})
+      ...(name === 'tradeLicense' ? { cif: value } : {}),
     }))
     if (errors[name] || (name === 'cif' && errors.tradeLicense)) {
       setErrors(p => ({ ...p, [name]: '', tradeLicense: '', cif: '' }))
@@ -1000,64 +568,79 @@ export default function WholesaleModal({ isOpen, onClose }) {
   const validateApply = () => {
     const e = {}
     const cif = (applyData.cif || applyData.tradeLicense || '').trim()
-    const phone = applyData.phone.trim()
+    const phone = (applyData.phone || '').trim()
     const phonePattern = /^\+?[\d\s\-()]{7,25}$/
     const cifPattern = /^[A-Za-z0-9\-\/\s]{4,100}$/
 
-    if (!applyData.businessName.trim()) e.businessName = 'Required'
-    if (!applyData.contactName.trim()) e.contactName = 'Required'
+    if (!applyData.businessName?.trim()) e.businessName = 'Business name is required'
+    if (!applyData.contactName?.trim()) e.contactName = 'Contact name is required'
     if (!cif) e.cif = 'CIF is required'
     else if (!cifPattern.test(cif)) e.cif = 'Enter a valid CIF (e.g. B12345678)'
-    if (!applyData.email.trim() || !/\S+@\S+\.\S+/.test(applyData.email)) e.email = 'Valid email required'
-    if (!phone) e.phone = 'Required'
+
+    if (!applyData.email?.trim() || !/\S+@\S+\.\S+/.test(applyData.email)) {
+      e.email = 'Valid business email is required'
+    }
+    if (!phone) e.phone = 'Phone number is required'
     else if (!phonePattern.test(phone)) e.phone = 'Enter a valid phone number'
-    if (!applyData.businessType) e.businessType = 'Please select a type'
-    if (!applyData.volume) e.volume = 'Please select a range'
-    if (!applyData.password || applyData.password.length < 8) e.password = 'Min. 8 characters'
+
+    if (!applyData.businessType) e.businessType = 'Please select a business type'
+
+    // If custom password was typed, ensure minimum 8 characters
+    if (applyData.password && applyData.password.length < 8) {
+      e.password = 'Password must be at least 8 characters'
+    }
     return e
   }
 
-  const handleApplySubmit = async (e) => {
+  const handleApplySubmit = async e => {
     e.preventDefault()
     const errs = validateApply()
-    if (Object.keys(errs).length) { setErrors(errs); return }
+    if (Object.keys(errs).length) {
+      setErrors(errs)
+      return
+    }
 
     setLoading(true)
     setServerError('')
     try {
-      // 1. Register with Django backend
       const cifValue = (applyData.cif || applyData.tradeLicense || '').trim().toUpperCase()
+
+      // Generate secure default password if user didn't enter custom one
+      const finalPassword =
+        applyData.password?.trim() ||
+        `ElArbol#${Math.random().toString(36).slice(-6)}WHL2026!`
+
       const payload = {
-        email: applyData.email.toLowerCase(),
-        password: applyData.password,
-        business_name: applyData.businessName,
-        contact_name: applyData.contactName,
+        email: applyData.email.toLowerCase().trim(),
+        password: finalPassword,
+        business_name: applyData.businessName.trim(),
+        contact_name: applyData.contactName.trim(),
         cif: cifValue,
         trade_license_number: cifValue,
-        phone: applyData.phone,
-        postcode: applyData.postcode,
+        phone: applyData.phone.trim(),
+        postcode: applyData.postcode.trim(),
         business_type: BUSINESS_TYPE_VALUES[applyData.businessType] || 'other',
-        monthly_volume: VOLUME_VALUES[applyData.volume] || '400_1000',
-        user_type: applyData.accountType,
+        monthly_volume: applyData.volume || '400_1000',
+        user_type: applyData.accountType || 'RESTAURANT',
       }
       if (applyData.store) {
         payload.store = applyData.store
       }
+
       await wholesaleRegister(payload)
 
-      // 2. Clear any existing normal user session before auto sign-in
+      // Clear any normal user session before wholesale auto login
       if (normalUser) {
         await normalLogout()
       }
-      // Also clear existing wholesale session if any
       if (session?.user) {
         await signOut({ redirect: false })
       }
 
-      // 3. Auto sign-in via NextAuth so they get a session
+      // Auto sign-in via NextAuth wholesale provider
       await signIn('wholesale', {
-        email: applyData.email,
-        password: applyData.password,
+        email: payload.email,
+        password: finalPassword,
         redirect: false,
       })
 
@@ -1078,7 +661,7 @@ export default function WholesaleModal({ isOpen, onClose }) {
       const backendErrors = {}
       let message = ''
 
-      const mapErrorValue = (value) => {
+      const mapErrorValue = value => {
         if (Array.isArray(value)) return value[0]
         if (typeof value === 'object' && value !== null) return JSON.stringify(value)
         return String(value)
@@ -1088,7 +671,7 @@ export default function WholesaleModal({ isOpen, onClose }) {
         for (const [key, value] of Object.entries(err)) {
           const target = fieldMap[key] || key
           const text = mapErrorValue(value)
-          if (target in applyData || target === 'businessType' || target === 'volume') {
+          if (target in applyData || target === 'businessType') {
             backendErrors[target] = text
           } else if (key === 'non_field_errors' || key === 'detail' || key === 'error') {
             message = text
@@ -1104,7 +687,12 @@ export default function WholesaleModal({ isOpen, onClose }) {
         setErrors(prev => ({ ...prev, ...backendErrors }))
         setServerError(message || '')
       } else {
-        const msg = message || err?.non_field_errors?.[0] || err?.detail || err?.message || 'Something went wrong. Please try again.'
+        const msg =
+          message ||
+          err?.non_field_errors?.[0] ||
+          err?.detail ||
+          err?.message ||
+          'Something went wrong. Please check your information and try again.'
         setServerError(msg)
       }
     } finally {
@@ -1112,7 +700,7 @@ export default function WholesaleModal({ isOpen, onClose }) {
     }
   }
 
-  const handleLoginSubmit = async (e) => {
+  const handleLoginSubmit = async e => {
     e.preventDefault()
     const errs = {}
 
@@ -1123,26 +711,28 @@ export default function WholesaleModal({ isOpen, onClose }) {
         return
       }
     } else {
-      if (!loginData.email.trim()) errs.email = 'Business email is required'
+      if (!loginData.email?.trim()) errs.email = 'Business email is required'
       if (!loginData.password) errs.password = 'Password is required'
-      if (Object.keys(errs).length) { setErrors(errs); return }
+      if (Object.keys(errs).length) {
+        setErrors(errs)
+        return
+      }
     }
 
     setLoading(true)
     setServerError('')
     try {
-      // Clear any existing normal user session before wholesale login
       if (normalUser) {
         await normalLogout()
       }
-      // Clear any existing wholesale session if any
       if (session?.user) {
         await signOut({ redirect: false })
       }
 
-      const identifier = loginMode === 'wholesale_id'
-        ? loginData.wholesaleId.trim()
-        : loginData.email.trim()
+      const identifier =
+        loginMode === 'wholesale_id'
+          ? loginData.wholesaleId.trim()
+          : loginData.email.trim()
 
       const payload = {
         login_type: loginMode === 'wholesale_id' ? 'wholesale_id' : 'email',
@@ -1154,29 +744,25 @@ export default function WholesaleModal({ isOpen, onClose }) {
         payload.password = loginData.password
       }
 
-      // Check with backend API first to display exact error message
       try {
         await wholesaleLogin(payload)
       } catch (err) {
-        const errorMsg = err?.non_field_errors?.[0] || err?.detail || err?.error || err?.message || (
-          loginMode === 'wholesale_id'
+        const errorMsg =
+          err?.non_field_errors?.[0] ||
+          err?.detail ||
+          err?.error ||
+          err?.message ||
+          (loginMode === 'wholesale_id'
             ? 'Wholesale ID not found or account deactivated. Please try again.'
-            : 'Invalid email or password. Please try again.'
-        )
+            : 'Invalid email or password. Please try again.')
         setServerError(errorMsg)
         return
       }
 
-      const credentials = loginMode === 'wholesale_id'
-        ? {
-            wholesaleId: identifier,
-            loginType: 'wholesale_id',
-          }
-        : {
-            email: identifier,
-            password: loginData.password,
-            loginType: 'email',
-          }
+      const credentials =
+        loginMode === 'wholesale_id'
+          ? { wholesaleId: identifier, loginType: 'wholesale_id' }
+          : { email: identifier, password: loginData.password, loginType: 'email' }
 
       const result = await signIn('wholesale', {
         ...credentials,
@@ -1200,431 +786,695 @@ export default function WholesaleModal({ isOpen, onClose }) {
     }
   }
 
-  const handleLogout = async () => {
-    localStorage.removeItem('cart_items')
-    if (typeof window !== 'undefined') window.dispatchEvent(new Event('cart_clear'))
-    await signOut({ redirect: false })
-    onClose()
-  }
-
   if (!isOpen) return null
 
   return (
-    <div ref={overlayRef} onClick={handleOverlay} style={{
-      position: 'fixed', inset: 0, zIndex: 1000,
-      background: 'rgba(5, 20, 13, 0.65)',
-      backdropFilter: 'blur(6px)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: '32px 16px', overflowY: 'auto',
-      animation: 'wsOverlayIn 0.2s ease',
-    }}>
+    <div
+      ref={overlayRef}
+      onClick={handleOverlay}
+      className="fixed inset-0 z-[1000] flex items-center justify-center p-3 sm:p-5 overflow-y-auto bg-black/50 backdrop-blur-md animate-in fade-in duration-200"
+    >
       <style>{`
-        @keyframes wsOverlayIn { from{opacity:0} to{opacity:1} }
-        @keyframes wsSlideUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes spin { to{transform:rotate(360deg)} }
-        .ws-inp{width:100%;padding:10px 13px;border:1.5px solid #C8D5CC;border-radius:10px;background:#fff;color:#151E13;font-size:13.5px;outline:none;transition:border-color .15s,box-shadow .15s;box-sizing:border-box;font-family:inherit}
-        .ws-inp:focus{border-color:#00694C;box-shadow:0 0 0 3px rgba(0,105,76,0.1)}
-        .ws-inp::placeholder{color:#A0ADA6}
-        .ws-inp-err{border-color:#D94040!important}
-        .ws-sel{width:100%;padding:10px 13px;border:1.5px solid #C8D5CC;border-radius:10px;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236D7A73' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center;color:#151E13;font-size:13.5px;outline:none;cursor:pointer;transition:border-color .15s,box-shadow .15s;box-sizing:border-box;font-family:inherit;appearance:none}
-        .ws-sel:focus{border-color:#00694C;box-shadow:0 0 0 3px rgba(0,105,76,0.1)}
-        .ws-sel-err{border-color:#D94040!important}
-        .ws-btn{width:100%;padding:12px;background:#00694C;color:white;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;transition:background .15s,transform .1s;letter-spacing:.01em;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px}
-        .ws-btn:hover:not(:disabled){background:#005540}
-        .ws-btn:active:not(:disabled){transform:scale(0.99)}
-        .ws-btn:disabled{opacity:0.65;cursor:not-allowed}
-        .ws-err-msg{font-size:11.5px;color:#D94040;margin:3px 0 0}
-        .ws-label{display:block;font-size:12.5px;font-weight:600;color:#2D3A35;margin-bottom:5px}
-        .ws-pass-eye{position:absolute;right:11px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#6D7A73;display:flex;align-items:center;padding:2px}
-        .ws-pass-eye:hover{color:#151E13}
-        .ws-scroll::-webkit-scrollbar{width:3px}
-        .ws-scroll::-webkit-scrollbar-thumb{background:#C8D5CC;border-radius:3px}
-        .ws-tab{flex:1;padding:8px 0;background:none;border:none;font-size:13.5px;font-weight:600;cursor:pointer;border-radius:8px;transition:all .15s;font-family:inherit}
-        .ws-tab-active{background:white;color:#085041;box-shadow:0 1px 4px rgba(0,0,0,0.1)}
-        .ws-tab-inactive{color:#6D7A73}
+        .ws-modal-card button,
+        .ws-modal-card [role="button"],
+        .ws-modal-card select,
+        .ws-modal-card a,
+        .ws-modal-card .cursor-pointer {
+          cursor: pointer !important;
+        }
       `}</style>
 
-      <div style={{
-        background: '#F7FAF8', borderRadius: '22px', width: '100%',
-        maxWidth: step === 3 ? '420px' : '480px',
-        maxHeight: 'calc(100dvh - 64px)',
-        display: 'flex', flexDirection: 'column',
-        animation: 'wsSlideUp 0.24s ease',
-        boxShadow: '0 24px 80px rgba(5,20,13,0.22), 0 4px 20px rgba(0,0,0,0.08)',
-        overflow: 'hidden', position: 'relative',
-      }}>
+      {/* ── MAIN MODAL CARD (EXACT 100% VISUAL & EFFECT MATCH) ── */}
+      <div
+        className="ws-modal-card relative w-full max-w-[580px] bg-white rounded-[28px] sm:rounded-[32px] shadow-[0_28px_70px_-15px_rgba(10,35,20,0.25)] border border-[#DCE6DE]/80 overflow-hidden flex flex-col my-auto animate-in zoom-in-95 duration-200 select-text"
+      >
+        {/* Close Button (with explicit cursor-pointer) */}
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute top-5 right-5 sm:top-6 sm:right-6 z-20 w-8 h-8 rounded-full flex items-center justify-center text-gray-700 hover:text-black hover:bg-[#EEF4EC] transition-colors cursor-pointer"
+          style={{ cursor: 'pointer' }}
+          aria-label="Close wholesale modal"
+        >
+          <X className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={2.4} />
+        </button>
 
-        {/* Header */}
-        <div style={{ padding: '24px 26px 0', flexShrink: 0 }}>
-          <button onClick={onClose} style={{
-            position: 'absolute', top: '14px', right: '14px', width: '30px', height: '30px',
-            borderRadius: '8px', background: 'none', border: 'none', cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6D7A73',
-          }}>
-            <CloseIcon />
-          </button>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: step === 3 ? '0' : '18px' }}>
-            <PineTree />
-            <span style={{ fontFamily: '"Playfair Display", Georgia, serif', fontSize: '19px', fontWeight: 700, color: '#085041' }}>
-              El Árbol
-            </span>
-            <span style={{
-              fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase',
-              background: '#00694C', color: '#fff', borderRadius: '100px', padding: '2px 8px', marginLeft: '4px',
-            }}>Wholesale</span>
+        {/* Modal Inner Container */}
+        <div className="relative z-10 px-6 sm:px-9 pt-7 sm:pt-8 pb-7 sm:pb-8 flex flex-col">
+          {/* ── HEADER ── */}
+          <div className="flex items-center gap-3">
+            <div className="relative w-11 h-11 rounded-full border border-[#D4E2D8] bg-white flex items-center justify-center p-1 shadow-xs flex-shrink-0">
+              <Image
+                src="/el-erbol-logo.png"
+                alt="El Árbol"
+                width={36}
+                height={36}
+                className="w-full h-full object-contain"
+              />
+            </div>
+            <div className="flex items-center gap-2.5">
+              <div>
+                <h1
+                  className="font-serif text-[19px] sm:text-[21px] font-bold text-[#113824] leading-tight tracking-[-0.01em]"
+                  style={{ fontFamily: 'var(--font-newsreader), "Playfair Display", Georgia, serif' }}
+                >
+                  El Árbol
+                </h1>
+                <p
+                  className="font-serif italic text-[11px] sm:text-[11.5px] text-[#557364] leading-none mt-0.5"
+                  style={{ fontFamily: 'var(--font-newsreader), "Playfair Display", Georgia, serif' }}
+                >
+                  Fresh. Local. Together.
+                </p>
+              </div>
+              <span className="bg-[#0B4828] text-white text-[10px] sm:text-[10.5px] font-bold tracking-[0.14em] uppercase px-3 py-1 rounded-full shadow-xs self-center">
+                WHOLESALE
+              </span>
+            </div>
           </div>
 
+          {/* ── SEGMENTED TAB SWITCHER (with explicit cursor-pointer) ── */}
           {step !== 3 && (
-            <div style={{ display: 'flex', background: '#E7F1DF', borderRadius: '10px', padding: '4px', gap: '2px' }}>
-              <button className={`ws-tab ${step === 1 ? 'ws-tab-active' : 'ws-tab-inactive'}`}
-                onClick={() => { setStep(1); setErrors({}); setServerError('') }}>
-                Apply for Account
+            <div className="mt-5 mb-5 p-1 bg-[#EEF4EC] rounded-full inline-flex sm:flex max-w-sm sm:max-w-md w-full gap-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setStep(1)
+                  setShowForgot(false)
+                  setErrors({})
+                  setServerError('')
+                }}
+                className={`flex-1 py-2 sm:py-2.5 px-4 rounded-full text-[13px] sm:text-[13.5px] font-semibold flex items-center justify-center gap-2 transition-all duration-150 cursor-pointer ${
+                  step === 1 && !showForgot
+                    ? 'bg-[#0B4828] text-white shadow-xs'
+                    : 'bg-transparent text-[#284435] hover:text-[#0B4828]'
+                }`}
+                style={{ cursor: 'pointer' }}
+              >
+                <FileText
+                  className={`w-4 h-4 ${step === 1 && !showForgot ? 'text-white' : 'text-[#284435]'}`}
+                  strokeWidth={2.2}
+                />
+                <span>Apply for Account</span>
               </button>
-              <button className={`ws-tab ${step === 2 ? 'ws-tab-active' : 'ws-tab-inactive'}`}
-                onClick={() => { setStep(2); setErrors({}); setServerError('') }}>
-                Log In
+
+              <button
+                type="button"
+                onClick={() => {
+                  setStep(2)
+                  setShowForgot(false)
+                  setErrors({})
+                  setServerError('')
+                }}
+                className={`flex-1 py-2 sm:py-2.5 px-4 rounded-full text-[13px] sm:text-[13.5px] font-semibold flex items-center justify-center gap-2 transition-all duration-150 cursor-pointer ${
+                  step === 2 || showForgot
+                    ? 'bg-[#0B4828] text-white shadow-xs'
+                    : 'bg-transparent text-[#284435] hover:text-[#0B4828]'
+                }`}
+                style={{ cursor: 'pointer' }}
+              >
+                <LogIn
+                  className={`w-4 h-4 ${step === 2 || showForgot ? 'text-white' : 'text-[#284435]'}`}
+                  strokeWidth={2.2}
+                />
+                <span>Log In</span>
               </button>
             </div>
           )}
-        </div>
 
-        {/* Body */}
-        <div className="ws-scroll" style={{ overflowY: 'auto', padding: '20px 26px 28px', flex: 1 }}>
-
-          {/* ── APPLY ── */}
+          {/* ═══════════════════════════════════════════
+              STEP 1: APPLY FOR WHOLESALE ACCOUNT
+              ═══════════════════════════════════════════ */}
           {step === 1 && (
-            <>
-              <div style={{ marginBottom: '20px' }}>
-                <h2 style={{ fontFamily: '"Playfair Display", Georgia, serif', fontSize: '21px', fontWeight: 700, color: '#151E13', margin: '0 0 5px' }}>
+            <div>
+              {/* Title & Subtitle */}
+              <div className="mb-4">
+                <h2
+                  className="font-serif text-[23px] sm:text-[25px] font-bold text-[#143223] tracking-tight"
+                  style={{ fontFamily: 'var(--font-newsreader), "Playfair Display", Georgia, serif' }}
+                >
                   Open a wholesale account
                 </h2>
-                <p style={{ fontSize: '13px', color: '#6D7A73', margin: 0, lineHeight: 1.55 }}>
-                  Review within 1 business day. Minimum order €400/month.
+                <p className="text-[13px] sm:text-[13.5px] text-[#556F60] mt-1 leading-snug">
+                  Grow your business with El Árbol — get exclusive wholesale benefits.
                 </p>
               </div>
 
-              <div style={{ background: '#E7F1DF', borderRadius: '10px', padding: '12px 14px', display: 'flex', gap: '10px', alignItems: 'flex-start', marginBottom: '20px' }}>
-                <svg width="16" height="16" fill="none" stroke="#00694c" strokeWidth="2" viewBox="0 0 24 24" style={{ flexShrink: 0, marginTop: '1px' }}>
-                  <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
-                </svg>
-                <p style={{ fontSize: '12px', color: '#3A5A44', margin: 0, lineHeight: 1.6 }}>
-                  Wholesale account is <strong>separate</strong> from the retail store. A dedicated account manager will contact you within 24 hours.
+              {/* Alert notice box */}
+              <div className="bg-[#EAF3E4] border border-[#D5E5CD] rounded-2xl p-3.5 sm:p-4 flex items-start gap-3 mb-5">
+                <Info className="w-4 h-4 sm:w-5 sm:h-5 text-[#0B4828] flex-shrink-0 mt-0.5" strokeWidth={2.2} />
+                <p className="text-[12px] sm:text-[12.5px] text-[#224030] leading-relaxed">
+                  Wholesale account is separate from the retail store. A dedicated account manager will contact you within 24 hours.
                 </p>
               </div>
 
               {serverError && (
-                <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '10px', padding: '10px 14px', marginBottom: '16px', fontSize: '13px', color: '#D94040' }}>
+                <div className="bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl p-3 mb-4">
                   {serverError}
                 </div>
               )}
 
-              <form onSubmit={handleApplySubmit} noValidate>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                  
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                    <div>
-                      <label className="ws-label">Business Name *</label>
-                      <input className={`ws-inp${errors.businessName ? ' ws-inp-err' : ''}`} name="businessName" placeholder="Restaurante Sol" value={applyData.businessName || ''} onChange={handleApplyChange} />
-                      {errors.businessName && <p className="ws-err-msg">{errors.businessName}</p>}
+              {/* Application Form */}
+              <form onSubmit={handleApplySubmit} noValidate className="space-y-3.5 sm:space-y-4">
+                {/* Row 1: Business Name * | Contact Name * */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5">
+                  <div>
+                    <label className="block text-[12px] sm:text-[12.5px] font-semibold text-[#183526] mb-1.5">
+                      Business Name <span className="text-[#183526]">*</span>
+                    </label>
+                    <div
+                      className={`flex items-center w-full bg-white border rounded-xl px-3 sm:px-3.5 h-[42px] sm:h-[44px] transition-all duration-150 shadow-[0_1px_2px_rgba(0,0,0,0.03)] ${
+                        errors.businessName
+                          ? 'border-red-400 ring-2 ring-red-100'
+                          : 'border-[#D4DFD8] focus-within:border-[#0B4828] focus-within:ring-2 focus-within:ring-[#0B4828]/15'
+                      }`}
+                    >
+                      <Building2 className="w-4 h-4 text-[#7A8C81] mr-2.5 flex-shrink-0" />
+                      <input
+                        type="text"
+                        name="businessName"
+                        placeholder="Restaurant Sol"
+                        value={applyData.businessName}
+                        onChange={handleApplyChange}
+                        className="w-full bg-transparent border-0 outline-none text-[13px] sm:text-[13.5px] text-[#14261C] placeholder-[#9BAAA0]"
+                        required
+                      />
                     </div>
-                    <div>
-                      <label className="ws-label">Contact Name *</label>
-                      <input className={`ws-inp${errors.contactName ? ' ws-inp-err' : ''}`} name="contactName" placeholder="María García" value={applyData.contactName || ''} onChange={handleApplyChange} />
-                      {errors.contactName && <p className="ws-err-msg">{errors.contactName}</p>}
-                    </div>
+                    {errors.businessName && (
+                      <p className="text-[11.5px] text-red-600 mt-1">{errors.businessName}</p>
+                    )}
                   </div>
 
                   <div>
-                    <label className="ws-label">Business Email *</label>
-                    <input className={`ws-inp${errors.email ? ' ws-inp-err' : ''}`} type="email" name="email" placeholder="orders@yourbusiness.com" value={applyData.email || ''} onChange={handleApplyChange} autoComplete="email" />
-                    {errors.email && <p className="ws-err-msg">{errors.email}</p>}
-                  </div>
-
-                  <div>
-                    <label className="ws-label">CIF *</label>
-                    <input className={`ws-inp${errors.cif ? ' ws-inp-err' : ''}`} name="cif" placeholder="e.g. B12345678" value={applyData.cif ?? applyData.tradeLicense ?? ''} onChange={handleApplyChange} required />
-                    {errors.cif && <p className="ws-err-msg">{errors.cif}</p>}
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                    <div>
-                      <label className="ws-label">Phone *</label>
-                      <input className={`ws-inp${errors.phone ? ' ws-inp-err' : ''}`} name="phone" placeholder="+34 600 000 000" value={applyData.phone || ''} onChange={handleApplyChange} required />
-                      {errors.phone && <p className="ws-err-msg">{errors.phone}</p>}
+                    <label className="block text-[12px] sm:text-[12.5px] font-semibold text-[#183526] mb-1.5">
+                      Contact Name <span className="text-[#183526]">*</span>
+                    </label>
+                    <div
+                      className={`flex items-center w-full bg-white border rounded-xl px-3 sm:px-3.5 h-[42px] sm:h-[44px] transition-all duration-150 shadow-[0_1px_2px_rgba(0,0,0,0.03)] ${
+                        errors.contactName
+                          ? 'border-red-400 ring-2 ring-red-100'
+                          : 'border-[#D4DFD8] focus-within:border-[#0B4828] focus-within:ring-2 focus-within:ring-[#0B4828]/15'
+                      }`}
+                    >
+                      <User className="w-4 h-4 text-[#7A8C81] mr-2.5 flex-shrink-0" />
+                      <input
+                        type="text"
+                        name="contactName"
+                        placeholder="Maria Garcia"
+                        value={applyData.contactName}
+                        onChange={handleApplyChange}
+                        className="w-full bg-transparent border-0 outline-none text-[13px] sm:text-[13.5px] text-[#14261C] placeholder-[#9BAAA0]"
+                        required
+                      />
                     </div>
-                    <div>
-                      <label className="ws-label">Delivery Postcode</label>
-                      <input className="ws-inp" name="postcode" placeholder="28001" value={applyData.postcode || ''} onChange={handleApplyChange} />
-                    </div>
+                    {errors.contactName && (
+                      <p className="text-[11.5px] text-red-600 mt-1">{errors.contactName}</p>
+                    )}
                   </div>
-
-                  <div>
-                    <label className="ws-label">Business Type *</label>
-                    <CustomSelect
-                      name="businessType"
-                      value={applyData.businessType || ''}
-                      onChange={handleApplyChange}
-                      options={BUSINESS_TYPES}
-                      details={BUSINESS_TYPE_DETAILS}
-                      placeholder="Select type…"
-                      hasError={!!errors.businessType}
-                      icon={Briefcase}
-                    />
-                    {errors.businessType && <p className="ws-err-msg">{errors.businessType}</p>}
-                  </div>
-
-                  <div>
-                    <label className="ws-label">Estimated Monthly Volume *</label>
-                    <CustomSelect
-                      name="volume"
-                      value={applyData.volume || ''}
-                      onChange={handleApplyChange}
-                      options={VOLUME_RANGES}
-                      details={VOLUME_DETAILS}
-                      placeholder="Select range…"
-                      hasError={!!errors.volume}
-                      icon={TrendingUp}
-                    />
-                    {errors.volume && <p className="ws-err-msg">{errors.volume}</p>}
-                  </div>
-
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
-                      <label className="ws-label" style={{ margin: 0 }}>Preferred Fulfillment Store</label>
-                      <span style={{ fontSize: '11px', color: '#6D7A73' }}>Optional</span>
-                    </div>
-                    <SearchableStoreSelect
-                      stores={stores}
-                      value={applyData.store || ''}
-                      onChange={handleApplyChange}
-                      userPostcode={applyData.postcode || ''}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="ws-label">Create Password *</label>
-                    <div style={{ position: 'relative' }}>
-                      <input className={`ws-inp${errors.password ? ' ws-inp-err' : ''}`}
-                        type={showPass ? 'text' : 'password'} name="password"
-                        placeholder="Min. 8 characters" value={applyData.password || ''}
-                        onChange={handleApplyChange} autoComplete="new-password"
-                        style={{ paddingRight: '40px' }} />
-                      <button type="button" className="ws-pass-eye" onClick={() => setShowPass(p => !p)}>
-                        <EyeIcon show={showPass} />
-                      </button>
-                    </div>
-                    {errors.password && <p className="ws-err-msg">{errors.password}</p>}
-                  </div>
-
-                  <p style={{ fontSize: '11.5px', color: '#9DAAA3', lineHeight: 1.5, margin: '2px 0 0' }}>
-                    By applying you agree to our <span style={{ color: '#00694C', cursor: 'pointer' }}>Wholesale Terms</span> and <span style={{ color: '#00694C', cursor: 'pointer' }}>Privacy Policy</span>.
-                  </p>
-
-                  <button type="submit" className="ws-btn" disabled={loading} style={{ marginTop: '4px' }}>
-                    {loading ? <><SpinnerIcon /> Submitting…</> : 'Submit Application'}
-                  </button>
                 </div>
+
+                {/* Row 2: Business Email * | CIF * */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5">
+                  <div>
+                    <label className="block text-[12px] sm:text-[12.5px] font-semibold text-[#183526] mb-1.5">
+                      Business Email <span className="text-[#183526]">*</span>
+                    </label>
+                    <div
+                      className={`flex items-center w-full bg-white border rounded-xl px-3 sm:px-3.5 h-[42px] sm:h-[44px] transition-all duration-150 shadow-[0_1px_2px_rgba(0,0,0,0.03)] ${
+                        errors.email
+                          ? 'border-red-400 ring-2 ring-red-100'
+                          : 'border-[#D4DFD8] focus-within:border-[#0B4828] focus-within:ring-2 focus-within:ring-[#0B4828]/15'
+                      }`}
+                    >
+                      <Mail className="w-4 h-4 text-[#7A8C81] mr-2.5 flex-shrink-0" />
+                      <input
+                        type="email"
+                        name="email"
+                        placeholder="order@yourbusiness.com"
+                        value={applyData.email}
+                        onChange={handleApplyChange}
+                        className="w-full bg-transparent border-0 outline-none text-[13px] sm:text-[13.5px] text-[#14261C] placeholder-[#9BAAA0]"
+                        autoComplete="email"
+                        required
+                      />
+                    </div>
+                    {errors.email && (
+                      <p className="text-[11.5px] text-red-600 mt-1">{errors.email}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-[12px] sm:text-[12.5px] font-semibold text-[#183526] mb-1.5">
+                      CIF <span className="text-[#183526]">*</span>
+                    </label>
+                    <div
+                      className={`flex items-center w-full bg-white border rounded-xl px-3 sm:px-3.5 h-[42px] sm:h-[44px] transition-all duration-150 shadow-[0_1px_2px_rgba(0,0,0,0.03)] ${
+                        errors.cif
+                          ? 'border-red-400 ring-2 ring-red-100'
+                          : 'border-[#D4DFD8] focus-within:border-[#0B4828] focus-within:ring-2 focus-within:ring-[#0B4828]/15'
+                      }`}
+                    >
+                      <CreditCard className="w-4 h-4 text-[#7A8C81] mr-2.5 flex-shrink-0" />
+                      <input
+                        type="text"
+                        name="cif"
+                        placeholder="e.g. B12345678"
+                        value={applyData.cif ?? applyData.tradeLicense ?? ''}
+                        onChange={handleApplyChange}
+                        className="w-full bg-transparent border-0 outline-none text-[13px] sm:text-[13.5px] text-[#14261C] placeholder-[#9BAAA0] uppercase"
+                        required
+                      />
+                    </div>
+                    {errors.cif && (
+                      <p className="text-[11.5px] text-red-600 mt-1">{errors.cif}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Row 3: Phone * | Delivery Postcode */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5">
+                  <div>
+                    <label className="block text-[12px] sm:text-[12.5px] font-semibold text-[#183526] mb-1.5">
+                      Phone <span className="text-[#183526]">*</span>
+                    </label>
+                    <div
+                      className={`flex items-center w-full bg-white border rounded-xl px-3 sm:px-3.5 h-[42px] sm:h-[44px] transition-all duration-150 shadow-[0_1px_2px_rgba(0,0,0,0.03)] ${
+                        errors.phone
+                          ? 'border-red-400 ring-2 ring-red-100'
+                          : 'border-[#D4DFD8] focus-within:border-[#0B4828] focus-within:ring-2 focus-within:ring-[#0B4828]/15'
+                      }`}
+                    >
+                      <Phone className="w-4 h-4 text-[#7A8C81] mr-2.5 flex-shrink-0" />
+                      <input
+                        type="tel"
+                        name="phone"
+                        placeholder="+34 600 000 000"
+                        value={applyData.phone}
+                        onChange={handleApplyChange}
+                        className="w-full bg-transparent border-0 outline-none text-[13px] sm:text-[13.5px] text-[#14261C] placeholder-[#9BAAA0]"
+                        required
+                      />
+                    </div>
+                    {errors.phone && (
+                      <p className="text-[11.5px] text-red-600 mt-1">{errors.phone}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-[12px] sm:text-[12.5px] font-semibold text-[#183526] mb-1.5">
+                      Delivery Postcode
+                    </label>
+                    <div className="flex items-center w-full bg-white border border-[#D4DFD8] rounded-xl px-3 sm:px-3.5 h-[42px] sm:h-[44px] transition-all duration-150 shadow-[0_1px_2px_rgba(0,0,0,0.03)] focus-within:border-[#0B4828] focus-within:ring-2 focus-within:ring-[#0B4828]/15">
+                      <MapPin className="w-4 h-4 text-[#7A8C81] mr-2.5 flex-shrink-0" />
+                      <input
+                        type="text"
+                        name="postcode"
+                        placeholder="28001"
+                        value={applyData.postcode}
+                        onChange={handleApplyChange}
+                        className="w-full bg-transparent border-0 outline-none text-[13px] sm:text-[13.5px] text-[#14261C] placeholder-[#9BAAA0]"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Row 4: Business Type * */}
+                <div>
+                  <label className="block text-[12px] sm:text-[12.5px] font-semibold text-[#183526] mb-1.5">
+                    Business Type <span className="text-[#183526]">*</span>
+                  </label>
+                  <SelectBusinessType
+                    value={applyData.businessType}
+                    onChange={handleApplyChange}
+                    hasError={!!errors.businessType}
+                  />
+                  {errors.businessType && (
+                    <p className="text-[11.5px] text-red-600 mt-1">{errors.businessType}</p>
+                  )}
+                </div>
+
+                {/* Optional Custom Password Toggle (with explicit cursor-pointer) */}
+                <div className="pt-0.5">
+                  {!showOptionalPassword ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowOptionalPassword(true)}
+                      className="text-[11.5px] text-[#526F5E] hover:text-[#0B4828] font-medium inline-flex items-center gap-1 transition-colors cursor-pointer"
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <Sparkles className="w-3 h-3 text-[#7A8C81]" />
+                      <span>Set custom password (optional)</span>
+                    </button>
+                  ) : (
+                    <div className="bg-[#FAFCF9] border border-[#E0EAE2] rounded-xl p-3 animate-in fade-in duration-150">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-[12px] font-semibold text-[#183526]">
+                          Custom Password
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowOptionalPassword(false)
+                            setApplyData(p => ({ ...p, password: '' }))
+                          }}
+                          className="text-[11px] text-gray-500 hover:text-gray-700 cursor-pointer"
+                          style={{ cursor: 'pointer' }}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                      <div className="flex items-center w-full bg-white border border-[#D4DFD8] rounded-xl px-3 h-[40px] focus-within:border-[#0B4828]">
+                        <Lock className="w-4 h-4 text-[#7A8C81] mr-2 flex-shrink-0" />
+                        <input
+                          type={showPass ? 'text' : 'password'}
+                          name="password"
+                          placeholder="Min. 8 characters"
+                          value={applyData.password}
+                          onChange={handleApplyChange}
+                          className="w-full bg-transparent border-0 outline-none text-[13px] text-[#14261C] placeholder-[#9BAAA0]"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPass(p => !p)}
+                          className="text-[#7A8C81] hover:text-[#14261C] p-1 cursor-pointer"
+                          style={{ cursor: 'pointer' }}
+                        >
+                          {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                      {errors.password && (
+                        <p className="text-[11px] text-red-600 mt-1">{errors.password}</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Submit Application Button (with explicit cursor-pointer) */}
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-[#0B4828] hover:bg-[#07361D] active:scale-[0.99] text-white py-3.5 sm:py-4 px-6 rounded-full font-semibold text-[15px] flex items-center justify-center gap-2.5 shadow-[0_4px_16px_rgba(11,72,40,0.32)] hover:shadow-[0_6px_22px_rgba(11,72,40,0.42)] transition-all duration-150 mt-4 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+                  style={{ cursor: 'pointer' }}
+                >
+                  {loading ? (
+                    <>
+                      <SpinnerIcon />
+                      <span>Submitting Application…</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4 -rotate-12 fill-white text-white flex-shrink-0 translate-y-[-0.5px]" />
+                      <span>Submit Application</span>
+                    </>
+                  )}
+                </button>
               </form>
-            </>
+            </div>
           )}
 
-          {/* ── LOGIN ── */}
-
+          {/* ═══════════════════════════════════════════
+              STEP 2: LOGIN TO WHOLESALE
+              ═══════════════════════════════════════════ */}
           {step === 2 && showForgot && (
             <WholesaleForgotPasswordFlow
               onBack={() => setShowForgot(false)}
-              onSuccess={() => { setShowForgot(false); setErrors({}); setServerError('') }}
+              onSuccess={() => {
+                setShowForgot(false)
+                setErrors({})
+                setServerError('')
+              }}
             />
           )}
+
           {step === 2 && !showForgot && (
-            <>
-              <div style={{ marginBottom: '22px' }}>
-                <h2 style={{ fontFamily: '"Playfair Display", Georgia, serif', fontSize: '21px', fontWeight: 700, color: '#151E13', margin: '0 0 5px' }}>
+            <div>
+              <div className="mb-4">
+                <h2
+                  className="font-serif text-[23px] sm:text-[25px] font-bold text-[#143223] tracking-tight"
+                  style={{ fontFamily: 'var(--font-newsreader), "Playfair Display", Georgia, serif' }}
+                >
                   Welcome back
                 </h2>
-                <p style={{ fontSize: '13px', color: '#6D7A73', margin: 0 }}>Sign in to your wholesale account</p>
+                <p className="text-[13px] sm:text-[13.5px] text-[#556F60] mt-1">
+                  Sign in to access your wholesale dashboard and preferred bulk rates.
+                </p>
               </div>
 
               {/* Login Mode Switcher */}
-              <div style={{
-                display: 'flex',
-                background: '#F0F5F2',
-                padding: '4px',
-                borderRadius: '11px',
-                marginBottom: '18px',
-                border: '1px solid #E2EDE6'
-              }}>
+              <div className="flex bg-[#F0F5ED] p-1 rounded-xl mb-4 border border-[#E0EBE2]">
                 <button
                   type="button"
-                  onClick={() => { setLoginMode('wholesale_id'); setErrors({}); setServerError('') }}
-                  style={{
-                    flex: 1,
-                    padding: '8px 12px',
-                    fontSize: '12.5px',
-                    fontWeight: loginMode === 'wholesale_id' ? 700 : 500,
-                    borderRadius: '8px',
-                    border: 'none',
-                    cursor: 'pointer',
-                    background: loginMode === 'wholesale_id' ? '#FFFFFF' : 'transparent',
-                    color: loginMode === 'wholesale_id' ? '#00694C' : '#6D7A73',
-                    boxShadow: loginMode === 'wholesale_id' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
-                    transition: 'all 0.15s ease',
-                    fontFamily: 'inherit'
+                  onClick={() => {
+                    setLoginMode('wholesale_id')
+                    setErrors({})
+                    setServerError('')
                   }}
+                  className={`flex-1 py-2 text-[12.5px] font-semibold rounded-lg transition-all duration-150 cursor-pointer ${
+                    loginMode === 'wholesale_id'
+                      ? 'bg-white text-[#0B4828] shadow-xs'
+                      : 'text-[#5A7365] hover:text-[#0B4828]'
+                  }`}
+                  style={{ cursor: 'pointer' }}
                 >
                   Wholesale ID (Quick)
                 </button>
                 <button
                   type="button"
-                  onClick={() => { setLoginMode('email'); setErrors({}); setServerError('') }}
-                  style={{
-                    flex: 1,
-                    padding: '8px 12px',
-                    fontSize: '12.5px',
-                    fontWeight: loginMode === 'email' ? 700 : 500,
-                    borderRadius: '8px',
-                    border: 'none',
-                    cursor: 'pointer',
-                    background: loginMode === 'email' ? '#FFFFFF' : 'transparent',
-                    color: loginMode === 'email' ? '#00694C' : '#6D7A73',
-                    boxShadow: loginMode === 'email' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
-                    transition: 'all 0.15s ease',
-                    fontFamily: 'inherit'
+                  onClick={() => {
+                    setLoginMode('email')
+                    setErrors({})
+                    setServerError('')
                   }}
+                  className={`flex-1 py-2 text-[12.5px] font-semibold rounded-lg transition-all duration-150 cursor-pointer ${
+                    loginMode === 'email'
+                      ? 'bg-white text-[#0B4828] shadow-xs'
+                      : 'text-[#5A7365] hover:text-[#0B4828]'
+                  }`}
+                  style={{ cursor: 'pointer' }}
                 >
                   Email & Password
                 </button>
               </div>
 
               {serverError && (
-                <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '10px', padding: '10px 14px', marginBottom: '16px', fontSize: '13px', color: '#D94040' }}>
+                <div className="bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl p-3 mb-4">
                   {serverError}
                 </div>
               )}
 
-              <form onSubmit={handleLoginSubmit} noValidate>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                  {loginMode === 'wholesale_id' ? (
-                    <div>
-                      <label className="ws-label">Wholesale ID *</label>
+              <form onSubmit={handleLoginSubmit} noValidate className="space-y-4">
+                {loginMode === 'wholesale_id' ? (
+                  <div>
+                    <label className="block text-[12px] sm:text-[12.5px] font-semibold text-[#183526] mb-1.5">
+                      Wholesale ID <span className="text-[#183526]">*</span>
+                    </label>
+                    <div
+                      className={`flex items-center w-full bg-white border rounded-xl px-3.5 h-[44px] transition-all shadow-[0_1px_2px_rgba(0,0,0,0.03)] ${
+                        errors.wholesaleId
+                          ? 'border-red-400 ring-2 ring-red-100'
+                          : 'border-[#D4DFD8] focus-within:border-[#0B4828] focus-within:ring-2 focus-within:ring-[#0B4828]/15'
+                      }`}
+                    >
+                      <CreditCard className="w-4 h-4 text-[#7A8C81] mr-2.5 flex-shrink-0" />
                       <input
-                        className={`ws-inp${errors.wholesaleId ? ' ws-inp-err' : ''}`}
                         type="text"
                         placeholder="e.g. WHL-1001"
-                        value={loginData.wholesaleId || ''}
+                        value={loginData.wholesaleId}
                         onChange={e => {
                           setLoginData(p => ({ ...p, wholesaleId: e.target.value }))
                           setErrors(p => ({ ...p, wholesaleId: '' }))
                           setServerError('')
                         }}
+                        className="w-full bg-transparent border-0 outline-none text-[13.5px] text-[#14261C] uppercase font-mono font-medium"
                         autoFocus
                       />
-                      {errors.wholesaleId && <p className="ws-err-msg">{errors.wholesaleId}</p>}
-                      <p style={{ fontSize: '12px', color: '#6D7A73', margin: '6px 0 0', lineHeight: 1.4 }}>
-                        Instant wholesale access with your assigned ID. No password required.
-                      </p>
                     </div>
-                  ) : (
-                    <>
-                      <div>
-                        <label className="ws-label">Business Email *</label>
+                    {errors.wholesaleId && (
+                      <p className="text-[11.5px] text-red-600 mt-1">{errors.wholesaleId}</p>
+                    )}
+                    <p className="text-[12px] text-[#5C7566] mt-1.5 leading-relaxed">
+                      Instant wholesale access with your assigned ID. No password required.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <div>
+                      <label className="block text-[12px] sm:text-[12.5px] font-semibold text-[#183526] mb-1.5">
+                        Business Email <span className="text-[#183526]">*</span>
+                      </label>
+                      <div
+                        className={`flex items-center w-full bg-white border rounded-xl px-3.5 h-[44px] transition-all shadow-[0_1px_2px_rgba(0,0,0,0.03)] ${
+                          errors.email
+                            ? 'border-red-400 ring-2 ring-red-100'
+                            : 'border-[#D4DFD8] focus-within:border-[#0B4828] focus-within:ring-2 focus-within:ring-[#0B4828]/15'
+                        }`}
+                      >
+                        <Mail className="w-4 h-4 text-[#7A8C81] mr-2.5 flex-shrink-0" />
                         <input
-                          className={`ws-inp${errors.email ? ' ws-inp-err' : ''}`}
                           type="email"
-                          placeholder="orders@yourbusiness.com"
-                          value={loginData.email || ''}
+                          placeholder="order@yourbusiness.com"
+                          value={loginData.email}
                           onChange={e => {
                             setLoginData(p => ({ ...p, email: e.target.value }))
                             setErrors(p => ({ ...p, email: '' }))
                             setServerError('')
                           }}
+                          className="w-full bg-transparent border-0 outline-none text-[13.5px] text-[#14261C]"
                         />
-                        {errors.email && <p className="ws-err-msg">{errors.email}</p>}
                       </div>
+                      {errors.email && (
+                        <p className="text-[11.5px] text-red-600 mt-1">{errors.email}</p>
+                      )}
+                    </div>
 
-                      <div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-                          <label className="ws-label" style={{ margin: 0 }}>Password *</label>
-                          <button
-                            type="button"
-                            onClick={() => { setShowForgot(true); setErrors({}); setServerError('') }}
-                            style={{ fontSize: '12px', color: '#00694C', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 500 }}
-                          >
-                            Forgot password?
-                          </button>
-                        </div>
-                        <div style={{ position: 'relative' }}>
-                          <input
-                            className={`ws-inp${errors.password ? ' ws-inp-err' : ''}`}
-                            type={showPass ? 'text' : 'password'}
-                            placeholder="••••••••"
-                            value={loginData.password || ''}
-                            onChange={e => {
-                              setLoginData(p => ({ ...p, password: e.target.value }))
-                              setErrors(p => ({ ...p, password: '' }))
-                              setServerError('')
-                            }}
-                            style={{ paddingRight: '40px' }}
-                          />
-                          <button type="button" className="ws-pass-eye" onClick={() => setShowPass(p => !p)}>
-                            <EyeIcon show={showPass} />
-                          </button>
-                        </div>
-                        {errors.password && <p className="ws-err-msg">{errors.password}</p>}
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-[12px] sm:text-[12.5px] font-semibold text-[#183526]">
+                          Password <span className="text-[#183526]">*</span>
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowForgot(true)
+                            setErrors({})
+                            setServerError('')
+                          }}
+                          className="text-[12px] text-[#0B4828] hover:underline font-semibold cursor-pointer"
+                          style={{ cursor: 'pointer' }}
+                        >
+                          Forgot password?
+                        </button>
                       </div>
+                      <div
+                        className={`flex items-center w-full bg-white border rounded-xl px-3.5 h-[44px] transition-all shadow-[0_1px_2px_rgba(0,0,0,0.03)] ${
+                          errors.password
+                            ? 'border-red-400 ring-2 ring-red-100'
+                            : 'border-[#D4DFD8] focus-within:border-[#0B4828] focus-within:ring-2 focus-within:ring-[#0B4828]/15'
+                        }`}
+                      >
+                        <Lock className="w-4 h-4 text-[#7A8C81] mr-2.5 flex-shrink-0" />
+                        <input
+                          type={showPass ? 'text' : 'password'}
+                          placeholder="••••••••"
+                          value={loginData.password}
+                          onChange={e => {
+                            setLoginData(p => ({ ...p, password: e.target.value }))
+                            setErrors(p => ({ ...p, password: '' }))
+                            setServerError('')
+                          }}
+                          className="w-full bg-transparent border-0 outline-none text-[13.5px] text-[#14261C]"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPass(p => !p)}
+                          className="text-[#7A8C81] hover:text-[#14261C] p-1 cursor-pointer"
+                          style={{ cursor: 'pointer' }}
+                        >
+                          {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                      {errors.password && (
+                        <p className="text-[11.5px] text-red-600 mt-1">{errors.password}</p>
+                      )}
+                    </div>
+                  </>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-[#0B4828] hover:bg-[#07361D] active:scale-[0.99] text-white py-3.5 sm:py-4 px-6 rounded-full font-semibold text-[15px] flex items-center justify-center gap-2 shadow-[0_4px_16px_rgba(11,72,40,0.32)] hover:shadow-[0_6px_22px_rgba(11,72,40,0.42)] transition-all mt-4 disabled:opacity-60 cursor-pointer"
+                  style={{ cursor: 'pointer' }}
+                >
+                  {loading ? (
+                    <>
+                      <SpinnerIcon />
+                      <span>Signing In…</span>
+                    </>
+                  ) : (
+                    <>
+                      <LogIn className="w-4 h-4 flex-shrink-0" />
+                      <span>
+                        {loginMode === 'wholesale_id'
+                          ? 'Log In with Wholesale ID'
+                          : 'Log In to Wholesale'}
+                      </span>
                     </>
                   )}
-
-                  <button type="submit" className="ws-btn" disabled={loading} style={{ marginTop: '6px' }}>
-                    {loading ? (
-                      <><SpinnerIcon /> Signing in…</>
-                    ) : loginMode === 'wholesale_id' ? (
-                      'Log In with Wholesale ID'
-                    ) : (
-                      'Log In to Wholesale'
-                    )}
-                  </button>
-                </div>
+                </button>
               </form>
 
-              <p style={{ fontSize: '12.5px', color: '#6D7A73', textAlign: 'center', marginTop: '18px' }}>
-                Don&apos;t have an account?{' '}
-                <button onClick={() => { setStep(1); setErrors({}); setServerError('') }}
-                  style={{ color: '#00694C', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: '12.5px', fontFamily: 'inherit' }}>
+              <p className="text-[12.5px] text-center text-[#556F60] mt-4">
+                Don&apos;t have a wholesale account?{' '}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStep(1)
+                    setErrors({})
+                    setServerError('')
+                  }}
+                  className="text-[#0B4828] font-bold hover:underline cursor-pointer"
+                  style={{ cursor: 'pointer' }}
+                >
                   Apply now
                 </button>
               </p>
-            </>
+            </div>
           )}
 
-          {/* ── SUCCESS ── */}
+          {/* ═══════════════════════════════════════════
+              STEP 3: SUCCESS / APPLICATION RECEIVED
+              ═══════════════════════════════════════════ */}
           {step === 3 && (
-            <div style={{ textAlign: 'center', padding: '32px 16px 8px' }}>
-              <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: '#E7F1DF', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
-                <CheckIcon />
+            <div className="text-center py-4 sm:py-6">
+              <div className="w-16 h-16 rounded-full bg-[#EAF3E4] text-[#0B4828] flex items-center justify-center mx-auto mb-4 shadow-xs">
+                <Check className="w-8 h-8" strokeWidth={2.8} />
               </div>
-              <h2 style={{ fontFamily: '"Playfair Display", Georgia, serif', fontSize: '22px', fontWeight: 700, color: '#151E13', margin: '0 0 10px' }}>
+
+              <h2
+                className="font-serif text-[24px] sm:text-[26px] font-bold text-[#143223]"
+                style={{ fontFamily: 'var(--font-newsreader), "Playfair Display", Georgia, serif' }}
+              >
                 Application received!
               </h2>
-              <p style={{ fontSize: '14px', color: '#6D7A73', lineHeight: 1.7, margin: '0 0 10px' }}>
-                Thank you, <strong style={{ color: '#151E13' }}>{applyData.contactName || 'there'}</strong>. We&apos;ll review your application for{' '}
-                <strong style={{ color: '#151E13' }}>{applyData.businessName || 'your business'}</strong> within 1 business day.
+
+              <p className="text-[13.5px] sm:text-[14px] text-[#556F60] mt-2 max-w-md mx-auto leading-relaxed">
+                Thank you, <strong className="text-[#143223]">{applyData.contactName || 'there'}</strong>.
+                We&apos;ll review your application for{' '}
+                <strong className="text-[#143223]">{applyData.businessName || 'your business'}</strong>{' '}
+                within 1 business day.
               </p>
-              <p style={{ fontSize: '13px', color: '#9DAAA3', lineHeight: 1.6, margin: '0 0 28px' }}>
-                Confirmation email sent to <strong>{applyData.email}</strong>.
+
+              <p className="text-[12.5px] text-[#7A8C81] mt-1 mb-6">
+                Confirmation details sent to <strong>{applyData.email}</strong>.
               </p>
-              <div style={{ background: '#fff', borderRadius: '12px', padding: '16px', border: '1px solid #E2EDE6', textAlign: 'left', marginBottom: '20px' }}>
-                {['Confirmation email sent immediately', 'Account review within 1 business day', 'Onboarding call from your account manager', 'First delivery within 48 hours of approval'].map((s, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: i < 3 ? '0 0 10px' : '0', borderBottom: i < 3 ? '1px solid #F0F5F2' : 'none' }}>
-                    <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: '#E7F1DF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <span style={{ fontSize: '10px', fontWeight: 700, color: '#00694C' }}>{i + 1}</span>
+
+              <div className="bg-[#F8FAF7] border border-[#E2ECE4] rounded-2xl p-4 text-left mb-6 space-y-2.5">
+                {[
+                  'Application logged directly into verification queue',
+                  'Dedicated wholesale account manager assigned within 24 hours',
+                  'Special tier wholesale catalog & bulk invoicing unlocked',
+                ].map((item, idx) => (
+                  <div key={idx} className="flex items-center gap-2.5">
+                    <div className="w-5 h-5 rounded-full bg-[#EAF3E4] text-[#0B4828] flex items-center justify-center text-[10.5px] font-bold flex-shrink-0">
+                      {idx + 1}
                     </div>
-                    <span style={{ fontSize: '12.5px', color: '#3A5A44' }}>{s}</span>
+                    <span className="text-[12.5px] text-[#294234]">{item}</span>
                   </div>
                 ))}
               </div>
-              <button onClick={() => { onClose(); window.location.href = '/wholesale/profile'; }} className="ws-btn">Done</button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  onClose()
+                  window.location.href = '/wholesale/profile'
+                }}
+                className="w-full bg-[#0B4828] hover:bg-[#07361D] text-white py-3.5 rounded-full font-semibold text-[15px] shadow-[0_4px_16px_rgba(11,72,40,0.32)] transition-all cursor-pointer"
+                style={{ cursor: 'pointer' }}
+              >
+                Go to Wholesale Profile
+              </button>
             </div>
           )}
         </div>
